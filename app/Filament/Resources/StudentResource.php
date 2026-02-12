@@ -13,6 +13,8 @@ use Filament\Tables\Table;
 use Filament\Forms\Components\Tabs;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Forms\Components\FileUpload;
+use Filament\Tables\Columns\ImageColumn;
 
 class StudentResource extends Resource
 {
@@ -29,6 +31,15 @@ class StudentResource extends Resource
                     Tabs\Tab::make('Identitas Santri')
                     ->icon('heroicon-m-user')
                     ->schema([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                FileUpload::make('foto')
+                                ->image() // Memastikan hanya file gambar
+                                ->directory('photos/students') // Folder penyimpanan
+                                ->imageEditor() // Fitur keren: bisa crop foto langsung!
+                                ->maxSize(1024) // Maksimal 1MB agar server tidak penuh
+                                ->columnSpanFull(),
+                                ])->columns(1),
                         Forms\Components\Grid::make(2)
                         ->schema([
                             Forms\Components\TextInput::make('nisn')
@@ -113,6 +124,13 @@ class StudentResource extends Resource
     {
         return $table
             ->columns([
+                ImageColumn::make('foto')
+                    ->label('Foto')
+                    ->square()
+                    ->size(60), // Ukuran foto 60x60 px
+                Tables\Columns\TextColumn::make('nama_lengkap')
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('nisn')
                     ->searchable()
                     ->sortable(),
