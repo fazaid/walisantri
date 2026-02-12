@@ -36,4 +36,9 @@ class Student extends Model
     {
         return $this->hasMany(MedicalRecord::class);
     }
+
+    public function waliKelas(): BelongsTo
+    {
+        return $this->belongsTo(Teacher::class, 'teacher_id');
+    }
 }

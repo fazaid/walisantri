@@ -22,6 +22,11 @@ class StudentResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->with('waliKelas');
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -38,7 +43,8 @@ class StudentResource extends Resource
                                 ->directory('photos/students') // Folder penyimpanan
                                 ->imageEditor() // Fitur keren: bisa crop foto langsung!
                                 ->maxSize(1024) // Maksimal 1MB agar server tidak penuh
-                                ->columnSpanFull(),
+                                ->columnSpanFull()
+                                ->imageCropAspectRatio('3:4'), // Memotong gambar menjadi bentuk persegi
                                 ])->columns(1),
                         Forms\Components\Grid::make(2)
                         ->schema([
@@ -114,7 +120,12 @@ class StudentResource extends Resource
                                     'Keluar' => 'Keluar',
                                 ]),
                             Forms\Components\TextInput::make('kelas_saat_ini'),
-                            Forms\Components\TextInput::make('wali_kelas'),
+                            Forms\Components\Select::make('teacher_id')
+                                ->label('Wali Kelas')
+                                ->relationship('waliKelas', 'nama_pengajar') // Mengambil data dari relasi 'waliKelas' di model Student
+                                ->searchable()
+                                ->required()
+                                ->preload(),
                    ])
             ])->columnSpanFull(), // Agar tab melebar memenuhi layar
          ]);
@@ -142,7 +153,7 @@ class StudentResource extends Resource
                         'Mutasi' => 'warning',
                         'Keluar' => 'danger',
                     }),
-                Tables\Columns\TextColumn::make('wali_kelas')
+                Tables\Columns\TextColumn::make('waliKelas.nama_pengajar')
                     ->toggleable(isToggledHiddenByDefault: true), // Bisa disembunyikan
                 ])
             ->filters([
