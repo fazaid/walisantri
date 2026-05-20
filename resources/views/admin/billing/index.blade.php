@@ -97,7 +97,7 @@
     {{-- CTA Hubungi --}}
     <div class="bg-teal-700 rounded-2xl p-5 text-white text-center">
         <p class="font-semibold mb-1">Butuh upgrade atau perpanjangan?</p>
-        <p class="text-teal-200 text-sm mb-3">Hubungi tim Walisantri untuk proses pembayaran.</p>
+        <p class="text-teal-200 text-sm mb-3">Hubungi tim kami untuk proses pembayaran.</p>
         <a href="https://wa.me/6281200000000?text=Halo,+saya+ingin+perpanjang+langganan+{{ urlencode($pesantren->nama_pesantren) }}"
            target="_blank"
            class="inline-block bg-white text-teal-700 font-semibold text-sm px-5 py-2 rounded-xl hover:bg-teal-50 transition-colors">
