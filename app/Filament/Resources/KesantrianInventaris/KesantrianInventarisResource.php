@@ -10,20 +10,23 @@ use App\Filament\Resources\KesantrianInventaris\Schemas\KesantrianInventarisForm
 use App\Filament\Resources\KesantrianInventaris\Schemas\KesantrianInventarisInfolist;
 use App\Filament\Resources\KesantrianInventaris\Tables\KesantrianInventarisTable;
 use App\Models\KesantrianInventaris as KesantrianInventarisModel;
-use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use BackedEnum;
 use UnitEnum;
 
 class KesantrianInventarisResource extends Resource
 {
     protected static ?string $model = KesantrianInventarisModel::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArchiveBox;
 
     protected static ?string $recordTitleAttribute = 'nama_barang_umum';
+    protected static ?string $navigationLabel = 'Inventaris';
+    protected static ?string $modelLabel = 'Inventaris';
+    protected static ?string $pluralModelLabel = 'Data Inventaris';
 
     protected static string|UnitEnum|null $navigationGroup = 'Kesantrian';
     protected static ?int $navigationSort = 7;

@@ -10,20 +10,23 @@ use App\Filament\Resources\TahfidzProgress\Schemas\TahfidzProgressForm;
 use App\Filament\Resources\TahfidzProgress\Schemas\TahfidzProgressInfolist;
 use App\Filament\Resources\TahfidzProgress\Tables\TahfidzProgressTable;
 use App\Models\TahfidzProgress;
-use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use BackedEnum;
 use UnitEnum;
 
 class TahfidzProgressResource extends Resource
 {
     protected static ?string $model = TahfidzProgress::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBookOpen;
 
     protected static ?string $recordTitleAttribute = 'nama_surah';
+    protected static ?string $navigationLabel = 'Setoran Tahfidz';
+    protected static ?string $modelLabel = 'Setoran';
+    protected static ?string $pluralModelLabel = 'Setoran Tahfidz';
 
     protected static string|UnitEnum|null $navigationGroup = 'Kesantrian';
     protected static ?int $navigationSort = 1;

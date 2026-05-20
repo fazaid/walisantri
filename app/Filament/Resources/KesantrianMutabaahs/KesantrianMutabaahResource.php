@@ -10,20 +10,23 @@ use App\Filament\Resources\KesantrianMutabaahs\Schemas\KesantrianMutabaahForm;
 use App\Filament\Resources\KesantrianMutabaahs\Schemas\KesantrianMutabaahInfolist;
 use App\Filament\Resources\KesantrianMutabaahs\Tables\KesantrianMutabaahsTable;
 use App\Models\KesantrianMutabaah;
-use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use BackedEnum;
 use UnitEnum;
 
 class KesantrianMutabaahResource extends Resource
 {
     protected static ?string $model = KesantrianMutabaah::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
 
     protected static ?string $recordTitleAttribute = 'tanggal';
+    protected static ?string $navigationLabel = 'Mutabaah';
+    protected static ?string $modelLabel = 'Mutabaah';
+    protected static ?string $pluralModelLabel = 'Data Mutabaah';
 
     protected static string|UnitEnum|null $navigationGroup = 'Kesantrian';
     protected static ?int $navigationSort = 4;

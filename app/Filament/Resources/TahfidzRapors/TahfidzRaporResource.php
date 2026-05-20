@@ -10,20 +10,23 @@ use App\Filament\Resources\TahfidzRapors\Schemas\TahfidzRaporForm;
 use App\Filament\Resources\TahfidzRapors\Schemas\TahfidzRaporInfolist;
 use App\Filament\Resources\TahfidzRapors\Tables\TahfidzRaporsTable;
 use App\Models\TahfidzRapor;
-use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use BackedEnum;
 use UnitEnum;
 
 class TahfidzRaporResource extends Resource
 {
     protected static ?string $model = TahfidzRapor::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
 
     protected static ?string $recordTitleAttribute = 'tahun_ajaran';
+    protected static ?string $navigationLabel = 'Rapor Tahfidz';
+    protected static ?string $modelLabel = 'Rapor';
+    protected static ?string $pluralModelLabel = 'Rapor Tahfidz';
 
     protected static string|UnitEnum|null $navigationGroup = 'Kesantrian';
     protected static ?int $navigationSort = 3;

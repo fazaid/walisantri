@@ -10,19 +10,22 @@ use App\Filament\Resources\MasterPengumumen\Schemas\MasterPengumumanForm;
 use App\Filament\Resources\MasterPengumumen\Schemas\MasterPengumumanInfolist;
 use App\Filament\Resources\MasterPengumumen\Tables\MasterPengumumenTable;
 use App\Models\MasterPengumuman;
-use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use BackedEnum;
 
 class MasterPengumumanResource extends Resource
 {
     protected static ?string $model = MasterPengumuman::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSpeakerWave;
 
     protected static ?string $recordTitleAttribute = 'judul_maklumat';
+    protected static ?string $navigationLabel = 'Pengumuman';
+    protected static ?string $modelLabel = 'Pengumuman';
+    protected static ?string $pluralModelLabel = 'Pengumuman';
 
     public static function form(Schema $schema): Schema
     {

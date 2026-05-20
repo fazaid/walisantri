@@ -10,11 +10,11 @@ use App\Filament\Resources\TahfidzUjians\Schemas\TahfidzUjianForm;
 use App\Filament\Resources\TahfidzUjians\Schemas\TahfidzUjianInfolist;
 use App\Filament\Resources\TahfidzUjians\Tables\TahfidzUjiansTable;
 use App\Models\TahfidzUjian;
-use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use BackedEnum;
 use Illuminate\Support\Facades\Gate;
 use UnitEnum;
 
@@ -22,9 +22,12 @@ class TahfidzUjianResource extends Resource
 {
     protected static ?string $model = TahfidzUjian::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAcademicCap;
 
     protected static ?string $recordTitleAttribute = 'target_juz';
+    protected static ?string $navigationLabel = 'Ujian Tahfidz';
+    protected static ?string $modelLabel = 'Ujian';
+    protected static ?string $pluralModelLabel = 'Ujian Tahfidz';
 
     protected static string|UnitEnum|null $navigationGroup = 'Kesantrian';
 

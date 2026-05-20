@@ -10,11 +10,11 @@ use App\Filament\Resources\KesantrianKesehatans\Schemas\KesantrianKesehatanForm;
 use App\Filament\Resources\KesantrianKesehatans\Schemas\KesantrianKesehatanInfolist;
 use App\Filament\Resources\KesantrianKesehatans\Tables\KesantrianKesehatansTable;
 use App\Models\KesantrianKesehatan;
-use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use BackedEnum;
 use Illuminate\Support\Facades\Gate;
 use UnitEnum;
 
@@ -22,9 +22,12 @@ class KesantrianKesehatanResource extends Resource
 {
     protected static ?string $model = KesantrianKesehatan::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedHeart;
 
     protected static ?string $recordTitleAttribute = 'kategori_keluhan';
+    protected static ?string $navigationLabel = 'Kesehatan';
+    protected static ?string $modelLabel = 'Rekam Medis';
+    protected static ?string $pluralModelLabel = 'Rekam Medis';
 
     protected static string|UnitEnum|null $navigationGroup = 'Kesantrian';
     protected static ?int $navigationSort = 6;

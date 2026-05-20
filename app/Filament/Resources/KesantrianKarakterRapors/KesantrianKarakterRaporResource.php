@@ -10,20 +10,23 @@ use App\Filament\Resources\KesantrianKarakterRapors\Schemas\KesantrianKarakterRa
 use App\Filament\Resources\KesantrianKarakterRapors\Schemas\KesantrianKarakterRaporInfolist;
 use App\Filament\Resources\KesantrianKarakterRapors\Tables\KesantrianKarakterRaporsTable;
 use App\Models\KesantrianKarakterRapor;
-use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use BackedEnum;
 use UnitEnum;
 
 class KesantrianKarakterRaporResource extends Resource
 {
     protected static ?string $model = KesantrianKarakterRapor::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedStar;
 
     protected static ?string $recordTitleAttribute = 'tanggal_input';
+    protected static ?string $navigationLabel = 'Karakter Rapor';
+    protected static ?string $modelLabel = 'Karakter Rapor';
+    protected static ?string $pluralModelLabel = 'Karakter Rapor';
 
     protected static string|UnitEnum|null $navigationGroup = 'Kesantrian';
     protected static ?int $navigationSort = 5;

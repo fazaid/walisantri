@@ -10,21 +10,25 @@ use App\Filament\Resources\Santris\Schemas\SantriForm;
 use App\Filament\Resources\Santris\Schemas\SantriInfolist;
 use App\Filament\Resources\Santris\Tables\SantrisTable;
 use App\Models\Santri;
-use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use BackedEnum;
+use UnitEnum;
 
 class SantriResource extends Resource
 {
     protected static ?string $model = Santri::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUsers;
 
     protected static ?string $recordTitleAttribute = 'nama_lengkap';
+    protected static ?string $navigationLabel = 'Santri';
+    protected static ?string $modelLabel = 'Santri';
+    protected static ?string $pluralModelLabel = 'Data Santri';
 
     public static function form(Schema $schema): Schema
     {
