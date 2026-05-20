@@ -13,12 +13,26 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('pesantren_id')
+                ->nullable()                          // NULL untuk super_admin
+                ->constrained('pesantrens')
+                ->nullOnDelete();
             $table->string('name');
             $table->string('email')->unique();
+            $table->string('phone_number', 20)->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->enum('role', [
+                'super_admin',
+                'admin_pesantren',
+                'ustadz',
+                'wali_santri',
+            ])->default('wali_santri');
             $table->rememberToken();
             $table->timestamps();
+
+            // Index untuk query autentikasi dan filtering per tenant
+            $table->index(['pesantren_id', 'role']);
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

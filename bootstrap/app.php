@@ -11,7 +11,18 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Daftarkan alias untuk dipanggil via #[Middleware] atau route middleware
+        $middleware->alias([
+            'tenant.quota'   => \App\Http\Middleware\CheckTenantQuota::class,
+            'saas.lifecycle' => \App\Http\Middleware\SaaSLifecycleLock::class,
+            'magic.token'    => \App\Http\Middleware\VerifyMagicToken::class,
+        ]);
+
+        // SaaSLifecycleLock jalan di semua request authenticated (kecuali super_admin)
+        // Tambahkan ke grup 'web' agar otomatis aktif
+        $middleware->appendToGroup('web', [
+            \App\Http\Middleware\SaaSLifecycleLock::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
