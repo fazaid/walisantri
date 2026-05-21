@@ -49,10 +49,27 @@ class UserForm
                 TextInput::make('password')
                     ->label('Password')
                     ->password()
-                    ->required()
+                    ->revealable()
                     ->minLength(8)
                     ->maxLength(255)
-                    ->hiddenOn('edit'),
+                    ->required(fn (string $operation): bool => $operation === 'create')
+                    ->dehydrated(fn (?string $state): bool => filled($state))
+                    ->helperText(fn (string $operation): string => $operation === 'edit'
+                        ? 'Kosongkan jika tidak ingin mengubah password.'
+                        : ''),
+
+                TextInput::make('password_confirmation')
+                    ->label('Konfirmasi Password')
+                    ->password()
+                    ->revealable()
+                    ->minLength(8)
+                    ->maxLength(255)
+                    ->required(fn (string $operation): bool => $operation === 'create')
+                    ->dehydrated(false)
+                    ->same('password')
+                    ->helperText(fn (string $operation): string => $operation === 'edit'
+                        ? 'Kosongkan jika tidak ingin mengubah password.'
+                        : ''),
             ]);
     }
 }

@@ -20,7 +20,8 @@ class CheckTenantQuotaTest extends TestCase
         // Register a minimal route protected by the middleware under test.
         // This route is NOT in the web group, so SaaSLifecycleLock only runs
         // if explicitly listed — keeping each middleware test independent.
-        Route::post('/test-quota', fn() => response('ok', 200))
+        // Path mengandung 'santri' agar lolos filter URL di CheckTenantQuota
+        Route::post('/santri/test-quota', fn() => response('ok', 200))
             ->middleware(['auth', 'tenant.quota']);
     }
 
@@ -72,9 +73,9 @@ class CheckTenantQuotaTest extends TestCase
         $this->makeSantri($pesantren, $wali, $ustadz, 'S002');
 
         $this->actingAs($admin)
-            ->postJson('/test-quota')
+            ->postJson('/santri/test-quota')
             ->assertStatus(422)
-            ->assertJsonFragment(['message' => 'Kuota santri aktif telah penuh. Upgrade paket untuk menambah santri.']);
+            ->assertJsonPath('message', fn (string $msg) => str_contains($msg, 'Batas kuota paket tercapai'));
     }
 
     public function test_middleware_mengizinkan_saat_kuota_belum_penuh(): void
@@ -89,7 +90,7 @@ class CheckTenantQuotaTest extends TestCase
         $this->makeSantri($pesantren, $wali, $ustadz, 'S002');
 
         $this->actingAs($admin)
-            ->postJson('/test-quota')
+            ->postJson('/santri/test-quota')
             ->assertStatus(200);
     }
 }

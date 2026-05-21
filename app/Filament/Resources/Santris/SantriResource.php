@@ -16,6 +16,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 use BackedEnum;
 use UnitEnum;
 
@@ -30,6 +31,14 @@ class SantriResource extends Resource
     protected static ?string $modelLabel = 'Santri';
     protected static ?string $pluralModelLabel = 'Data Santri';
 
+
+    public static function canViewAny(): bool
+    {
+        return in_array(Auth::user()?->role, [
+            'admin_pesantren',
+            'ustadz',
+        ]);
+    }
     public static function form(Schema $schema): Schema
     {
         return SantriForm::configure($schema);

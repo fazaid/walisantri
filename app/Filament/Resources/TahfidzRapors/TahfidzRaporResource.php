@@ -14,6 +14,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 use BackedEnum;
 use UnitEnum;
 
@@ -31,6 +32,14 @@ class TahfidzRaporResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'Kesantrian';
     protected static ?int $navigationSort = 3;
 
+
+    public static function canViewAny(): bool
+    {
+        return in_array(Auth::user()?->role, [
+            'admin_pesantren',
+            'ustadz',
+        ]);
+    }
     public static function form(Schema $schema): Schema
     {
         return TahfidzRaporForm::configure($schema);

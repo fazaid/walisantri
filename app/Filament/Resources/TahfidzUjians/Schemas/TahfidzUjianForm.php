@@ -30,7 +30,11 @@ class TahfidzUjianForm
                             ->required(),
                         Select::make('penguji_id')
                             ->label('Penguji')
-                            ->options(User::where('role', 'ustadz')->pluck('name', 'id'))
+                            ->options(
+                                User::where('role', 'ustadz')
+                                    ->where('pesantren_id', auth()->user()?->pesantren_id)
+                                    ->pluck('name', 'id')
+                            )
                             ->searchable()
                             ->required(),
                         DatePicker::make('tanggal_ujian')

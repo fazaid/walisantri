@@ -17,6 +17,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use BackedEnum;
 use Illuminate\Database\Eloquent\Builder;
+use UnitEnum;
 
 class UserResource extends Resource
 {
@@ -24,12 +25,26 @@ class UserResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;
 
+    protected static string|UnitEnum|null $navigationGroup = 'Manajemen';
+
+    protected static ?int $navigationSort = 1;
+
     protected static ?string $recordTitleAttribute = 'name';
     protected static ?string $navigationLabel = 'Pengguna';
     protected static ?string $modelLabel = 'Pengguna';
     protected static ?string $pluralModelLabel = 'Data Pengguna';
 
     public static function canAccess(): bool
+    {
+        $role = auth()->user()?->role;
+
+        return in_array($role, [
+            UserRole::SuperAdmin->value,
+            UserRole::AdminPesantren->value,
+        ]);
+    }
+
+    public static function canViewAny(): bool
     {
         $role = auth()->user()?->role;
 

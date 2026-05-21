@@ -24,9 +24,9 @@ class PesantrenResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingOffice2;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Super Admin';
+    protected static string|UnitEnum|null $navigationGroup = null;
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $recordTitleAttribute = 'nama_pesantren';
     protected static ?string $navigationLabel = 'Pesantren';
@@ -34,6 +34,11 @@ class PesantrenResource extends Resource
     protected static ?string $pluralModelLabel = 'Data Pesantren';
 
     public static function canAccess(): bool
+    {
+        return auth()->user()?->role === UserRole::SuperAdmin->value;
+    }
+
+    public static function canViewAny(): bool
     {
         return auth()->user()?->role === UserRole::SuperAdmin->value;
     }

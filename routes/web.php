@@ -3,7 +3,6 @@
 // File: routes/web.php
 // Ini adalah KESELURUHAN isi web.php — replace seluruh file.
 
-use App\Http\Controllers\Admin\BillingController;
 use App\Http\Controllers\Auth\WaliLoginController;
 use App\Http\Controllers\Wali\DashboardController;
 use App\Http\Controllers\Wali\LaporanController;
@@ -21,14 +20,6 @@ Route::post('/wali/login', [WaliLoginController::class, 'login'])
 Route::post('/wali/logout', [WaliLoginController::class, 'logout'])
     ->middleware('auth')
     ->name('logout');
-// --- Billing (admin pesantren only) ---
-Route::middleware(['auth', 'saas.lifecycle'])
-    ->name('billing.')
-    ->group(function () {
-        Route::get('/billing', [BillingController::class, 'index'])
-            ->name('index');
-    });
-
 // --- Portal Wali Santri (butuh login) ---
 Route::middleware(['auth', 'saas.lifecycle'])
     ->prefix('wali')

@@ -26,6 +26,15 @@ class SaaSLifecycleLock
 
         $user = auth()->user();
 
+        // Selalu izinkan request logout agar user bisa keluar meski status terkunci
+        if ($request->is('admin/logout')
+            || $request->is('wali/logout')
+            || $request->routeIs('filament.admin.auth.logout')
+            || $request->routeIs('logout')
+        ) {
+            return $next($request);
+        }
+
         // Super admin tidak pernah dikunci
         if (in_array($user->role, self::BYPASS_ROLES)) {
             return $next($request);
@@ -35,6 +44,24 @@ class SaaSLifecycleLock
 
         if (! $pesantren) {
             return $this->lockResponse($request, 'Data pesantren tidak ditemukan.');
+        }
+
+        // Halaman billing & auth panel selalu boleh diakses (mencegah infinite redirect)
+        if ($request->is('admin/billing-page')
+            || $request->is('admin/billing-page/*')
+            || $request->is('admin/login')
+            || $request->is('admin/logout')
+            || $request->routeIs('filament.admin.auth.*')
+        ) {
+            return $next($request);
+        }
+
+        // Auto-sinkronkan status ke 'expired' jika expired_at sudah lewat
+        if ($this->isExpired($pesantren)
+            && ! in_array($pesantren->status_berlangganan, ['expired', 'suspended'])
+        ) {
+            $pesantren->updateQuietly(['status_berlangganan' => 'expired']);
+            $pesantren->status_berlangganan = 'expired';
         }
 
         // Status suspended — semua role dikunci total
@@ -96,7 +123,7 @@ class SaaSLifecycleLock
             ], 402);
         }
 
-        return redirect()->route('billing.index');
+        return redirect()->route('filament.admin.pages.billing-page');
     }
 
     private function lockResponse(Request $request, string $message, int $status = 403): Response

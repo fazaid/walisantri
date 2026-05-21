@@ -34,6 +34,7 @@ class TahfidzProgressForm
                             ->label('Ustadz Pencatat')
                             ->options(
                                 User::where('role', 'ustadz')
+                                    ->where('pesantren_id', auth()->user()?->pesantren_id)
                                     ->pluck('name', 'id')
                             )
                             ->searchable()

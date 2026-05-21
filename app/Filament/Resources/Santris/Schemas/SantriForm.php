@@ -47,6 +47,7 @@ class SantriForm
                             ->label('Wali Santri')
                             ->options(
                                 User::where('role', 'wali_santri')
+                                    ->where('pesantren_id', auth()->user()?->pesantren_id)
                                     ->pluck('name', 'id')
                             )
                             ->searchable()
@@ -55,6 +56,7 @@ class SantriForm
                             ->label('Ustadz Pembimbing')
                             ->options(
                                 User::where('role', 'ustadz')
+                                    ->where('pesantren_id', auth()->user()?->pesantren_id)
                                     ->pluck('name', 'id')
                             )
                             ->searchable()
