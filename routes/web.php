@@ -6,7 +6,9 @@
 use App\Http\Controllers\Admin\BillingController;
 use App\Http\Controllers\Auth\WaliLoginController;
 use App\Http\Controllers\Wali\DashboardController;
+use App\Http\Controllers\Wali\LaporanController;
 use App\Http\Controllers\Wali\PengumumanController;
+use App\Http\Controllers\Wali\RaporController;
 use App\Http\Controllers\Wali\ReportController;
 use Illuminate\Support\Facades\Route;
 
@@ -25,8 +27,6 @@ Route::middleware(['auth', 'saas.lifecycle'])
     ->group(function () {
         Route::get('/billing', [BillingController::class, 'index'])
             ->name('index');
-        Route::get('/pengumuman', [PengumumanController::class, 'index'])
-            ->name('pengumuman');
     });
 
 // --- Portal Wali Santri (butuh login) ---
@@ -40,6 +40,10 @@ Route::middleware(['auth', 'saas.lifecycle'])
             ->name('santri.show');
         Route::get('/pengumuman', [PengumumanController::class, 'index'])
             ->name('pengumuman');
+        Route::get('/rapor', [RaporController::class, 'index'])
+            ->name('rapor');
+        Route::get('/laporan/pdf', [LaporanController::class, 'exportPdf'])
+            ->name('laporan.pdf');
     });
 
 // --- Magic Link (tanpa login form, via UUID santri) ---

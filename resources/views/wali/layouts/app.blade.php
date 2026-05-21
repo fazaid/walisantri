@@ -15,9 +15,6 @@
 
     <title>@yield('title', 'Portal Wali Santri') — {{ config('app.name') }}</title>
 
-    {{-- Hide content until Alpine is ready (prevents flash of unstyled content) --}}
-    <style>[x-cloak] { display: none !important; }</style>
-
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -55,20 +52,8 @@
         </div>
     </header>
 
-    {{-- Content with Alpine skeleton wrapper --}}
-    <main class="max-w-lg mx-auto px-4 py-5 pb-20"
-          x-data="{ ready: false }"
-          x-init="$nextTick(() => { ready = true })">
-
-        {{-- Skeleton: visible until Alpine initialises --}}
-        <div x-show="!ready" aria-hidden="true">
-            @include('wali.partials.skeleton')
-        </div>
-
-        {{-- Actual page content: hidden until Alpine initialises --}}
-        <div x-show="ready" x-cloak>
-            @yield('content')
-        </div>
+    <main class="max-w-lg mx-auto px-4 py-5 pb-20">
+        @yield('content')
     </main>
 
     {{-- ─── Bottom Navigation Bar ─────────────────────────────────────────── --}}
