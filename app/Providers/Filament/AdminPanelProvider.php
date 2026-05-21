@@ -5,6 +5,12 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\CentralDashboard;
+use App\Filament\Widgets\ExpiringTenantsWidget;
+use App\Filament\Widgets\PengumumanCentralWidget;
+use App\Filament\Widgets\SystemStatsWidget;
+use App\Filament\Widgets\TenantListWidget;
+use App\Filament\Widgets\TenantStatsOverview;
 use App\Http\Middleware\SaaSLifecycleLock;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -39,11 +45,17 @@ class AdminPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
                 Dashboard::class,
+                CentralDashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
                 AccountWidget::class,
                 FilamentInfoWidget::class,
+                TenantStatsOverview::class,
+                SystemStatsWidget::class,
+                ExpiringTenantsWidget::class,
+                TenantListWidget::class,
+                PengumumanCentralWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

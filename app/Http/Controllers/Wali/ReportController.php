@@ -6,8 +6,11 @@ namespace App\Http\Controllers\Wali;
 
 use App\Http\Controllers\Controller;
 use App\Models\KesantrianKesehatan;
+use App\Models\KesantrianMutabaah;
 use App\Models\Santri;
 use App\Models\TahfidzProgress;
+use App\Models\TahfidzRapor;
+use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
@@ -39,6 +42,7 @@ class ReportController extends Controller
 
     private function buildPayload(Santri $santri): array
     {
+        // ── Existing queries ─────────────────────────────────────────────────
         $tahfidzRecent = TahfidzProgress::where('santri_id', $santri->id)
             ->orderByDesc('tanggal')
             ->limit(10)
@@ -49,6 +53,71 @@ class ReportController extends Controller
             ->limit(5)
             ->get();
 
-        return compact('santri', 'tahfidzRecent', 'kesehatanRecent');
+        // ── Summary Card 1: Total Juz Hafalan ────────────────────────────────
+        // Per surah: ambil ayat_selesai tertinggi, lalu estimasi juz dari total ayat.
+        $sumMaxAyat = TahfidzProgress::where('santri_id', $santri->id)
+            ->select('nama_surah', DB::raw('MAX(ayat_selesai) as max_ayat'))
+            ->groupBy('nama_surah')
+            ->pluck('max_ayat')
+            ->sum();
+
+        $totalJuzHafalan = $sumMaxAyat > 0
+            ? round($sumMaxAyat / 604 * 30, 1)
+            : 0;
+
+        // ── Summary Card 2: Persentase Amalan 7 Hari Terakhir ────────────────
+        $mutabaahMingguIni = KesantrianMutabaah::where('santri_id', $santri->id)
+            ->whereBetween('tanggal', [now()->subDays(6)->toDateString(), now()->toDateString()])
+            ->get();
+
+        $persentaseAmalanMingguIni = 0;
+
+        if ($mutabaahMingguIni->isNotEmpty()) {
+            $totalSkor = $mutabaahMingguIni->sum(function ($m) {
+                return ($m->jamaah_5_waktu * 5)   // max 25
+                    + ($m->is_rawatib      ? 7 : 0)
+                    + ($m->is_shalat_malam ? 7 : 0)
+                    + ($m->is_dhuha        ? 7 : 0)
+                    + ($m->is_tilawah_1juz ? 7 : 0)
+                    + ($m->is_infak        ? 7 : 0)
+                    + ($m->is_puasa        ? 7 : 0);
+            });
+            $persentaseAmalanMingguIni = (int) round(($totalSkor / (67 * 7)) * 100);
+        }
+
+        // ── Summary Card 3: Status Kesehatan Terkini ─────────────────────────
+        $latestKesehatan = KesantrianKesehatan::where('santri_id', $santri->id)
+            ->orderByDesc('tanggal_periksa')
+            ->first();
+
+        $statusKesehatanTerkini = $latestKesehatan ? [
+            'tanggal_periksa'  => $latestKesehatan->tanggal_periksa,
+            'kategori_keluhan' => $latestKesehatan->kategori_keluhan,
+            'status_pemulihan' => $latestKesehatan->status_pemulihan,
+        ] : null;
+
+        // ── Summary Card 4: Rapor Tahfidz Terakhir ───────────────────────────
+        $latestRapor = TahfidzRapor::where('santri_id', $santri->id)
+            ->orderByDesc('created_at')
+            ->first();
+
+        $raporTahfidzTerakhir = $latestRapor ? [
+            'periode'       => $latestRapor->periode,
+            'tahun_ajaran'  => $latestRapor->tahun_ajaran,
+            'nilai_hafalan' => $latestRapor->nilai_hafalan,
+            'nilai_tilawah' => $latestRapor->nilai_tilawah,
+            'nilai_tajwid'  => $latestRapor->nilai_tajwid,
+            'nilai_makhraj' => $latestRapor->nilai_makhraj,
+        ] : null;
+
+        return compact(
+            'santri',
+            'tahfidzRecent',
+            'kesehatanRecent',
+            'totalJuzHafalan',
+            'persentaseAmalanMingguIni',
+            'statusKesehatanTerkini',
+            'raporTahfidzTerakhir',
+        );
     }
 }

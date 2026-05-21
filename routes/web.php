@@ -3,12 +3,12 @@
 // File: routes/web.php
 // Ini adalah KESELURUHAN isi web.php — replace seluruh file.
 
+use App\Http\Controllers\Admin\BillingController;
 use App\Http\Controllers\Auth\WaliLoginController;
 use App\Http\Controllers\Wali\DashboardController;
+use App\Http\Controllers\Wali\PengumumanController;
 use App\Http\Controllers\Wali\ReportController;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\BillingController;
 
 
 // --- Auth Wali Santri ---
@@ -25,6 +25,8 @@ Route::middleware(['auth', 'saas.lifecycle'])
     ->group(function () {
         Route::get('/billing', [BillingController::class, 'index'])
             ->name('index');
+        Route::get('/pengumuman', [PengumumanController::class, 'index'])
+            ->name('pengumuman');
     });
 
 // --- Portal Wali Santri (butuh login) ---
@@ -36,6 +38,8 @@ Route::middleware(['auth', 'saas.lifecycle'])
             ->name('dashboard');
         Route::get('/santri/{santri}', [ReportController::class, 'show'])
             ->name('santri.show');
+        Route::get('/pengumuman', [PengumumanController::class, 'index'])
+            ->name('pengumuman');
     });
 
 // --- Magic Link (tanpa login form, via UUID santri) ---

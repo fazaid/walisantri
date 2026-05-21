@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\MasterPengumumen;
 
+use App\Enums\UserRole;
 use App\Filament\Resources\MasterPengumumen\Pages\CreateMasterPengumuman;
 use App\Filament\Resources\MasterPengumumen\Pages\EditMasterPengumuman;
 use App\Filament\Resources\MasterPengumumen\Pages\ListMasterPengumumen;
@@ -10,11 +11,11 @@ use App\Filament\Resources\MasterPengumumen\Schemas\MasterPengumumanForm;
 use App\Filament\Resources\MasterPengumumen\Schemas\MasterPengumumanInfolist;
 use App\Filament\Resources\MasterPengumumen\Tables\MasterPengumumenTable;
 use App\Models\MasterPengumuman;
+use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use BackedEnum;
 
 class MasterPengumumanResource extends Resource
 {
@@ -26,6 +27,17 @@ class MasterPengumumanResource extends Resource
     protected static ?string $navigationLabel = 'Pengumuman';
     protected static ?string $modelLabel = 'Pengumuman';
     protected static ?string $pluralModelLabel = 'Pengumuman';
+
+    public static function canAccess(): bool
+    {
+        $role = auth()->user()?->role;
+
+        return in_array($role, [
+            UserRole::SuperAdmin->value,
+            UserRole::AdminPesantren->value,
+            UserRole::Ustadz->value,
+        ]);
+    }
 
     public static function form(Schema $schema): Schema
     {

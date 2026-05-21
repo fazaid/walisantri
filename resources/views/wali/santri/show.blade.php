@@ -8,6 +8,105 @@
 @section('content')
 <div class="space-y-5">
 
+    {{-- ═══════════════════════════════════════════════════════════════════════
+         SUMMARY CARDS  2×2 grid
+    ════════════════════════════════════════════════════════════════════════ --}}
+    @php
+        /* ── Card 3: warna berdasarkan status pemulihan ── */
+        $kesehatanStatus = $statusKesehatanTerkini['status_pemulihan'] ?? null;
+        [$kBg, $kBorder, $kText, $kLabel] = match ($kesehatanStatus) {
+            'Rawat_Mandiri'   => ['bg-green-50',  'border-green-200',  'text-green-700',  'Rawat Mandiri'],
+            'Istirahat_Total' => ['bg-yellow-50', 'border-yellow-200', 'text-yellow-700', 'Istirahat Total'],
+            'Rujukan_Luar'    => ['bg-red-50',    'border-red-200',    'text-red-700',    'Rujukan Luar'],
+            default           => ['bg-green-50',  'border-green-200',  'text-green-700',  'Sehat'],
+        };
+
+        /* ── Card 2: warna progress bar amalan ── */
+        $progressColor = $persentaseAmalanMingguIni >= 70
+            ? 'bg-green-500'
+            : ($persentaseAmalanMingguIni >= 40 ? 'bg-yellow-400' : 'bg-red-400');
+
+        /* ── Card 4: format periode rapor singkat ── */
+        if ($raporTahfidzTerakhir) {
+            $periodeLabel = match ($raporTahfidzTerakhir['periode']) {
+                'Semester_Ganjil' => 'Sem. Ganjil',
+                'Semester_Genap'  => 'Sem. Genap',
+                default           => $raporTahfidzTerakhir['periode'],
+            };
+            $tahunSingkat = implode('/', array_map(
+                fn ($y) => substr(trim($y), 2),
+                explode('/', $raporTahfidzTerakhir['tahun_ajaran'])
+            ));
+        }
+    @endphp
+
+    <div class="grid grid-cols-2 gap-3">
+
+        {{-- Card 1 — Estimasi Hafalan --}}
+        <div class="bg-teal-50 border border-teal-200 rounded-2xl p-4">
+            <div class="flex items-center gap-1.5 mb-2">
+                <span class="text-lg leading-none">📖</span>
+                <span class="text-xs font-medium text-teal-600">Estimasi Hafalan</span>
+            </div>
+            @if($totalJuzHafalan > 0)
+                <p class="text-2xl font-bold text-teal-700 leading-tight">
+                    {{ $totalJuzHafalan }}<span class="text-sm font-medium ml-1">Juz</span>
+                </p>
+            @else
+                <p class="text-sm font-medium text-teal-400">Belum ada data</p>
+            @endif
+        </div>
+
+        {{-- Card 2 — Amalan Minggu Ini --}}
+        <div class="bg-purple-50 border border-purple-200 rounded-2xl p-4">
+            <div class="flex items-center gap-1.5 mb-2">
+                <span class="text-lg leading-none">✨</span>
+                <span class="text-xs font-medium text-purple-600">Amalan Minggu Ini</span>
+            </div>
+            <p class="text-2xl font-bold text-purple-700 leading-tight">
+                {{ $persentaseAmalanMingguIni }}<span class="text-sm font-medium ml-0.5">%</span>
+            </p>
+            {{-- Progress bar tipis --}}
+            <div class="mt-2 h-1.5 rounded-full bg-gray-200 overflow-hidden">
+                <div class="h-1.5 rounded-full {{ $progressColor }}"
+                     style="width: {{ $persentaseAmalanMingguIni }}%"></div>
+            </div>
+        </div>
+
+        {{-- Card 3 — Status Kesehatan --}}
+        <div class="{{ $kBg }} border {{ $kBorder }} rounded-2xl p-4">
+            <div class="flex items-center gap-1.5 mb-2">
+                <span class="text-lg leading-none">🏥</span>
+                <span class="text-xs font-medium {{ $kText }}">Status Kesehatan</span>
+            </div>
+            <p class="text-sm font-bold {{ $kText }} leading-tight">{{ $kLabel }}</p>
+            @if($statusKesehatanTerkini)
+                <p class="text-xs {{ $kText }} opacity-70 mt-0.5">
+                    {{ $statusKesehatanTerkini['tanggal_periksa']->translatedFormat('d M Y') }}
+                </p>
+            @endif
+        </div>
+
+        {{-- Card 4 — Rapor Tahfidz --}}
+        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+            <div class="flex items-center gap-1.5 mb-2">
+                <span class="text-lg leading-none">⭐</span>
+                <span class="text-xs font-medium text-amber-600">Rapor Terakhir</span>
+            </div>
+            @if($raporTahfidzTerakhir)
+                <p class="text-2xl font-bold text-amber-700 leading-tight">
+                    {{ $raporTahfidzTerakhir['nilai_hafalan'] }}
+                </p>
+                <p class="text-xs text-amber-600 mt-0.5">
+                    {{ $periodeLabel }} {{ $tahunSingkat }}
+                </p>
+            @else
+                <p class="text-sm font-medium text-amber-400">Belum ada rapor</p>
+            @endif
+        </div>
+
+    </div>{{-- /grid --}}
+
     {{-- Info Card Santri --}}
     <div class="bg-teal-700 text-white rounded-2xl p-4 shadow">
         <div class="flex items-center gap-4">
