@@ -15,7 +15,7 @@ class RegisterController extends Controller
     public function showForm()
     {
         if (Auth::check()) {
-            return redirect('/admin');
+            return redirect('http://' . config('app.domain') . '/admin');
         }
 
         return view('auth.register');
@@ -41,6 +41,6 @@ class RegisterController extends Controller
 
         Auth::login($result['admin']);
 
-        return redirect('/admin');
+        return redirect('http://' . config('app.domain') . '/admin');
     }
 }
