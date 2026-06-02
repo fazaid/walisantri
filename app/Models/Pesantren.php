@@ -17,13 +17,19 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'max_santri_kuota',
     'status_berlangganan',
     'expired_at',
+    'santri_count_cache',
+    'onboarding_completed_steps',
+    'profil',
 ])]
 class Pesantren extends Model
 {
     protected function casts(): array
     {
         return [
-            'expired_at' => 'datetime',
+            'expired_at'                 => 'datetime',
+            'santri_count_cache'         => 'integer',
+            'onboarding_completed_steps' => 'array',
+            'profil'                     => 'array',
         ];
     }
 

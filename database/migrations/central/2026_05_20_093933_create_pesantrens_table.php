@@ -14,14 +14,14 @@ return new class extends Migration
         Schema::create('pesantrens', function (Blueprint $table) {
             $table->id();
             $table->string('nama_pesantren');
-            $table->string('slug')->unique();           // URL routing tenant
+            $table->string('slug')->unique();
             $table->enum('paket_langganan', [
+                'gratis',
                 'rintisan',
                 'berkembang',
-                'akselerasi',
-                'besar',
-            ])->default('rintisan');
-            $table->unsignedInteger('max_santri_kuota')->default(100);
+                'maju',
+            ])->default('gratis');
+            $table->integer('max_santri_kuota')->default(10);
             $table->enum('status_berlangganan', [
                 'trial',
                 'active',
@@ -29,10 +29,12 @@ return new class extends Migration
                 'expired',
             ])->default('trial');
             $table->timestamp('expired_at')->nullable();
+            $table->integer('santri_count_cache')->default(0);
+            $table->jsonb('onboarding_completed_steps')->nullable();
+            $table->jsonb('profil')->nullable();
             $table->timestamps();
 
-            // Index untuk query lifecycle & billing oleh super_admin
-            $table->index(['status_berlangganan', 'expired_at']);
+            $table->index(['status_berlangganan', 'expired_at'], 'idx_pesantrens_status_exp');
         });
     }
 

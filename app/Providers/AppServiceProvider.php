@@ -30,38 +30,31 @@ class AppServiceProvider extends ServiceProvider
     // -----------------------------------------------------------------
     private function registerModuleGates(): void
     {
-        // Modul Kesehatan — Berkembang ke atas
+        // Modul Kesehatan — Berkembang ke atas (§5.1)
         Gate::define('access-modul-kesehatan', function ($user) {
             if ($user->isSuperAdmin()) return true;
 
             return in_array($user->pesantren?->paket_langganan, [
                 'berkembang',
-                'akselerasi',
-                'besar',
+                'maju',
             ]);
         });
 
-        // Modul Inventaris — Akselerasi ke atas
+        // Modul Inventaris — Maju saja (§5.1)
         Gate::define('access-modul-inventaris', function ($user) {
             if ($user->isSuperAdmin()) return true;
 
-            return in_array($user->pesantren?->paket_langganan, [
-                'akselerasi',
-                'besar',
-            ]);
+            return $user->pesantren?->paket_langganan === 'maju';
         });
 
-        // Modul AI (Laravel AI SDK) — Akselerasi ke atas (PRD §6)
+        // Modul AI — Maju saja, post v1.0 (§5.1)
         Gate::define('access-modul-ai', function ($user) {
             if ($user->isSuperAdmin()) return true;
 
-            return in_array($user->pesantren?->paket_langganan, [
-                'akselerasi',
-                'besar',
-            ]);
+            return $user->pesantren?->paket_langganan === 'maju';
         });
 
-        // Modul Akademik + Mutaba'ah — semua paket
+        // Modul Akademik + Mutaba'ah — semua paket termasuk Gratis (§5.1)
         Gate::define('access-modul-akademik', function ($user) {
             return ! is_null($user->pesantren?->paket_langganan);
         });
