@@ -49,7 +49,7 @@ class WaliLoginController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        return redirect()->route('wali.login');
+        return redirect()->route('login');
     }
 
     private function redirectAfterLogin($user)
