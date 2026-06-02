@@ -19,12 +19,6 @@ $appDomain  = config('app.domain', 'app.walisantri.com');
 // =============================================================================
 Route::domain($baseDomain)->group(function () {
     Route::get('/', function () {
-        if (auth()->check()) {
-            return match (auth()->user()->role) {
-                'wali_santri' => redirect()->route('wali.dashboard'),
-                default       => redirect('/admin'),
-            };
-        }
         return view('landing');
     })->name('landing');
 
