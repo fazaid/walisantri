@@ -119,18 +119,20 @@ class PesantrenSettingsPage extends Page implements HasForms
             ]);
     }
 
-    public function getContent(): Form
+    public function content(Schema $schema): Schema
     {
-        return Form::make([EmbeddedSchema::make('form')])
-            ->id('form')
-            ->livewireSubmitHandler('save')
-            ->footer([
-                Actions::make([
-                    Action::make('save')
-                        ->label('Simpan Perubahan')
-                        ->submit('save'),
-                ])->key('form-actions'),
-            ]);
+        return $schema->components([
+            Form::make([EmbeddedSchema::make('form')])
+                ->id('form')
+                ->livewireSubmitHandler('save')
+                ->footer([
+                    Actions::make([
+                        Action::make('save')
+                            ->label('Simpan Perubahan')
+                            ->submit('save'),
+                    ])->key('form-actions'),
+                ]),
+        ]);
     }
 
     public function save(): void
