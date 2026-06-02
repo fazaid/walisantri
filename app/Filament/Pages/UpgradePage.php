@@ -87,8 +87,8 @@ class UpgradePage extends Page implements HasForms
                         ->required()
                         ->native(false)
                         ->live()
-                        ->afterStateUpdated(function (string $state) {
-                            $this->paket_target = $state;
+                        ->afterStateUpdated(function (?string $state) {
+                            $this->paket_target = $state ?? '';
                             if ($state === 'maju') {
                                 $this->max_santri_kuota_target = max(
                                     $this->max_santri_kuota_target,
