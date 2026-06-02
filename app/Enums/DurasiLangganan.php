@@ -27,9 +27,16 @@ enum DurasiLangganan: int
         };
     }
 
+    // Bulan yang dibayar = durasi yang dipilih - bonus gratis
+    public function bulanBayar(): int
+    {
+        return $this->value - $this->bonusBulan();
+    }
+
+    // Total aktif = value (yang dipilih sudah merupakan total aktif)
     public function totalBulan(): int
     {
-        return $this->value + $this->bonusBulan();
+        return $this->value;
     }
 
     public static function options(): array

@@ -46,17 +46,17 @@
 
                         <div style="display: flex; justify-content: space-between;">
                             <span style="color: #6b7280;">Durasi bayar</span>
-                            <span style="font-weight: 500; color: #111827;">{{ $this->durasi_bulan }} bulan</span>
+                            <span style="font-weight: 500; color: #111827;">{{ $this->bulan_bayar }} bulan</span>
                         </div>
 
                         @if($this->bonus_bulan > 0)
                         <div style="display: flex; justify-content: space-between; color: #059669;">
-                            <span>Bonus tahunan</span>
-                            <span style="font-weight: 500;">+{{ $this->bonus_bulan }} bulan gratis</span>
+                            <span>Gratis</span>
+                            <span style="font-weight: 500;">+{{ $this->bonus_bulan }} bulan</span>
                         </div>
-                        <div style="display: flex; justify-content: space-between; color: #059669;">
-                            <span>Total aktif</span>
-                            <span style="font-weight: 600;">{{ $this->durasi_bulan + $this->bonus_bulan }} bulan</span>
+                        <div style="display: flex; justify-content: space-between; color: #374151;">
+                            <span style="color: #6b7280;">Total aktif</span>
+                            <span style="font-weight: 600;">{{ $this->durasi_bulan }} bulan</span>
                         </div>
                         @endif
 

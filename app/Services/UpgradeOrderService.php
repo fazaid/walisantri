@@ -32,10 +32,11 @@ class UpgradeOrderService
         $hasil = $this->calculator->hitungUntukTarget($paketTarget, $maxSantriKuota);
         $hargaPerBulan = $hasil['total_biaya'];
 
-        $durasi    = DurasiLangganan::from($durasibulan);
-        $bonusBulan = $durasi->bonusBulan();
-        $totalBulan = $durasi->totalBulan();
-        $hargaTotalSebelumDiskon = $hargaPerBulan * $durasibulan;
+        $durasi      = DurasiLangganan::from($durasibulan);
+        $bonusBulan  = $durasi->bonusBulan();
+        $bulanBayar  = $durasi->bulanBayar();   // bulan yang dibayar (misal 10 dari 12)
+        $totalBulan  = $durasi->totalBulan();   // total aktif = durasi yang dipilih (12)
+        $hargaTotalSebelumDiskon = $hargaPerBulan * $bulanBayar;
 
         $diskonNominal = 0;
         $kupon         = null;

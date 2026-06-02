@@ -49,6 +49,7 @@ class UpgradePage extends Page implements HasForms
     public int    $harga_total                 = 0;
     public ?string $kupon_pesan                = null;
     public bool   $kupon_valid                 = false;
+    public int    $bulan_bayar                 = 1;
 
     public static function canAccess(): bool
     {
@@ -164,9 +165,11 @@ class UpgradePage extends Page implements HasForms
         $calculator = app(BillingCalculatorService::class);
         $hasil      = $calculator->hitungUntukTarget($this->paket_target, $this->max_santri_kuota_target);
 
+        $durasi                           = DurasiLangganan::from($this->durasi_bulan);
         $this->harga_per_bulan            = $hasil['total_biaya'];
-        $this->harga_total_sebelum_diskon = $this->harga_per_bulan * $this->durasi_bulan;
-        $this->bonus_bulan                = DurasiLangganan::from($this->durasi_bulan)->bonusBulan();
+        $this->bonus_bulan                = $durasi->bonusBulan();
+        $this->bulan_bayar                = $durasi->bulanBayar();
+        $this->harga_total_sebelum_diskon = $this->harga_per_bulan * $this->bulan_bayar;
 
         $this->terapkanKupon();
     }
