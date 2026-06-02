@@ -41,7 +41,7 @@ class ExpiringTenantsWidget extends TableWidget
 
                 TextColumn::make('expired_at')
                     ->label('Expired')
-                    ->dateTime('d M Y HH:mm')
+                    ->dateTime('d M Y H:i')
                     ->sortable(),
 
                 TextColumn::make('status_berlangganan')

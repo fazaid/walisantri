@@ -56,9 +56,7 @@ class WaliLoginController extends Controller
     {
         return match ($user->role) {
             'wali_santri'    => redirect()->route('wali.dashboard'),
-            'super_admin'    => redirect()->to(
-                'http://' . config('app.dash_domain') . '/admin'
-            ),
+            'super_admin'    => redirect('/admin'),
             default          => redirect('/admin'),
         };
     }
