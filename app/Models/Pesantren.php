@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Table('pesantrens')]
 #[Fillable([
@@ -54,6 +55,18 @@ class Pesantren extends Model
     public function activityLogs(): HasMany
     {
         return $this->hasMany(ActivityLog::class);
+    }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function activeOrder(): HasOne
+    {
+        return $this->hasOne(Order::class)
+            ->whereIn('status', ['pending_payment', 'awaiting_confirmation'])
+            ->latestOfMany();
     }
 
     // Helper: cek apakah tenant masih aktif

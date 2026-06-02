@@ -2,7 +2,9 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\Order;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Auth;
@@ -27,8 +29,24 @@ class BillingPage extends Page
         return Auth::user()?->role === 'admin_pesantren';
     }
 
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('upgrade')
+                ->label('Upgrade / Perpanjang Paket')
+                ->icon(Heroicon::OutlinedArrowUpCircle)
+                ->url(UpgradePage::getUrl())
+                ->color('primary'),
+        ];
+    }
+
     public function getPesantren()
     {
         return Auth::user()?->pesantren;
+    }
+
+    public function getActiveOrder(): ?Order
+    {
+        return $this->getPesantren()?->activeOrder;
     }
 }

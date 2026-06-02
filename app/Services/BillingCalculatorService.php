@@ -53,6 +53,17 @@ class BillingCalculatorService
         ];
     }
 
+    public function hitungUntukTarget(string $paket, int $maxSantri): array
+    {
+        return match ($paket) {
+            'gratis'     => $this->paketTetap('Gratis', self::HARGA_GRATIS, 10),
+            'rintisan'   => $this->paketTetap('Rintisan', self::HARGA_RINTISAN, 100),
+            'berkembang' => $this->paketTetap('Berkembang', self::HARGA_BERKEMBANG, 500),
+            'maju'       => $this->paketMaju($maxSantri),
+            default      => $this->paketTetap('Unknown', 0, 0),
+        };
+    }
+
     private function paketTetap(string $nama, int $harga, int $kuota): array
     {
         return [

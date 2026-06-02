@@ -1,6 +1,7 @@
 <x-filament-panels::page>
 @php
     $pesantren   = $this->getPesantren();
+    $activeOrder = $this->getActiveOrder();
     $status      = $pesantren?->status_berlangganan;
     $expiredAt   = $pesantren?->expired_at
         ? \Carbon\Carbon::parse($pesantren->expired_at) : null;
@@ -18,10 +19,10 @@
         default     => '—',
     };
     $paketLabel = match($pesantren?->paket_langganan) {
+        'gratis'     => 'Gratis — Maks 10 santri',
         'rintisan'   => 'Rintisan — Maks 100 santri',
-        'berkembang' => 'Berkembang — Maks 250 santri',
-        'akselerasi' => 'Akselerasi — Maks 500 santri',
-        'besar'      => 'Besar — Kuota custom',
+        'berkembang' => 'Berkembang — Maks 500 santri',
+        'maju'       => 'Maju — Maks ' . number_format($kuota, 0, ',', '.') . ' santri',
         default      => '—',
     };
     $expiredLabel = $expiredAt
@@ -100,17 +101,36 @@
     </dl>
 </x-filament::section>
 
-{{-- ROW 4: Perpanjangan --}}
+{{-- ROW 4: Order Aktif / Upgrade --}}
+@if($activeOrder)
 <x-filament::section>
-    <x-slot name="heading">Perpanjangan & Upgrade</x-slot>
-    <x-slot name="description">
-        Hubungi admin Walisantri.com untuk perpanjangan
-        masa aktif atau upgrade paket.
-    </x-slot>
+    <x-slot name="heading">Order Sedang Berjalan</x-slot>
+    <x-slot name="description">Ada order yang belum selesai diproses.</x-slot>
 
-    <x-filament::badge color="gray">
-        📱 Hubungi via WhatsApp
-    </x-filament::badge>
+    <dl class="divide-y divide-gray-100 mb-4">
+        @foreach([
+            'Nomor Order' => $activeOrder->nomor_order,
+            'Paket'       => ucfirst($activeOrder->paket_target->value),
+            'Durasi'      => $activeOrder->durasi_bulan . ' bulan' . ($activeOrder->bonus_bulan > 0 ? ' + ' . $activeOrder->bonus_bulan . ' bulan bonus' : ''),
+            'Total'       => 'Rp ' . number_format($activeOrder->harga_total, 0, ',', '.'),
+        ] as $label => $value)
+        <div class="flex justify-between items-center py-3">
+            <dt class="text-sm text-gray-500">{{ $label }}</dt>
+            <dd class="text-sm font-medium text-gray-800">{{ $value }}</dd>
+        </div>
+        @endforeach
+    </dl>
+
+    <div class="flex items-center gap-3">
+        <x-filament::badge :color="$activeOrder->status->color()">
+            {{ $activeOrder->status->label() }}
+        </x-filament::badge>
+        <a href="{{ \App\Filament\Pages\OrderInvoicePage::getUrl(['order' => $activeOrder->id]) }}"
+           class="text-sm text-primary-600 hover:underline font-medium">
+            Lihat Invoice →
+        </a>
+    </div>
 </x-filament::section>
+@endif
 
 </x-filament-panels::page>
