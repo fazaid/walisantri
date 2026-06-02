@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'saas.lifecycle' => \App\Http\Middleware\SaaSLifecycleLock::class,
             'magic.token'    => \App\Http\Middleware\VerifyMagicToken::class,
             'public.tenant'  => \App\Http\Middleware\PublicTenantResolver::class,
+            'tenant.resolve' => \App\Http\Middleware\ResolveTenantFromAccount::class,
         ]);
 
         // SaaSLifecycleLock hanya di panel app (bukan dash/super_admin)

@@ -1,47 +1,42 @@
 <?php
 
-// File: app/Http/Controllers/Auth/WaliLoginController.php
-
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Pesantren;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class WaliLoginController extends Controller
 {
-    public function showLoginForm()
+    /**
+     * Login terpusat (§1.3): semua role masuk ke app.walisantri.com/login.
+     * ?tenant={slug} → baca branding pesantren agar halaman terasa gerbang lembaga.
+     */
+    public function showLoginForm(Request $request)
     {
-        // Jika sudah login sebagai wali, langsung ke dashboard
-        if (Auth::check() && Auth::user()->isWaliSantri()) {
-            return redirect()->route('wali.dashboard');
+        if (Auth::check()) {
+            return $this->redirectAfterLogin(Auth::user());
         }
 
-        return view('wali.auth.login');
+        $pesantren = null;
+        if ($slug = $request->query('tenant')) {
+            $pesantren = Pesantren::where('slug', $slug)->first();
+        }
+
+        return view('auth.login', compact('pesantren'));
     }
 
     public function login(Request $request)
     {
-        // dd($request->all());
-
         $credentials = $request->validate([
             'email'    => ['required', 'email'],
             'password' => ['required'],
         ]);
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
-            $user = Auth::user();
-
-            // Hanya wali santri yang boleh masuk lewat sini
-            if (! $user->isWaliSantri()) {
-                Auth::logout();
-                return back()->withErrors([
-                    'email' => 'Akun ini bukan akun wali santri. Gunakan panel admin.',
-                ]);
-            }
-
             $request->session()->regenerate();
-            return redirect()->intended(route('wali.dashboard'));
+            return $this->redirectAfterLogin(Auth::user());
         }
 
         return back()->withErrors([
@@ -55,5 +50,16 @@ class WaliLoginController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
         return redirect()->route('wali.login');
+    }
+
+    private function redirectAfterLogin($user)
+    {
+        return match ($user->role) {
+            'wali_santri'    => redirect()->route('wali.dashboard'),
+            'super_admin'    => redirect()->to(
+                'http://' . config('app.dash_domain') . '/admin'
+            ),
+            default          => redirect('/admin'),
+        };
     }
 }
