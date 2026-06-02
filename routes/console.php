@@ -27,7 +27,7 @@ Schedule::job(\App\Jobs\DatabaseBackup::class)
 
 // Tiap 25 menit — Pre-generate cache dashboard wali santri aktif (§4.5)
 Schedule::job(\App\Jobs\WarmDashboardCache::class)
-    ->everyTwentyFiveMinutes()
+    ->cron('*/25 * * * *')
     ->withoutOverlapping();
 
 // Harian 03.00 — Hapus cache Redis santri non-aktif
