@@ -4,18 +4,27 @@
 // Ini adalah KESELURUHAN isi web.php — replace seluruh file.
 
 use App\Http\Controllers\Auth\WaliLoginController;
+use App\Http\Controllers\PublicProfileController;
+use App\Http\Controllers\SlugCheckController;
 use App\Http\Controllers\Wali\DashboardController;
 use App\Http\Controllers\Wali\LaporanController;
 use App\Http\Controllers\Wali\PengumumanController;
 use App\Http\Controllers\Wali\RaporController;
 use App\Http\Controllers\Wali\ReportController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Cache\RateLimiting\Limit;
 
 
-// --- Auth Wali Santri ---
-Route::get('/wali/login', [WaliLoginController::class, 'showLoginForm'])
+// --- Slug availability check (§1.4, rate-limit 30/mnt) ---
+Route::get('/check-slug/{slug}', SlugCheckController::class)
+    ->middleware('throttle:check-slug')
+    ->name('check-slug');
+
+// --- Auth Wali Santri (login terpusat §1.3 — branded via ?tenant=slug) ---
+Route::get('/login', [WaliLoginController::class, 'showLoginForm'])
     ->name('wali.login');
-Route::post('/wali/login', [WaliLoginController::class, 'login'])
+Route::post('/login', [WaliLoginController::class, 'login'])
     ->name('wali.login.submit');
 Route::post('/wali/logout', [WaliLoginController::class, 'logout'])
     ->middleware('auth')
@@ -42,7 +51,7 @@ Route::get('/report/{uuid}', [ReportController::class, 'showByUuid'])
     ->middleware('magic.token')
     ->name('wali.magic.report');
 
-// --- Redirect root ---
+// --- Root redirect ---
 Route::get('/', function () {
     if (auth()->check()) {
         return match (auth()->user()->role) {
@@ -52,8 +61,3 @@ Route::get('/', function () {
     }
     return redirect()->route('wali.login');
 });
-
-// --- Alias route login untuk Laravel auth middleware ---
-Route::get('/login', function () {
-    return redirect()->route('wali.login');
-})->name('login');

@@ -5,8 +5,10 @@
 
 namespace App\Providers;
 
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -23,6 +25,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->registerModuleGates();
         $this->registerQueueRouting();
+        $this->registerRateLimiters();
     }
 
     // -----------------------------------------------------------------
@@ -63,6 +66,18 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('access-billing', function ($user) {
             return $user->isSuperAdmin() || $user->isAdminPesantren();
         });
+    }
+
+    // -----------------------------------------------------------------
+    // Rate Limiters (PRD §9.2)
+    // -----------------------------------------------------------------
+    private function registerRateLimiters(): void
+    {
+        RateLimiter::for('check-slug', fn ($request) =>
+            Limit::perMinute(30)->by($request->ip())->response(fn () =>
+                response()->json(['available' => false, 'message' => 'Terlalu banyak permintaan.'], 429)
+            )
+        );
     }
 
     // -----------------------------------------------------------------
