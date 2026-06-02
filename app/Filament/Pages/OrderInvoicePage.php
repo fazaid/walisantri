@@ -40,8 +40,13 @@ class OrderInvoicePage extends Page implements HasForms
         return Auth::user()?->role === 'admin_pesantren';
     }
 
-    public function mount(int $order): void
+    public function mount(?int $order = null): void
     {
+        if (! $order) {
+            $this->redirect(BillingPage::getUrl());
+            return;
+        }
+
         $this->order = Order::with(['invoice', 'pesantren'])->findOrFail($order);
 
         abort_unless(
