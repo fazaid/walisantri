@@ -4,8 +4,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -41,6 +41,16 @@ class Pesantren extends Model
     public function santri(): HasMany
     {
         return $this->hasMany(Santri::class);
+    }
+
+    public function domains(): HasMany
+    {
+        return $this->hasMany(TenantDomain::class);
+    }
+
+    public function activityLogs(): HasMany
+    {
+        return $this->hasMany(ActivityLog::class);
     }
 
     // Helper: cek apakah tenant masih aktif
