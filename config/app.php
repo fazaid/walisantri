@@ -54,7 +54,6 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
     'domain'      => env('APP_DOMAIN', 'app.walisantri.com'),
-    'dash_domain' => env('APP_DASH_DOMAIN', 'dash.walisantri.com'),
     'base_domain' => env('APP_BASE_DOMAIN', 'walisantri.com'),
 
     /*
