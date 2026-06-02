@@ -196,8 +196,7 @@ class UpgradeOrderService
     {
         $tanggal = now()->format('Ymd');
         $count   = DB::table($table)
-            ->whereDate('created_at', today())
-            ->lockForUpdate()
+            ->whereRaw("created_at::date = ?", [today()->toDateString()])
             ->count();
 
         return $prefix . '-' . $tanggal . '-' . str_pad($count + 1, 4, '0', STR_PAD_LEFT);
