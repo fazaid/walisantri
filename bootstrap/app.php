@@ -16,13 +16,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.quota'   => \App\Http\Middleware\CheckTenantQuota::class,
             'saas.lifecycle' => \App\Http\Middleware\SaaSLifecycleLock::class,
             'magic.token'    => \App\Http\Middleware\VerifyMagicToken::class,
+            'public.tenant'  => \App\Http\Middleware\PublicTenantResolver::class,
         ]);
 
-        // SaaSLifecycleLock jalan di semua request authenticated (kecuali super_admin)
-        // Tambahkan ke grup 'web' agar otomatis aktif
-        $middleware->appendToGroup('web', [
-            \App\Http\Middleware\SaaSLifecycleLock::class,
-        ]);
+        // SaaSLifecycleLock hanya di panel app (bukan dash/super_admin)
+        // Didaftarkan di AdminPanelProvider::middleware(), bukan di web group global,
+        // agar tidak menyentuh request dash panel dan public site.
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

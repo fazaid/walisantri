@@ -2,10 +2,12 @@
 
 namespace App\Providers\Filament;
 
-use App\Filament\Widgets\AdminStatsOverview;
-use App\Filament\Widgets\SuperAdminStatsOverview;
-use App\Filament\Widgets\UstadzStatsOverview;
-use App\Http\Middleware\CheckTenantQuota;
+use App\Filament\Resources\Pesantrens\PesantrenResource;
+use App\Filament\Widgets\ExpiringTenantsWidget;
+use App\Filament\Widgets\PengumumanCentralWidget;
+use App\Filament\Widgets\SystemStatsWidget;
+use App\Filament\Widgets\TenantListWidget;
+use App\Filament\Widgets\TenantStatsOverview;
 use App\Http\Middleware\SaaSLifecycleLock;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -23,30 +25,31 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
-class AdminPanelProvider extends PanelProvider
+class DashPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
         return $panel
-            ->default()
-            ->id('admin')
+            ->id('dash')
             ->path('admin')
-            ->domain(config('app.domain', 'app.walisantri.com'))
+            ->domain(config('app.dash_domain', 'dash.walisantri.com'))
             ->login()
             ->colors([
-                'primary' => Color::Teal,
+                'primary' => Color::Rose,
             ])
-            ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
-            ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
+            ->resources([
+                PesantrenResource::class,
+            ])
             ->pages([
                 Dashboard::class,
             ])
-            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
                 AccountWidget::class,
-                AdminStatsOverview::class,
-                UstadzStatsOverview::class,
-                SuperAdminStatsOverview::class,
+                TenantStatsOverview::class,
+                SystemStatsWidget::class,
+                ExpiringTenantsWidget::class,
+                TenantListWidget::class,
+                PengumumanCentralWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -58,8 +61,6 @@ class AdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
-                SaaSLifecycleLock::class,
-                CheckTenantQuota::class,
             ])
             ->authMiddleware([
                 Authenticate::class,
