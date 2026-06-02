@@ -6,9 +6,9 @@ use App\Filament\Widgets\AdminStatsOverview;
 use App\Filament\Widgets\SuperAdminStatsOverview;
 use App\Filament\Widgets\UstadzStatsOverview;
 use App\Http\Middleware\CheckTenantQuota;
+use App\Http\Middleware\FilamentAuthenticate;
 use App\Http\Middleware\ResolveTenantFromAccount;
 use App\Http\Middleware\SaaSLifecycleLock;
-use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -33,7 +33,6 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->domain(config('app.domain', 'app.walisantri.com'))
-            ->login()
             ->colors([
                 'primary' => Color::Teal,
             ])
@@ -63,7 +62,7 @@ class AdminPanelProvider extends PanelProvider
                 CheckTenantQuota::class,
             ])
             ->authMiddleware([
-                Authenticate::class,
+                FilamentAuthenticate::class,
                 ResolveTenantFromAccount::class,
             ]);
     }
