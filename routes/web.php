@@ -43,6 +43,17 @@ Route::domain($baseDomain)->group(function () {
 // =============================================================================
 Route::domain($appDomain)->group(function () {
 
+    // --- Root redirect ---
+    Route::get('/', function () {
+        if (! auth()->check()) {
+            return redirect()->route('login');
+        }
+        return match (auth()->user()->role) {
+            'wali_santri' => redirect()->route('wali.dashboard'),
+            default       => redirect('/admin'),
+        };
+    });
+
     // --- Auth login terpusat (§1.3, ?tenant=slug branding) ---
     Route::get('/login', [WaliLoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [WaliLoginController::class, 'login'])->name('wali.login.submit');
