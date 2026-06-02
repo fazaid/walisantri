@@ -7,39 +7,42 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
-/**
- * @extends Factory<User>
- */
 class UserFactory extends Factory
 {
-    /**
-     * The current password being used by the factory.
-     */
+    protected $model = User::class;
+
     protected static ?string $password;
 
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
+            'pesantren_id' => null,
+            'name'         => fake()->name(),
+            'email'        => fake()->unique()->safeEmail(),
+            'phone_number' => null,
+            'password'     => static::$password ??= Hash::make('password'),
+            'role'         => 'wali_santri',
             'remember_token' => Str::random(10),
         ];
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
-    public function unverified(): static
+    public function superAdmin(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
-        ]);
+        return $this->state(['role' => 'super_admin', 'pesantren_id' => null]);
+    }
+
+    public function adminPesantren(): static
+    {
+        return $this->state(['role' => 'admin_pesantren']);
+    }
+
+    public function ustadz(): static
+    {
+        return $this->state(['role' => 'ustadz']);
+    }
+
+    public function waliSantri(): static
+    {
+        return $this->state(['role' => 'wali_santri']);
     }
 }

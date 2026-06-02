@@ -5,10 +5,11 @@
 namespace App\Models;
 
 use App\Traits\Multitenantable;
-use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -27,7 +28,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 #[Hidden(['pesantren_id'])]
 class Santri extends Model
 {
-    use Multitenantable, HasUuids, SoftDeletes;
+    use HasFactory, Multitenantable, HasUuids, SoftDeletes;
 
     // Batasi HasUuids hanya pada kolom 'uuid', bukan 'id'
     public function uniqueIds(): array
