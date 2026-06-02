@@ -5,6 +5,12 @@
 
 namespace App\Providers;
 
+use App\Models\Pesantren;
+use App\Models\Santri;
+use App\Models\User;
+use App\Observers\PesantrenObserver;
+use App\Observers\SantriObserver;
+use App\Observers\UserObserver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Queue;
@@ -26,6 +32,7 @@ class AppServiceProvider extends ServiceProvider
         $this->registerModuleGates();
         $this->registerQueueRouting();
         $this->registerRateLimiters();
+        $this->registerObservers();
     }
 
     // -----------------------------------------------------------------
@@ -66,6 +73,16 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('access-billing', function ($user) {
             return $user->isSuperAdmin() || $user->isAdminPesantren();
         });
+    }
+
+    // -----------------------------------------------------------------
+    // Observers — audit log events (PRD §10.2)
+    // -----------------------------------------------------------------
+    private function registerObservers(): void
+    {
+        Santri::observe(SantriObserver::class);
+        User::observe(UserObserver::class);
+        Pesantren::observe(PesantrenObserver::class);
     }
 
     // -----------------------------------------------------------------
