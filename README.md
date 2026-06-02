@@ -1,58 +1,187 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Walisantri.com
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+B2B Multi-Tenant SaaS untuk manajemen pesantren — menghubungkan admin pesantren, ustadz, dan wali santri dalam satu platform.
 
-## About Laravel
+**Stack:** Laravel 13 · Filament v5 · PostgreSQL 17 · Livewire v3 · TailwindCSS · Redis · Cloudflare R2
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Fitur Utama
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+| Modul | Deskripsi | Paket |
+|---|---|---|
+| Portal Wali Santri | Pantau perkembangan santri via web & Magic Link WhatsApp | Semua |
+| Profil Publik Pesantren | Situs `{slug}.walisantri.com` otomatis aktif saat registrasi | Semua |
+| Tahfidz | Progress hafalan, ujian, rapor tahfidz | Semua |
+| Mutaba'ah Yaumiyah | Input harian ibadah santri | Semua |
+| Pengumuman | Pengumuman per pesantren & siaran sentral | Semua |
+| Kesehatan Santri | Rekam medis & pemantauan kondisi | Berkembang+ |
+| Inventaris | Manajemen barang santri | Maju |
+| Dashboard Central | Monitoring semua tenant (Super Admin) | — |
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Arsitektur Domain
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+```
+walisantri.com              → Landing page + registrasi pesantren baru
+{slug}.walisantri.com       → Profil publik pesantren (read-only)
+app.walisantri.com/login    → Login terpusat semua role
+app.walisantri.com/admin    → Panel Filament (Super Admin / Admin / Ustadz)
+app.walisantri.com/wali     → Portal Wali Santri
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Tenant di-resolve dari **akun** (email unik global → `pesantren_id`), bukan dari host. Satu panel Filament melayani semua role — menu difilter via `canAccess()` / `canView()` per role.
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Paket Langganan
 
-## Code of Conduct
+| Paket | Harga/bulan | Kuota Santri |
+|---|---|---|
+| Gratis | Rp 0 | ≤ 10 |
+| Rintisan | Rp 150.000 | ≤ 100 |
+| Berkembang | Rp 450.000 | ≤ 500 |
+| Maju | Rp 750.000 | ≤ 1.000 |
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Kuota custom di atas 1.000 dihitung: `Rp 750.000 + ⌈(N − 1.000) / 100⌉ × Rp 100.000`.
 
-## Security Vulnerabilities
+---
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Setup Lokal
 
-## License
+### Prasyarat
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- [Laravel Herd](https://herd.laravel.com/) (macOS)
+- PostgreSQL 17 — disarankan via [DBngin](https://dbngin.com/)
+- Node.js 18+
+
+### Langkah
+
+```bash
+# 1. Clone & install dependencies
+git clone https://github.com/fazaid/walisantri.git
+cd walisantri
+composer install
+npm install
+
+# 2. Konfigurasi environment
+cp .env.example .env
+php artisan key:generate
+```
+
+Edit `.env` sesuaikan koneksi database:
+
+```env
+APP_URL=http://walisantri.test
+APP_BASE_DOMAIN=walisantri.test
+APP_DOMAIN=app.walisantri.test
+
+DB_CONNECTION=pgsql
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_DATABASE=walisantri
+DB_USERNAME=postgres
+DB_PASSWORD=
+```
+
+```bash
+# 3. Migrasi & seeding
+php artisan migrate
+php artisan db:seed
+
+# 4. Build frontend assets
+npm run build
+
+# 5. Daftarkan site di Herd
+# Herd → Sites → Add → pilih folder walisantri
+```
+
+Tambahkan entri di `/etc/hosts` jika subdomain tidak otomatis resolve:
+
+```
+127.0.0.1  walisantri.test
+127.0.0.1  app.walisantri.test
+```
+
+> Herd menangani wildcard `*.walisantri.test` otomatis via DNS resolver — subdomain profil pesantren tidak perlu entri manual.
+
+---
+
+## Akun Demo
+
+Setelah `php artisan db:seed`:
+
+| Role | Email | Password | Pesantren |
+|---|---|---|---|
+| Super Admin | `superadmin@walisantri.com` | `superadmin123` | — |
+| Admin Pesantren | `admin@al-fatah.com` | `admin123` | Al-Fatah |
+| Admin Pesantren | `admin@ibnu-hajar.com` | `admin123` | Ibnu Hajar |
+| Admin Pesantren | `admin@darul-ilmi.com` | `admin123` | Darul Ilmi |
+| Ustadz | `ustadz.ibrahim@al-fatah.com` | `ustadz123` | Al-Fatah |
+| Wali Santri | `wali.fulan@al-fatah.com` | `wali123` | Al-Fatah |
+
+---
+
+## Struktur Database
+
+Migrasi dipisah dua direktori:
+
+```
+database/migrations/
+├── central/   → pesantrens, users, tenant_domains, slug_releases, activity_logs
+└── tenant/    → santri, tahfidz_*, kesantrian_*, master_pengumuman
+```
+
+Model tenant menggunakan trait `Multitenantable` — Global Scope otomatis menambahkan `WHERE pesantren_id = ?` pada setiap query; `super_admin` di-bypass.
+
+---
+
+## Testing
+
+```bash
+# Unit tests (SQLite in-memory)
+php artisan test --testsuite=Unit
+
+# Tenant isolation tests (wajib PostgreSQL)
+php artisan test --testsuite=TenantIsolation
+
+# Semua tests paralel
+php artisan test --parallel
+```
+
+> `DataIsolationTest` membutuhkan koneksi PostgreSQL aktif — tidak bisa SQLite karena menguji isolasi data lintas tenant.
+
+---
+
+## Scheduled Jobs
+
+Daftarkan cron di server:
+
+```bash
+* * * * * cd /path/to/walisantri && php artisan schedule:run >> /dev/null 2>&1
+```
+
+| Job | Jadwal | Fungsi |
+|---|---|---|
+| `CheckExpiredTenants` | Tiap jam | Auto-suspend tenant yang sudah expired |
+| `WarnExpiringTenants` | Tiap hari 08.00 | Email peringatan 7 hari sebelum expired |
+| `PurgeAuditLogs` | Tiap minggu | Hapus log audit > 90 hari |
+| `DatabaseBackup` | Tiap hari 02.00 | `pg_dump` → Cloudflare R2 |
+| `WarmDashboardCache` | Tiap 25 menit | Pre-generate cache dashboard wali |
+| `PruneStaleCache` | Tiap hari 03.00 | Bersihkan cache kadaluwarsa |
+
+---
+
+## Development
+
+```bash
+# Dev server dengan HMR
+npm run dev
+
+# Lihat semua route
+php artisan route:list
+
+# Buat user super admin baru
+php artisan db:seed --class=SuperAdminSeeder
+```
