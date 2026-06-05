@@ -5,8 +5,6 @@ namespace App\Filament\Resources\Santris\Actions;
 use App\Models\Santri;
 use App\Observers\ActivityLogger;
 use Filament\Actions\Action;
-use Filament\Forms\Components\TextInput;
-use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Auth;
 
 class KirimMagicLinkAction extends Action
@@ -25,26 +23,18 @@ class KirimMagicLinkAction extends Action
             ->icon('heroicon-o-link')
             ->color('info')
             ->modalHeading('Link Portal Wali')
-            ->modalDescription('Salin link ini dan kirimkan ke wali santri via WhatsApp atau media lain. Link berlaku permanen sampai di-regenerasi.')
-            ->form([
-                TextInput::make('magic_link_url')
-                    ->label('Link Portal Wali')
-                    ->readOnly()
-                    ->copyable(copyMessage: 'Link tersalin!', copyMessageDuration: 1500),
-            ])
-            ->mountUsing(function (Action $action, ?Schema $schema, Santri $record): void {
-                $schema?->fill([
-                    'magic_link_url' => $this->buildMagicLinkUrl($record),
-                ]);
-
+            ->modalContent(fn (Santri $record) => view('filament.actions.magic-link-modal', [
+                'url' => $this->buildMagicLinkUrl($record),
+            ]))
+            ->modalSubmitAction(false)
+            ->modalCancelActionLabel('Tutup')
+            ->visible(fn () => in_array(Auth::user()?->role, ['admin_pesantren', 'ustadz']))
+            ->mountUsing(function (Santri $record): void {
                 ActivityLogger::log('magic_link.sent', $record, null, [
                     'wali_id' => $record->wali_santri_id,
                     'sent_by' => Auth::id(),
                 ]);
-            })
-            ->modalSubmitAction(false)
-            ->modalCancelActionLabel('Tutup')
-            ->visible(fn () => in_array(Auth::user()?->role, ['admin_pesantren', 'ustadz']));
+            });
     }
 
     private function buildMagicLinkUrl(Santri $record): string
