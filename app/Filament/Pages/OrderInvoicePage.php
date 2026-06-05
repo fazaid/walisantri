@@ -18,6 +18,8 @@ use Filament\Schemas\Components\Form;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use UnitEnum;
 
 class OrderInvoicePage extends Page implements HasForms
@@ -33,21 +35,23 @@ class OrderInvoicePage extends Page implements HasForms
 
     public Order   $order;
     public Invoice $invoice;
-    public ?string $bukti_transfer = null;
+    public array|null $bukti_transfer = [];
 
     public static function canAccess(): bool
     {
         return Auth::user()?->role === 'admin_pesantren';
     }
 
-    public function mount(?int $order = null): void
+    public function mount(): void
     {
-        if (! $order) {
+        $orderId = (int) request()->query('order', 0);
+
+        if (! $orderId) {
             $this->redirect(BillingPage::getUrl());
             return;
         }
 
-        $this->order = Order::with(['invoice', 'pesantren'])->findOrFail($order);
+        $this->order = Order::with(['invoice', 'pesantren'])->findOrFail($orderId);
 
         abort_unless(
             $this->order->pesantren_id === Auth::user()->pesantren_id,
@@ -66,11 +70,10 @@ class OrderInvoicePage extends Page implements HasForms
             FileUpload::make('bukti_transfer')
                 ->label('Upload Bukti Transfer')
                 ->disk('local')
-                ->directory('bukti-transfer-tmp')
-                ->acceptedFileTypes(['image/jpeg', 'image/png', 'application/pdf'])
-                ->maxSize(5120)
                 ->helperText('Format: JPG, PNG, atau PDF. Maks. 5 MB.')
-                ->visible(fn () => $this->order->isPendingPayment()),
+                ->visible(fn () => $this->order->isPendingPayment())
+                ->storeFiles(false)
+                ->fetchFileInformation(false),
         ]);
     }
 
@@ -95,31 +98,88 @@ class OrderInvoicePage extends Page implements HasForms
     public function uploadBukti(): void
     {
         $data = $this->form->getState();
+        $raw  = $data['bukti_transfer'] ?? null;
+        $file = $raw instanceof TemporaryUploadedFile ? $raw : ($raw[0] ?? null);
 
-        abort_unless(isset($data['bukti_transfer']), 422, 'File bukti transfer wajib diupload.');
+        if (! $file) {
+            Notification::make()
+                ->title('File belum dipilih')
+                ->body('Silakan pilih file bukti transfer terlebih dahulu.')
+                ->danger()
+                ->send();
 
-        $service = app(UpgradeOrderService::class);
+            return;
+        }
 
-        // Pindahkan file dari tmp ke direktori permanen
-        $tmpPath = $data['bukti_transfer'];
-        $ext     = pathinfo($tmpPath, PATHINFO_EXTENSION);
-        $dest    = "bukti-transfer/{$this->order->id}/bukti.{$ext}";
+        // Livewire serializes TemporaryUploadedFile as just the basename (loses livewire-tmp/ prefix).
+        // getFilename() always returns the basename regardless, so we reconstruct the correct path.
+        if ($file instanceof TemporaryUploadedFile) {
+            $diskPath   = 'livewire-tmp/' . $file->getFilename();
+            $sourcePath = Storage::disk('local')->path($diskPath);
+        } else {
+            $diskPath   = $file;
+            $sourcePath = Storage::disk('local')->path($diskPath);
+        }
 
-        \Illuminate\Support\Facades\Storage::disk('local')->move($tmpPath, $dest);
+        if (! file_exists($sourcePath)) {
+            Notification::make()
+                ->title('File tidak ditemukan')
+                ->body('Silakan upload ulang bukti transfer.')
+                ->danger()
+                ->send();
 
-        // Buat UploadedFile semu dari path storage
-        $fullPath    = storage_path("app/{$dest}");
-        $uploadedFile = new \Illuminate\Http\UploadedFile(
-            $fullPath,
-            basename($fullPath),
-            mime_content_type($fullPath),
-            null,
-            true
-        );
+            $this->reset('bukti_transfer');
 
-        $service->uploadBuktiTransfer($this->invoice, $uploadedFile);
+            return;
+        }
 
-        // Refresh order
+        $mime = mime_content_type($sourcePath) ?: 'application/octet-stream';
+
+        if (! in_array($mime, ['image/jpeg', 'image/png', 'application/pdf'])) {
+            Notification::make()
+                ->title('Format file tidak valid')
+                ->body('Gunakan format JPG, PNG, atau PDF.')
+                ->danger()
+                ->send();
+
+            return;
+        }
+
+        if (filesize($sourcePath) > 5 * 1024 * 1024) {
+            Notification::make()
+                ->title('Ukuran file terlalu besar')
+                ->body('Maksimal 5 MB.')
+                ->danger()
+                ->send();
+
+            return;
+        }
+
+        $ext = match ($mime) {
+            'image/jpeg'      => 'jpg',
+            'image/png'       => 'png',
+            'application/pdf' => 'pdf',
+        };
+
+        $dest     = "bukti-transfer/{$this->order->id}/bukti.{$ext}";
+        $fullPath = Storage::disk('local')->path($dest);
+
+        Storage::disk('local')->move($diskPath, $dest);
+
+        if (! file_exists($fullPath)) {
+            Notification::make()
+                ->title('Gagal menyimpan file')
+                ->body('Silakan coba upload ulang.')
+                ->danger()
+                ->send();
+
+            return;
+        }
+
+        $uploadedFile = new \Illuminate\Http\UploadedFile($fullPath, "bukti.{$ext}", $mime, null, true);
+
+        app(UpgradeOrderService::class)->uploadBuktiTransfer($this->invoice, $uploadedFile);
+
         $this->order->refresh();
         $this->invoice->refresh();
 

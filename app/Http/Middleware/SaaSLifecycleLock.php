@@ -46,9 +46,11 @@ class SaaSLifecycleLock
             return $this->lockResponse($request, 'Data pesantren tidak ditemukan.');
         }
 
-        // Halaman billing & auth panel selalu boleh diakses (mencegah infinite redirect)
+        // Halaman billing, invoice, & auth panel selalu boleh diakses (mencegah infinite redirect)
         if ($request->is('admin/billing-page')
             || $request->is('admin/billing-page/*')
+            || $request->is('admin/order-invoice-page')
+            || $request->is('admin/order-invoice-page/*')
             || $request->is('admin/login')
             || $request->is('admin/logout')
             || $request->routeIs('filament.admin.auth.*')
