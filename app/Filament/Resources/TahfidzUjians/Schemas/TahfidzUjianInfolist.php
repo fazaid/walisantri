@@ -22,7 +22,7 @@ class TahfidzUjianInfolist
                         TextEntry::make('penguji.name')->label('Penguji'),
                         TextEntry::make('tanggal_ujian')->label('Tanggal')->date('d M Y'),
                         TextEntry::make('target_juz')->label('Target Juz')
-                            ->formatStateUsing(fn ($state) => 'Juz ' . $state),
+                            ->formatStateUsing(fn ($state) => $state . ' Juz'),
                         TextEntry::make('status_kelulusan')->label('Status')
                             ->badge()
                             ->color(fn (string $state): string => match ($state) {

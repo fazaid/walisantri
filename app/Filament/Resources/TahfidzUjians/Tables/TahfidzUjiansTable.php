@@ -23,7 +23,7 @@ class TahfidzUjiansTable
                 TextColumn::make('tanggal_ujian')->label('Tanggal')->date('d M Y')->sortable(),
                 TextColumn::make('santri.nama_lengkap')->label('Santri')->searchable()->sortable(),
                 TextColumn::make('target_juz')->label('Target Juz')
-                    ->formatStateUsing(fn ($state) => 'Juz ' . $state),
+                    ->formatStateUsing(fn ($state) => $state . ' Juz'),
                 TextColumn::make('status_kelulusan')->label('Status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
@@ -39,7 +39,7 @@ class TahfidzUjiansTable
                 SelectFilter::make('target_juz')->label('Target Juz')
                     ->options(array_combine(
                         ['1','3','5','10','15','20','25','30'],
-                        ['Juz 1','Juz 3','Juz 5','Juz 10','Juz 15','Juz 20','Juz 25','Juz 30']
+                        ['1 Juz','3 Juz','5 Juz','10 Juz','15 Juz','20 Juz','25 Juz','30 Juz']
                     )),
             ])
             ->recordActions([ViewAction::make(), EditAction::make()])

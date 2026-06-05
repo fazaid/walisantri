@@ -45,7 +45,7 @@ class TahfidzUjianForm
                             ->label('Target Juz')
                             ->options(array_combine(
                                 ['1','3','5','10','15','20','25','30'],
-                                ['Juz 1','Juz 3','Juz 5','Juz 10','Juz 15','Juz 20','Juz 25','Juz 30']
+                                ['1 Juz','3 Juz','5 Juz','10 Juz','15 Juz','20 Juz','25 Juz','30 Juz']
                             ))
                             ->required(),
                         Select::make('status_kelulusan')
