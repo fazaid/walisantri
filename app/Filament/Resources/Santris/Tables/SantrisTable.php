@@ -4,6 +4,8 @@
 
 namespace App\Filament\Resources\Santris\Tables;
 
+use App\Filament\Resources\Santris\Actions\PindahKamarBulkAction;
+use App\Filament\Resources\Santris\Actions\PindahKelasBulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -77,6 +79,8 @@ class SantrisTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
+                    PindahKelasBulkAction::make(),
+                    PindahKamarBulkAction::make(),
                     DeleteBulkAction::make(),
                     ForceDeleteBulkAction::make(),
                     RestoreBulkAction::make(),
