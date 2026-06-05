@@ -1,7 +1,5 @@
 <?php
 
-// File: app/Http/Controllers/Wali/DashboardController.php
-
 namespace App\Http\Controllers\Wali;
 
 use App\Http\Controllers\Controller;
@@ -9,6 +7,7 @@ use App\Models\KesantrianKesehatan;
 use App\Models\KesantrianMutabaah;
 use App\Models\MasterPengumuman;
 use App\Models\TahfidzProgress;
+use App\Models\TahfidzRapor;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -18,63 +17,21 @@ class DashboardController extends Controller
         $wali = auth()->user();
 
         $anakList = $wali->anakSantri()
-            ->with(['pesantren', 'kelas', 'kamar'])
+            ->with(['pesantren', 'kelas', 'kamar', 'pembimbing'])
             ->where('status_aktif', true)
             ->get();
 
-        $santriIds = $anakList->pluck('id');
+        $children = $anakList->map(fn ($santri) => $this->buildChildData($santri));
 
-        // Alert kesehatan: santri yang berstatus tidak sehat
-        $alertKesehatan = KesantrianKesehatan::whereIn('santri_id', $santriIds)
-            ->whereIn('status_pemulihan', ['Istirahat_Total', 'Rujukan_Luar'])
-            ->whereIn('id', function ($q) use ($santriIds) {
-                // Hanya ambil record terbaru per santri
-                $q->select(DB::raw('MAX(id)'))
-                  ->from('kesantrian_kesehatan')
-                  ->whereIn('santri_id', $santriIds)
-                  ->groupBy('santri_id');
-            })
-            ->with('santri')
-            ->get()
-            ->keyBy('santri_id');
+        // Alert kesehatan lintas anak
+        $alertKesehatan = $children
+            ->filter(fn ($c) => in_array($c['statusKesehatan']['status_pemulihan'] ?? null, ['Istirahat_Total', 'Rujukan_Luar']))
+            ->map(fn ($c) => [
+                'nama'             => $c['santri']->nama_lengkap,
+                'status'           => $c['statusKesehatan']['status_pemulihan'],
+                'tanggal_periksa'  => $c['statusKesehatan']['tanggal_periksa'],
+            ]);
 
-        // Setoran tahfidz terakhir per santri
-        $setoranTerakhir = TahfidzProgress::whereIn('santri_id', $santriIds)
-            ->whereIn('id', function ($q) use ($santriIds) {
-                $q->select(DB::raw('MAX(id)'))
-                  ->from('tahfidz_progress')
-                  ->whereIn('santri_id', $santriIds)
-                  ->groupBy('santri_id');
-            })
-            ->get()
-            ->keyBy('santri_id');
-
-        // Persentase amalan 7 hari terakhir per santri
-        $mutabaah = KesantrianMutabaah::whereIn('santri_id', $santriIds)
-            ->whereBetween('tanggal', [now()->subDays(6)->toDateString(), now()->toDateString()])
-            ->get()
-            ->groupBy('santri_id');
-
-        $persentaseAmalan = [];
-        foreach ($santriIds as $id) {
-            $records = $mutabaah[$id] ?? collect();
-            if ($records->isEmpty()) {
-                $persentaseAmalan[$id] = 0;
-                continue;
-            }
-            $skor = $records->sum(fn ($m) =>
-                ($m->jamaah_5_waktu * 5)
-                + ($m->is_rawatib      ? 7 : 0)
-                + ($m->is_shalat_malam ? 7 : 0)
-                + ($m->is_dhuha        ? 7 : 0)
-                + ($m->is_tilawah_1juz ? 7 : 0)
-                + ($m->is_infak        ? 7 : 0)
-                + ($m->is_puasa        ? 7 : 0)
-            );
-            $persentaseAmalan[$id] = (int) round(($skor / (67 * 7)) * 100);
-        }
-
-        // Pengumuman
         $pengumuman = MasterPengumuman::where('pesantren_id', $wali->pesantren_id)
             ->forWali()->latest()->limit(5)->get();
 
@@ -84,12 +41,70 @@ class DashboardController extends Controller
 
         return view('wali.dashboard', compact(
             'wali',
-            'anakList',
+            'children',
             'alertKesehatan',
-            'setoranTerakhir',
-            'persentaseAmalan',
             'pengumuman',
             'pengumumanCentral',
         ));
+    }
+
+    private function buildChildData($santri): array
+    {
+        // Estimasi juz
+        $sumMaxAyat = TahfidzProgress::where('santri_id', $santri->id)
+            ->select('nama_surah', DB::raw('MAX(ayat_selesai) as max_ayat'))
+            ->groupBy('nama_surah')->pluck('max_ayat')->sum();
+        $totalJuz = $sumMaxAyat > 0 ? round($sumMaxAyat / 604 * 30, 1) : 0;
+
+        // Persentase amalan 7 hari terakhir
+        $mutabaah = KesantrianMutabaah::where('santri_id', $santri->id)
+            ->whereBetween('tanggal', [now()->subDays(6)->toDateString(), now()->toDateString()])
+            ->get();
+        $persentaseAmalan = 0;
+        if ($mutabaah->isNotEmpty()) {
+            $skor = $mutabaah->sum(fn ($m) =>
+                ($m->jamaah_5_waktu * 5)
+                + ($m->is_rawatib      ? 7 : 0)
+                + ($m->is_shalat_malam ? 7 : 0)
+                + ($m->is_dhuha        ? 7 : 0)
+                + ($m->is_tilawah_1juz ? 7 : 0)
+                + ($m->is_infak        ? 7 : 0)
+                + ($m->is_puasa        ? 7 : 0)
+            );
+            $persentaseAmalan = (int) round(($skor / (67 * 7)) * 100);
+        }
+
+        // Status kesehatan terkini
+        $latestKesehatan  = KesantrianKesehatan::where('santri_id', $santri->id)
+            ->orderByDesc('tanggal_periksa')->first();
+        $statusKesehatan  = $latestKesehatan ? [
+            'tanggal_periksa'  => $latestKesehatan->tanggal_periksa,
+            'status_pemulihan' => $latestKesehatan->status_pemulihan,
+        ] : null;
+
+        // Rapor terakhir
+        $latestRapor     = TahfidzRapor::where('santri_id', $santri->id)
+            ->orderByDesc('created_at')->first();
+        $raporTerakhir   = $latestRapor ? [
+            'periode'       => $latestRapor->periode,
+            'tahun_ajaran'  => $latestRapor->tahun_ajaran,
+            'nilai_hafalan' => $latestRapor->nilai_hafalan,
+        ] : null;
+
+        // Riwayat setoran & kesehatan
+        $tahfidzRecent   = TahfidzProgress::where('santri_id', $santri->id)
+            ->orderByDesc('tanggal')->limit(10)->get();
+        $kesehatanRecent = KesantrianKesehatan::where('santri_id', $santri->id)
+            ->orderByDesc('tanggal_periksa')->limit(5)->get();
+
+        return compact(
+            'santri',
+            'totalJuz',
+            'persentaseAmalan',
+            'statusKesehatan',
+            'raporTerakhir',
+            'tahfidzRecent',
+            'kesehatanRecent',
+        );
     }
 }
