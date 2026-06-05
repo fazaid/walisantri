@@ -26,12 +26,14 @@ class KirimMagicLinkAction extends Action
             ->color('info')
             ->modalHeading('Link Portal Wali')
             ->modalDescription('Salin link ini dan kirimkan ke wali santri via WhatsApp atau media lain. Link berlaku permanen sampai di-regenerasi.')
-            ->form(fn (Santri $record) => [
+            ->form([
                 TextInput::make('magic_link_url')
                     ->label('Link Portal Wali')
-                    ->default($this->buildMagicLinkUrl($record))
                     ->readOnly()
                     ->copyable(copyMessage: 'Link tersalin!', copyMessageDuration: 1500),
+            ])
+            ->fillForm(fn (Santri $record): array => [
+                'magic_link_url' => $this->buildMagicLinkUrl($record),
             ])
             ->modalSubmitAction(false)
             ->modalCancelActionLabel('Tutup')
