@@ -127,7 +127,10 @@
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
             <h2 class="font-semibold text-gray-800">📖 Setoran Tahfidz</h2>
-            <span class="text-xs text-gray-400">10 terbaru</span>
+            <a href="{{ route('wali.santri.tahfidz', $santri->id) }}"
+               class="text-xs text-teal-600 font-medium hover:text-teal-800">
+                Statistik →
+            </a>
         </div>
 
         @forelse($tahfidzRecent as $progress)

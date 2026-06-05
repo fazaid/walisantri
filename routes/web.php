@@ -9,6 +9,7 @@ use App\Http\Controllers\Wali\LaporanController;
 use App\Http\Controllers\Wali\PengumumanController;
 use App\Http\Controllers\Wali\RaporController;
 use App\Http\Controllers\Wali\ReportController;
+use App\Http\Controllers\Wali\TahfidzStatsController;
 use Illuminate\Support\Facades\Route;
 
 $baseDomain = config('app.base_domain', 'walisantri.com');
@@ -60,6 +61,7 @@ Route::domain($appDomain)->group(function () {
         ->group(function () {
             Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
             Route::get('/santri/{santri}', [ReportController::class, 'show'])->name('santri.show');
+            Route::get('/santri/{santri}/tahfidz', [TahfidzStatsController::class, 'show'])->name('santri.tahfidz');
             Route::get('/pengumuman', [PengumumanController::class, 'index'])->name('pengumuman');
             Route::get('/rapor', [RaporController::class, 'index'])->name('rapor');
             Route::get('/laporan/pdf', [LaporanController::class, 'exportPdf'])->name('laporan.pdf');
