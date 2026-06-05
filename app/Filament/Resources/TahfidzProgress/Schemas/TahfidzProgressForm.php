@@ -4,6 +4,7 @@
 
 namespace App\Filament\Resources\TahfidzProgress\Schemas;
 
+use App\Data\QuranSurah;
 use App\Models\Santri;
 use App\Models\User;
 use Filament\Forms\Components\DatePicker;
@@ -56,20 +57,36 @@ class TahfidzProgressForm
                 Section::make('Detail Ayat')
                     ->columns(3)
                     ->schema([
-                        TextInput::make('nama_surah')
+                        Select::make('nama_surah')
                             ->label('Nama Surah')
+                            ->options(QuranSurah::options())
+                            ->searchable()
                             ->required()
-                            ->maxLength(100),
+                            ->native(false)
+                            ->live()
+                            ->afterStateUpdated(function ($state, callable $set) {
+                                $set('ayat_mulai', 1);
+                                $set('ayat_selesai', null);
+                            }),
                         TextInput::make('ayat_mulai')
                             ->label('Ayat Mulai')
                             ->numeric()
                             ->minValue(1)
+                            ->maxValue(fn ($get) => $get('nama_surah')
+                                ? QuranSurah::ayatCount($get('nama_surah'))
+                                : 286)
                             ->required(),
                         TextInput::make('ayat_selesai')
                             ->label('Ayat Selesai')
                             ->numeric()
-                            ->minValue(1)
-                            ->required(),
+                            ->minValue(fn ($get) => (int) ($get('ayat_mulai') ?: 1))
+                            ->maxValue(fn ($get) => $get('nama_surah')
+                                ? QuranSurah::ayatCount($get('nama_surah'))
+                                : 286)
+                            ->required()
+                            ->helperText(fn ($get) => $get('nama_surah')
+                                ? 'Maks: ayat ' . QuranSurah::ayatCount($get('nama_surah'))
+                                : ''),
                     ]),
 
                 Section::make('Penilaian')
@@ -78,10 +95,10 @@ class TahfidzProgressForm
                         Select::make('nilai_kelancaran')
                             ->label('Nilai Kelancaran')
                             ->options([
-                                'Mumtaz'       => 'Mumtaz (Sangat Baik)',
-                                'Jayyid Jiddan'=> 'Jayyid Jiddan (Baik Sekali)',
-                                'Jayyid'       => 'Jayyid (Baik)',
-                                'Maqbul'       => 'Maqbul (Cukup)',
+                                'Mumtaz'        => 'Mumtaz (Sangat Baik)',
+                                'Jayyid Jiddan' => 'Jayyid Jiddan (Baik Sekali)',
+                                'Jayyid'        => 'Jayyid (Baik)',
+                                'Maqbul'        => 'Maqbul (Cukup)',
                             ])
                             ->required(),
                         Textarea::make('catatan_evaluasi')
