@@ -12,6 +12,7 @@ use App\Http\Controllers\Wali\RaporController;
 use App\Http\Controllers\Wali\ReportController;
 use App\Http\Controllers\Wali\KesehatanStatsController;
 use App\Http\Controllers\Wali\MutabaahStatsController;
+use App\Http\Controllers\Wali\SppController;
 use App\Http\Controllers\Wali\TahfidzStatsController;
 use Illuminate\Support\Facades\Route;
 
@@ -73,6 +74,7 @@ Route::domain($appDomain)->group(function () {
             Route::get('/pengumuman', [PengumumanController::class, 'index'])->name('pengumuman');
             Route::get('/rapor', [RaporController::class, 'index'])->name('rapor');
             Route::get('/laporan/pdf', [LaporanController::class, 'exportPdf'])->name('laporan.pdf');
+            Route::get('/spp', [SppController::class, 'index'])->name('spp');
         });
 
     // --- Magic Link — /report/{uuid} (§4.3) ---
