@@ -6,7 +6,7 @@ use App\Models\Santri;
 use App\Observers\ActivityLogger;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
-use Filament\Notifications\Notification;
+use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Auth;
 
 class KirimMagicLinkAction extends Action
@@ -32,18 +32,19 @@ class KirimMagicLinkAction extends Action
                     ->readOnly()
                     ->copyable(copyMessage: 'Link tersalin!', copyMessageDuration: 1500),
             ])
-            ->fillForm(fn (Santri $record): array => [
-                'magic_link_url' => $this->buildMagicLinkUrl($record),
-            ])
-            ->modalSubmitAction(false)
-            ->modalCancelActionLabel('Tutup')
-            ->visible(fn () => in_array(Auth::user()?->role, ['admin_pesantren', 'ustadz']))
-            ->mountUsing(function (Santri $record) {
+            ->mountUsing(function (Action $action, ?Schema $schema, Santri $record): void {
+                $schema?->fill([
+                    'magic_link_url' => $this->buildMagicLinkUrl($record),
+                ]);
+
                 ActivityLogger::log('magic_link.sent', $record, null, [
                     'wali_id' => $record->wali_santri_id,
                     'sent_by' => Auth::id(),
                 ]);
-            });
+            })
+            ->modalSubmitAction(false)
+            ->modalCancelActionLabel('Tutup')
+            ->visible(fn () => in_array(Auth::user()?->role, ['admin_pesantren', 'ustadz']));
     }
 
     private function buildMagicLinkUrl(Santri $record): string
