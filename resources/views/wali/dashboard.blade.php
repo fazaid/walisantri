@@ -211,6 +211,26 @@
 
     @endif
 
+    {{-- Notifikasi SPP --}}
+    @if($tunggakanSpp > 0)
+    <a href="{{ route('wali.spp') }}" class="block bg-orange-50 border border-orange-200 rounded-2xl px-4 py-3">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <span class="text-xl">💳</span>
+                <div>
+                    <p class="text-sm font-semibold text-orange-700">
+                        {{ $tunggakanSpp }} tagihan SPP belum dibayar
+                    </p>
+                    <p class="text-xs text-orange-500">Tap untuk lihat detail</p>
+                </div>
+            </div>
+            <svg class="w-4 h-4 text-orange-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+            </svg>
+        </div>
+    </a>
+    @endif
+
     {{-- Pengumuman --}}
     @if($pengumuman->isNotEmpty() || $pengumumanCentral->isNotEmpty())
     <div>

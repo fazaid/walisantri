@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Wali;
 
 use App\Http\Controllers\Controller;
+use App\Enums\StatusTagihanSpp;
 use App\Models\KesantrianKesehatan;
 use App\Models\KesantrianMutabaah;
 use App\Models\MasterPengumuman;
+use App\Models\TagihanSpp;
 use App\Models\TahfidzProgress;
 use App\Models\TahfidzRapor;
 use Illuminate\Support\Facades\DB;
@@ -39,12 +41,19 @@ class DashboardController extends Controller
             ->whereNull('pesantren_id')
             ->forWali()->latest()->limit(3)->get();
 
+        $santriIds = $anakList->pluck('id');
+        $tunggakanSpp = TagihanSpp::withoutGlobalScope('pesantren')
+            ->whereIn('santri_id', $santriIds)
+            ->where('status', StatusTagihanSpp::BelumBayar)
+            ->count();
+
         return view('wali.dashboard', compact(
             'wali',
             'children',
             'alertKesehatan',
             'pengumuman',
             'pengumumanCentral',
+            'tunggakanSpp',
         ));
     }
 
