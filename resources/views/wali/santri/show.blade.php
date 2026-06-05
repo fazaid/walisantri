@@ -206,9 +206,12 @@
 
     {{-- Mutabaah Harian --}}
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-4 py-3 border-b border-gray-100">
-            <h2 class="font-semibold text-gray-800">✨ Mutabaah Harian</h2>
-            <p class="text-xs text-gray-400 mt-0.5">7 hari terakhir</p>
+        <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+            <div>
+                <h2 class="font-semibold text-gray-800">✨ Mutabaah Harian</h2>
+                <p class="text-xs text-gray-400 mt-0.5">7 hari terakhir</p>
+            </div>
+            <a href="{{ route('wali.santri.mutabaah', $santri->id) }}" class="text-xs text-teal-600 font-medium hover:text-teal-800">Detail →</a>
         </div>
 
         @php
