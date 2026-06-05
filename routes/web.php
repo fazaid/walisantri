@@ -75,6 +75,7 @@ Route::domain($appDomain)->group(function () {
             Route::get('/rapor', [RaporController::class, 'index'])->name('rapor');
             Route::get('/laporan/pdf', [LaporanController::class, 'exportPdf'])->name('laporan.pdf');
             Route::get('/spp', [SppController::class, 'index'])->name('spp');
+            Route::post('/spp/{tagihan}/konfirmasi', [SppController::class, 'konfirmasi'])->name('spp.konfirmasi');
         });
 
     // --- Magic Link — /report/{uuid} (§4.3) ---

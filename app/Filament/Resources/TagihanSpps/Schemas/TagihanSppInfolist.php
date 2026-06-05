@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\TagihanSpps\Schemas;
 
 use App\Models\TagihanSpp;
+use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -31,13 +32,33 @@ class TagihanSppInfolist
                         ->formatStateUsing(fn (TagihanSpp $record): string => $record->status->label()),
                 ]),
 
+            Section::make('Konfirmasi Wali')
+                ->columns(2)
+                ->schema([
+                    TextEntry::make('dikonfirmasi_wali_at')
+                        ->label('Konfirmasi Dikirim')
+                        ->dateTime('d M Y, H:i')
+                        ->placeholder('Belum ada konfirmasi'),
+                    TextEntry::make('status')
+                        ->label('Status')
+                        ->badge()
+                        ->color(fn (TagihanSpp $record): string => $record->status->color())
+                        ->formatStateUsing(fn (TagihanSpp $record): string => $record->status->label()),
+                    ImageEntry::make('bukti_transfer')
+                        ->label('Bukti Transfer')
+                        ->disk('public')
+                        ->height(200)
+                        ->columnSpanFull()
+                        ->placeholder('Belum ada bukti'),
+                ]),
+
             Section::make('Pembayaran')
                 ->columns(2)
                 ->schema([
                     TextEntry::make('pembayaran.tanggal_bayar')
                         ->label('Tanggal Bayar')
                         ->date('d M Y')
-                        ->placeholder('Belum dibayar'),
+                        ->placeholder('Belum dikonfirmasi admin'),
                     TextEntry::make('pembayaran.metode_bayar')
                         ->label('Metode')
                         ->formatStateUsing(fn (?string $state): string =>

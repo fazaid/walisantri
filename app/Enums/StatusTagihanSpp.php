@@ -4,22 +4,25 @@ namespace App\Enums;
 
 enum StatusTagihanSpp: string
 {
-    case BelumBayar = 'belum_bayar';
-    case Lunas      = 'lunas';
+    case BelumBayar          = 'belum_bayar';
+    case MenungguKonfirmasi  = 'menunggu_konfirmasi';
+    case Lunas               = 'lunas';
 
     public function label(): string
     {
         return match($this) {
-            self::BelumBayar => 'Belum Bayar',
-            self::Lunas      => 'Lunas',
+            self::BelumBayar         => 'Belum Bayar',
+            self::MenungguKonfirmasi => 'Menunggu Konfirmasi',
+            self::Lunas              => 'Lunas',
         };
     }
 
     public function color(): string
     {
         return match($this) {
-            self::BelumBayar => 'danger',
-            self::Lunas      => 'success',
+            self::BelumBayar         => 'danger',
+            self::MenungguKonfirmasi => 'warning',
+            self::Lunas              => 'success',
         };
     }
 

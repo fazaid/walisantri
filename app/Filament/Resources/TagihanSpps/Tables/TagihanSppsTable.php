@@ -156,6 +156,8 @@ class TagihanSppsTable
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->visible(fn (TagihanSpp $record): bool => ! $record->isLunas())
+                    ->badge(fn (TagihanSpp $record): ?string => $record->isMenungguKonfirmasi() ? '!' : null)
+                    ->badgeColor('warning')
                     ->form([
                         DatePicker::make('tanggal_bayar')
                             ->label('Tanggal Bayar')

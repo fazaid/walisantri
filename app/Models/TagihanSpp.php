@@ -23,14 +23,17 @@ class TagihanSpp extends Model
         'jatuh_tempo',
         'keterangan',
         'status',
+        'bukti_transfer',
+        'dikonfirmasi_wali_at',
     ];
 
     protected $casts = [
-        'bulan'        => 'integer',
-        'tahun'        => 'integer',
-        'nominal'      => 'integer',
-        'jatuh_tempo'  => 'date',
-        'status'       => StatusTagihanSpp::class,
+        'bulan'                => 'integer',
+        'tahun'                => 'integer',
+        'nominal'              => 'integer',
+        'jatuh_tempo'          => 'date',
+        'status'               => StatusTagihanSpp::class,
+        'dikonfirmasi_wali_at' => 'datetime',
     ];
 
     public static array $namaBulan = [
@@ -52,6 +55,18 @@ class TagihanSpp extends Model
     public function isLunas(): bool
     {
         return $this->status === StatusTagihanSpp::Lunas;
+    }
+
+    public function isMenungguKonfirmasi(): bool
+    {
+        return $this->status === StatusTagihanSpp::MenungguKonfirmasi;
+    }
+
+    public function getBuktiTransferUrlAttribute(): ?string
+    {
+        return $this->bukti_transfer
+            ? \Illuminate\Support\Facades\Storage::disk('public')->url($this->bukti_transfer)
+            : null;
     }
 
     public function santri(): BelongsTo
