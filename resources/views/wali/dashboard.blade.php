@@ -15,7 +15,7 @@
 
     {{-- List Santri --}}
     <div>
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Santri Anda</p>
+        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Anak Anda</p>
         @forelse($anakList as $santri)
         <a href="{{ route('wali.santri.show', $santri->id) }}"
            class="flex items-center gap-4 bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-3 hover:shadow-md transition-shadow active:scale-[0.98]">
