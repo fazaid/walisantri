@@ -15,12 +15,15 @@ class SppController extends Controller
             'tagihanSpp' => fn ($q) => $q->with('pembayaran')
                 ->orderByDesc('tahun')
                 ->orderByDesc('bulan'),
+            'kelas',
         ])->get();
 
         $totalTunggakan = $santris->sum(
             fn ($s) => $s->tagihanSpp->where('status', StatusTagihanSpp::BelumBayar)->count()
         );
 
-        return view('wali.spp.index', compact('santris', 'totalTunggakan'));
+        $rekening = $wali->pesantren?->profil['rekening'] ?? [];
+
+        return view('wali.spp.index', compact('santris', 'totalTunggakan', 'rekening'));
     }
 }

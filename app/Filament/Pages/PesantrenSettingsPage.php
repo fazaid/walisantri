@@ -6,6 +6,7 @@ use App\Rules\SlugNotReserved;
 use App\Rules\ValidTenantSlug;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -45,6 +46,7 @@ class PesantrenSettingsPage extends Page implements HasForms
     public string $alamat          = '';
     public string $telepon         = '';
     public string $deskripsi       = '';
+    public array  $rekening        = [];
 
     public static function canAccess(): bool
     {
@@ -61,6 +63,7 @@ class PesantrenSettingsPage extends Page implements HasForms
             'alamat'         => $pesantren->profil['alamat']    ?? '',
             'telepon'        => $pesantren->profil['telepon']   ?? '',
             'deskripsi'      => $pesantren->profil['deskripsi'] ?? '',
+            'rekening'       => $pesantren->profil['rekening']  ?? [],
         ]);
     }
 
@@ -116,6 +119,33 @@ class PesantrenSettingsPage extends Page implements HasForms
                             ->rows(4)
                             ->maxLength(1000),
                     ]),
+
+                Section::make('Rekening Pembayaran SPP')
+                    ->description('Informasi rekening yang ditampilkan ke wali santri saat melihat tagihan SPP.')
+                    ->schema([
+                        Repeater::make('rekening')
+                            ->label('')
+                            ->schema([
+                                TextInput::make('nama_bank')
+                                    ->label('Nama Bank')
+                                    ->placeholder('BCA / BRI / Mandiri / ...')
+                                    ->required()
+                                    ->maxLength(50),
+                                TextInput::make('nomor_rekening')
+                                    ->label('Nomor Rekening')
+                                    ->placeholder('1234567890')
+                                    ->required()
+                                    ->maxLength(30),
+                                TextInput::make('atas_nama')
+                                    ->label('Atas Nama')
+                                    ->required()
+                                    ->maxLength(100),
+                            ])
+                            ->columns(3)
+                            ->addActionLabel('+ Tambah Rekening')
+                            ->defaultItems(0)
+                            ->reorderable(false),
+                    ]),
             ]);
     }
 
@@ -147,6 +177,7 @@ class PesantrenSettingsPage extends Page implements HasForms
                 'alamat'    => $data['alamat'],
                 'telepon'   => $data['telepon'],
                 'deskripsi' => $data['deskripsi'],
+                'rekening'  => $data['rekening'] ?? [],
             ],
         ]);
 

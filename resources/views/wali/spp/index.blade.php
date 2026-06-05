@@ -24,6 +24,31 @@
         </div>
     @endif
 
+    {{-- Info rekening --}}
+    @if(count($rekening) > 0)
+        <div class="bg-white border border-gray-100 rounded-2xl px-4 py-4 mb-5">
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Transfer Pembayaran SPP ke:</p>
+            <div class="space-y-2">
+                @foreach($rekening as $rek)
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="font-semibold text-gray-800 text-sm">{{ $rek['nama_bank'] }}</p>
+                            <p class="text-xs text-gray-400">{{ $rek['atas_nama'] }}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-mono font-semibold text-gray-800 text-sm tracking-wide">
+                                {{ $rek['nomor_rekening'] }}
+                            </p>
+                        </div>
+                    </div>
+                    @if(! $loop->last)
+                        <hr class="border-gray-100">
+                    @endif
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     @forelse($santris as $santri)
         <div class="mb-6">
             {{-- Header santri --}}
