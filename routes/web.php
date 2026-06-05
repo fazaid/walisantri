@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\WaliLoginController;
+use App\Http\Controllers\DemoController;
 use App\Http\Controllers\PublicProfileController;
 use App\Http\Controllers\SlugCheckController;
 use App\Http\Controllers\Wali\DashboardController;
@@ -32,6 +33,9 @@ Route::domain($baseDomain)->group(function () {
 
     Route::get('/register', [RegisterController::class, 'showForm'])->name('register');
     Route::post('/register', [RegisterController::class, 'store'])->name('register.submit');
+
+    Route::get('/demo', [DemoController::class, 'show'])->name('demo');
+    Route::post('/demo', [DemoController::class, 'store'])->name('demo.submit');
 });
 
 // =============================================================================
