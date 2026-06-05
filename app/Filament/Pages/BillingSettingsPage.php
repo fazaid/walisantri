@@ -4,18 +4,26 @@ namespace App\Filament\Pages;
 
 use App\Enums\UserRole;
 use App\Models\BillingSetting;
+use BackedEnum;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Actions;
+use Filament\Schemas\Components\EmbeddedSchema;
+use Filament\Schemas\Components\Form;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use UnitEnum;
 
-class BillingSettingsPage extends Page
+class BillingSettingsPage extends Page implements HasForms
 {
-    protected string $view = 'filament.pages.billing-settings';
+    use InteractsWithForms;
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
 
     protected static string|UnitEnum|null $navigationGroup = 'Langganan';
 
@@ -25,9 +33,16 @@ class BillingSettingsPage extends Page
 
     protected static ?string $title = 'Pengaturan Harga Langganan';
 
-    protected static string|\BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
+    protected string $view = 'filament.pages.billing-settings';
 
-    public array $data = [];
+    public int $harga_rintisan           = 0;
+    public int $harga_berkembang          = 0;
+    public int $harga_maju_base           = 0;
+    public int $harga_maju_per_100_santri = 0;
+    public int $kuota_rintisan            = 0;
+    public int $kuota_berkembang          = 0;
+    public int $kuota_maju_base           = 0;
+    public int $bonus_bulan_tahunan       = 0;
 
     public static function canAccess(): bool
     {
@@ -36,69 +51,73 @@ class BillingSettingsPage extends Page
 
     public function mount(): void
     {
-        $this->data = BillingSetting::allAsArray();
+        $this->form->fill(BillingSetting::allAsArray());
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Section::make('Harga Paket (per bulan)')
-                    ->description('Harga dalam Rupiah, tanpa titik/koma.')
-                    ->columns(2)
-                    ->schema([
-                        TextInput::make('harga_rintisan')
-                            ->label('Rintisan (≤100 santri)')
-                            ->numeric()->minValue(0)->required()
-                            ->prefix('Rp'),
-                        TextInput::make('harga_berkembang')
-                            ->label('Berkembang (≤500 santri)')
-                            ->numeric()->minValue(0)->required()
-                            ->prefix('Rp'),
-                        TextInput::make('harga_maju_base')
-                            ->label('Maju — harga dasar (≤1.000 santri)')
-                            ->numeric()->minValue(0)->required()
-                            ->prefix('Rp'),
-                        TextInput::make('harga_maju_per_100_santri')
-                            ->label('Maju — tambahan per 100 santri di atas 1.000')
-                            ->numeric()->minValue(0)->required()
-                            ->prefix('Rp'),
-                    ]),
+        return $schema->components([
+            Section::make('Harga Paket (per bulan)')
+                ->description('Dalam Rupiah penuh, tanpa titik atau koma.')
+                ->columns(2)
+                ->schema([
+                    TextInput::make('harga_rintisan')
+                        ->label('Rintisan (≤ kuota_rintisan santri)')
+                        ->numeric()->minValue(0)->required()
+                        ->prefix('Rp'),
+                    TextInput::make('harga_berkembang')
+                        ->label('Berkembang (≤ kuota_berkembang santri)')
+                        ->numeric()->minValue(0)->required()
+                        ->prefix('Rp'),
+                    TextInput::make('harga_maju_base')
+                        ->label('Maju — harga dasar')
+                        ->numeric()->minValue(0)->required()
+                        ->prefix('Rp'),
+                    TextInput::make('harga_maju_per_100_santri')
+                        ->label('Maju — tambahan per 100 santri di atas kuota dasar')
+                        ->numeric()->minValue(0)->required()
+                        ->prefix('Rp'),
+                ]),
 
-                Section::make('Kuota Santri per Paket')
-                    ->columns(3)
-                    ->schema([
-                        TextInput::make('kuota_rintisan')
-                            ->label('Rintisan')->numeric()->minValue(1)->required()
-                            ->suffix('santri'),
-                        TextInput::make('kuota_berkembang')
-                            ->label('Berkembang')->numeric()->minValue(1)->required()
-                            ->suffix('santri'),
-                        TextInput::make('kuota_maju_base')
-                            ->label('Maju (dasar)')->numeric()->minValue(1)->required()
-                            ->suffix('santri'),
-                    ]),
+            Section::make('Kuota Santri per Paket')
+                ->columns(3)
+                ->schema([
+                    TextInput::make('kuota_rintisan')
+                        ->label('Rintisan')->numeric()->minValue(1)->required()
+                        ->suffix('santri'),
+                    TextInput::make('kuota_berkembang')
+                        ->label('Berkembang')->numeric()->minValue(1)->required()
+                        ->suffix('santri'),
+                    TextInput::make('kuota_maju_base')
+                        ->label('Maju (dasar)')->numeric()->minValue(1)->required()
+                        ->suffix('santri'),
+                ]),
 
-                Section::make('Diskon Berlangganan Tahunan')
-                    ->columns(1)
-                    ->schema([
-                        TextInput::make('bonus_bulan_tahunan')
-                            ->label('Bonus bulan gratis saat berlangganan 12 bulan')
-                            ->numeric()->minValue(0)->maxValue(6)->required()
-                            ->suffix('bulan')
-                            ->helperText('Contoh: nilai 2 → bayar 10 bulan, aktif 12 bulan'),
-                    ]),
-            ])
-            ->statePath('data');
+            Section::make('Diskon Berlangganan Tahunan')
+                ->schema([
+                    TextInput::make('bonus_bulan_tahunan')
+                        ->label('Bonus bulan gratis saat berlangganan 12 bulan')
+                        ->numeric()->minValue(0)->maxValue(6)->required()
+                        ->suffix('bulan')
+                        ->helperText('Contoh: nilai 2 → bayar 10 bulan, aktif 12 bulan'),
+                ]),
+        ]);
     }
 
-    protected function getFormActions(): array
+    public function content(Schema $schema): Schema
     {
-        return [
-            Action::make('save')
-                ->label('Simpan Pengaturan')
-                ->action('save'),
-        ];
+        return $schema->components([
+            Form::make([EmbeddedSchema::make('form')])
+                ->id('form')
+                ->livewireSubmitHandler('save')
+                ->footer([
+                    Actions::make([
+                        Action::make('save')
+                            ->label('Simpan Pengaturan')
+                            ->submit('save'),
+                    ])->key('form-actions'),
+                ]),
+        ]);
     }
 
     public function save(): void
