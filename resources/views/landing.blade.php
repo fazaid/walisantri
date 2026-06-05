@@ -43,7 +43,7 @@
             </h1>
             <p class="text-lg text-gray-500 mb-10 max-w-2xl mx-auto leading-relaxed">
                 Kelola akademik, mutaba'ah ibadah, tahfidz Al-Quran, kesehatan santri, inventaris,
-                dan komunikasi wali — semuanya terintegrasi dalam satu platform yang mudah digunakan.
+                SPP bulanan, prestasi santri, dan komunikasi wali — semuanya terintegrasi dalam satu platform yang mudah digunakan.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
                 <a href="{{ route('register') }}"
@@ -63,7 +63,7 @@
     <section class="border-y border-gray-100 bg-white">
         <div class="max-w-4xl mx-auto px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             @foreach([
-                ['6+', 'Modul Lengkap'],
+                ['8+', 'Modul Lengkap'],
                 ['100%', 'Berbasis Web'],
                 ['Real-time', 'Update Data'],
                 ['Multi-peran', 'Admin & Wali'],
@@ -186,7 +186,43 @@
                     Wali santri bisa pantau perkembangan anak langsung dari HP — tanpa perlu install aplikasi.
                 </p>
                 <ul class="mt-4 space-y-1.5">
-                    @foreach(['Akses via link magic', 'Lihat nilai & ibadah anak', 'Terima pengumuman pesantren'] as $item)
+                    @foreach(['Akses via link magic', 'Pantau ibadah, tahfidz & prestasi', 'Lihat tagihan SPP & kirim bukti'] as $item)
+                        <li class="flex items-center gap-2 text-sm text-gray-600">
+                            <span class="text-teal-500">✓</span> {{ $item }}
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+
+            {{-- SPP & Keuangan --}}
+            <div class="border border-gray-100 rounded-2xl p-6 hover:shadow-md hover:border-teal-200 transition-all group">
+                <div class="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center mb-4 text-2xl group-hover:bg-green-100 transition-colors">
+                    💳
+                </div>
+                <h3 class="font-bold text-gray-900 text-lg mb-2">SPP & Keuangan</h3>
+                <p class="text-gray-500 text-sm leading-relaxed">
+                    Kelola tagihan SPP bulanan secara digital. Wali konfirmasi transfer langsung dari HP, admin verifikasi dengan mudah.
+                </p>
+                <ul class="mt-4 space-y-1.5">
+                    @foreach(['Tagihan bulanan per santri', 'Konfirmasi transfer oleh wali', 'Rekap tunggakan real-time'] as $item)
+                        <li class="flex items-center gap-2 text-sm text-gray-600">
+                            <span class="text-teal-500">✓</span> {{ $item }}
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+
+            {{-- Prestasi Santri --}}
+            <div class="border border-gray-100 rounded-2xl p-6 hover:shadow-md hover:border-teal-200 transition-all group">
+                <div class="w-12 h-12 bg-yellow-50 rounded-xl flex items-center justify-center mb-4 text-2xl group-hover:bg-yellow-100 transition-colors">
+                    🏆
+                </div>
+                <h3 class="font-bold text-gray-900 text-lg mb-2">Prestasi Santri</h3>
+                <p class="text-gray-500 text-sm leading-relaxed">
+                    Catat dan pamerkan pencapaian santri — dari tingkat internal pesantren hingga kompetisi nasional.
+                </p>
+                <ul class="mt-4 space-y-1.5">
+                    @foreach(['Catat prestasi & penghargaan', 'Upload sertifikat digital', 'Tampil di portal wali'] as $item)
                         <li class="flex items-center gap-2 text-sm text-gray-600">
                             <span class="text-teal-500">✓</span> {{ $item }}
                         </li>
@@ -197,23 +233,28 @@
         </div>
     </section>
 
-    {{-- Pengumuman highlight --}}
+    {{-- Highlight 3 kolom --}}
     <section class="bg-teal-50 py-16">
-        <div class="max-w-4xl mx-auto px-6 flex flex-col md:flex-row gap-10 items-center">
-            <div class="flex-1">
+        <div class="max-w-5xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div>
                 <div class="text-4xl mb-4">📢</div>
-                <h3 class="text-2xl font-bold text-gray-900 mb-3">Pengumuman Langsung ke Wali</h3>
-                <p class="text-gray-600 leading-relaxed">
-                    Kirim pengumuman ke seluruh wali santri dalam hitungan detik. Informasi resmi pesantren
-                    tersedia di portal wali tanpa perlu grup WhatsApp yang ramai.
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Pengumuman Langsung ke Wali</h3>
+                <p class="text-gray-600 text-sm leading-relaxed">
+                    Kirim pengumuman ke seluruh wali santri dalam hitungan detik — tersedia di portal wali tanpa perlu grup WhatsApp yang ramai.
                 </p>
             </div>
-            <div class="flex-1">
+            <div>
+                <div class="text-4xl mb-4">💳</div>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">SPP Tanpa Kerumitan</h3>
+                <p class="text-gray-600 text-sm leading-relaxed">
+                    Wali cukup foto struk transfer dan kirim dari HP. Admin verifikasi sekali klik. Tidak ada lagi antrian bayar SPP manual.
+                </p>
+            </div>
+            <div>
                 <div class="text-4xl mb-4">📊</div>
-                <h3 class="text-2xl font-bold text-gray-900 mb-3">Laporan Komprehensif</h3>
-                <p class="text-gray-600 leading-relaxed">
-                    Laporan akademik, kesehatan, dan ibadah bisa diekspor ke PDF maupun Excel.
-                    Cocok untuk evaluasi bulanan dan rapat wali santri.
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Laporan Komprehensif</h3>
+                <p class="text-gray-600 text-sm leading-relaxed">
+                    Laporan akademik, kesehatan, dan ibadah bisa diekspor ke PDF maupun Excel — cocok untuk evaluasi bulanan dan rapat wali santri.
                 </p>
             </div>
         </div>
