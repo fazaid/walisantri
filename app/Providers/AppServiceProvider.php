@@ -95,6 +95,10 @@ class AppServiceProvider extends ServiceProvider
                 response()->json(['available' => false, 'message' => 'Terlalu banyak permintaan.'], 429)
             )
         );
+
+        RateLimiter::for('register', fn ($request) =>
+            Limit::perHour(5)->by($request->ip())
+        );
     }
 
     // -----------------------------------------------------------------

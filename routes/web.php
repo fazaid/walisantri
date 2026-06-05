@@ -33,7 +33,7 @@ Route::domain($baseDomain)->group(function () {
         ->name('check-slug');
 
     Route::get('/register', [RegisterController::class, 'showForm'])->name('register');
-    Route::post('/register', [RegisterController::class, 'store'])->name('register.submit');
+    Route::post('/register', [RegisterController::class, 'store'])->name('register.submit')->middleware('throttle:register');
 
     Route::get('/demo', [DemoController::class, 'show'])->name('demo');
     Route::post('/demo', [DemoController::class, 'store'])->name('demo.submit');

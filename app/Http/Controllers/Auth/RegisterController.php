@@ -28,7 +28,7 @@ class RegisterController extends Controller
             'slug'           => ['required', 'string', new ValidTenantSlug, new SlugNotReserved, 'unique:pesantrens,slug'],
             'admin_name'     => ['required', 'string', 'max:100'],
             'email'          => ['required', 'email', 'unique:users,email'],
-            'password'       => ['required', 'confirmed', Password::min(8)],
+            'password'       => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()],
         ]);
 
         $result = $onboard->execute(
