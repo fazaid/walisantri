@@ -61,6 +61,7 @@ class TahfidzProgressForm
                             ->label('Nama Surah')
                             ->options(QuranSurah::options())
                             ->searchable()
+                            ->optionsLimit(114)
                             ->required()
                             ->native(false)
                             ->live()
