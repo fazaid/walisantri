@@ -13,7 +13,7 @@ class ListSantris extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            CreateAction::make()->visible(fn () => static::getResource()::canCreate()),
         ];
     }
 }
