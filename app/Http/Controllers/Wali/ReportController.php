@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Wali;
 use App\Http\Controllers\Controller;
 use App\Models\KesantrianKesehatan;
 use App\Models\KesantrianMutabaah;
+use App\Models\PrestasiSantri;
 use App\Models\Santri;
 use App\Models\TahfidzProgress;
 use App\Models\TahfidzRapor;
@@ -112,6 +113,11 @@ class ReportController extends Controller
             'nilai_makhraj' => $latestRapor->nilai_makhraj,
         ] : null;
 
+        $prestasi = PrestasiSantri::withoutGlobalScope('pesantren')
+            ->where('santri_id', $santri->id)
+            ->orderByDesc('tanggal')
+            ->get();
+
         return compact(
             'santri',
             'tahfidzRecent',
@@ -121,6 +127,7 @@ class ReportController extends Controller
             'mutabaahWeek',
             'statusKesehatanTerkini',
             'raporTahfidzTerakhir',
+            'prestasi',
         );
     }
 }

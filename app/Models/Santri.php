@@ -68,4 +68,9 @@ class Santri extends Model
     {
         return $this->hasMany(TagihanSpp::class)->withoutGlobalScope('pesantren');
     }
+
+    public function prestasi(): HasMany
+    {
+        return $this->hasMany(PrestasiSantri::class)->withoutGlobalScope('pesantren');
+    }
 }

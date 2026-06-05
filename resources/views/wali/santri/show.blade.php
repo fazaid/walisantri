@@ -301,5 +301,45 @@
         @endif
     </div>
 
+    {{-- Prestasi --}}
+    @if($prestasi->isNotEmpty())
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-100">
+            <h2 class="font-semibold text-gray-800 text-sm">🏆 Prestasi</h2>
+        </div>
+        <div class="divide-y divide-gray-50">
+            @foreach($prestasi as $item)
+            <div class="px-4 py-3 flex items-start gap-3">
+                <span class="text-xl flex-shrink-0 mt-0.5">{{ match($item->posisi) {
+                    'Juara 1' => '🥇', 'Juara 2' => '🥈', 'Juara 3' => '🥉', default => '🏅'
+                } }}</span>
+                <div class="flex-1 min-w-0">
+                    <p class="font-medium text-gray-800 text-sm leading-snug">{{ $item->judul }}</p>
+                    <div class="flex flex-wrap gap-1.5 mt-1.5">
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">{{ $item->kategori }}</span>
+                        <span class="text-xs px-2 py-0.5 rounded-full font-medium
+                            {{ match($item->tingkat->value) {
+                                'internal' => 'bg-gray-100 text-gray-600',
+                                'kabupaten' => 'bg-sky-50 text-sky-700',
+                                'provinsi' => 'bg-amber-50 text-amber-700',
+                                'nasional' => 'bg-green-50 text-green-700',
+                                'internasional' => 'bg-red-50 text-red-700',
+                                default => 'bg-gray-100 text-gray-600',
+                            } }}">{{ $item->tingkat->label() }}</span>
+                        @if($item->posisi)
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-yellow-50 text-yellow-700 font-medium">{{ $item->posisi }}</span>
+                        @endif
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1">
+                        {{ $item->tanggal->translatedFormat('d M Y') }}
+                        @if($item->penyelenggara) · {{ $item->penyelenggara }}@endif
+                    </p>
+                </div>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
+
 </div>
 @endsection
