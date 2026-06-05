@@ -22,7 +22,13 @@ class KesantrianInventarisForm
             ->components([
                 Section::make('Detail Barang')->columns(2)->schema([
                     Select::make('santri_id')->label('Santri')
-                        ->options(Santri::where('status_aktif', true)->pluck('nama_lengkap', 'id'))
+                        ->options(function () {
+                                $query = Santri::where('status_aktif', true);
+                                if (auth()->user()?->role === 'ustadz') {
+                                    $query->where('pembimbing_ustadz_id', auth()->id());
+                                }
+                                return $query->pluck('nama_lengkap', 'id');
+                            })
                         ->searchable()->required(),
                     TextInput::make('nama_barang_umum')->label('Nama Barang')->required(),
                     TextInput::make('kode_unik_fisik')->label('Kode Unik Fisik')

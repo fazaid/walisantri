@@ -14,6 +14,8 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use App\Models\Santri;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use BackedEnum;
 use UnitEnum;
@@ -40,6 +42,16 @@ class TahfidzRaporResource extends Resource
             'ustadz',
         ]);
     }
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        if (Auth::user()?->role === 'ustadz') {
+            $santriIds = Santri::where('pembimbing_ustadz_id', Auth::id())->pluck('id');
+            $query->whereIn('santri_id', $santriIds);
+        }
+        return $query;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return TahfidzRaporForm::configure($schema);

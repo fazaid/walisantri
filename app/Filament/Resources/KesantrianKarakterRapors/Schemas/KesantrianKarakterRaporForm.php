@@ -29,7 +29,13 @@ class KesantrianKarakterRaporForm
             ->components([
                 Section::make('Identitas')->columns(2)->schema([
                     Select::make('santri_id')->label('Santri')
-                        ->options(Santri::where('status_aktif', true)->pluck('nama_lengkap', 'id'))
+                        ->options(function () {
+                                $query = Santri::where('status_aktif', true);
+                                if (auth()->user()?->role === 'ustadz') {
+                                    $query->where('pembimbing_ustadz_id', auth()->id());
+                                }
+                                return $query->pluck('nama_lengkap', 'id');
+                            })
                         ->searchable()->required(),
                     DatePicker::make('tanggal_input')->label('Tanggal Input')->default(now())->required(),
                     Select::make('periode')->label('Periode')
