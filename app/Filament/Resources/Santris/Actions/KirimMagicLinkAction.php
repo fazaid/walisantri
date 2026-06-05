@@ -31,9 +31,7 @@ class KirimMagicLinkAction extends Action
                     ->label('Link Portal Wali')
                     ->default($this->buildMagicLinkUrl($record))
                     ->readOnly()
-                    ->copyable()
-                    ->copyMessage('Link tersalin!')
-                    ->copyMessageDuration(1500),
+                    ->copyable(copyMessage: 'Link tersalin!', copyMessageDuration: 1500),
             ])
             ->modalSubmitAction(false)
             ->modalCancelActionLabel('Tutup')
