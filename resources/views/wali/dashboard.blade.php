@@ -50,11 +50,11 @@
     {{-- Panel per Anak --}}
     @foreach($children as $i => $child)
     @php
-        $santri   = $child['santri'];
-        $rapor    = $child['raporTerakhir'];
+        $santri    = $child['santri'];
+        $rapor     = $child['raporTerakhir'];
         $kesehatan = $child['statusKesehatan'];
-        $amalan   = $child['persentaseAmalan'];
-        $juz      = $child['totalJuz'];
+        $amalan    = $child['persentaseAmalan'];
+        $juz       = $child['totalJuz'];
 
         [$kBg, $kBorder, $kText, $kLabel] = match($kesehatan['status_pemulihan'] ?? null) {
             'Rawat_Mandiri'   => ['bg-yellow-50','border-yellow-200','text-yellow-700','Rawat Mandiri'],
@@ -204,6 +204,7 @@
             <div class="px-4 py-5 text-center text-sm text-gray-400">Tidak ada riwayat kesehatan.</div>
             @endforelse
         </div>
+
 
     </div>{{-- /panel --}}
     @endforeach

@@ -204,5 +204,99 @@
         @endforelse
     </div>
 
+    {{-- Mutabaah Harian --}}
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-100">
+            <h2 class="font-semibold text-gray-800">✨ Mutabaah Harian</h2>
+            <p class="text-xs text-gray-400 mt-0.5">7 hari terakhir</p>
+        </div>
+
+        @php
+            $days7 = collect(range(6, 0))->map(fn($d) => now()->subDays($d));
+            $totalDaysData = $mutabaahWeek->count();
+        @endphp
+
+        {{-- Heatmap --}}
+        <div class="px-4 pt-3 pb-2">
+            <div class="grid grid-cols-7 gap-1.5">
+                @foreach($days7 as $day)
+                @php
+                    $rec = $mutabaahWeek->get($day->toDateString());
+                    if ($rec) {
+                        $dayScore = $rec->jamaah_5_waktu
+                            + ($rec->is_rawatib      ? 1 : 0)
+                            + ($rec->is_shalat_malam ? 1 : 0)
+                            + ($rec->is_dhuha        ? 1 : 0)
+                            + ($rec->is_tilawah_1juz ? 1 : 0)
+                            + ($rec->is_infak        ? 1 : 0)
+                            + ($rec->is_puasa        ? 1 : 0);
+                        $dayPct   = $dayScore / 11 * 100;
+                        $dotColor = $dayPct >= 80 ? 'bg-green-400' : ($dayPct >= 50 ? 'bg-yellow-400' : 'bg-red-300');
+                    } else {
+                        $dotColor = 'bg-gray-100';
+                    }
+                @endphp
+                <div class="flex flex-col items-center gap-1">
+                    <div class="w-full h-7 rounded-lg {{ $dotColor }}"></div>
+                    <span class="text-[10px] text-gray-400">{{ $day->isoFormat('ddd') }}</span>
+                </div>
+                @endforeach
+            </div>
+            <div class="flex items-center gap-3 mt-2.5">
+                <span class="flex items-center gap-1 text-[10px] text-gray-400"><span class="w-2.5 h-2.5 rounded bg-green-400 inline-block"></span>≥80%</span>
+                <span class="flex items-center gap-1 text-[10px] text-gray-400"><span class="w-2.5 h-2.5 rounded bg-yellow-400 inline-block"></span>50–79%</span>
+                <span class="flex items-center gap-1 text-[10px] text-gray-400"><span class="w-2.5 h-2.5 rounded bg-red-300 inline-block"></span>&lt;50%</span>
+                <span class="flex items-center gap-1 text-[10px] text-gray-400"><span class="w-2.5 h-2.5 rounded bg-gray-100 inline-block"></span>Tidak ada data</span>
+            </div>
+        </div>
+
+        {{-- Breakdown per amal --}}
+        @if($totalDaysData > 0)
+        <div class="px-4 pb-4 pt-1 space-y-2.5">
+            @php
+                $jamaahTotal = $mutabaahWeek->sum('jamaah_5_waktu');
+                $jamaahMax   = $totalDaysData * 5;
+                $amalList = [
+                    ['icon' => '🌙', 'label' => 'Rawatib',       'key' => 'is_rawatib'],
+                    ['icon' => '🌃', 'label' => 'Shalat Malam',  'key' => 'is_shalat_malam'],
+                    ['icon' => '🌅', 'label' => 'Dhuha',         'key' => 'is_dhuha'],
+                    ['icon' => '📖', 'label' => 'Tilawah 1 Juz', 'key' => 'is_tilawah_1juz'],
+                    ['icon' => '💰', 'label' => 'Infak',         'key' => 'is_infak'],
+                    ['icon' => '🤲', 'label' => 'Puasa Sunnah',  'key' => 'is_puasa'],
+                ];
+            @endphp
+
+            <div class="flex items-center justify-between">
+                <span class="text-xs text-gray-600">🕌 Berjamaah</span>
+                <div class="flex items-center gap-2">
+                    <div class="w-28 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-teal-500 rounded-full" style="width: {{ $jamaahMax > 0 ? round($jamaahTotal / $jamaahMax * 100) : 0 }}%"></div>
+                    </div>
+                    <span class="text-xs font-medium text-gray-700 w-14 text-right">{{ $jamaahTotal }}/{{ $jamaahMax }} waktu</span>
+                </div>
+            </div>
+
+            @foreach($amalList as $aml)
+            @php
+                $cnt = $mutabaahWeek->where($aml['key'], true)->count();
+                $pct = $totalDaysData > 0 ? round($cnt / $totalDaysData * 100) : 0;
+                $barColor = $pct >= 80 ? 'bg-green-400' : ($pct >= 50 ? 'bg-yellow-400' : 'bg-purple-400');
+            @endphp
+            <div class="flex items-center justify-between">
+                <span class="text-xs text-gray-600">{{ $aml['icon'] }} {{ $aml['label'] }}</span>
+                <div class="flex items-center gap-2">
+                    <div class="w-28 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div class="h-full {{ $barColor }} rounded-full" style="width: {{ $pct }}%"></div>
+                    </div>
+                    <span class="text-xs font-medium text-gray-700 w-14 text-right">{{ $cnt }}/{{ $totalDaysData }} hari</span>
+                </div>
+            </div>
+            @endforeach
+        </div>
+        @else
+        <div class="px-4 py-5 text-center text-sm text-gray-400">Belum ada data mutabaah.</div>
+        @endif
+    </div>
+
 </div>
 @endsection

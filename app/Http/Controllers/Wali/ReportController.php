@@ -85,6 +85,8 @@ class ReportController extends Controller
             $persentaseAmalanMingguIni = (int) round(($totalSkor / (67 * 7)) * 100);
         }
 
+        $mutabaahWeek = $mutabaahMingguIni->keyBy(fn ($m) => $m->tanggal->toDateString());
+
         // ── Summary Card 3: Status Kesehatan Terkini ─────────────────────────
         $latestKesehatan = KesantrianKesehatan::where('santri_id', $santri->id)
             ->orderByDesc('tanggal_periksa')
@@ -116,6 +118,7 @@ class ReportController extends Controller
             'kesehatanRecent',
             'totalJuzHafalan',
             'persentaseAmalanMingguIni',
+            'mutabaahWeek',
             'statusKesehatanTerkini',
             'raporTahfidzTerakhir',
         );
