@@ -43,6 +43,28 @@ class SantriResource extends Resource
             'ustadz',
         ]);
     }
+
+    public static function canCreate(): bool
+    {
+        return Auth::user()?->role === 'admin_pesantren';
+    }
+
+    public static function canEdit($record): bool
+    {
+        return Auth::user()?->role === 'admin_pesantren';
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+
+        if (Auth::user()?->role === 'ustadz') {
+            $query->where('pembimbing_ustadz_id', Auth::id());
+        }
+
+        return $query;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return SantriForm::configure($schema);
