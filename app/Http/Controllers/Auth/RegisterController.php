@@ -14,6 +14,8 @@ class RegisterController extends Controller
 {
     public function showForm()
     {
+        abort_if(! config('app.registration_open', true), 404);
+
         if (Auth::check()) {
             return redirect('http://' . config('app.domain') . '/admin');
         }
@@ -23,6 +25,7 @@ class RegisterController extends Controller
 
     public function store(Request $request, OnboardPesantren $onboard)
     {
+        abort_if(! config('app.registration_open', true), 404);
         $data = $request->validate([
             'nama_pesantren' => ['required', 'string', 'max:100'],
             'slug'           => ['required', 'string', new ValidTenantSlug, new SlugNotReserved, 'unique:pesantrens,slug'],

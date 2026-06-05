@@ -53,8 +53,9 @@ return [
     */
 
     'url' => env('APP_URL', 'http://localhost'),
-    'domain'      => env('APP_DOMAIN', 'app.walisantri.com'),
-    'base_domain' => env('APP_BASE_DOMAIN', 'walisantri.com'),
+    'domain'            => env('APP_DOMAIN', 'app.walisantri.com'),
+    'base_domain'       => env('APP_BASE_DOMAIN', 'walisantri.com'),
+    'registration_open' => env('REGISTRATION_OPEN', true),
 
     /*
     |--------------------------------------------------------------------------
