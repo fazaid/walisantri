@@ -75,6 +75,14 @@ Route::domain($appDomain)->group(function () {
     Route::get('/report/{uuid}', [ReportController::class, 'showByUuid'])
         ->middleware('magic.token')
         ->name('wali.magic.report');
+
+    // --- Logout wali (magic link maupun login biasa) ---
+    Route::post('/wali/logout', function () {
+        Auth::logout();
+        request()->session()->invalidate();
+        request()->session()->regenerateToken();
+        return redirect()->route('login');
+    })->middleware('auth')->name('wali.logout');
 });
 
 // =============================================================================

@@ -44,12 +44,10 @@
                     <p class="text-xs text-teal-200">@yield('subtitle', config('app.name'))</p>
                 </div>
             </div>
-            @unless(session('magic_link_session'))
-            <form method="POST" action="{{ route('logout') }}">
+            <form method="POST" action="{{ route('wali.logout') }}">
                 @csrf
                 <button type="submit" class="text-xs text-teal-200 hover:text-white">Keluar</button>
             </form>
-            @endunless
         </div>
     </header>
 

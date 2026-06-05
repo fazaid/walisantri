@@ -31,6 +31,11 @@ class VerifyMagicToken
             abort(404, 'Tautan tidak valid atau santri tidak aktif.');
         }
 
+        // Jika sudah login sebagai admin/ustadz/super_admin, jangan timpa sesi mereka
+        if (Auth::check() && Auth::user()->role !== 'wali_santri') {
+            return redirect("/admin/santris/{$santri->id}");
+        }
+
         // Login sebagai wali santri — read-only session
         $wali = $santri->wali;
 
@@ -46,7 +51,6 @@ class VerifyMagicToken
 
         // Abort semua request non-GET dari magic link session
         if (! $request->isMethod('GET')) {
-            Auth::logout();
             abort(403, 'Akses magic link hanya diizinkan untuk membaca data.');
         }
 
