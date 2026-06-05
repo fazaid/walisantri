@@ -1,48 +1,54 @@
 <?php
 
-// File: app/Services/BillingCalculatorService.php
-// Buat folder app/Services/ jika belum ada.
-
 namespace App\Services;
 
+use App\Models\BillingSetting;
 use App\Models\Pesantren;
 
 class BillingCalculatorService
 {
-    // Harga paket tetap (Rupiah) — PRD §5.1
-    private const HARGA_GRATIS     = 0;
-    private const HARGA_RINTISAN   = 150_000;
-    private const HARGA_BERKEMBANG = 450_000;
-
-    // Formula Paket Maju: Rp750.000 + (X × Rp100.000) — PRD §5.2
-    private const HARGA_MAJU_BASE    = 750_000;
-    private const HARGA_MAJU_PER_100 = 100_000;
-    private const MAJU_KUOTA_BASE    = 1000;
-    private const MAJU_KUOTA_STEP    = 100;
+    private function cfg(string $key, int $default): int
+    {
+        return BillingSetting::get($key, $default);
+    }
 
     public function hitung(Pesantren $pesantren): array
     {
         return match ($pesantren->paket_langganan) {
-            'gratis'     => $this->paketTetap('Gratis', self::HARGA_GRATIS, 10),
-            'rintisan'   => $this->paketTetap('Rintisan', self::HARGA_RINTISAN, 100),
-            'berkembang' => $this->paketTetap('Berkembang', self::HARGA_BERKEMBANG, 500),
+            'gratis'     => $this->paketTetap('Gratis', 0, 10),
+            'rintisan'   => $this->paketTetap('Rintisan', $this->cfg('harga_rintisan', 150_000), $this->cfg('kuota_rintisan', 100)),
+            'berkembang' => $this->paketTetap('Berkembang', $this->cfg('harga_berkembang', 450_000), $this->cfg('kuota_berkembang', 500)),
             'maju'       => $this->paketMaju($pesantren->max_santri_kuota),
             default      => $this->paketTetap('Unknown', 0, 0),
         };
     }
 
-    // Formula PRD §5.2:
-    // X = CEIL((N - 1000) / 100)
-    // Total = Rp750.000 + (X × Rp100.000)
-    // Kuota = 1000 + (X × 100)
-    // Contoh: 1.200 santri → X=2 → kuota 1.200 → Rp 950.000/bulan
+    public function hitungUntukTarget(string $paket, int $maxSantri): array
+    {
+        return match ($paket) {
+            'gratis'     => $this->paketTetap('Gratis', 0, 10),
+            'rintisan'   => $this->paketTetap('Rintisan', $this->cfg('harga_rintisan', 150_000), $this->cfg('kuota_rintisan', 100)),
+            'berkembang' => $this->paketTetap('Berkembang', $this->cfg('harga_berkembang', 450_000), $this->cfg('kuota_berkembang', 500)),
+            'maju'       => $this->paketMaju($maxSantri),
+            default      => $this->paketTetap('Unknown', 0, 0),
+        };
+    }
+
+    // Formula PRD §5.3:
+    // X = CEIL((N - kuota_maju_base) / 100)
+    // Total = harga_maju_base + (X × harga_maju_per_100_santri)
+    // Kuota = kuota_maju_base + (X × 100)
     public function paketMaju(int $quotaSantri): array
     {
-        $n = max($quotaSantri, self::MAJU_KUOTA_BASE + 1);
-        $x = (int) ceil(($n - self::MAJU_KUOTA_BASE) / self::MAJU_KUOTA_STEP);
+        $base    = $this->cfg('kuota_maju_base', 1000);
+        $hargaB  = $this->cfg('harga_maju_base', 750_000);
+        $hargaX  = $this->cfg('harga_maju_per_100_santri', 100_000);
 
-        $totalBiaya    = self::HARGA_MAJU_BASE + ($x * self::HARGA_MAJU_PER_100);
-        $kuotaMaksimal = self::MAJU_KUOTA_BASE + ($x * self::MAJU_KUOTA_STEP);
+        $n  = max($quotaSantri, $base + 1);
+        $x  = (int) ceil(($n - $base) / 100);
+
+        $totalBiaya    = $hargaB + ($x * $hargaX);
+        $kuotaMaksimal = $base + ($x * 100);
 
         return [
             'paket'          => 'Maju',
@@ -51,17 +57,6 @@ class BillingCalculatorService
             'kuota_maksimal' => $kuotaMaksimal,
             'formatted'      => 'Rp ' . number_format($totalBiaya, 0, ',', '.'),
         ];
-    }
-
-    public function hitungUntukTarget(string $paket, int $maxSantri): array
-    {
-        return match ($paket) {
-            'gratis'     => $this->paketTetap('Gratis', self::HARGA_GRATIS, 10),
-            'rintisan'   => $this->paketTetap('Rintisan', self::HARGA_RINTISAN, 100),
-            'berkembang' => $this->paketTetap('Berkembang', self::HARGA_BERKEMBANG, 500),
-            'maju'       => $this->paketMaju($maxSantri),
-            default      => $this->paketTetap('Unknown', 0, 0),
-        };
     }
 
     private function paketTetap(string $nama, int $harga, int $kuota): array
