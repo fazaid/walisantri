@@ -17,8 +17,8 @@ class WarmDashboardCache implements ShouldQueue
         // Cache key: "dashboard_wali:{santri_uuid}", TTL 30 menit
         Santri::allTenants()
             ->where('status_aktif', true)
-            ->with(['wali', 'pesantren'])
-            ->select(['id', 'uuid', 'pesantren_id', 'wali_santri_id', 'nama_lengkap', 'kelas', 'kamar'])
+            ->with(['wali', 'pesantren', 'kelas', 'kamar'])
+            ->select(['id', 'uuid', 'pesantren_id', 'wali_santri_id', 'nama_lengkap', 'kelas_id', 'kamar_id'])
             ->eachById(function (Santri $santri) {
                 Cache::put(
                     "dashboard_wali:{$santri->uuid}",

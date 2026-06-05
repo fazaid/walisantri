@@ -21,8 +21,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'pembimbing_ustadz_id',
     'nis',
     'nama_lengkap',
-    'kelas',
-    'kamar',
+    'kelas_id',
+    'kamar_id',
     'status_aktif',
 ])]
 #[Hidden(['pesantren_id'])]
@@ -51,5 +51,15 @@ class Santri extends Model
     public function pembimbing(): BelongsTo
     {
         return $this->belongsTo(User::class, 'pembimbing_ustadz_id');
+    }
+
+    public function kelas(): BelongsTo
+    {
+        return $this->belongsTo(Kelas::class);
+    }
+
+    public function kamar(): BelongsTo
+    {
+        return $this->belongsTo(Kamar::class);
     }
 }

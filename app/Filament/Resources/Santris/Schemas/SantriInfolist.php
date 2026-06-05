@@ -24,9 +24,9 @@ class SantriInfolist
                         TextEntry::make('nama_lengkap')
                             ->label('Nama Lengkap')
                             ->columnSpanFull(),
-                        TextEntry::make('kelas')
+                        TextEntry::make('kelas.nama_kelas')
                             ->label('Kelas'),
-                        TextEntry::make('kamar')
+                        TextEntry::make('kamar.nama_kamar')
                             ->label('Kamar'),
                         IconEntry::make('status_aktif')
                             ->label('Status Aktif')

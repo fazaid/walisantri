@@ -30,11 +30,11 @@ class SantrisTable
                     ->label('Nama Lengkap')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('kelas')
+                TextColumn::make('kelas.nama_kelas')
                     ->label('Kelas')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('kamar')
+                TextColumn::make('kamar.nama_kamar')
                     ->label('Kamar')
                     ->searchable()
                     ->sortable(),
@@ -57,12 +57,12 @@ class SantrisTable
             ])
             ->defaultSort('nama_lengkap', 'asc')
             ->filters([
-                SelectFilter::make('kelas')
+                SelectFilter::make('kelas_id')
                     ->label('Filter Kelas')
-                    ->options(fn () => \App\Models\Santri::distinct()->pluck('kelas', 'kelas')),
-                SelectFilter::make('kamar')
+                    ->relationship('kelas', 'nama_kelas'),
+                SelectFilter::make('kamar_id')
                     ->label('Filter Kamar')
-                    ->options(fn () => \App\Models\Santri::distinct()->pluck('kamar', 'kamar')),
+                    ->relationship('kamar', 'nama_kamar'),
                 SelectFilter::make('status_aktif')
                     ->label('Status')
                     ->options([

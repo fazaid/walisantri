@@ -4,6 +4,8 @@
 
 namespace App\Filament\Resources\Santris\Schemas;
 
+use App\Models\Kamar;
+use App\Models\Kelas;
 use App\Models\User;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\Select;
@@ -29,12 +31,22 @@ class SantriForm
                             ->required()
                             ->maxLength(255)
                             ->columnSpanFull(),
-                        TextInput::make('kelas')
-                            ->required()
-                            ->maxLength(50),
-                        TextInput::make('kamar')
-                            ->required()
-                            ->maxLength(50),
+                        Select::make('kelas_id')
+                            ->label('Kelas')
+                            ->options(fn () => Kelas::where('pesantren_id', auth()->user()?->pesantren_id)
+                                ->orderBy('nama_kelas')
+                                ->pluck('nama_kelas', 'id'))
+                            ->searchable()
+                            ->nullable()
+                            ->native(false),
+                        Select::make('kamar_id')
+                            ->label('Kamar')
+                            ->options(fn () => Kamar::where('pesantren_id', auth()->user()?->pesantren_id)
+                                ->orderBy('nama_kamar')
+                                ->pluck('nama_kamar', 'id'))
+                            ->searchable()
+                            ->nullable()
+                            ->native(false),
                         Toggle::make('status_aktif')
                             ->default(true)
                             ->columnSpanFull(),

@@ -34,7 +34,13 @@ class UserForm
 
                 Select::make('role')
                     ->label('Role')
-                    ->options(UserRole::options())
+                    ->options(function () {
+                        $options = UserRole::options();
+                        if (auth()->user()?->role === UserRole::AdminPesantren->value) {
+                            unset($options[UserRole::SuperAdmin->value]);
+                        }
+                        return $options;
+                    })
                     ->default(UserRole::WaliSantri->value)
                     ->required()
                     ->native(false),
