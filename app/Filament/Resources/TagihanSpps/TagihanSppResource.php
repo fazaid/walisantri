@@ -32,7 +32,7 @@ class TagihanSppResource extends Resource
     public static function canAccess(): bool
     {
         $role = auth()->user()?->role;
-        return in_array($role, [UserRole::SuperAdmin->value, UserRole::AdminPesantren->value]);
+        return $role === UserRole::AdminPesantren->value;
     }
 
     public static function canViewAny(): bool

@@ -36,7 +36,6 @@ class PrestasiSantriResource extends Resource
     {
         $role = auth()->user()?->role;
         return in_array($role, [
-            UserRole::SuperAdmin->value,
             UserRole::AdminPesantren->value,
             UserRole::Ustadz->value,
         ]);
