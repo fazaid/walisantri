@@ -52,8 +52,8 @@
         <div class="space-y-2">
             @foreach($pengumuman->merge($pengumumanCentral)->sortByDesc('created_at')->take(5) as $item)
             <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                <p class="font-medium text-gray-800 text-sm">{{ $item->judul }}</p>
-                <p class="text-xs text-gray-500 mt-1 line-clamp-2">{{ $item->isi }}</p>
+                <p class="font-medium text-gray-800 text-sm">{{ $item->judul_maklumat }}</p>
+                <p class="text-xs text-gray-500 mt-1 line-clamp-2">{{ $item->isi_maklumat }}</p>
                 <p class="text-xs text-gray-400 mt-2">{{ $item->created_at->diffForHumans() }}</p>
             </div>
             @endforeach
