@@ -4,8 +4,10 @@
 
 namespace App\Filament\Resources\Santris\Tables;
 
+use App\Filament\Resources\Santris\Actions\KirimMagicLinkAction;
 use App\Filament\Resources\Santris\Actions\PindahKamarBulkAction;
 use App\Filament\Resources\Santris\Actions\PindahKelasBulkAction;
+use App\Filament\Resources\Santris\Actions\RegenerasiUuidAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -75,6 +77,8 @@ class SantrisTable
             ])
             ->recordActions([
                 ViewAction::make(),
+                KirimMagicLinkAction::make(),
+                RegenerasiUuidAction::make(),
                 EditAction::make(),
             ])
             ->toolbarActions([
