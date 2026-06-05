@@ -46,9 +46,11 @@ class KesehatanStatsController extends Controller
         $trenFisik = KesantrianKesehatan::where('santri_id', $santri->id)
             ->whereNotNull('berat_badan')
             ->whereNotNull('tinggi_badan')
-            ->orderBy('tanggal_periksa')
+            ->orderByDesc('tanggal_periksa')
+            ->limit(10)
             ->get(['tanggal_periksa', 'berat_badan', 'tinggi_badan'])
-            ->takeLast(10);
+            ->sortBy('tanggal_periksa')
+            ->values();
 
         // Total & status terkini
         $totalPemeriksaan = KesantrianKesehatan::where('santri_id', $santri->id)->count();
