@@ -19,7 +19,7 @@ class DashboardController extends Controller
 
         // Ambil semua anak santri milik wali ini
         $anakList = $wali->anakSantri()
-            ->with(['pesantren', 'pembimbing'])
+            ->with(['pesantren', 'pembimbing', 'kelas', 'kamar'])
             ->where('status_aktif', true)
             ->get();
 

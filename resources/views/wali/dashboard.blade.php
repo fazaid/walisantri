@@ -34,7 +34,7 @@
         <p class="text-xs text-gray-500 mb-3">
             Pemantauan •
             <span class="font-medium text-gray-700">{{ $activeSantri->nama_lengkap }}</span>
-            • {{ $activeSantri->kelas }}
+            • {{ $activeSantri->kelas?->nama_kelas }}
         </p>
 
         <div class="grid grid-cols-2 gap-3">
@@ -131,7 +131,7 @@
                 {{-- Info --}}
                 <div class="flex-1 min-w-0">
                     <p class="font-semibold text-gray-800 truncate">{{ $santri->nama_lengkap }}</p>
-                    <p class="text-sm text-gray-500">{{ $santri->kelas }} · {{ $santri->kamar }}</p>
+                    <p class="text-sm text-gray-500">{{ $santri->kelas?->nama_kelas }} · {{ $santri->kamar?->nama_kamar }}</p>
                     <p class="text-xs text-teal-600 mt-0.5">{{ $santri->pesantren->nama_pesantren }}</p>
                 </div>
                 {{-- Arrow --}}

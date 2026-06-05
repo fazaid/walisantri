@@ -21,7 +21,7 @@ class ReportController extends Controller
 
         // Pastikan santri ini milik wali yang login
         $santri = $wali->anakSantri()
-            ->with(['pembimbing', 'pesantren'])
+            ->with(['pembimbing', 'pesantren', 'kelas', 'kamar'])
             ->findOrFail($santriId);
 
         return view('wali.santri.show', $this->buildPayload($santri));
@@ -34,7 +34,7 @@ class ReportController extends Controller
         $santriId = session('magic_link_santri_id');
 
         $santri = Santri::withoutGlobalScope('pesantren')
-            ->with(['pembimbing', 'pesantren'])
+            ->with(['pembimbing', 'pesantren', 'kelas', 'kamar'])
             ->findOrFail($santriId);
 
         return view('wali.santri.show', $this->buildPayload($santri));

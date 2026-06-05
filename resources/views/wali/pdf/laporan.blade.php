@@ -153,9 +153,9 @@
         </tr>
         <tr>
             <td>Kelas</td>
-            <td>: {{ $santri->kelas }}</td>
+            <td>: {{ $santri->kelas?->nama_kelas ?? '—' }}</td>
             <td>Kamar</td>
-            <td>: {{ $santri->kamar }}</td>
+            <td>: {{ $santri->kamar?->nama_kamar ?? '—' }}</td>
         </tr>
     </table>
 </div>

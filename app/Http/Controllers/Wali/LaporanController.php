@@ -20,7 +20,7 @@ class LaporanController extends Controller
         // Validasi: santri harus milik wali yang sedang login
         $santri = Santri::where('id', $santriId)
             ->where('wali_santri_id', auth()->id())
-            ->with('pesantren')
+            ->with(['pesantren', 'kelas', 'kamar'])
             ->firstOrFail();
 
         $raporTahfidz = TahfidzRapor::where('santri_id', $santriId)
