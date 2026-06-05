@@ -9,6 +9,7 @@
 
     <div class="flex items-center gap-2">
         <input
+            x-ref="linkInput"
             type="text"
             readonly
             value="{{ $url }}"
@@ -18,7 +19,7 @@
         <button
             type="button"
             @click="
-                navigator.clipboard.writeText('{{ $url }}');
+                navigator.clipboard.writeText($refs.linkInput.value);
                 copied = true;
                 setTimeout(() => copied = false, 2000)
             "
