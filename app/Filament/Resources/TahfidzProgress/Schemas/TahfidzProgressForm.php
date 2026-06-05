@@ -25,10 +25,13 @@ class TahfidzProgressForm
                     ->schema([
                         Select::make('santri_id')
                             ->label('Santri')
-                            ->options(
-                                Santri::where('status_aktif', true)
-                                    ->pluck('nama_lengkap', 'id')
-                            )
+                            ->options(function () {
+                                $query = Santri::where('status_aktif', true);
+                                if (auth()->user()?->role === 'ustadz') {
+                                    $query->where('pembimbing_ustadz_id', auth()->id());
+                                }
+                                return $query->pluck('nama_lengkap', 'id');
+                            })
                             ->searchable()
                             ->required(),
                         Select::make('ustadz_id')
@@ -38,6 +41,7 @@ class TahfidzProgressForm
                                     ->where('pesantren_id', auth()->user()?->pesantren_id)
                                     ->pluck('name', 'id')
                             )
+                            ->default(fn () => auth()->user()?->role === 'ustadz' ? auth()->id() : null)
                             ->searchable()
                             ->required(),
                         DatePicker::make('tanggal')
