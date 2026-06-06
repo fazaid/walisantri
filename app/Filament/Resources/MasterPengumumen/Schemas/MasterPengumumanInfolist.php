@@ -18,6 +18,21 @@ class MasterPengumumanInfolist
             ->components([
                 Section::make('Pengumuman')->schema([
                     TextEntry::make('judul_maklumat')->label('Judul'),
+                    TextEntry::make('target_audience')
+                        ->label('Kepada')
+                        ->badge()
+                        ->color(fn (string $state): string => match($state) {
+                            'semua' => 'success',
+                            'admin' => 'info',
+                            'wali'  => 'warning',
+                            default => 'gray',
+                        })
+                        ->formatStateUsing(fn (string $state): string => match($state) {
+                            'semua' => 'Semua Pengguna',
+                            'admin' => 'Admin & Ustadz',
+                            'wali'  => 'Wali Santri',
+                            default => $state,
+                        }),
                     TextEntry::make('isi_maklumat')->label('Isi')->html(),
                     TextEntry::make('created_at')->label('Dipublikasikan')->dateTime('d M Y, H:i'),
                 ]),

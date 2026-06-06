@@ -52,6 +52,38 @@ class MasterPengumumanResource extends Resource
         ]);
     }
 
+    public static function canCreate(): bool
+    {
+        return in_array(auth()->user()?->role, [
+            UserRole::SuperAdmin->value,
+            UserRole::AdminPesantren->value,
+        ]);
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return in_array(auth()->user()?->role, [
+            UserRole::SuperAdmin->value,
+            UserRole::AdminPesantren->value,
+        ]);
+    }
+
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return in_array(auth()->user()?->role, [
+            UserRole::SuperAdmin->value,
+            UserRole::AdminPesantren->value,
+        ]);
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return in_array(auth()->user()?->role, [
+            UserRole::SuperAdmin->value,
+            UserRole::AdminPesantren->value,
+        ]);
+    }
+
     // Super admin melihat semua pengumuman lintas tenant.
     // Admin/Ustadz melihat pengumuman pesantrennya + global super admin, target admin/semua.
     public static function getEloquentQuery(): Builder
