@@ -14,7 +14,13 @@ class KamarForm
                 ->label('Nama Kamar')
                 ->required()
                 ->maxLength(100)
-                ->unique(ignoreRecord: true),
+                ->unique(
+                    table: 'kamar',
+                    column: 'nama_kamar',
+                    ignoreRecord: true,
+                    modifyRuleUsing: fn (\Illuminate\Validation\Rules\Unique $rule) =>
+                        $rule->where('pesantren_id', auth()->user()?->pesantren_id)
+                ),
             TextInput::make('kapasitas')
                 ->label('Kapasitas')
                 ->numeric()

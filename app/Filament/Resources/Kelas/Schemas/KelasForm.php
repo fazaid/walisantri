@@ -14,7 +14,13 @@ class KelasForm
                 ->label('Nama Kelas')
                 ->required()
                 ->maxLength(100)
-                ->unique(ignoreRecord: true),
+                ->unique(
+                    table: 'kelas',
+                    column: 'nama_kelas',
+                    ignoreRecord: true,
+                    modifyRuleUsing: fn (\Illuminate\Validation\Rules\Unique $rule) =>
+                        $rule->where('pesantren_id', auth()->user()?->pesantren_id)
+                ),
         ]);
     }
 }

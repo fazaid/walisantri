@@ -36,6 +36,26 @@ class KelasResource extends Resource
         return Auth::user()?->role === 'admin_pesantren';
     }
 
+    public static function canCreate(): bool
+    {
+        return Auth::user()?->role === 'admin_pesantren';
+    }
+
+    public static function canEdit($record): bool
+    {
+        return Auth::user()?->role === 'admin_pesantren';
+    }
+
+    public static function canDelete($record): bool
+    {
+        return Auth::user()?->role === 'admin_pesantren';
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return Auth::user()?->role === 'admin_pesantren';
+    }
+
     public static function form(Schema $schema): Schema
     {
         return KelasForm::configure($schema);
