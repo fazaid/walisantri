@@ -50,7 +50,8 @@ class UserForm
                     ->options(fn () => Pesantren::pluck('nama_pesantren', 'id'))
                     ->searchable()
                     ->nullable()
-                    ->placeholder('Kosongkan untuk Super Admin'),
+                    ->placeholder('Kosongkan untuk Super Admin')
+                    ->hidden(fn () => auth()->user()?->role === UserRole::AdminPesantren->value),
 
                 TextInput::make('password')
                     ->label('Password')
