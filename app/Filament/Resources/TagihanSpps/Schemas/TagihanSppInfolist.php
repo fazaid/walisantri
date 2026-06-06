@@ -39,11 +39,6 @@ class TagihanSppInfolist
                         ->label('Konfirmasi Dikirim')
                         ->dateTime('d M Y, H:i')
                         ->placeholder('Belum ada konfirmasi'),
-                    TextEntry::make('status')
-                        ->label('Status')
-                        ->badge()
-                        ->color(fn (TagihanSpp $record): string => $record->status->color())
-                        ->formatStateUsing(fn (TagihanSpp $record): string => $record->status->label()),
                     ImageEntry::make('bukti_transfer')
                         ->label('Bukti Transfer')
                         ->disk('public')

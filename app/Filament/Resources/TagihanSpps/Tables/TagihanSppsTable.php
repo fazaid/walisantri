@@ -172,15 +172,17 @@ class TagihanSppsTable
                             ->label('Catatan (opsional)'),
                     ])
                     ->action(function (TagihanSpp $record, array $data): void {
-                        PembayaranSpp::create([
-                            'pesantren_id'   => $record->pesantren_id,
-                            'tagihan_spp_id' => $record->id,
-                            'jumlah'         => $record->nominal,
-                            'tanggal_bayar'  => $data['tanggal_bayar'],
-                            'metode_bayar'   => $data['metode_bayar'],
-                            'catatan'        => $data['catatan'] ?? null,
-                            'dicatat_oleh'   => auth()->id(),
-                        ]);
+                        if (! $record->pembayaran()->exists()) {
+                            PembayaranSpp::create([
+                                'pesantren_id'   => $record->pesantren_id,
+                                'tagihan_spp_id' => $record->id,
+                                'jumlah'         => $record->nominal,
+                                'tanggal_bayar'  => $data['tanggal_bayar'],
+                                'metode_bayar'   => $data['metode_bayar'],
+                                'catatan'        => $data['catatan'] ?? null,
+                                'dicatat_oleh'   => auth()->id(),
+                            ]);
+                        }
 
                         $record->update(['status' => StatusTagihanSpp::Lunas]);
 
