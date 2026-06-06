@@ -67,8 +67,7 @@ class MasterPengumumanResource extends Resource
             ->where(function (Builder $query) use ($user) {
                 $query->where('pesantren_id', $user->pesantren_id)
                     ->orWhereNull('pesantren_id');
-            })
-            ->forAdmin();
+            });
     }
 
     public static function form(Schema $schema): Schema
