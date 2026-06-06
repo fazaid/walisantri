@@ -42,6 +42,27 @@ class KesantrianInventarisResource extends Resource
             'ustadz',
         ]);
     }
+
+    public static function canCreate(): bool
+    {
+        return Auth::user()?->role === 'admin_pesantren';
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return Auth::user()?->role === 'admin_pesantren';
+    }
+
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return Auth::user()?->role === 'admin_pesantren';
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return Auth::user()?->role === 'admin_pesantren';
+    }
+
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();

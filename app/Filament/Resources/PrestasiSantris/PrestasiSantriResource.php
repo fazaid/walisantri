@@ -46,6 +46,32 @@ class PrestasiSantriResource extends Resource
         return static::canAccess();
     }
 
+    public static function canCreate(): bool
+    {
+        return in_array(auth()->user()?->role, [
+            UserRole::AdminPesantren->value,
+            UserRole::Ustadz->value,
+        ]);
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return in_array(auth()->user()?->role, [
+            UserRole::AdminPesantren->value,
+            UserRole::Ustadz->value,
+        ]);
+    }
+
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return auth()->user()?->role === UserRole::AdminPesantren->value;
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return auth()->user()?->role === UserRole::AdminPesantren->value;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return PrestasiSantriForm::configure($schema);

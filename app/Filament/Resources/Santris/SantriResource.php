@@ -54,6 +54,16 @@ class SantriResource extends Resource
         return Auth::user()?->role === 'admin_pesantren';
     }
 
+    public static function canDelete($record): bool
+    {
+        return Auth::user()?->role === 'admin_pesantren';
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return Auth::user()?->role === 'admin_pesantren';
+    }
+
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();

@@ -42,6 +42,27 @@ class KesantrianKarakterRaporResource extends Resource
             'ustadz',
         ]);
     }
+
+    public static function canCreate(): bool
+    {
+        return in_array(Auth::user()?->role, ['admin_pesantren', 'ustadz']);
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return in_array(Auth::user()?->role, ['admin_pesantren', 'ustadz']);
+    }
+
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return Auth::user()?->role === 'admin_pesantren';
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return Auth::user()?->role === 'admin_pesantren';
+    }
+
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
