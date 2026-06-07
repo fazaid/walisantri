@@ -92,7 +92,7 @@
                     @foreach($pengumuman as $item)
                         <div class="border-b border-gray-50 pb-4 last:border-0 last:pb-0">
                             <p class="font-medium text-gray-900 text-sm">{{ $item->judul_maklumat }}</p>
-                            <p class="text-gray-500 text-sm mt-1 line-clamp-2">{{ $item->isi_maklumat }}</p>
+                            <p class="text-gray-500 text-sm mt-1 line-clamp-2">{{ Str::limit(strip_tags($item->isi_maklumat), 120) }}</p>
                             <p class="text-xs text-gray-400 mt-1">{{ $item->created_at->format('d M Y') }}</p>
                         </div>
                     @endforeach

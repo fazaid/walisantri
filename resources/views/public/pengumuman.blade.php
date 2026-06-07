@@ -22,7 +22,7 @@
         @forelse($pengumuman as $item)
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-4">
                 <p class="font-semibold text-gray-900">{{ $item->judul_maklumat }}</p>
-                <p class="text-gray-600 text-sm mt-2 leading-relaxed whitespace-pre-line">{{ $item->isi_maklumat }}</p>
+                <p class="text-gray-600 text-sm mt-2 leading-relaxed whitespace-pre-line">{{ strip_tags($item->isi_maklumat) }}</p>
                 <p class="text-xs text-gray-400 mt-3">{{ $item->created_at->format('d F Y, H:i') }}</p>
             </div>
         @empty
