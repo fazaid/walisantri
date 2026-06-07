@@ -578,9 +578,17 @@ Dashboard                        ← semua role
 ── Keuangan (group) ──
   Tagihan SPP Banknotes [admin_pesantren only, Rintisan+]
 ──
-Pengumuman SpeakerWave · Pengguna UserGroup [Admin+SuperAdmin] · Pesantren BuildingOffice2 [SuperAdmin only]
+── Langganan (group) ── [super_admin only]
+  Order Banknotes · Kupon Tag
+──
+── Manajemen (group) ──
+  Pengguna UserGroup [Admin+SuperAdmin]
+──
+Pengumuman SpeakerWave · Pesantren BuildingOffice2 [SuperAdmin only]
 Demo Request [super_admin only] ← masuk di bawah Pesantren
 ```
+
+> Urutan grup navigasi diregistrasi eksplisit di `AdminPanelProvider::navigationGroups()` — `Santri → Akademik → Kesantrian → Keuangan → Langganan → Manajemen` — agar tak lagi bergantung pada nilai `navigationSort` item pertama tiap grup (yang rapuh terhadap reorder/pemindahan resource antar grup).
 
 > Kelas & Kamar hanya tampil untuk `admin_pesantren` (bukan ustadz). Ustadz hanya melihat data santri binaannya di semua menu Kesantrian. TagihanSpp hanya `admin_pesantren` + `super_admin` (bukan ustadz).
 
