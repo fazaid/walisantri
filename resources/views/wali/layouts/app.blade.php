@@ -62,6 +62,7 @@
         $isSantriActive     = request()->routeIs('wali.santri.show');
         $isPengumumanActive = request()->routeIs('wali.pengumuman');
         $isSppActive        = request()->routeIs('wali.spp');
+        $isRaporActive      = request()->routeIs('wali.rapor');
 
         $firstSantriId  = auth()->user()?->anakSantri()->value('id');
         $santriTabUrl   = $firstSantriId
@@ -117,6 +118,18 @@
                           d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                 </svg>
                 Pengumuman
+            </a>
+
+            {{-- Tab: Rapor --}}
+            <a href="{{ route('wali.rapor') }}"
+               class="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-xs font-medium transition-colors
+                      {{ $isRaporActive ? 'text-teal-600' : 'text-gray-400 hover:text-gray-600' }}">
+                <svg class="w-6 h-6" fill="{{ $isRaporActive ? 'currentColor' : 'none' }}"
+                     stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25M9 16.5v.75m3-3v3M15 12v5.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/>
+                </svg>
+                Rapor
             </a>
 
         </div>
