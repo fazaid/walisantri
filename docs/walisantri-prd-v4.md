@@ -4,7 +4,9 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Juni 2026 — v4.4
+**Last Updated:** Juni 2026 — v4.5
+
+**Changelog v4.5:** Modul **Akademik Formal** — entitas baru `mata_pelajaran` (kelas + ustadz pengampu tetap, master data `admin_pesantren`) dan `nilai_akademik` (nilai tunggal per santri/mapel/periode, input `admin_pesantren` + `ustadz` pengampu, unique `(santri_id, mata_pelajaran_id, tahun_ajaran, periode)`); halaman **Rapor Akademik** agregasi nilai per santri dengan ekspor PDF (reuse `barryvdh/laravel-dompdf`). Grup navigasi Filament **Akademik** baru — menggabungkan Mata Pelajaran, Nilai Akademik, Rapor Akademik dengan 3 resource Tahfidz yang dipindah dari grup Kesantrian (selaras nama modul §3.2 & §5.1). Tersedia di semua paket termasuk Gratis (gate `access-modul-akademik` sudah ada sejak v4.x). Closes gap landing page yang sejak awal menjanjikan modul ini (lihat §22 — "akademik formal" kini bukan lagi item ditunda).
 
 **Changelog v4.4:** Modul **SPP** (Sumbangan Pembinaan Pendidikan) — tagihan bulanan manual per santri, rekening bank pesantren disimpan di `profil` jsonb, konfirmasi transfer oleh wali (upload foto bukti → status `menunggu_konfirmasi`), verifikasi & tandai lunas oleh admin, notifikasi tunggakan di dashboard wali; tabel `tagihan_spp` + `pembayaran_spp` (tenant/). Modul **Prestasi Santri** — CRUD prestasi (judul, kategori, tingkat, posisi, tanggal, penyelenggara, sertifikat) dengan enum `TingkatPrestasi` (internal/kabupaten/provinsi/nasional/internasional); tabel `prestasi_santri` (tenant/); tampil di portal wali pada halaman detail santri. **Demo Request / Waiting List** — halaman `/demo` di landing page (form waiting list: nama pesantren, kontak, email, HP, jumlah santri, kota, catatan); tabel `demo_requests` (central/); `DemoRequestResource` di Filament hanya `super_admin` (list, view, tandai dihubungi). Grup navigasi **Keuangan** baru di panel Filament.
 
@@ -202,6 +204,9 @@ erDiagram
   santri ||--o{ tahfidz_progress : setoran
   santri ||--o{ tahfidz_ujian : ujian
   santri ||--o{ tahfidz_rapor : rapor
+  kelas ||--o{ mata_pelajaran : memuat
+  mata_pelajaran ||--o{ nilai_akademik : dinilai
+  santri ||--o{ nilai_akademik : memperoleh
   santri ||--o{ kesantrian_mutabaah : amalan
   santri ||--o{ kesantrian_karakter_rapor : karakter
   santri ||--o{ kesantrian_kesehatan : medis
@@ -251,6 +256,22 @@ erDiagram
     string tahun_ajaran
     enum periode "Bulanan/Semester"
     enum nilai_tilawah "A/B/C/D"
+  }
+  mata_pelajaran {
+    bigint id PK
+    bigint pesantren_id FK
+    bigint kelas_id FK "ke kelas"
+    bigint ustadz_id FK "ke users — pengampu tetap"
+    string nama_mapel
+  }
+  nilai_akademik {
+    bigint id PK
+    bigint pesantren_id FK
+    bigint santri_id FK
+    bigint mata_pelajaran_id FK
+    string tahun_ajaran
+    enum periode "Bulanan/Semester_Ganjil/Semester_Genap"
+    smallint nilai "0-100"
   }
   kesantrian_mutabaah {
     bigint santri_id FK
@@ -345,6 +366,10 @@ erDiagram
 **`tahfidz_ujian`** — `penguji_id` FK→users · `tanggal_ujian` · `target_juz` enum(1/3/5/10/15/20/25/30) · `status_kelulusan` enum(`Lulus`/`Mengulang`) · `catatan_ujian` text null.
 
 **`tahfidz_rapor`** — `tahun_ajaran` (`"2026/2027"`) · `periode` enum(`Bulanan`/`Semester_Ganjil`/`Semester_Genap`) · `nilai_hafalan` (auto) · `nilai_tilawah`/`makhraj`/`tajwid` enum A/B/C/D · `rekomendasi_pembimbing` text. *Unique: `(santri_id, tahun_ajaran, periode)`.*
+
+**`mata_pelajaran`** — `id` PK · `pesantren_id` FK cascadeOnDelete · `kelas_id` FK→kelas cascadeOnDelete · `ustadz_id` FK→users cascadeOnDelete null (pengampu tetap — satu mapel = satu ustadz, bukan pivot many-to-many) · `nama_mapel` string(100) · timestamps. *Unique: `(pesantren_id, kelas_id, nama_mapel)`; Index: `(pesantren_id, kelas_id)`.* Master data, hanya `admin_pesantren` yang bisa CRUD (pola sama `kelas`/`kamar`).
+
+**`nilai_akademik`** — `id` PK · `pesantren_id` FK cascadeOnDelete · `santri_id` FK→santri cascadeOnDelete · `mata_pelajaran_id` FK→mata_pelajaran cascadeOnDelete · `tahun_ajaran` string(10) (`"2026/2027"`) · `periode` enum(`Bulanan`/`Semester_Ganjil`/`Semester_Genap`) · `nilai` smallint (0-100, nilai tunggal — bukan komponen berbobot tugas/UTS/UAS, mengikuti kesederhanaan `tahfidz_rapor`) · `catatan` text null · timestamps. *Unique: `(santri_id, mata_pelajaran_id, tahun_ajaran, periode)`; Index: `(pesantren_id, santri_id, tahun_ajaran, periode)`.* Input oleh `admin_pesantren` + `ustadz` (ustadz dibatasi hanya mapel yang ia ampu, via `mata_pelajaran.ustadz_id`). **Rapor Akademik** dihitung on-the-fly (agregasi rata-rata per mapel/periode) — tidak ada tabel `rapor_akademik` tersimpan, ekspor PDF via halaman Filament khusus.
 
 ### Modul Kesantrian & Logistik
 
@@ -542,10 +567,13 @@ Dashboard                        ← semua role
   Santri Users · Kelas AcademicCap [admin_pesantren] · Kamar Home [admin_pesantren]
   Prestasi Santri Trophy ← admin_pesantren + ustadz
 ──
+── Akademik (group) ──
+  Mata Pelajaran (1) RectangleStack [admin_pesantren] · Nilai Akademik (2) PencilSquare · Rapor Akademik (3) DocumentChartBar [PDF]
+  Setoran Tahfidz (4) BookOpen · Ujian Tahfidz (5) AcademicCap · Rapor Tahfidz (6) DocumentText
+──
 ── Kesantrian (group) ──
-  Setoran Tahfidz (1) BookOpen · Ujian Tahfidz (2) AcademicCap · Rapor Tahfidz (3) DocumentText
-  Mutaba'ah Harian (4) ClipboardDocumentList · Karakter Rapor (5) Star
-  Kesehatan (6) Heart [Berkembang+] · Inventaris (7) ArchiveBox [Maju]
+  Mutaba'ah Harian (1) ClipboardDocumentList · Karakter Rapor (2) Star
+  Kesehatan (3) Heart [Berkembang+] · Inventaris (4) ArchiveBox [Maju]
 ──
 ── Keuangan (group) ──
   Tagihan SPP Banknotes [admin_pesantren only, Rintisan+]
@@ -791,7 +819,7 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 | `users` mencampur staf & wali (dibedakan `role`) | Hemat untuk MVP; atribut staf vs wali belum dipisah | Saat **modul SDM/kepegawaian** masuk (gaji, jadwal mengajar, sertifikasi) → pertimbangkan pecah ke tabel profil `staff`/`wali` |
 | `kelas` & `kamar` sudah jadi entitas master (v4.3) | Tabel `kelas` + `kamar` per-tenant, santri FK ke keduanya | Saat butuh atribut lebih lanjut per-kelas/kamar (kapasitas, PJ, jadwal) → tambah kolom ke tabel yang sudah ada |
 | Sebagian enum di-hardcode (CHECK constraint) | Aman untuk nilai tetap (`A/B/C/D`, `tipe_setoran`) | Saat pesantren minta **menambah kategori** (mis. `kategori_keluhan`, jenis amalan) → migrasi ke tabel `master_{x}` per-tenant |
-| Semua entitas tenant menggantung ke `santri` | Pola per-santri konsisten & teruji | Saat **modul bukan-per-santri** masuk (keuangan/SPP, aset pondok, akademik formal) → entitas baru dengan akar selain `santri`, ikuti §1.7 |
+| Sebagian besar entitas tenant menggantung ke `santri` | Pola per-santri konsisten & teruji; SPP & **akademik formal** (`mata_pelajaran` — akar `kelas`, bukan `santri`, v4.5) sudah jadi contoh nyata "modul bukan-per-santri" yang ikut §1.7 | Saat modul bukan-per-santri lain masuk (mis. aset pondok, kepegawaian) → ikuti pola yang sama: entitas baru dengan akar selain `santri`, ikuti §1.7 |
 | Email unik global | Wali tak bisa pakai email sama di dua pesantren | Bila kasus ini sering → pertimbangkan identitas wali lintas-tenant (kompleks; kemungkinan tetap ditolak) |
 | Deploy host-langsung (tanpa Docker) | Ramping & cocok skala MVP solo-dev di VPS ~1GB; environment dijaga via PHP 8.4 di server + `setup-server.sh` idempotent | Saat (a) butuh service berat di-install native (mis. Meilisearch, runtime AI), (b) pindah multi-server / DB-per-tenant, atau (c) ada dev kedua (parity environment baru terbayar) → pindah ke **Docker Compose** (tanpa Coolify) |
 

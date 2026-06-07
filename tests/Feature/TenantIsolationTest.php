@@ -2,6 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Kelas;
+use App\Models\MataPelajaran;
+use App\Models\NilaiAkademik;
 use App\Models\Pesantren;
 use App\Models\Santri;
 use App\Models\User;
@@ -49,6 +52,92 @@ class TenantIsolationTest extends TestCase
             'kelas'                => '1A',
             'kamar'                => 'A',
         ]);
+    }
+
+    private function makeKelas(Pesantren $pesantren, string $nama): Kelas
+    {
+        return Kelas::create([
+            'pesantren_id' => $pesantren->id,
+            'nama_kelas'   => $nama,
+        ]);
+    }
+
+    private function makeMataPelajaran(Pesantren $pesantren, Kelas $kelas, User $ustadz, string $nama): MataPelajaran
+    {
+        return MataPelajaran::create([
+            'pesantren_id' => $pesantren->id,
+            'kelas_id'     => $kelas->id,
+            'ustadz_id'    => $ustadz->id,
+            'nama_mapel'   => $nama,
+        ]);
+    }
+
+    private function makeNilaiAkademik(Pesantren $pesantren, Santri $santri, MataPelajaran $mapel, int $nilai, string $periode = 'Semester_Ganjil'): NilaiAkademik
+    {
+        return NilaiAkademik::create([
+            'pesantren_id'      => $pesantren->id,
+            'santri_id'         => $santri->id,
+            'mata_pelajaran_id' => $mapel->id,
+            'tahun_ajaran'      => '2026/2027',
+            'periode'           => $periode,
+            'nilai'             => $nilai,
+        ]);
+    }
+
+    public function test_admin_pesantren_a_hanya_melihat_mata_pelajaran_pesantren_a(): void
+    {
+        $pesantrenA = $this->makePesantren('A');
+        $pesantrenB = $this->makePesantren('B');
+
+        $adminA  = $this->makeUser($pesantrenA, 'admin_pesantren', 'A');
+        $ustadzA = $this->makeUser($pesantrenA, 'ustadz', 'A');
+        $ustadzB = $this->makeUser($pesantrenB, 'ustadz', 'B');
+
+        $kelasA = $this->makeKelas($pesantrenA, 'Kelas A');
+        $kelasB = $this->makeKelas($pesantrenB, 'Kelas B');
+
+        $this->makeMataPelajaran($pesantrenA, $kelasA, $ustadzA, 'Tafsir');
+        $this->makeMataPelajaran($pesantrenA, $kelasA, $ustadzA, 'Hadits');
+        $this->makeMataPelajaran($pesantrenB, $kelasB, $ustadzB, 'Fiqih');
+
+        $this->actingAs($adminA);
+
+        $mapel = MataPelajaran::all();
+
+        $this->assertCount(2, $mapel);
+        $mapel->each(fn($m) => $this->assertEquals($pesantrenA->id, $m->pesantren_id));
+    }
+
+    public function test_admin_pesantren_a_hanya_melihat_nilai_akademik_pesantren_a(): void
+    {
+        $pesantrenA = $this->makePesantren('A');
+        $pesantrenB = $this->makePesantren('B');
+
+        $adminA  = $this->makeUser($pesantrenA, 'admin_pesantren', 'A');
+        $waliA   = $this->makeUser($pesantrenA, 'wali_santri', 'A');
+        $ustadzA = $this->makeUser($pesantrenA, 'ustadz', 'A');
+        $waliB   = $this->makeUser($pesantrenB, 'wali_santri', 'B');
+        $ustadzB = $this->makeUser($pesantrenB, 'ustadz', 'B');
+
+        $kelasA = $this->makeKelas($pesantrenA, 'Kelas A');
+        $kelasB = $this->makeKelas($pesantrenB, 'Kelas B');
+
+        $santriA = $this->makeSantri($pesantrenA, $waliA, $ustadzA, 'A001');
+        $santriB = $this->makeSantri($pesantrenB, $waliB, $ustadzB, 'B001');
+
+        $mapelA = $this->makeMataPelajaran($pesantrenA, $kelasA, $ustadzA, 'Tafsir');
+        $mapelB = $this->makeMataPelajaran($pesantrenB, $kelasB, $ustadzB, 'Fiqih');
+
+        $this->makeNilaiAkademik($pesantrenA, $santriA, $mapelA, 88, 'Semester_Ganjil');
+        $this->makeNilaiAkademik($pesantrenA, $santriA, $mapelA, 90, 'Semester_Genap');
+        $this->makeNilaiAkademik($pesantrenB, $santriB, $mapelB, 75, 'Semester_Ganjil');
+
+        $this->actingAs($adminA);
+
+        $nilai = NilaiAkademik::all();
+
+        $this->assertCount(2, $nilai);
+        $nilai->each(fn($n) => $this->assertEquals($pesantrenA->id, $n->pesantren_id));
     }
 
     public function test_admin_pesantren_a_hanya_melihat_santri_pesantren_a(): void

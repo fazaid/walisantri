@@ -31,8 +31,8 @@ class TahfidzProgressResource extends Resource
     protected static ?string $modelLabel = 'Setoran';
     protected static ?string $pluralModelLabel = 'Setoran Tahfidz';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Kesantrian';
-    protected static ?int $navigationSort = 1;
+    protected static string|UnitEnum|null $navigationGroup = 'Akademik';
+    protected static ?int $navigationSort = 4;
 
 
     public static function canViewAny(): bool

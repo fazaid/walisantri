@@ -32,9 +32,9 @@ class TahfidzUjianResource extends Resource
     protected static ?string $modelLabel = 'Ujian';
     protected static ?string $pluralModelLabel = 'Ujian Tahfidz';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Kesantrian';
+    protected static string|UnitEnum|null $navigationGroup = 'Akademik';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 5;
 
 
     public static function canViewAny(): bool

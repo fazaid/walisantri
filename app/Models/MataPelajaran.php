@@ -10,9 +10,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Table('kelas')]
-#[Fillable(['pesantren_id', 'nama_kelas'])]
-class Kelas extends Model
+#[Table('mata_pelajaran')]
+#[Fillable(['pesantren_id', 'kelas_id', 'ustadz_id', 'nama_mapel'])]
+class MataPelajaran extends Model
 {
     use HasFactory, Multitenantable;
 
@@ -21,8 +21,18 @@ class Kelas extends Model
         return $this->belongsTo(Pesantren::class);
     }
 
-    public function santri(): HasMany
+    public function kelas(): BelongsTo
     {
-        return $this->hasMany(Santri::class);
+        return $this->belongsTo(Kelas::class);
+    }
+
+    public function ustadz(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'ustadz_id');
+    }
+
+    public function nilaiAkademik(): HasMany
+    {
+        return $this->hasMany(NilaiAkademik::class);
     }
 }

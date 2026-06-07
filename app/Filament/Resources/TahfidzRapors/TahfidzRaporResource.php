@@ -31,8 +31,8 @@ class TahfidzRaporResource extends Resource
     protected static ?string $modelLabel = 'Rapor';
     protected static ?string $pluralModelLabel = 'Rapor Tahfidz';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Kesantrian';
-    protected static ?int $navigationSort = 3;
+    protected static string|UnitEnum|null $navigationGroup = 'Akademik';
+    protected static ?int $navigationSort = 6;
 
 
     public static function canViewAny(): bool

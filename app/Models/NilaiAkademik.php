@@ -8,11 +8,18 @@ use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Table('kelas')]
-#[Fillable(['pesantren_id', 'nama_kelas'])]
-class Kelas extends Model
+#[Table('nilai_akademik')]
+#[Fillable([
+    'pesantren_id',
+    'santri_id',
+    'mata_pelajaran_id',
+    'tahun_ajaran',
+    'periode',
+    'nilai',
+    'catatan',
+])]
+class NilaiAkademik extends Model
 {
     use HasFactory, Multitenantable;
 
@@ -21,8 +28,13 @@ class Kelas extends Model
         return $this->belongsTo(Pesantren::class);
     }
 
-    public function santri(): HasMany
+    public function santri(): BelongsTo
     {
-        return $this->hasMany(Santri::class);
+        return $this->belongsTo(Santri::class);
+    }
+
+    public function mataPelajaran(): BelongsTo
+    {
+        return $this->belongsTo(MataPelajaran::class);
     }
 }

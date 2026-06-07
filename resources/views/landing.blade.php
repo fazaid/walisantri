@@ -97,7 +97,7 @@
                     Kelola kelas, mata pelajaran, dan nilai santri. Input nilai mudah, rekap otomatis, dan ekspor rapor ke PDF.
                 </p>
                 <ul class="mt-4 space-y-1.5">
-                    @foreach(['Manajemen kelas & mapel', 'Input & rekap nilai', 'Ekspor rapor PDF/Excel'] as $item)
+                    @foreach(['Manajemen kelas & mapel', 'Input & rekap nilai', 'Ekspor rapor PDF'] as $item)
                         <li class="flex items-center gap-2 text-sm text-gray-600">
                             <span class="text-teal-500">✓</span> {{ $item }}
                         </li>
