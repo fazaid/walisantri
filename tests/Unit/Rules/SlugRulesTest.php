@@ -4,24 +4,13 @@ namespace Tests\Unit\Rules;
 
 use App\Rules\SlugNotReserved;
 use App\Rules\ValidTenantSlug;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Validator;
 use Tests\TestCase;
 
 class SlugRulesTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        // Buat tabel slug_releases di SQLite test jika belum ada
-        if (! Schema::hasTable('slug_releases')) {
-            Schema::create('slug_releases', function ($table) {
-                $table->string('slug')->primary();
-                $table->timestamp('released_at');
-            });
-        }
-    }
+    use RefreshDatabase;
 
     public function test_valid_slug_passes(): void
     {
