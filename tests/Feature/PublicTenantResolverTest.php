@@ -11,6 +11,14 @@ class PublicTenantResolverTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // View profil publik pakai @vite — manifest tidak dibangun di lingkungan test.
+        $this->withoutVite();
+    }
+
     /** Subdomain publik mengikuti pola route `{slug}.` . config('app.base_domain'). */
     private function hostFor(string $slug): string
     {
