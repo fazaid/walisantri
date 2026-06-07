@@ -316,6 +316,7 @@ erDiagram
     bigint pesantren_id FK "scoped, bukan per-santri"
     string judul_maklumat
     text isi_maklumat
+    enum target_audience "admin/wali/semua — filter visibilitas (panel & situs publik)"
   }
 ```
 
@@ -355,7 +356,7 @@ erDiagram
 
 **`kesantrian_inventaris`** — `nama_barang_umum` · `kode_unik_fisik` unique (`[Inisial]-[Barang]-[Nomor]`, mis. `FZ-SRG-01`) · `kuota_regulasi_maksimal` smallint · `kondisi_barang` enum(`Baik`/`Layak_Rusak`/`Hilang`) · `tanggal_sidak_terakhir` date null.
 
-**`master_pengumuman`** — `judul_maklumat` · `isi_maklumat` text · timestamps. *Index: `(pesantren_id, created_at)`.*
+**`master_pengumuman`** — `judul_maklumat` · `isi_maklumat` text · `target_audience` enum(`admin`/`wali`/`semua`, default `semua`) — kontrol visibilitas: filter feed dashboard wali & **feed pengumuman publik** di `{slug}.walisantri.com` (§1.4) hanya menampilkan `wali`/`semua`, menyembunyikan pengumuman ber-target `admin` dari situs publik · timestamps. *Index: `(pesantren_id, created_at)`.*
 
 ### Modul Keuangan
 
