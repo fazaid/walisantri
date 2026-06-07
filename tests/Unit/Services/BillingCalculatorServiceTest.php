@@ -4,11 +4,14 @@ namespace Tests\Unit\Services;
 
 use App\Models\Pesantren;
 use App\Services\BillingCalculatorService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class BillingCalculatorServiceTest extends TestCase
 {
+    use RefreshDatabase;
+
     private BillingCalculatorService $svc;
 
     protected function setUp(): void

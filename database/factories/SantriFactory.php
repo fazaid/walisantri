@@ -19,8 +19,6 @@ class SantriFactory extends Factory
             'pembimbing_ustadz_id' => User::factory()->ustadz(),
             'nis'                  => fake()->unique()->numerify('########'),
             'nama_lengkap'         => fake()->name(),
-            'kelas'                => fake()->randomElement(['1A', '1B', '2A', '2B', '3A']),
-            'kamar'                => fake()->randomElement(['Umar', 'Ali', 'Abu Bakar', 'Utsman']),
             'status_aktif'         => true,
         ];
     }

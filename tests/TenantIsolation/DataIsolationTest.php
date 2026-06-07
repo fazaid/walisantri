@@ -92,8 +92,6 @@ class DataIsolationTest extends TestCase
             'pembimbing_ustadz_id' => $admin->id,
             'nis'                  => 'TEST001',
             'nama_lengkap'         => 'Santri Test',
-            'kelas'                => '1A',
-            'kamar'                => 'A1',
         ]);
 
         $this->assertEquals($pesantren->id, $santri->pesantren_id,

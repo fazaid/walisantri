@@ -33,7 +33,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
-          extensions: pdo_sqlite, pdo_pgsql
+          extensions: pdo_pgsql
           coverage: none
 
       - name: Install Composer dependencies
@@ -44,10 +44,7 @@ jobs:
           cp .env.example .env
           php artisan key:generate
 
-      - name: Run Unit & Feature tests (SQLite)
-        run: php artisan test --testsuite=Unit,Feature --parallel
-
-      - name: Run TenantIsolation tests (PostgreSQL)
+      - name: Run test suite (PostgreSQL)
         env:
           DB_CONNECTION: pgsql
           DB_HOST: 127.0.0.1
@@ -55,7 +52,7 @@ jobs:
           DB_DATABASE: walisantri_test
           DB_USERNAME: postgres
           DB_PASSWORD: postgres
-        run: php artisan test --testsuite=TenantIsolation
+        run: php artisan test
 
   deploy:
     name: Deploy ke VPS (walisantri.com)
