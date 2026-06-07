@@ -63,7 +63,7 @@ class ReportController extends Controller
             ->sum();
 
         $totalJuzHafalan = $sumMaxAyat > 0
-            ? round($sumMaxAyat / 604 * 30, 1)
+            ? round($sumMaxAyat / 6236 * 30, 1)
             : 0;
 
         // ── Summary Card 2: Persentase Amalan 7 Hari Terakhir ────────────────

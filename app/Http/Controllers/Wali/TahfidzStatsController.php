@@ -57,7 +57,7 @@ class TahfidzStatsController extends Controller
             ->pluck('max_ayat')
             ->sum();
 
-        $estimasiJuz = $sumMaxAyat > 0 ? round($sumMaxAyat / 604 * 30, 1) : 0;
+        $estimasiJuz = $sumMaxAyat > 0 ? round($sumMaxAyat / 6236 * 30, 1) : 0;
 
         // Distribusi nilai kelancaran
         $distribusiNilai = TahfidzProgress::where('santri_id', $santri->id)

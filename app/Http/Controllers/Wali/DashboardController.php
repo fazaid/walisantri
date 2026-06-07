@@ -63,7 +63,7 @@ class DashboardController extends Controller
         $sumMaxAyat = TahfidzProgress::where('santri_id', $santri->id)
             ->select('nama_surah', DB::raw('MAX(ayat_selesai) as max_ayat'))
             ->groupBy('nama_surah')->pluck('max_ayat')->sum();
-        $totalJuz = $sumMaxAyat > 0 ? round($sumMaxAyat / 604 * 30, 1) : 0;
+        $totalJuz = $sumMaxAyat > 0 ? round($sumMaxAyat / 6236 * 30, 1) : 0;
 
         // Persentase amalan 7 hari terakhir
         $mutabaah = KesantrianMutabaah::where('santri_id', $santri->id)
