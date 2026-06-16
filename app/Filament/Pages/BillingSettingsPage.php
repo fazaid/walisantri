@@ -39,9 +39,11 @@ class BillingSettingsPage extends Page implements HasForms
     public int $harga_berkembang          = 0;
     public int $harga_maju_base           = 0;
     public int $harga_maju_per_100_santri = 0;
+    public int $kuota_gratis              = 0;
     public int $kuota_rintisan            = 0;
     public int $kuota_berkembang          = 0;
     public int $kuota_maju_base           = 0;
+    public int $bonus_bulan_enam          = 0;
     public int $bonus_bulan_tahunan       = 0;
 
     public static function canAccess(): bool
@@ -80,8 +82,11 @@ class BillingSettingsPage extends Page implements HasForms
                 ]),
 
             Section::make('Kuota Santri per Paket')
-                ->columns(3)
+                ->columns(4)
                 ->schema([
+                    TextInput::make('kuota_gratis')
+                        ->label('Gratis')->numeric()->minValue(1)->required()
+                        ->suffix('santri'),
                     TextInput::make('kuota_rintisan')
                         ->label('Rintisan')->numeric()->minValue(1)->required()
                         ->suffix('santri'),
@@ -93,10 +98,16 @@ class BillingSettingsPage extends Page implements HasForms
                         ->suffix('santri'),
                 ]),
 
-            Section::make('Diskon Berlangganan Tahunan')
+            Section::make('Diskon Durasi Berlangganan')
+                ->columns(2)
                 ->schema([
+                    TextInput::make('bonus_bulan_enam')
+                        ->label('Bonus bulan gratis — langganan 6 bulan')
+                        ->numeric()->minValue(0)->maxValue(3)->required()
+                        ->suffix('bulan')
+                        ->helperText('Contoh: nilai 1 → bayar 5 bulan, aktif 6 bulan'),
                     TextInput::make('bonus_bulan_tahunan')
-                        ->label('Bonus bulan gratis saat berlangganan 12 bulan')
+                        ->label('Bonus bulan gratis — langganan 12 bulan')
                         ->numeric()->minValue(0)->maxValue(6)->required()
                         ->suffix('bulan')
                         ->helperText('Contoh: nilai 2 → bayar 10 bulan, aktif 12 bulan'),
