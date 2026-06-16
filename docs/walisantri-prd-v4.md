@@ -747,7 +747,7 @@ Admin ajukan penghapusan permanen ke Super Admin via email → diproses ≤7 har
 
 **Upgrade:** Admin ajukan di `/billing` → Super Admin verifikasi bayar, update `paket_langganan` & `max_santri_kuota` di panel admin → Gate otomatis update, modul baru langsung aktif tanpa logout.
 
-**Kebijakan durasi saat upgrade:** Sisa masa aktif lama dipertahankan sebagai titik awal, durasi baru ditambahkan di atasnya (tidak ada proration). Untuk mencegah tenant dengan langganan panjang membeli upgrade dengan durasi minimal, berlaku batas minimum:
+**Kebijakan durasi saat upgrade:** Sisa masa aktif lama **dipertahankan** sebagai titik awal (`expired_at` lama), durasi baru ditambahkan di atasnya — paket langsung berganti saat konfirmasi. Tidak ada proration. Contoh: Rintisan 12 bulan aktif + upgrade Tumbuh 12 bulan = tenant mendapat Tumbuh selama 24 bulan ke depan. Ini disengaja — mendorong upgrade lebih awal tanpa membuat tenant merasa kehilangan sisa langganan. Untuk mencegah pembelian durasi terlalu pendek saat sisa aktif masih panjang, berlaku batas minimum:
 
 | Sisa masa aktif | Minimum durasi upgrade |
 |---|---|
