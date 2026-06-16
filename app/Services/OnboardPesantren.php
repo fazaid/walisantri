@@ -16,7 +16,7 @@ class OnboardPesantren
      * 1. Buat baris pesantrens
      * 2. Buat baris tenant_domains (subdomain otomatis)
      * 3. Buat user pertama role admin_pesantren
-     * 4. Aktifkan trial 14 hari
+     * 4. Aktifkan trial 30 hari
      * 5. Catat audit log
      */
     public function execute(
@@ -34,9 +34,9 @@ class OnboardPesantren
                 'nama_pesantren'     => $namaPesantren,
                 'slug'               => $slug,
                 'paket_langganan'    => 'gratis',
-                'max_santri_kuota'   => 10,
+                'max_santri_kuota'   => 5,
                 'status_berlangganan' => 'trial',
-                'expired_at'         => now()->addDays(14),
+                'expired_at'         => now()->addDays(30),
                 'santri_count_cache' => 0,
                 'onboarding_completed_steps' => [],
             ]);

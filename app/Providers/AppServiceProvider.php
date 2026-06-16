@@ -40,11 +40,12 @@ class AppServiceProvider extends ServiceProvider
     // -----------------------------------------------------------------
     private function registerModuleGates(): void
     {
-        // Modul Kesehatan — Berkembang ke atas (§5.1)
+        // Modul Kesehatan — Rintisan ke atas (§5.1, v4.6: dipindah dari Berkembang+)
         Gate::define('access-modul-kesehatan', function ($user) {
             if ($user->isSuperAdmin()) return true;
 
             return in_array($user->pesantren?->paket_langganan, [
+                'rintisan',
                 'berkembang',
                 'maju',
             ]);
