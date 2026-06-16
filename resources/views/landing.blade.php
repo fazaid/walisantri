@@ -430,9 +430,9 @@
                     <li class="flex items-start gap-2 text-sm font-medium text-teal-700">
                         <span class="mt-0.5 shrink-0">✓</span>
                         <span class="harga-per-santri"
-                              data-bulanan="Rp {{ number_format($hargaPerSantri, 0, ',', '.') }}/santri/bulan"
-                              data-tahunan="Rp {{ number_format($hargaPerSantriTahunan, 0, ',', '.') }}/santri/bulan">
-                            Rp {{ number_format($hargaPerSantri, 0, ',', '.') }}/santri/bulan
+                              data-bulanan="hanya Rp {{ number_format($hargaPerSantri, 0, ',', '.') }}/santri"
+                              data-tahunan="hanya Rp {{ number_format($hargaPerSantriTahunan, 0, ',', '.') }}/santri">
+                            hanya Rp {{ number_format($hargaPerSantri, 0, ',', '.') }}/santri
                         </span>
                     </li>
                     @endif
