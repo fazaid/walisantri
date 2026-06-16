@@ -3,9 +3,11 @@
 namespace App\Filament\Resources\Orders\Schemas;
 
 use App\Models\Order;
+use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Storage;
 
 class OrderInfolist
 {
@@ -87,6 +89,24 @@ class OrderInfolist
                         ->formatStateUsing(fn (int $state): string => 'Rp ' . number_format($state, 0, ',', '.'))
                         ->weight('bold')
                         ->size('lg'),
+                ]),
+
+            Section::make('Bukti Pembayaran')
+                ->columns(2)
+                ->schema([
+                    TextEntry::make('invoice.bukti_transfer_uploaded_at')
+                        ->label('Diunggah Pada')
+                        ->dateTime('d F Y, H:i')
+                        ->placeholder('Belum ada bukti transfer'),
+
+                    TextEntry::make('invoice.bukti_transfer_path')
+                        ->label('File')
+                        ->formatStateUsing(fn (?string $state, Order $record): string =>
+                            $state
+                                ? '✓ Tersedia — gunakan tombol "Lihat Bukti Transfer" di atas'
+                                : '—'
+                        )
+                        ->placeholder('—'),
                 ]),
 
             Section::make('Konfirmasi')

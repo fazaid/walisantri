@@ -14,7 +14,10 @@ use App\Http\Controllers\Wali\KesehatanStatsController;
 use App\Http\Controllers\Wali\MutabaahStatsController;
 use App\Http\Controllers\Wali\SppController;
 use App\Http\Controllers\Wali\TahfidzStatsController;
+use App\Models\Order;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 
 $baseDomain = config('app.base_domain', 'walisantri.com');
 $appDomain  = config('app.domain', 'app.walisantri.com');
@@ -82,6 +85,17 @@ Route::domain($appDomain)->group(function () {
     Route::get('/report/{uuid}', [ReportController::class, 'showByUuid'])
         ->middleware('magic.token')
         ->name('wali.magic.report');
+
+    // --- Bukti transfer order — hanya super_admin ---
+    Route::get('/orders/{order}/bukti-transfer', function (Order $order) {
+        abort_unless(Auth::check() && Auth::user()->role === 'super_admin', 403);
+        abort_unless($order->invoice?->bukti_transfer_path, 404);
+
+        $path = $order->invoice->bukti_transfer_path;
+        abort_unless(Storage::disk('local')->exists($path), 404);
+
+        return Storage::disk('local')->response($path);
+    })->middleware('auth')->name('orders.bukti-transfer');
 
     // --- Logout wali (magic link maupun login biasa) ---
     Route::post('/wali/logout', function () {

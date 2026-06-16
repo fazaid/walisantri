@@ -18,6 +18,14 @@ class ViewOrder extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('lihat_bukti')
+                ->label('Lihat Bukti Transfer')
+                ->icon('heroicon-o-photo')
+                ->color('gray')
+                ->visible(fn (): bool => (bool) $this->record->invoice?->bukti_transfer_path)
+                ->url(fn (): string => route('orders.bukti-transfer', $this->record))
+                ->openUrlInNewTab(),
+
             Action::make('konfirmasi_langsung')
                 ->label('Konfirmasi Langsung')
                 ->icon('heroicon-o-bolt')
