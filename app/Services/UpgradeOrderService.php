@@ -123,7 +123,11 @@ class UpgradeOrderService
 
     public function confirmOrder(Order $order, User $confirmedBy, ?string $catatanAdmin = null): void
     {
-        abort_unless($order->isAwaitingConfirmation(), 422, 'Order tidak dalam status menunggu konfirmasi.');
+        abort_unless(
+            $order->isAwaitingConfirmation() || $order->isPendingPayment(),
+            422,
+            'Order tidak dalam status yang dapat dikonfirmasi.'
+        );
 
         DB::transaction(function () use ($order, $confirmedBy, $catatanAdmin) {
             $pesantren = $order->pesantren;

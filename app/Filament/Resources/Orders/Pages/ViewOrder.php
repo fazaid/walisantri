@@ -18,6 +18,35 @@ class ViewOrder extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('konfirmasi_langsung')
+                ->label('Konfirmasi Langsung')
+                ->icon('heroicon-o-bolt')
+                ->color('success')
+                ->visible(fn (): bool => $this->record->isPendingPayment())
+                ->requiresConfirmation()
+                ->modalHeading('Konfirmasi Tanpa Bukti Transfer')
+                ->modalDescription('Gunakan ini jika pembayaran sudah diterima secara langsung (tunai, transfer via konfirmasi verbal, dll). Paket pesantren akan langsung diupgrade.')
+                ->form([
+                    Textarea::make('catatan_admin')
+                        ->label('Catatan (wajib — catat metode/bukti pembayaran)')
+                        ->required()
+                        ->rows(3),
+                ])
+                ->action(function (array $data): void {
+                    app(UpgradeOrderService::class)->confirmOrder(
+                        $this->record,
+                        Auth::user(),
+                        $data['catatan_admin'],
+                    );
+
+                    $this->record->refresh();
+
+                    Notification::make()
+                        ->title('Order dikonfirmasi langsung!')
+                        ->success()
+                        ->send();
+                }),
+
             Action::make('konfirmasi')
                 ->label('Konfirmasi Order')
                 ->icon('heroicon-o-check-circle')
