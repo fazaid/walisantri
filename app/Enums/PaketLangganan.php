@@ -4,15 +4,13 @@ namespace App\Enums;
 
 enum PaketLangganan: string
 {
-    case Gratis    = 'gratis';
-    case Rintisan  = 'rintisan';
+    case Rintisan   = 'rintisan';
     case Berkembang = 'berkembang';
-    case Maju      = 'maju';
+    case Maju       = 'maju';
 
     public function label(): string
     {
         return match($this) {
-            self::Gratis     => 'Gratis',
             self::Rintisan   => 'Rintisan',
             self::Berkembang => 'Berkembang',
             self::Maju       => 'Maju',
@@ -22,7 +20,6 @@ enum PaketLangganan: string
     public function color(): string
     {
         return match($this) {
-            self::Gratis     => 'gray',
             self::Rintisan   => 'info',
             self::Berkembang => 'warning',
             self::Maju       => 'success',
@@ -32,7 +29,6 @@ enum PaketLangganan: string
     public function maxSantri(): int
     {
         return match($this) {
-            self::Gratis     => 10,
             self::Rintisan   => 100,
             self::Berkembang => 500,
             self::Maju       => 1000,

@@ -21,15 +21,6 @@ class BillingCalculatorServiceTest extends TestCase
         $this->svc = new BillingCalculatorService();
     }
 
-    public function test_paket_gratis(): void
-    {
-        $p = new Pesantren(['paket_langganan' => 'gratis', 'max_santri_kuota' => 5]);
-        $r = $this->svc->hitung($p);
-
-        $this->assertEquals(0, $r['total_biaya']);
-        $this->assertEquals(5, $r['kuota_maksimal']);
-    }
-
     public function test_paket_rintisan(): void
     {
         $p = new Pesantren(['paket_langganan' => 'rintisan', 'max_santri_kuota' => 100]);

@@ -17,7 +17,6 @@ class FixKuotaSantriCommand extends Command
         $isDryRun = $this->option('dry-run');
 
         $kuotaPerPaket = [
-            'gratis'     => BillingSetting::get('kuota_gratis', 5),
             'rintisan'   => BillingSetting::get('kuota_rintisan', 100),
             'berkembang' => BillingSetting::get('kuota_berkembang', 500),
         ];

@@ -33,10 +33,10 @@ class OnboardPesantren
             $pesantren = Pesantren::create([
                 'nama_pesantren'     => $namaPesantren,
                 'slug'               => $slug,
-                'paket_langganan'    => 'gratis',
-                'max_santri_kuota'   => 5,
+                'paket_langganan'     => 'rintisan',
+                'max_santri_kuota'    => \App\Models\BillingSetting::get('kuota_rintisan', 100),
                 'status_berlangganan' => 'trial',
-                'expired_at'         => now()->addDays(30),
+                'expired_at'          => now()->addDays(30),
                 'santri_count_cache' => 0,
                 'onboarding_completed_steps' => [],
             ]);

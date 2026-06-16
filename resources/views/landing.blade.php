@@ -295,28 +295,21 @@
 
             $paketHarga = [
                 [
-                    'nama'      => 'Gratis',
-                    'harga'     => 0,
-                    'kuota'     => BillingSetting::get('kuota_gratis', 5),
-                    'popular'   => false,
-                    'deskripsi' => 'Untuk mencoba dan evaluasi platform.',
-                    'fitur'     => ['Semua modul tersedia', 'Portal wali santri', 'Support via email'],
-                    'cta'       => ['label' => 'Daftar Gratis', 'href' => route('register'), 'style' => 'border'],
-                ],
-                [
                     'nama'      => 'Rintisan',
                     'harga'     => BillingSetting::get('harga_rintisan', 150_000),
                     'kuota'     => BillingSetting::get('kuota_rintisan', 100),
                     'popular'   => true,
+                    'trial'     => true,
                     'deskripsi' => 'Untuk pesantren yang baru berkembang.',
-                    'fitur'     => ['Semua modul tersedia', 'Portal wali santri', 'Ekspor PDF & Excel', 'Support prioritas'],
-                    'cta'       => ['label' => 'Mulai Sekarang', 'href' => route('register'), 'style' => 'solid'],
+                    'fitur'     => ['Trial 30 hari gratis', 'Semua modul tersedia', 'Portal wali santri', 'Ekspor PDF & Excel', 'Support prioritas'],
+                    'cta'       => ['label' => 'Mulai Trial Gratis', 'href' => route('register'), 'style' => 'solid'],
                 ],
                 [
                     'nama'      => 'Berkembang',
                     'harga'     => BillingSetting::get('harga_berkembang', 350_000),
                     'kuota'     => BillingSetting::get('kuota_berkembang', 500),
                     'popular'   => false,
+                    'trial'     => false,
                     'deskripsi' => 'Untuk pesantren menengah yang aktif.',
                     'fitur'     => ['Semua modul tersedia', 'Portal wali santri', 'Ekspor PDF & Excel', 'Support prioritas', 'Onboarding gratis'],
                     'cta'       => ['label' => 'Mulai Sekarang', 'href' => route('register'), 'style' => 'border'],
@@ -326,6 +319,7 @@
                     'harga'     => BillingSetting::get('harga_maju_base', 750_000),
                     'kuota'     => null,
                     'popular'   => false,
+                    'trial'     => false,
                     'deskripsi' => 'Untuk pesantren besar dengan kebutuhan khusus.',
                     'fitur'     => ['Semua modul tersedia', 'Portal wali santri', 'Ekspor PDF & Excel', 'Support prioritas', 'Onboarding gratis', 'Kuota custom 1.000+ santri'],
                     'cta'       => ['label' => 'Hubungi Kami', 'href' => route('demo'), 'style' => 'border'],
@@ -357,7 +351,7 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
             @foreach($paketHarga as $paket)
             @php
                 $hargaBulanan         = $paket['harga'];
@@ -377,7 +371,11 @@
             <div class="relative border rounded-2xl p-6 flex flex-col gap-4
                 {{ $paket['popular'] ? 'border-teal-500 shadow-lg shadow-teal-100 ring-1 ring-teal-500' : 'border-gray-200 hover:border-gray-300' }}">
 
-                @if($paket['popular'])
+                @if($paket['trial'])
+                <div class="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                    <span class="bg-teal-600 text-white text-xs font-semibold px-3 py-1 rounded-full">✓ Trial 30 Hari Gratis</span>
+                </div>
+                @elseif($paket['popular'])
                 <div class="absolute -top-3 left-1/2 -translate-x-1/2">
                     <span class="bg-teal-600 text-white text-xs font-semibold px-3 py-1 rounded-full">Paling Populer</span>
                 </div>

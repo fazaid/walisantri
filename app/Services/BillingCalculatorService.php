@@ -15,7 +15,6 @@ class BillingCalculatorService
     public function hitung(Pesantren $pesantren): array
     {
         return match ($pesantren->paket_langganan) {
-            'gratis'     => $this->paketTetap('Gratis', 0, $this->cfg('kuota_gratis', 5)),
             'rintisan'   => $this->paketTetap('Rintisan', $this->cfg('harga_rintisan', 150_000), $this->cfg('kuota_rintisan', 100)),
             'berkembang' => $this->paketTetap('Berkembang', $this->cfg('harga_berkembang', 350_000), $this->cfg('kuota_berkembang', 500)),
             'maju'       => $this->paketMaju($pesantren->max_santri_kuota),
@@ -26,7 +25,6 @@ class BillingCalculatorService
     public function hitungUntukTarget(string $paket, int $maxSantri): array
     {
         return match ($paket) {
-            'gratis'     => $this->paketTetap('Gratis', 0, $this->cfg('kuota_gratis', 5)),
             'rintisan'   => $this->paketTetap('Rintisan', $this->cfg('harga_rintisan', 150_000), $this->cfg('kuota_rintisan', 100)),
             'berkembang' => $this->paketTetap('Berkembang', $this->cfg('harga_berkembang', 350_000), $this->cfg('kuota_berkembang', 500)),
             'maju'       => $this->paketMaju($maxSantri),

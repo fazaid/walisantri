@@ -39,7 +39,6 @@ class BillingSettingsPage extends Page implements HasForms
     public int $harga_berkembang          = 0;
     public int $harga_maju_base           = 0;
     public int $harga_maju_per_100_santri = 0;
-    public int $kuota_gratis              = 0;
     public int $kuota_rintisan            = 0;
     public int $kuota_berkembang          = 0;
     public int $kuota_maju_base           = 0;
@@ -86,9 +85,6 @@ class BillingSettingsPage extends Page implements HasForms
             Section::make('Kuota Santri per Paket')
                 ->columns(4)
                 ->schema([
-                    TextInput::make('kuota_gratis')
-                        ->label('Gratis')->numeric()->minValue(1)->required()
-                        ->suffix('santri'),
                     TextInput::make('kuota_rintisan')
                         ->label('Rintisan')->numeric()->minValue(1)->required()
                         ->suffix('santri'),
