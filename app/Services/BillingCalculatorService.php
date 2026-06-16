@@ -44,8 +44,8 @@ class BillingCalculatorService
         $hargaB  = $this->cfg('harga_maju_base', 750_000);
         $hargaX  = $this->cfg('harga_maju_per_100_santri', 100_000);
 
-        $n  = max($quotaSantri, $base + 1);
-        $x  = (int) ceil(($n - $base) / 100);
+        $n  = max($quotaSantri, $base);
+        $x  = max(0, (int) ceil(($n - $base) / 100));
 
         $totalBiaya    = $hargaB + ($x * $hargaX);
         $kuotaMaksimal = $base + ($x * 100);

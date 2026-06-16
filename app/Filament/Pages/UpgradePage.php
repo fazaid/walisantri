@@ -38,7 +38,7 @@ class UpgradePage extends Page implements HasForms
     // Form state
     public string $paket_target            = '';
     public int    $durasi_bulan            = 1;
-    public int    $max_santri_kuota_target = 1100;
+    public int    $max_santri_kuota_target = 1000;
     public string $kode_kupon              = '';
 
     // Computed (reactive)
@@ -60,7 +60,7 @@ class UpgradePage extends Page implements HasForms
     {
         $pesantren = Auth::user()->pesantren;
         $this->paket_target            = $pesantren->paket_langganan ?? 'rintisan';
-        $this->max_santri_kuota_target = $pesantren->max_santri_kuota ?? 1100;
+        $this->max_santri_kuota_target = $pesantren->max_santri_kuota ?? 1000;
 
         $this->form->fill([
             'paket_target'            => $this->paket_target,
@@ -96,7 +96,7 @@ class UpgradePage extends Page implements HasForms
                             if ($state === 'maju') {
                                 $this->max_santri_kuota_target = max(
                                     $this->max_santri_kuota_target,
-                                    1100
+                                    1000
                                 );
                             }
                             $this->hitungHarga();
@@ -105,13 +105,13 @@ class UpgradePage extends Page implements HasForms
                     TextInput::make('max_santri_kuota_target')
                         ->label('Kuota Santri')
                         ->numeric()
-                        ->minValue(1001)
+                        ->minValue(1000)
                         ->step(100)
-                        ->helperText('Minimum 1.001 untuk paket Maju, kelipatan 100.')
+                        ->helperText('Minimum 1.000 untuk paket Maju, kelipatan 100.')
                         ->visible(fn () => $this->paket_target === 'maju')
                         ->live(onBlur: true)
                         ->afterStateUpdated(function (?string $state) {
-                            $this->max_santri_kuota_target = (int) ($state ?? 1100);
+                            $this->max_santri_kuota_target = (int) ($state ?? 1000);
                             $this->hitungHarga();
                         }),
                 ]),

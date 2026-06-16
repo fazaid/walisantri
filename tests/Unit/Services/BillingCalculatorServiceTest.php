@@ -89,10 +89,12 @@ class BillingCalculatorServiceTest extends TestCase
     public static function maju_provider(): array
     {
         // PRD §5.2: X=CEIL((N-1000)/100), Total=750k+(X*100k), Kuota=1000+(X*100)
+        // X=0 diizinkan: N=1000 → 750k, kuota 1000
         return [
+            'base 1000'  => [1000, 750_000, 1000],
             'base 1001'  => [1001, 850_000, 1100],
             'base 1100'  => [1100, 850_000, 1100],
-            'base 1200'  => [1200, 950_000, 1200], // contoh di PRD
+            'base 1200'  => [1200, 950_000, 1200],
             'base 1500'  => [1500, 1_250_000, 1500],
         ];
     }
