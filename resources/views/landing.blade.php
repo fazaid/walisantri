@@ -16,6 +16,7 @@
             <div class="hidden md:flex items-center gap-6">
                 <a href="#fitur" class="text-sm text-gray-500 hover:text-teal-700 font-medium">Fitur</a>
                 <a href="#cara-kerja" class="text-sm text-gray-500 hover:text-teal-700 font-medium">Cara Kerja</a>
+                <a href="#harga" class="text-sm text-gray-500 hover:text-teal-700 font-medium">Harga</a>
                 <a href="{{ route('demo') }}" class="text-sm text-gray-500 hover:text-teal-700 font-medium">Demo</a>
             </div>
             <div class="flex items-center gap-2 shrink-0">
@@ -284,6 +285,119 @@
         </div>
     </section>
 
+    {{-- Harga --}}
+    <section id="harga" class="max-w-6xl mx-auto px-6 py-20">
+        @php
+            use App\Models\BillingSetting;
+            $paketHarga = [
+                [
+                    'nama'     => 'Gratis',
+                    'harga'    => 0,
+                    'kuota'    => BillingSetting::get('kuota_gratis', 5),
+                    'popular'  => false,
+                    'deskripsi' => 'Untuk mencoba dan evaluasi platform.',
+                    'fitur'    => ['Semua modul tersedia', 'Portal wali santri', 'Support via email'],
+                    'cta'      => ['label' => 'Daftar Gratis', 'href' => route('register'), 'style' => 'border'],
+                ],
+                [
+                    'nama'     => 'Rintisan',
+                    'harga'    => BillingSetting::get('harga_rintisan', 150_000),
+                    'kuota'    => BillingSetting::get('kuota_rintisan', 100),
+                    'popular'  => true,
+                    'deskripsi' => 'Untuk pesantren yang baru berkembang.',
+                    'fitur'    => ['Semua modul tersedia', 'Portal wali santri', 'Ekspor PDF & Excel', 'Support prioritas'],
+                    'cta'      => ['label' => 'Mulai Sekarang', 'href' => route('register'), 'style' => 'solid'],
+                ],
+                [
+                    'nama'     => 'Berkembang',
+                    'harga'    => BillingSetting::get('harga_berkembang', 350_000),
+                    'kuota'    => BillingSetting::get('kuota_berkembang', 500),
+                    'popular'  => false,
+                    'deskripsi' => 'Untuk pesantren menengah yang aktif.',
+                    'fitur'    => ['Semua modul tersedia', 'Portal wali santri', 'Ekspor PDF & Excel', 'Support prioritas', 'Onboarding gratis'],
+                    'cta'      => ['label' => 'Mulai Sekarang', 'href' => route('register'), 'style' => 'border'],
+                ],
+                [
+                    'nama'     => 'Maju',
+                    'harga'    => BillingSetting::get('harga_maju_base', 750_000),
+                    'kuota'    => null,
+                    'popular'  => false,
+                    'deskripsi' => 'Untuk pesantren besar dengan kebutuhan khusus.',
+                    'fitur'    => ['Semua modul tersedia', 'Portal wali santri', 'Ekspor PDF & Excel', 'Support prioritas', 'Onboarding gratis', 'Kuota custom 1.000+ santri'],
+                    'cta'      => ['label' => 'Hubungi Kami', 'href' => route('demo'), 'style' => 'border'],
+                ],
+            ];
+        @endphp
+
+        <div class="text-center mb-14">
+            <h2 class="text-3xl font-bold text-gray-900 mb-4">Harga Transparan, Tanpa Biaya Tersembunyi</h2>
+            <p class="text-gray-500 max-w-xl mx-auto">
+                Mulai gratis, upgrade kapan saja sesuai pertumbuhan pesantren Anda.
+                Bayar per bulan, tidak ada kontrak jangka panjang.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
+            @foreach($paketHarga as $paket)
+            <div class="relative border rounded-2xl p-6 flex flex-col gap-4
+                {{ $paket['popular'] ? 'border-teal-500 shadow-lg shadow-teal-100 ring-1 ring-teal-500' : 'border-gray-200 hover:border-gray-300' }}">
+
+                @if($paket['popular'])
+                <div class="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <span class="bg-teal-600 text-white text-xs font-semibold px-3 py-1 rounded-full">Paling Populer</span>
+                </div>
+                @endif
+
+                <div>
+                    <div class="font-bold text-gray-900 text-lg mb-1">{{ $paket['nama'] }}</div>
+                    <div class="text-gray-500 text-sm">{{ $paket['deskripsi'] }}</div>
+                </div>
+
+                <div>
+                    @if($paket['harga'] === 0)
+                        <span class="text-3xl font-bold text-gray-900">Gratis</span>
+                    @else
+                        <span class="text-xs text-gray-400 font-medium">Mulai</span>
+                        <div>
+                            <span class="text-3xl font-bold text-gray-900">Rp {{ number_format($paket['harga'], 0, ',', '.') }}</span>
+                            <span class="text-sm text-gray-400">/bulan</span>
+                        </div>
+                    @endif
+                    <div class="mt-1 text-sm font-medium {{ $paket['popular'] ? 'text-teal-600' : 'text-gray-500' }}">
+                        @if($paket['kuota'])
+                            hingga {{ number_format($paket['kuota'], 0, ',', '.') }} santri
+                        @else
+                            kuota custom 1.000+ santri
+                        @endif
+                    </div>
+                </div>
+
+                <ul class="space-y-2 flex-1">
+                    @foreach($paket['fitur'] as $fitur)
+                    <li class="flex items-start gap-2 text-sm text-gray-600">
+                        <span class="text-teal-500 mt-0.5 shrink-0">✓</span>
+                        {{ $fitur }}
+                    </li>
+                    @endforeach
+                </ul>
+
+                <a href="{{ $paket['cta']['href'] }}"
+                   class="block text-center text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors
+                       {{ $paket['cta']['style'] === 'solid'
+                           ? 'bg-teal-600 text-white hover:bg-teal-700'
+                           : 'border border-gray-300 text-gray-700 hover:border-teal-400 hover:text-teal-700' }}">
+                    {{ $paket['cta']['label'] }}
+                </a>
+            </div>
+            @endforeach
+        </div>
+
+        <p class="text-center text-sm text-gray-400 mt-8">
+            Semua paket termasuk bonus masa aktif untuk pembayaran 6 bulan dan 12 bulan.
+            <a href="{{ route('demo') }}" class="text-teal-600 hover:underline">Konsultasi gratis →</a>
+        </p>
+    </section>
+
     {{-- CTA Demo --}}
     <section class="bg-gray-900 py-20">
         <div class="max-w-2xl mx-auto px-6 text-center">
@@ -313,6 +427,7 @@
                 Platform Digitalisasi Pesantren Indonesia
             </p>
             <div class="flex gap-6">
+                <a href="#harga" class="text-sm text-gray-500 hover:text-teal-700">Harga</a>
                 <a href="{{ route('demo') }}" class="text-sm text-gray-500 hover:text-teal-700">Demo</a>
                 <a href="{{ route('register') }}" class="text-sm text-gray-500 hover:text-teal-700">Daftar</a>
                 <a href="{{ route('login') }}" class="text-sm text-gray-500 hover:text-teal-700">Masuk</a>

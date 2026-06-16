@@ -19,12 +19,13 @@
         default     => ['label' => '—',            'color' => '#6b7280', 'bg' => '#f9fafb', 'border' => '#e5e7eb', 'dot' => '#9ca3af'],
     };
 
+    $kuotaLabel  = $kuota > 0 ? number_format($kuota, 0, ',', '.') . ' santri' : '—';
     $paketConfig = match($pesantren?->paket_langganan) {
-        'gratis'     => ['label' => 'Gratis',     'kuota' => '10 santri',   'color' => '#6b7280', 'bg' => '#f9fafb'],
-        'rintisan'   => ['label' => 'Rintisan',   'kuota' => '100 santri',  'color' => '#2563eb', 'bg' => '#eff6ff'],
-        'berkembang' => ['label' => 'Berkembang', 'kuota' => '500 santri',  'color' => '#d97706', 'bg' => '#fffbeb'],
-        'maju'       => ['label' => 'Maju',       'kuota' => number_format($kuota, 0, ',', '.') . ' santri', 'color' => '#059669', 'bg' => '#ecfdf5'],
-        default      => ['label' => '—',          'kuota' => '—',           'color' => '#6b7280', 'bg' => '#f9fafb'],
+        'gratis'     => ['label' => 'Gratis',     'kuota' => $kuotaLabel, 'color' => '#6b7280', 'bg' => '#f9fafb'],
+        'rintisan'   => ['label' => 'Rintisan',   'kuota' => $kuotaLabel, 'color' => '#2563eb', 'bg' => '#eff6ff'],
+        'berkembang' => ['label' => 'Berkembang', 'kuota' => $kuotaLabel, 'color' => '#d97706', 'bg' => '#fffbeb'],
+        'maju'       => ['label' => 'Maju',       'kuota' => $kuotaLabel, 'color' => '#059669', 'bg' => '#ecfdf5'],
+        default      => ['label' => '—',          'kuota' => '—',         'color' => '#6b7280', 'bg' => '#f9fafb'],
     };
 
     $expiredLabel = $expiredAt
