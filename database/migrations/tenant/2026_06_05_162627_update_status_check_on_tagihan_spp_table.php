@@ -7,12 +7,20 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            return;
+        }
+
         DB::statement('ALTER TABLE tagihan_spp DROP CONSTRAINT IF EXISTS tagihan_spp_status_check');
         DB::statement("ALTER TABLE tagihan_spp ADD CONSTRAINT tagihan_spp_status_check CHECK (status IN ('belum_bayar','menunggu_konfirmasi','lunas'))");
     }
 
     public function down(): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            return;
+        }
+
         DB::statement('ALTER TABLE tagihan_spp DROP CONSTRAINT IF EXISTS tagihan_spp_status_check');
         DB::statement("ALTER TABLE tagihan_spp ADD CONSTRAINT tagihan_spp_status_check CHECK (status IN ('belum_bayar','lunas'))");
     }
