@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Enums\DurasiLangganan;
 use App\Enums\PaketLangganan;
 use App\Models\Kupon;
+use App\Models\Pesantren;
 use App\Services\BillingCalculatorService;
 use App\Services\UpgradeOrderService;
 use BackedEnum;
@@ -41,6 +42,9 @@ class UpgradePage extends Page implements HasForms
     public int    $max_santri_kuota_target = 1000;
     public string $kode_kupon              = '';
 
+    // Computed once in mount — minimum durasi berdasarkan sisa masa aktif
+    public int $min_durasi_upgrade = 1;
+
     // Computed (reactive)
     public int    $harga_per_bulan             = 0;
     public int    $harga_total_sebelum_diskon  = 0;
@@ -61,6 +65,8 @@ class UpgradePage extends Page implements HasForms
         $pesantren = Auth::user()->pesantren;
         $this->paket_target            = $pesantren->paket_langganan ?? 'rintisan';
         $this->max_santri_kuota_target = $pesantren->max_santri_kuota ?? 1000;
+        $this->min_durasi_upgrade      = $this->hitungMinDurasi($pesantren);
+        $this->durasi_bulan            = max($this->durasi_bulan, $this->min_durasi_upgrade);
 
         $this->form->fill([
             'paket_target'            => $this->paket_target,
@@ -70,6 +76,19 @@ class UpgradePage extends Page implements HasForms
         ]);
 
         $this->hitungHarga();
+    }
+
+    private function hitungMinDurasi(Pesantren $pesantren): int
+    {
+        if (! $pesantren->expired_at || ! $pesantren->expired_at->isFuture()) {
+            return 1;
+        }
+
+        $sisaBulan = (int) ceil(now()->floatDiffInMonths($pesantren->expired_at));
+
+        if ($sisaBulan > 9) return 12;
+        if ($sisaBulan > 6) return 6;
+        return 1;
     }
 
     public function form(Schema $schema): Schema
@@ -115,7 +134,21 @@ class UpgradePage extends Page implements HasForms
                 ->schema([
                     Select::make('durasi_bulan')
                         ->label('Durasi Langganan')
-                        ->options(DurasiLangganan::options())
+                        ->options(function () {
+                            return collect(DurasiLangganan::cases())
+                                ->filter(fn ($d) => $d->value >= $this->min_durasi_upgrade)
+                                ->mapWithKeys(fn ($d) => [$d->value => $d->label()])
+                                ->all();
+                        })
+                        ->helperText(function () {
+                            if ($this->min_durasi_upgrade === 12) {
+                                return 'Durasi minimum 12 bulan karena sisa langganan aktif lebih dari 9 bulan.';
+                            }
+                            if ($this->min_durasi_upgrade === 6) {
+                                return 'Durasi minimum 6 bulan karena sisa langganan aktif lebih dari 6 bulan.';
+                            }
+                            return null;
+                        })
                         ->required()
                         ->native(false)
                         ->live()
@@ -201,6 +234,12 @@ class UpgradePage extends Page implements HasForms
     public function prosesPembayaran(): void
     {
         $this->form->getState();
+
+        abort_if(
+            $this->durasi_bulan < $this->min_durasi_upgrade,
+            422,
+            "Durasi minimum upgrade adalah {$this->min_durasi_upgrade} bulan karena sisa langganan aktif Anda."
+        );
 
         $pesantren = Auth::user()->pesantren;
 
