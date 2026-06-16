@@ -289,56 +289,83 @@
     <section id="harga" class="max-w-6xl mx-auto px-6 py-20">
         @php
             use App\Models\BillingSetting;
+
+            $bonusTahunan      = BillingSetting::get('bonus_bulan_tahunan', 2);
+            $bulanBayarTahunan = 12 - $bonusTahunan;
+
             $paketHarga = [
                 [
-                    'nama'     => 'Gratis',
-                    'harga'    => 0,
-                    'kuota'    => BillingSetting::get('kuota_gratis', 5),
-                    'popular'  => false,
+                    'nama'      => 'Gratis',
+                    'harga'     => 0,
+                    'kuota'     => BillingSetting::get('kuota_gratis', 5),
+                    'popular'   => false,
                     'deskripsi' => 'Untuk mencoba dan evaluasi platform.',
-                    'fitur'    => ['Semua modul tersedia', 'Portal wali santri', 'Support via email'],
-                    'cta'      => ['label' => 'Daftar Gratis', 'href' => route('register'), 'style' => 'border'],
+                    'fitur'     => ['Semua modul tersedia', 'Portal wali santri', 'Support via email'],
+                    'cta'       => ['label' => 'Daftar Gratis', 'href' => route('register'), 'style' => 'border'],
                 ],
                 [
-                    'nama'     => 'Rintisan',
-                    'harga'    => BillingSetting::get('harga_rintisan', 150_000),
-                    'kuota'    => BillingSetting::get('kuota_rintisan', 100),
-                    'popular'  => true,
+                    'nama'      => 'Rintisan',
+                    'harga'     => BillingSetting::get('harga_rintisan', 150_000),
+                    'kuota'     => BillingSetting::get('kuota_rintisan', 100),
+                    'popular'   => true,
                     'deskripsi' => 'Untuk pesantren yang baru berkembang.',
-                    'fitur'    => ['Semua modul tersedia', 'Portal wali santri', 'Ekspor PDF & Excel', 'Support prioritas'],
-                    'cta'      => ['label' => 'Mulai Sekarang', 'href' => route('register'), 'style' => 'solid'],
+                    'fitur'     => ['Semua modul tersedia', 'Portal wali santri', 'Ekspor PDF & Excel', 'Support prioritas'],
+                    'cta'       => ['label' => 'Mulai Sekarang', 'href' => route('register'), 'style' => 'solid'],
                 ],
                 [
-                    'nama'     => 'Berkembang',
-                    'harga'    => BillingSetting::get('harga_berkembang', 350_000),
-                    'kuota'    => BillingSetting::get('kuota_berkembang', 500),
-                    'popular'  => false,
+                    'nama'      => 'Berkembang',
+                    'harga'     => BillingSetting::get('harga_berkembang', 350_000),
+                    'kuota'     => BillingSetting::get('kuota_berkembang', 500),
+                    'popular'   => false,
                     'deskripsi' => 'Untuk pesantren menengah yang aktif.',
-                    'fitur'    => ['Semua modul tersedia', 'Portal wali santri', 'Ekspor PDF & Excel', 'Support prioritas', 'Onboarding gratis'],
-                    'cta'      => ['label' => 'Mulai Sekarang', 'href' => route('register'), 'style' => 'border'],
+                    'fitur'     => ['Semua modul tersedia', 'Portal wali santri', 'Ekspor PDF & Excel', 'Support prioritas', 'Onboarding gratis'],
+                    'cta'       => ['label' => 'Mulai Sekarang', 'href' => route('register'), 'style' => 'border'],
                 ],
                 [
-                    'nama'     => 'Maju',
-                    'harga'    => BillingSetting::get('harga_maju_base', 750_000),
-                    'kuota'    => null,
-                    'popular'  => false,
+                    'nama'      => 'Maju',
+                    'harga'     => BillingSetting::get('harga_maju_base', 750_000),
+                    'kuota'     => null,
+                    'popular'   => false,
                     'deskripsi' => 'Untuk pesantren besar dengan kebutuhan khusus.',
-                    'fitur'    => ['Semua modul tersedia', 'Portal wali santri', 'Ekspor PDF & Excel', 'Support prioritas', 'Onboarding gratis', 'Kuota custom 1.000+ santri'],
-                    'cta'      => ['label' => 'Hubungi Kami', 'href' => route('demo'), 'style' => 'border'],
+                    'fitur'     => ['Semua modul tersedia', 'Portal wali santri', 'Ekspor PDF & Excel', 'Support prioritas', 'Onboarding gratis', 'Kuota custom 1.000+ santri'],
+                    'cta'       => ['label' => 'Hubungi Kami', 'href' => route('demo'), 'style' => 'border'],
                 ],
             ];
         @endphp
 
-        <div class="text-center mb-14">
+        <div class="text-center mb-10">
             <h2 class="text-3xl font-bold text-gray-900 mb-4">Harga Transparan, Tanpa Biaya Tersembunyi</h2>
             <p class="text-gray-500 max-w-xl mx-auto">
                 Mulai gratis, upgrade kapan saja sesuai pertumbuhan pesantren Anda.
-                Bayar per bulan, tidak ada kontrak jangka panjang.
             </p>
+        </div>
+
+        {{-- Toggle bulanan / tahunan --}}
+        <div class="flex justify-center mb-10">
+            <div class="bg-gray-100 p-1 rounded-xl inline-flex gap-1">
+                <button id="btn-bulanan" onclick="setPeriode('bulanan')"
+                        class="px-5 py-2 rounded-lg text-sm font-semibold transition-all bg-white text-gray-900 shadow-sm">
+                    Bulanan
+                </button>
+                <button id="btn-tahunan" onclick="setPeriode('tahunan')"
+                        class="px-5 py-2 rounded-lg text-sm font-semibold transition-all text-gray-500">
+                    Tahunan
+                    <span class="ml-1.5 bg-teal-100 text-teal-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+                        Hemat {{ $bonusTahunan }} bulan
+                    </span>
+                </button>
+            </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
             @foreach($paketHarga as $paket)
+            @php
+                $hargaBulanan  = $paket['harga'];
+                $hargaTahunanPerBulan = $hargaBulanan > 0
+                    ? (int) round($hargaBulanan * $bulanBayarTahunan / 12)
+                    : 0;
+                $totalTahunan  = $hargaBulanan * $bulanBayarTahunan;
+            @endphp
             <div class="relative border rounded-2xl p-6 flex flex-col gap-4
                 {{ $paket['popular'] ? 'border-teal-500 shadow-lg shadow-teal-100 ring-1 ring-teal-500' : 'border-gray-200 hover:border-gray-300' }}">
 
@@ -354,13 +381,25 @@
                 </div>
 
                 <div>
-                    @if($paket['harga'] === 0)
+                    @if($hargaBulanan === 0)
                         <span class="text-3xl font-bold text-gray-900">Gratis</span>
+                        <div class="mt-1 text-sm text-gray-400">selamanya</div>
                     @else
-                        <span class="text-xs text-gray-400 font-medium">Mulai</span>
+                        <div class="flex items-baseline gap-1">
+                            <span class="text-xs text-gray-400">Mulai</span>
+                        </div>
                         <div>
-                            <span class="text-3xl font-bold text-gray-900">Rp {{ number_format($paket['harga'], 0, ',', '.') }}</span>
+                            <span class="text-3xl font-bold text-gray-900 price-display"
+                                  data-bulanan="{{ number_format($hargaBulanan, 0, ',', '.') }}"
+                                  data-tahunan="{{ number_format($hargaTahunanPerBulan, 0, ',', '.') }}">
+                                Rp {{ number_format($hargaBulanan, 0, ',', '.') }}
+                            </span>
                             <span class="text-sm text-gray-400">/bulan</span>
+                        </div>
+                        <div class="mt-1 text-xs text-gray-400 tagihan-info"
+                             data-bulanan="Ditagih bulanan"
+                             data-tahunan="Ditagih Rp {{ number_format($totalTahunan, 0, ',', '.') }}/tahun">
+                            Ditagih bulanan
                         </div>
                     @endif
                     <div class="mt-1 text-sm font-medium {{ $paket['popular'] ? 'text-teal-600' : 'text-gray-500' }}">
@@ -393,10 +432,32 @@
         </div>
 
         <p class="text-center text-sm text-gray-400 mt-8">
-            Semua paket termasuk bonus masa aktif untuk pembayaran 6 bulan dan 12 bulan.
+            Paket 6 bulan juga tersedia dengan bonus 1 bulan gratis.
             <a href="{{ route('demo') }}" class="text-teal-600 hover:underline">Konsultasi gratis →</a>
         </p>
     </section>
+
+    <script>
+        function setPeriode(periode) {
+            const isAnnual = periode === 'tahunan';
+
+            document.getElementById('btn-bulanan').className = isAnnual
+                ? 'px-5 py-2 rounded-lg text-sm font-semibold transition-all text-gray-500'
+                : 'px-5 py-2 rounded-lg text-sm font-semibold transition-all bg-white text-gray-900 shadow-sm';
+
+            document.getElementById('btn-tahunan').className = isAnnual
+                ? 'px-5 py-2 rounded-lg text-sm font-semibold transition-all bg-white text-gray-900 shadow-sm'
+                : 'px-5 py-2 rounded-lg text-sm font-semibold transition-all text-gray-500';
+
+            document.querySelectorAll('.price-display').forEach(el => {
+                el.textContent = 'Rp ' + el.dataset[periode];
+            });
+
+            document.querySelectorAll('.tagihan-info').forEach(el => {
+                el.textContent = el.dataset[periode];
+            });
+        }
+    </script>
 
     {{-- CTA Demo --}}
     <section class="bg-gray-900 py-20">
