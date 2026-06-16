@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Services;
 
+use App\Enums\DurasiLangganan;
 use App\Models\Pesantren;
 use App\Services\BillingCalculatorService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -22,11 +23,11 @@ class BillingCalculatorServiceTest extends TestCase
 
     public function test_paket_gratis(): void
     {
-        $p = new Pesantren(['paket_langganan' => 'gratis', 'max_santri_kuota' => 10]);
+        $p = new Pesantren(['paket_langganan' => 'gratis', 'max_santri_kuota' => 5]);
         $r = $this->svc->hitung($p);
 
         $this->assertEquals(0, $r['total_biaya']);
-        $this->assertEquals(10, $r['kuota_maksimal']);
+        $this->assertEquals(5, $r['kuota_maksimal']);
     }
 
     public function test_paket_rintisan(): void
@@ -43,8 +44,35 @@ class BillingCalculatorServiceTest extends TestCase
         $p = new Pesantren(['paket_langganan' => 'berkembang', 'max_santri_kuota' => 500]);
         $r = $this->svc->hitung($p);
 
-        $this->assertEquals(450_000, $r['total_biaya']);
+        $this->assertEquals(350_000, $r['total_biaya']);
         $this->assertEquals(500, $r['kuota_maksimal']);
+    }
+
+    public function test_durasi_enam_bulan_bayar_lima_aktif_enam(): void
+    {
+        $durasi = DurasiLangganan::EnamBulan;
+
+        $this->assertEquals(1, $durasi->bonusBulan());
+        $this->assertEquals(5, $durasi->bulanBayar());
+        $this->assertEquals(6, $durasi->totalBulan());
+    }
+
+    public function test_durasi_duabelas_bulan_bayar_sepuluh_aktif_duabelas(): void
+    {
+        $durasi = DurasiLangganan::DuabelasBulan;
+
+        $this->assertEquals(2, $durasi->bonusBulan());
+        $this->assertEquals(10, $durasi->bulanBayar());
+        $this->assertEquals(12, $durasi->totalBulan());
+    }
+
+    public function test_durasi_bulanan_tanpa_bonus(): void
+    {
+        $durasi = DurasiLangganan::SatuBulan;
+
+        $this->assertEquals(0, $durasi->bonusBulan());
+        $this->assertEquals(1, $durasi->bulanBayar());
+        $this->assertEquals(1, $durasi->totalBulan());
     }
 
     #[DataProvider('maju_provider')]

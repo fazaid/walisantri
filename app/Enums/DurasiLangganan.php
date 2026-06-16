@@ -22,6 +22,7 @@ enum DurasiLangganan: int
     public function bonusBulan(): int
     {
         return match($this) {
+            self::EnamBulan     => \App\Models\BillingSetting::get('bonus_bulan_enam', 1),
             self::DuabelasBulan => \App\Models\BillingSetting::get('bonus_bulan_tahunan', 2),
             default             => 0,
         };
