@@ -30,7 +30,8 @@ class UpgradeOrderService
         ?string $kodeKupon = null,
     ): array {
         $hasil = $this->calculator->hitungUntukTarget($paketTarget, $maxSantriKuota);
-        $hargaPerBulan = $hasil['total_biaya'];
+        $hargaPerBulan  = $hasil['total_biaya'];
+        $effectiveKuota = $hasil['kuota_maksimal'];
 
         $durasi      = DurasiLangganan::from($durasibulan);
         $bonusBulan  = $durasi->bonusBulan();
@@ -66,7 +67,7 @@ class UpgradeOrderService
                 'nomor_order'                => $nomorOrder,
                 'paket_target'               => $paketTarget,
                 'durasi_bulan'               => $durasibulan,
-                'max_santri_kuota_target'    => $maxSantriKuota,
+                'max_santri_kuota_target'    => $effectiveKuota,
                 'harga_per_bulan'            => $hargaPerBulan,
                 'harga_total_sebelum_diskon' => $hargaTotalSebelumDiskon,
                 'diskon_nominal'             => $diskonNominal,

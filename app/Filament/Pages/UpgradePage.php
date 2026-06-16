@@ -90,6 +90,9 @@ class UpgradePage extends Page implements HasForms
                         ->live()
                         ->afterStateUpdated(function (?string $state) {
                             $this->paket_target = $state ?? '';
+                            $calculator = app(BillingCalculatorService::class);
+                            $hasil = $calculator->hitungUntukTarget($state ?? '', $this->max_santri_kuota_target);
+                            $this->max_santri_kuota_target = $hasil['kuota_maksimal'];
                             if ($state === 'maju') {
                                 $this->max_santri_kuota_target = max(
                                     $this->max_santri_kuota_target,
