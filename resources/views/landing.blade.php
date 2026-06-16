@@ -360,11 +360,19 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
             @foreach($paketHarga as $paket)
             @php
-                $hargaBulanan  = $paket['harga'];
+                $hargaBulanan         = $paket['harga'];
                 $hargaTahunanPerBulan = $hargaBulanan > 0
                     ? (int) round($hargaBulanan * $bulanBayarTahunan / 12)
                     : 0;
-                $totalTahunan  = $hargaBulanan * $bulanBayarTahunan;
+                $totalTahunan         = $hargaBulanan * $bulanBayarTahunan;
+
+                $kuotaCalc            = $paket['kuota'] ?? BillingSetting::get('kuota_maju_base', 1000);
+                $hargaPerSantri       = $hargaBulanan > 0
+                    ? (int) ceil($hargaBulanan / $kuotaCalc)
+                    : null;
+                $hargaPerSantriTahunan = $hargaTahunanPerBulan > 0
+                    ? (int) ceil($hargaTahunanPerBulan / $kuotaCalc)
+                    : null;
             @endphp
             <div class="relative border rounded-2xl p-6 flex flex-col gap-4
                 {{ $paket['popular'] ? 'border-teal-500 shadow-lg shadow-teal-100 ring-1 ring-teal-500' : 'border-gray-200 hover:border-gray-300' }}">
@@ -418,6 +426,16 @@
                         {{ $fitur }}
                     </li>
                     @endforeach
+                    @if($hargaPerSantri)
+                    <li class="flex items-start gap-2 text-sm font-medium text-teal-700">
+                        <span class="mt-0.5 shrink-0">✓</span>
+                        <span class="harga-per-santri"
+                              data-bulanan="Rp {{ number_format($hargaPerSantri, 0, ',', '.') }}/santri/bulan"
+                              data-tahunan="Rp {{ number_format($hargaPerSantriTahunan, 0, ',', '.') }}/santri/bulan">
+                            Rp {{ number_format($hargaPerSantri, 0, ',', '.') }}/santri/bulan
+                        </span>
+                    </li>
+                    @endif
                 </ul>
 
                 <a href="{{ $paket['cta']['href'] }}"
@@ -454,6 +472,10 @@
             });
 
             document.querySelectorAll('.tagihan-info').forEach(el => {
+                el.textContent = el.dataset[periode];
+            });
+
+            document.querySelectorAll('.harga-per-santri').forEach(el => {
                 el.textContent = el.dataset[periode];
             });
         }
