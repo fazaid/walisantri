@@ -6,9 +6,9 @@
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
 **Last Updated:** Juni 2026 — v4.6
 
-**Changelog v4.6:** Revisi **model bisnis & harga** — (1) harga paket **Berkembang** diturunkan Rp 450.000 → **Rp 350.000**/bulan agar lompatan harga lebih gradual (rasio ×2,3 vs ×3 sebelumnya); (2) kuota paket **Gratis** dikurangi 10 → **5 santri** agar funnel lebih mendorong konversi; (3) **Modul Kesehatan** dipindah ke **Rintisan+** (sebelumnya Berkembang+) — rekam medis adalah kebutuhan keselamatan dasar boarding school, bukan fitur premium; (4) masa **trial diperpanjang** 14 → **30 hari** sesuai siklus keputusan pesantren yang lebih panjang; (5) opsi durasi **6 bulan** ditambah ke §5.2 (bayar 5, aktif 6); (6) **§5.6 baru** — Kebijakan Retensi (jaminan harga terkunci, program referral); (7) simulasi bisnis & **target milestone klien** di §21 diperbarui.
+**Changelog v4.6:** Revisi **model bisnis & harga** — (1) harga paket **Berkembang** diturunkan Rp 450.000 → **Rp 350.000**/bulan agar lompatan harga lebih gradual (rasio ×2,3 vs ×3 sebelumnya); (2) **paket Gratis dihapus** — diganti model **trial Rintisan 30 hari gratis** (kuota 100 santri, fitur penuh Rintisan) agar calon pelanggan merasakan nilai nyata sebelum berkomitmen; (3) **Modul Kesehatan** dipindah ke **Rintisan+** (sebelumnya Berkembang+) — rekam medis adalah kebutuhan keselamatan dasar boarding school, bukan fitur premium; (4) lifecycle baru: trial 30 hari → expired → **grace period 7 hari** (admin/ustadz redirect `/billing`, wali read-only) → **suspended**; (5) **paket Maju** izinkan X=0 — 1.000 santri = Rp 750.000/bulan (base price, tanpa add-on); (6) opsi durasi **6 bulan** ditambah ke §5.2 (bayar 5, aktif 6); (7) **§5.6 baru** — Kebijakan Retensi (jaminan harga terkunci, program referral); (8) simulasi bisnis & **target milestone klien** di §21 diperbarui; (9) landing page kini memiliki **seksi #harga** dengan toggle bulanan/tahunan dan 3 kartu paket (Rintisan trial, Berkembang, Maju).
 
-**Changelog v4.5:** Modul **Akademik Formal** — entitas baru `mata_pelajaran` (kelas + ustadz pengampu tetap, master data `admin_pesantren`) dan `nilai_akademik` (nilai tunggal per santri/mapel/periode, input `admin_pesantren` + `ustadz` pengampu, unique `(santri_id, mata_pelajaran_id, tahun_ajaran, periode)`); halaman **Rapor Akademik** agregasi nilai per santri dengan ekspor PDF (reuse `barryvdh/laravel-dompdf`). Grup navigasi Filament **Akademik** baru — menggabungkan Mata Pelajaran, Nilai Akademik, Rapor Akademik dengan 3 resource Tahfidz yang dipindah dari grup Kesantrian (selaras nama modul §3.2 & §5.1). Tersedia di semua paket termasuk Gratis (gate `access-modul-akademik` sudah ada sejak v4.x). Closes gap landing page yang sejak awal menjanjikan modul ini (lihat §22 — "akademik formal" kini bukan lagi item ditunda). **Selain itu:** halaman **Rapor** portal wali (`/wali/rapor` + ekspor PDF) — yang ternyata sudah lama dibangun penuh namun belum tertaut navigasi & masih tercatat keliru sebagai "roadmap/di-skip" di §8/§22 — kini ditautkan sebagai tab ke-5 bottom nav wali (Beranda · Santri · SPP · Pengumuman · **Rapor**) dan PRD diselaraskan ke status "selesai" (lihat §8); view duplikat mati `wali/pengumuman/index.blade.php` turut dibersihkan.
+**Changelog v4.5:** Modul **Akademik Formal** — entitas baru `mata_pelajaran` (kelas + ustadz pengampu tetap, master data `admin_pesantren`) dan `nilai_akademik` (nilai tunggal per santri/mapel/periode, input `admin_pesantren` + `ustadz` pengampu, unique `(santri_id, mata_pelajaran_id, tahun_ajaran, periode)`); halaman **Rapor Akademik** agregasi nilai per santri dengan ekspor PDF (reuse `barryvdh/laravel-dompdf`). Grup navigasi Filament **Akademik** baru — menggabungkan Mata Pelajaran, Nilai Akademik, Rapor Akademik dengan 3 resource Tahfidz yang dipindah dari grup Kesantrian (selaras nama modul §3.2 & §5.1). Tersedia di semua paket (gate `access-modul-akademik` sudah ada sejak v4.x). Closes gap landing page yang sejak awal menjanjikan modul ini (lihat §22 — "akademik formal" kini bukan lagi item ditunda). **Selain itu:** halaman **Rapor** portal wali (`/wali/rapor` + ekspor PDF) — yang ternyata sudah lama dibangun penuh namun belum tertaut navigasi & masih tercatat keliru sebagai "roadmap/di-skip" di §8/§22 — kini ditautkan sebagai tab ke-5 bottom nav wali (Beranda · Santri · SPP · Pengumuman · **Rapor**) dan PRD diselaraskan ke status "selesai" (lihat §8); view duplikat mati `wali/pengumuman/index.blade.php` turut dibersihkan.
 
 **Changelog v4.4:** Modul **SPP** (Sumbangan Pembinaan Pendidikan) — tagihan bulanan manual per santri, rekening bank pesantren disimpan di `profil` jsonb, konfirmasi transfer oleh wali (upload foto bukti → status `menunggu_konfirmasi`), verifikasi & tandai lunas oleh admin, notifikasi tunggakan di dashboard wali; tabel `tagihan_spp` + `pembayaran_spp` (tenant/). Modul **Prestasi Santri** — CRUD prestasi (judul, kategori, tingkat, posisi, tanggal, penyelenggara, sertifikat) dengan enum `TingkatPrestasi` (internal/kabupaten/provinsi/nasional/internasional); tabel `prestasi_santri` (tenant/); tampil di portal wali pada halaman detail santri. **Demo Request / Waiting List** — halaman `/demo` di landing page (form waiting list: nama pesantren, kontak, email, HP, jumlah santri, kota, catatan); tabel `demo_requests` (central/); `DemoRequestResource` di Filament hanya `super_admin` (list, view, tandai dihubungi). Grup navigasi **Keuangan** baru di panel Filament.
 
@@ -161,7 +161,7 @@ erDiagram
     bigint id PK
     string nama_pesantren
     string slug UK "mutable + cooldown 90h"
-    enum paket_langganan "gratis..maju"
+    enum paket_langganan "rintisan..maju"
     enum status_berlangganan "trial..expired"
     timestamp expired_at
     int santri_count_cache
@@ -345,7 +345,7 @@ erDiagram
 
 ## 3.1 DB Central
 
-**`pesantrens`** — `id` PK · `nama_pesantren` · `slug` (unique, **mutable** + cooldown 90 hari, sumber subdomain default) · `paket_langganan` enum(`gratis`/`rintisan`/`berkembang`/`maju`) · `max_santri_kuota` int · `status_berlangganan` enum(`trial`/`active`/`suspended`/`expired`) · `expired_at` ts null · `santri_count_cache` int default 0 · `onboarding_completed_steps` jsonb null · `profil` jsonb null (konten situs publik: deskripsi, alamat, kontak, galeri) · timestamps. *Index: `(status_berlangganan, expired_at)`.*
+**`pesantrens`** — `id` PK · `nama_pesantren` · `slug` (unique, **mutable** + cooldown 90 hari, sumber subdomain default) · `paket_langganan` enum(`rintisan`/`berkembang`/`maju`) · `max_santri_kuota` int · `status_berlangganan` enum(`trial`/`active`/`suspended`/`expired`) · `expired_at` ts null · `santri_count_cache` int default 0 · `onboarding_completed_steps` jsonb null · `profil` jsonb null (konten situs publik: deskripsi, alamat, kontak, galeri) · timestamps. *Index: `(status_berlangganan, expired_at)`.*
 
 **`users`** — `id` PK · `pesantren_id` FK null (null = Super Admin) · `name` · `email` unique (global) · `phone_number` null (WhatsApp) · `password` · `role` enum(`super_admin`/`admin_pesantren`/`ustadz`/`wali_santri`) · `remember_token` · timestamps. *Index: `(pesantren_id, role)`.*
 
@@ -405,7 +405,7 @@ erDiagram
 
 ## 4.1 Onboarding & Registrasi
 
-Via `walisantri.com/register`. Sistem otomatis: (1) validasi slug (format, unik, reserved, cooldown) real-time; (2) buat baris `pesantrens` di central; (3) buat baris `tenant_domains` (`type=subdomain`, `{slug}.walisantri.com`); (4) **aktifkan situs profil publik** di subdomain itu (template minimal); (5) buat user pertama role `admin_pesantren`; (6) aktifkan trial 30 hari; (7) redirect ke `app.walisantri.com/admin`.
+Via `walisantri.com/register`. Sistem otomatis: (1) validasi slug (format, unik, reserved, cooldown) real-time; (2) buat baris `pesantrens` di central; (3) buat baris `tenant_domains` (`type=subdomain`, `{slug}.walisantri.com`); (4) **aktifkan situs profil publik** di subdomain itu (template minimal); (5) buat user pertama role `admin_pesantren`; (6) aktifkan **trial Rintisan 30 hari** (`paket_langganan='rintisan'`, `status_berlangganan='trial'`, `max_santri_kuota=100`, `expired_at=+30 hari`) — fitur penuh Rintisan tersedia selama trial; (7) redirect ke `app.walisantri.com/admin`.
 
 > **Zero-Self Registration:** Santri/Ustadz/Wali tidak bisa daftar mandiri. **Multi-Anak Logic:** jika nomor WhatsApp wali sudah terdaftar, santri baru dikaitkan ke `wali_santri_id` yang ada.
 
@@ -449,10 +449,12 @@ Panel Filament yang sama dengan Admin/Ustadz; menu ditampilkan via `canAccess()`
 
 Matriks fitur — paket di kolom, fitur/kuota/modul di baris (✓ = termasuk, — = tidak, teks = detail):
 
-| Fitur | Gratis | Rintisan | Berkembang | Maju |
+| Fitur | Rintisan | Tumbuh | Berkembang | Maju |
 |---|---|---|---|---|
-| **Harga / bulan** | Rp 0 | Rp 150.000 | Rp 350.000 | Rp 750.000 |
-| **Kuota santri** | ≤ 5 | ≤ 100 | ≤ 500 | ≤ 1.000 |
+| **Harga / bulan** | Rp 150.000 | Rp 299.000 | Rp 350.000 | Rp 750.000 |
+| **Trial gratis** | ✓ 30 hari | — | — | — |
+| **Posisi** | Starter | **Paling Populer** | Menengah | Enterprise |
+| **Kuota santri** | ≤ 100 | ≤ 250 | ≤ 500 | ≤ 1.000 (+ add-on) |
 | Website profil publik | ✓ | ✓ | ✓ | ✓ |
 | Portal Wali + Magic Link | ✓ | ✓ | ✓ | ✓ |
 | Pengumuman | ✓ | ✓ | ✓ | ✓ |
@@ -460,10 +462,10 @@ Matriks fitur — paket di kolom, fitur/kuota/modul di baris (✓ = termasuk, �
 | Modul Akademik & Tahfidz | ✓ | ✓ | ✓ | ✓ |
 | Mutaba'ah harian | ✓ | ✓ | ✓ | ✓ |
 | Karakter Rapor | ✓ | ✓ | ✓ | ✓ |
-| Export Excel/PDF | — | ✓ | ✓ + rekam medis | ✓ semua |
-| Modul SPP (tagihan bulanan) | — | ✓ | ✓ | ✓ |
+| Export Excel/PDF | ✓ | ✓ | ✓ + rekam medis | ✓ semua |
+| Modul SPP (tagihan bulanan) | ✓ | ✓ | ✓ | ✓ |
 | Modul Prestasi Santri | ✓ | ✓ | ✓ | ✓ |
-| Modul Kesehatan | — | ✓ | ✓ | ✓ |
+| Modul Kesehatan | ✓ | ✓ | ✓ | ✓ |
 | Modul Inventaris | — | — | — | ✓ |
 | Fitur AI *(post v1.0)* | — | — | — | ✓ |
 | Custom domain *(roadmap, add-on)* | — | — | — | ✓ (add-on) |
@@ -471,7 +473,7 @@ Matriks fitur — paket di kolom, fitur/kuota/modul di baris (✓ = termasuk, �
 
 **Gate (di `AppServiceProvider`):** `access-modul-akademik` (semua) · `access-modul-prestasi` (semua) · `access-modul-spp` (Rintisan+) · `access-modul-kesehatan` (Rintisan+) · `access-modul-inventaris` (Maju) · `access-modul-ai` (Maju) · `access-billing` (Admin & Super Admin).
 
-> *Gratis = funnel akuisisi: core akademik + kesantrian penuh dengan kuota 5 santri, tanpa export/modul lanjutan/custom domain. Cukup untuk membuktikan nilai produk, mendorong upgrade saat pesantren tumbuh.*
+> *Tidak ada paket Gratis — konversi didorong via trial Rintisan 30 hari gratis (fitur penuh, 100 santri). Paket **Tumbuh** (250 santri, Rp 299.000) adalah paket paling populer — sweet spot antara harga terjangkau dan kapasitas nyata untuk mayoritas pesantren. Setelah trial berakhir: grace period 7 hari → suspended.*
 
 ## 5.2 Kebijakan Harga Tahunan
 
@@ -495,8 +497,8 @@ Kalkulasi di `BillingCalculatorService` pakai `bulanBayar()` (bukan `value`) unt
 
 ## 5.3 Formula Kuota Custom Maju (`BillingCalculatorService`)
 
-Add-on di atas paket Maju (> 1.000 santri): `X = CEIL((N - 1000) / 100)` · `Total = Rp 750.000 + (X × Rp 100.000)` · `Kuota = 1000 + (X × 100)`.
-Contoh: 1.200 santri → X=2 → kuota 1.200 → Rp 950.000/bulan.
+Base paket Maju: 1.000 santri = Rp 750.000/bulan (X=0). Add-on per blok 100 santri di atas 1.000: `X = CEIL((N - 1000) / 100)` · `Total = Rp 750.000 + (X × Rp 100.000)` · `Kuota = 1000 + (X × 100)`.
+Contoh: 1.200 santri → X=2 → kuota 1.200 → Rp 950.000/bulan. Contoh X=0: 1.000 santri → Rp 750.000/bulan, kuota 1.000.
 
 ## 5.4 Aturan Pembimbing Ustadz
 
@@ -515,9 +517,11 @@ Satu ustadz hanya dapat membimbing **maks 20 santri aktif** (`status_aktif = tru
 |---|---|---|
 | Trial (30 hari) | Akses penuh + banner sisa hari | Normal |
 | Active | Akses penuh | Akses penuh |
-| Expired | Redirect `/billing`, input diblokir | Read-only 7 hari + banner, lalu suspended |
-| Suspended | Diblokir total | Diblokir total |
+| Expired (grace 7 hari) | Redirect `/billing`, input diblokir | Read-only + banner "langganan berakhir" |
+| Suspended (setelah 7 hari grace) | Diblokir total | Diblokir total |
 | Subdomain not found | 404 bertema Walisantri | 404 bertema Walisantri |
+
+> *Grace period 7 hari setelah `expired_at` diimplementasikan di `CheckExpiredTenants` job (harian 00.01): step 1 — `trial`/`active` → `expired` saat `expired_at < now()`; step 2 — `expired` → `suspended` saat `expired_at < now() - 7 hari`.*
 
 ---
 
@@ -702,7 +706,7 @@ On-demand penuh — tidak ada pengiriman terjadwal otomatis. Gateway Fonnte/Waba
 
 | Status | Data | Tindakan |
 |---|---|---|
-| Trial expired tanpa bayar | Tersimpan | 30 hari grace → suspended |
+| Trial expired tanpa bayar | Tersimpan | Grace period 7 hari akses terbatas → suspended |
 | Suspended ≤ 90 hari | Tersimpan, tak bisa diakses | Admin bisa reaktivasi kapanpun |
 | Suspended > 90 hari | Dijadwalkan hapus | Email peringatan 30 hari sebelum hapus |
 | Hapus permanen | Dihapus | Termasuk file R2 |
@@ -743,7 +747,7 @@ Admin ajukan penghapusan permanen ke Super Admin via email → diproses ≤7 har
 
 **Upgrade:** Admin ajukan di `/billing` → Super Admin verifikasi bayar, update `paket_langganan` & `max_santri_kuota` di panel admin → Gate otomatis update, modul baru langsung aktif tanpa logout.
 
-**Downgrade:** Maju→Berkembang kunci Inventaris & AI · Berkembang→Rintisan kunci Kesehatan · Rintisan→Gratis kunci export (kuota turun ke 10) · santri aktif > kuota baru → downgrade diblokir (nonaktifkan santri dulu). Data modul terkunci tidak dihapus — pulih saat upgrade kembali.
+**Downgrade:** Maju→Berkembang kunci Inventaris & AI · Berkembang→Rintisan kunci Kesehatan · santri aktif > kuota baru → downgrade diblokir (nonaktifkan santri dulu). Data modul terkunci tidak dihapus — pulih saat upgrade kembali.
 
 ---
 
@@ -754,7 +758,7 @@ Pendekatan **Unit Test**, fokus lapisan kritis: isolasi tenant, business logic m
 **Prioritas wajib sebelum go-live:**
 - *Tenant isolation:* santri/tahfidz/mutaba'ah/kesehatan/inventaris terisolasi per `pesantren_id`; Super Admin bisa lintas tenant via `withoutGlobalScope`; wali hanya akses anaknya. (Bila RLS aktif, tambahkan test policy di level DB.)
 - *Middleware:* `CheckTenantQuota` (422 saat penuh) · `SaaSLifecycleLock` (redirect/blokir) · `VerifyMagicToken` (read-only UUID valid, 404 invalid, 403 non-GET) · `PublicTenantResolver` (resolve host ke `tenant_domains`, 404 invalid) · resolusi tenant dari akun saat login (email → `pesantren_id`).
-- *Service & rules:* `BillingCalculatorService` (formula kuota custom Maju) · `SlugNotReserved` · `ValidTenantSlug` (format/panjang/unik) · `OnboardPesantren` (buat pesantren+admin+trial 14 hari).
+- *Service & rules:* `BillingCalculatorService` (formula kuota custom Maju, X=0 di-cover) · `SlugNotReserved` · `ValidTenantSlug` (format/panjang/unik) · `OnboardPesantren` (buat pesantren+admin, paket rintisan, trial 30 hari).
 - *Model & observer:* `HasUuids` isi `uuid` saja · `SoftDeletes` Santri · Observer Kesehatan auto-udzur · Multi-Anak Logic.
 
 **Konfigurasi:** unit test pakai PostgreSQL ephemeral (mis. service container `postgres` di GitHub Actions) atau SQLite in-memory untuk test yang tidak bergantung fitur PostgreSQL; `CACHE_DRIVER=array`, `QUEUE_CONNECTION=sync`. Test isolasi tenant & RLS **wajib** pakai PostgreSQL (bukan SQLite) agar policy ikut teruji.
@@ -816,7 +820,7 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 
 **Bagi hasil 50:50:** Faza (Developer — full-stack, server, keamanan, maintenance) · Mitra Bisnis (Marketing — penetrasi pasar, presentasi, support, feedback lapangan).
 
-**Simulasi (ilustratif, 9 klien berbayar):** 5 Gratis (Rp 0, funnel) + 4 Rintisan (4 × 150rb = 600rb) + 3 Berkembang (3 × 350rb = 1.050rb) + 2 Maju (2 × 750rb = 1.500rb) = **Gross Rp 3.150rb** − operasional 840rb = **Net Rp 2.310rb** → masing-masing Rp 1.155rb.
+**Simulasi (ilustratif, 11 klien berbayar):** 3 Rintisan (3 × 150rb = 450rb) + 4 Tumbuh (4 × 299rb = 1.196rb) + 2 Berkembang (2 × 350rb = 700rb) + 2 Maju (2 × 750rb = 1.500rb) = **Gross Rp 3.846rb** − operasional 840rb = **Net Rp 3.006rb** → masing-masing Rp 1.503rb. *(Tidak ada tier Gratis — konversi digerakkan via trial 30 hari. Paket Tumbuh diasumsikan jadi mayoritas karena posisinya sebagai paket paling populer.)*
 
 **Target milestone klien (anchor perencanaan):**
 
@@ -832,7 +836,7 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 
 # 22. Catatan Implementasi Aktual
 
-**Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali. PRD ini adalah v4.6 (file: `docs/walisantri-prd-v4.md`).
+**Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali. PRD ini adalah v4.6 (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum hanya `rintisan`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 30 hari. Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0).
 
 **Perubahan v4.0:** **login terpusat di `app.walisantri.com`** (tenant di-resolve dari akun, bukan host) — memutus ketergantungan auth pada subdomain · **subdomain `{slug}.walisantri.com` jadi website profil publik**, otomatis aktif saat registrasi · **slug mutable** (cooldown 90 hari) menggantikan immutable · tabel `tenant_domains` sbg sumber resolusi host publik · **custom domain** di roadmap (Cloudflare for SaaS gratis ≤100 hostname, fallback Caddy on-demand TLS) · `dash.walisantri.com` ganti rencana `central.walisantri.com` · **DB pindah ke PostgreSQL 17** (sebelumnya rencana MySQL) — alasan: RLS native, pgvector untuk AI, schema-per-tenant untuk DB-per-tenant · R2 (zero egress) · CI/CD otomatis · hybrid tenancy.
 
@@ -872,4 +876,4 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 
 ---
 
-*Confidential — Internal Document | Walisantri.com v4.6 | Juni 2026*
+*Confidential — Internal Document | Walisantri.com v4.6 | Juni 2026 (diperbarui 16 Juni 2026)*

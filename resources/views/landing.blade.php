@@ -298,11 +298,21 @@
                     'nama'      => 'Rintisan',
                     'harga'     => BillingSetting::get('harga_rintisan', 150_000),
                     'kuota'     => BillingSetting::get('kuota_rintisan', 100),
+                    'popular'   => false,
+                    'trial'     => false,
+                    'deskripsi' => 'Untuk pesantren yang baru memulai.',
+                    'fitur'     => ['Trial 30 hari gratis', 'Semua modul tersedia', 'Portal wali santri', 'Ekspor PDF & Excel'],
+                    'cta'       => ['label' => 'Mulai Gratis', 'href' => route('register'), 'style' => 'border'],
+                ],
+                [
+                    'nama'      => 'Tumbuh',
+                    'harga'     => BillingSetting::get('harga_tumbuh', 299_000),
+                    'kuota'     => BillingSetting::get('kuota_tumbuh', 250),
                     'popular'   => true,
-                    'trial'     => true,
-                    'deskripsi' => 'Untuk pesantren yang baru berkembang.',
-                    'fitur'     => ['Trial 30 hari gratis', 'Semua modul tersedia', 'Portal wali santri', 'Ekspor PDF & Excel', 'Support prioritas'],
-                    'cta'       => ['label' => 'Mulai Trial Gratis', 'href' => route('register'), 'style' => 'solid'],
+                    'trial'     => false,
+                    'deskripsi' => 'Pilihan terbaik untuk pesantren aktif.',
+                    'fitur'     => ['Semua modul tersedia', 'Portal wali santri', 'Ekspor PDF & Excel', 'Support prioritas', 'Onboarding gratis'],
+                    'cta'       => ['label' => 'Mulai Sekarang', 'href' => route('register'), 'style' => 'solid'],
                 ],
                 [
                     'nama'      => 'Berkembang',
@@ -310,7 +320,7 @@
                     'kuota'     => BillingSetting::get('kuota_berkembang', 500),
                     'popular'   => false,
                     'trial'     => false,
-                    'deskripsi' => 'Untuk pesantren menengah yang aktif.',
+                    'deskripsi' => 'Untuk pesantren menengah yang berkembang.',
                     'fitur'     => ['Semua modul tersedia', 'Portal wali santri', 'Ekspor PDF & Excel', 'Support prioritas', 'Onboarding gratis'],
                     'cta'       => ['label' => 'Mulai Sekarang', 'href' => route('register'), 'style' => 'border'],
                 ],
@@ -351,7 +361,7 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
             @foreach($paketHarga as $paket)
             @php
                 $hargaBulanan         = $paket['harga'];

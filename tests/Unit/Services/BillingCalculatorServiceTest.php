@@ -30,6 +30,15 @@ class BillingCalculatorServiceTest extends TestCase
         $this->assertEquals(100, $r['kuota_maksimal']);
     }
 
+    public function test_paket_tumbuh(): void
+    {
+        $p = new Pesantren(['paket_langganan' => 'tumbuh', 'max_santri_kuota' => 250]);
+        $r = $this->svc->hitung($p);
+
+        $this->assertEquals(299_000, $r['total_biaya']);
+        $this->assertEquals(250, $r['kuota_maksimal']);
+    }
+
     public function test_paket_berkembang(): void
     {
         $p = new Pesantren(['paket_langganan' => 'berkembang', 'max_santri_kuota' => 500]);

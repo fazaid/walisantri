@@ -79,12 +79,7 @@ class UpgradePage extends Page implements HasForms
                 ->schema([
                     Select::make('paket_target')
                         ->label('Paket Tujuan')
-                        ->options(
-                            collect(PaketLangganan::cases())
-                                ->filter(fn ($p) => $p !== PaketLangganan::Gratis)
-                                ->mapWithKeys(fn ($p) => [$p->value => $p->label()])
-                                ->all()
-                        )
+                        ->options(PaketLangganan::options())
                         ->required()
                         ->native(false)
                         ->live()

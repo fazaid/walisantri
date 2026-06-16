@@ -16,6 +16,7 @@ class BillingCalculatorService
     {
         return match ($pesantren->paket_langganan) {
             'rintisan'   => $this->paketTetap('Rintisan', $this->cfg('harga_rintisan', 150_000), $this->cfg('kuota_rintisan', 100)),
+            'tumbuh'     => $this->paketTetap('Tumbuh', $this->cfg('harga_tumbuh', 299_000), $this->cfg('kuota_tumbuh', 250)),
             'berkembang' => $this->paketTetap('Berkembang', $this->cfg('harga_berkembang', 350_000), $this->cfg('kuota_berkembang', 500)),
             'maju'       => $this->paketMaju($pesantren->max_santri_kuota),
             default      => $this->paketTetap('Unknown', 0, 0),
@@ -26,6 +27,7 @@ class BillingCalculatorService
     {
         return match ($paket) {
             'rintisan'   => $this->paketTetap('Rintisan', $this->cfg('harga_rintisan', 150_000), $this->cfg('kuota_rintisan', 100)),
+            'tumbuh'     => $this->paketTetap('Tumbuh', $this->cfg('harga_tumbuh', 299_000), $this->cfg('kuota_tumbuh', 250)),
             'berkembang' => $this->paketTetap('Berkembang', $this->cfg('harga_berkembang', 350_000), $this->cfg('kuota_berkembang', 500)),
             'maju'       => $this->paketMaju($maxSantri),
             default      => $this->paketTetap('Unknown', 0, 0),

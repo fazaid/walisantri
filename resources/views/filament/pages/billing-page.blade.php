@@ -22,8 +22,9 @@
     $kuotaLabel  = $kuota > 0 ? number_format($kuota, 0, ',', '.') . ' santri' : '—';
     $paketConfig = match($pesantren?->paket_langganan) {
         'rintisan'   => ['label' => 'Rintisan',   'kuota' => $kuotaLabel, 'color' => '#2563eb', 'bg' => '#eff6ff'],
+        'tumbuh'     => ['label' => 'Tumbuh',     'kuota' => $kuotaLabel, 'color' => '#059669', 'bg' => '#ecfdf5'],
         'berkembang' => ['label' => 'Berkembang', 'kuota' => $kuotaLabel, 'color' => '#d97706', 'bg' => '#fffbeb'],
-        'maju'       => ['label' => 'Maju',       'kuota' => $kuotaLabel, 'color' => '#059669', 'bg' => '#ecfdf5'],
+        'maju'       => ['label' => 'Maju',       'kuota' => $kuotaLabel, 'color' => '#7c3aed', 'bg' => '#f5f3ff'],
         default      => ['label' => '—',          'kuota' => '—',         'color' => '#6b7280', 'bg' => '#f9fafb'],
     };
 

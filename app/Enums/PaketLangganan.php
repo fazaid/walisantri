@@ -5,6 +5,7 @@ namespace App\Enums;
 enum PaketLangganan: string
 {
     case Rintisan   = 'rintisan';
+    case Tumbuh     = 'tumbuh';
     case Berkembang = 'berkembang';
     case Maju       = 'maju';
 
@@ -12,6 +13,7 @@ enum PaketLangganan: string
     {
         return match($this) {
             self::Rintisan   => 'Rintisan',
+            self::Tumbuh     => 'Tumbuh',
             self::Berkembang => 'Berkembang',
             self::Maju       => 'Maju',
         };
@@ -21,8 +23,9 @@ enum PaketLangganan: string
     {
         return match($this) {
             self::Rintisan   => 'info',
+            self::Tumbuh     => 'success',
             self::Berkembang => 'warning',
-            self::Maju       => 'success',
+            self::Maju       => 'primary',
         };
     }
 
@@ -30,6 +33,7 @@ enum PaketLangganan: string
     {
         return match($this) {
             self::Rintisan   => 100,
+            self::Tumbuh     => 250,
             self::Berkembang => 500,
             self::Maju       => 1000,
         };

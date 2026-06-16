@@ -36,10 +36,12 @@ class BillingSettingsPage extends Page implements HasForms
     protected string $view = 'filament.pages.billing-settings';
 
     public int $harga_rintisan           = 0;
+    public int $harga_tumbuh             = 0;
     public int $harga_berkembang          = 0;
     public int $harga_maju_base           = 0;
     public int $harga_maju_per_100_santri = 0;
     public int $kuota_rintisan            = 0;
+    public int $kuota_tumbuh             = 0;
     public int $kuota_berkembang          = 0;
     public int $kuota_maju_base           = 0;
     public int $bonus_bulan_enam          = 0;
@@ -66,6 +68,10 @@ class BillingSettingsPage extends Page implements HasForms
                         ->label('Rintisan')
                         ->numeric()->minValue(0)->required()
                         ->prefix('Rp'),
+                    TextInput::make('harga_tumbuh')
+                        ->label('Tumbuh (Paling Populer)')
+                        ->numeric()->minValue(0)->required()
+                        ->prefix('Rp'),
                     TextInput::make('harga_berkembang')
                         ->label('Berkembang')
                         ->numeric()->minValue(0)->required()
@@ -87,6 +93,9 @@ class BillingSettingsPage extends Page implements HasForms
                 ->schema([
                     TextInput::make('kuota_rintisan')
                         ->label('Rintisan')->numeric()->minValue(1)->required()
+                        ->suffix('santri'),
+                    TextInput::make('kuota_tumbuh')
+                        ->label('Tumbuh')->numeric()->minValue(1)->required()
                         ->suffix('santri'),
                     TextInput::make('kuota_berkembang')
                         ->label('Berkembang')->numeric()->minValue(1)->required()
