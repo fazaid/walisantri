@@ -11,8 +11,7 @@ use Tests\TestCase;
 
 /**
  * PRD §17: Test isolasi tenant wajib pakai PostgreSQL (bukan SQLite).
- * Jalankan via: php artisan test --testsuite=TenantIsolation
- * dengan env DB_CONNECTION=pgsql DB_DATABASE=walisantri_test
+ * Jalankan via: php artisan test --configuration=phpunit.tenant.xml
  */
 class DataIsolationTest extends TestCase
 {
