@@ -64,21 +64,23 @@ class BillingSettingsPage extends Page implements HasForms
                 ->columns(2)
                 ->schema([
                     TextInput::make('harga_rintisan')
-                        ->label('Rintisan (≤ kuota_rintisan santri)')
+                        ->label('Rintisan')
                         ->numeric()->minValue(0)->required()
                         ->prefix('Rp'),
                     TextInput::make('harga_berkembang')
-                        ->label('Berkembang (≤ kuota_berkembang santri)')
+                        ->label('Berkembang')
                         ->numeric()->minValue(0)->required()
                         ->prefix('Rp'),
                     TextInput::make('harga_maju_base')
                         ->label('Maju — harga dasar')
                         ->numeric()->minValue(0)->required()
-                        ->prefix('Rp'),
+                        ->prefix('Rp')
+                        ->helperText('Berlaku untuk paket Maju sampai batas kuota dasar'),
                     TextInput::make('harga_maju_per_100_santri')
-                        ->label('Maju — tambahan per 100 santri di atas kuota dasar')
+                        ->label('Maju — tambahan per 100 santri')
                         ->numeric()->minValue(0)->required()
-                        ->prefix('Rp'),
+                        ->prefix('Rp')
+                        ->helperText('Dikenakan setiap kelipatan 100 santri di atas kuota dasar'),
                 ]),
 
             Section::make('Kuota Santri per Paket')
