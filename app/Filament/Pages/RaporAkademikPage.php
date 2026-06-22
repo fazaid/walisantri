@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Models\MataPelajaran;
 use App\Models\NilaiAkademik;
 use App\Models\Santri;
+use App\Services\TahunAjaranOptions;
 use Barryvdh\DomPDF\Facade\Pdf;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -37,9 +38,12 @@ class RaporAkademikPage extends Page
 
     public function mount(): void
     {
-        $this->tahunAjaran = now()->month >= 7
-            ? now()->year . '/' . (now()->year + 1)
-            : (now()->year - 1) . '/' . now()->year;
+        $this->tahunAjaran = TahunAjaranOptions::current();
+    }
+
+    public function getTahunAjaranOptions(): array
+    {
+        return TahunAjaranOptions::options();
     }
 
     public static function canAccess(): bool

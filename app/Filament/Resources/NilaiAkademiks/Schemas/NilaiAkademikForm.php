@@ -4,6 +4,7 @@ namespace App\Filament\Resources\NilaiAkademiks\Schemas;
 
 use App\Models\MataPelajaran;
 use App\Models\Santri;
+use App\Services\TahunAjaranOptions;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -52,11 +53,11 @@ class NilaiAkademikForm
                         })
                         ->searchable()
                         ->required(),
-                    TextInput::make('tahun_ajaran')
+                    Select::make('tahun_ajaran')
                         ->label('Tahun Ajaran')
-                        ->placeholder('2026/2027')
-                        ->required()
-                        ->maxLength(10),
+                        ->options(TahunAjaranOptions::options())
+                        ->default(TahunAjaranOptions::current())
+                        ->required(),
                     Select::make('periode')
                         ->label('Periode')
                         ->options([

@@ -6,6 +6,7 @@
 namespace App\Filament\Resources\TahfidzRapors\Schemas;
 
 use App\Models\Santri;
+use App\Services\TahunAjaranOptions;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -31,9 +32,10 @@ class TahfidzRaporForm
                                 return $query->pluck('nama_lengkap', 'id');
                             })
                             ->searchable()->required(),
-                        TextInput::make('tahun_ajaran')
+                        Select::make('tahun_ajaran')
                             ->label('Tahun Ajaran')
-                            ->placeholder('2026/2027')
+                            ->options(TahunAjaranOptions::options())
+                            ->default(TahunAjaranOptions::current())
                             ->required(),
                         Select::make('periode')
                             ->label('Periode')
