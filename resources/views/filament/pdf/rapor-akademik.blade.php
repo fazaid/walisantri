@@ -114,7 +114,7 @@
     @if($santri->pesantren)
     <div class="pesantren-name">{{ $santri->pesantren->nama_pesantren }}</div>
     @endif
-    <div class="meta">RAPOR AKADEMIK</div>
+    <div class="meta">NILAI AKADEMIK & TAHFIDZ</div>
 </div>
 
 <div class="info-card">
@@ -141,6 +141,9 @@
 </div>
 
 <div class="section-title">📚 Nilai per Mata Pelajaran</div>
+@if($nilai->isEmpty())
+    <p class="no-data">Belum ada nilai akademik pada periode ini.</p>
+@else
 <table class="data-table">
     <tr>
         <th style="width:45%">Mata Pelajaran</th>
@@ -164,6 +167,28 @@
     </tr>
     @endforeach
 </table>
+@endif
+
+<div class="section-title">📖 Nilai Tahfidz</div>
+@if(! $tahfidzRapor)
+    <p class="no-data">Belum ada nilai tahfidz pada periode ini.</p>
+@else
+<table class="data-table">
+    <tr>
+        <th>Hafalan</th>
+        <th>Tilawah</th>
+        <th>Makhraj</th>
+        <th>Tajwid</th>
+    </tr>
+    <tr>
+        <td>{{ $tahfidzRapor->nilai_hafalan }}</td>
+        <td>{{ $tahfidzRapor->nilai_tilawah }}</td>
+        <td>{{ $tahfidzRapor->nilai_makhraj }}</td>
+        <td>{{ $tahfidzRapor->nilai_tajwid }}</td>
+    </tr>
+</table>
+<p style="margin-top:6px;"><strong>Rekomendasi Pembimbing:</strong><br>{{ $tahfidzRapor->rekomendasi_pembimbing }}</p>
+@endif
 
 </body>
 </html>
