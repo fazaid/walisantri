@@ -24,6 +24,9 @@ class SantriInfolist
                         TextEntry::make('nama_lengkap')
                             ->label('Nama Lengkap')
                             ->columnSpanFull(),
+                        TextEntry::make('nama_panggilan')
+                            ->label('Nama Panggilan')
+                            ->placeholder('—'),
                         TextEntry::make('kelas.nama_kelas')
                             ->label('Kelas'),
                         TextEntry::make('kamar.nama_kamar')
@@ -34,6 +37,31 @@ class SantriInfolist
                         TextEntry::make('uuid')
                             ->label('Magic Link UUID')
                             ->copyable()
+                            ->columnSpanFull(),
+                    ]),
+
+                Section::make('Biodata')
+                    ->columns(2)
+                    ->schema([
+                        TextEntry::make('nama_ayah')
+                            ->label('Nama Ayah')
+                            ->placeholder('—'),
+                        TextEntry::make('nama_ibu')
+                            ->label('Nama Ibu')
+                            ->placeholder('—'),
+                        TextEntry::make('alamat_lengkap')
+                            ->label('Alamat Lengkap')
+                            ->placeholder('—')
+                            ->columnSpanFull(),
+                        TextEntry::make('jumlah_saudara')
+                            ->label('Jumlah Saudara')
+                            ->placeholder('—'),
+                        TextEntry::make('cita_cita')
+                            ->label('Cita-cita')
+                            ->placeholder('—'),
+                        TextEntry::make('ciri_fisik')
+                            ->label('Ciri Fisik yang Mudah Dikenali')
+                            ->placeholder('—')
                             ->columnSpanFull(),
                     ]),
 
