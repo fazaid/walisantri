@@ -18,12 +18,15 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use UnitEnum;
 
 class MasterPengumumanResource extends Resource
 {
     protected static ?string $model = MasterPengumuman::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSpeakerWave;
+
+    protected static string|UnitEnum|null $navigationGroup = 'Manajemen';
 
     protected static ?string $recordTitleAttribute = 'judul_maklumat';
     protected static ?string $navigationLabel = 'Pengumuman';
