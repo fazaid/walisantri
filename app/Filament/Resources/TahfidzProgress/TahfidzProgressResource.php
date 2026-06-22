@@ -9,6 +9,7 @@ use App\Filament\Resources\TahfidzProgress\Pages\ViewTahfidzProgress;
 use App\Filament\Resources\TahfidzProgress\Schemas\TahfidzProgressForm;
 use App\Filament\Resources\TahfidzProgress\Schemas\TahfidzProgressInfolist;
 use App\Filament\Resources\TahfidzProgress\Tables\TahfidzProgressTable;
+use App\Filament\Clusters\Tahfidz;
 use App\Models\TahfidzProgress;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -18,7 +19,6 @@ use App\Models\Santri;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use BackedEnum;
-use UnitEnum;
 
 class TahfidzProgressResource extends Resource
 {
@@ -27,12 +27,11 @@ class TahfidzProgressResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBookOpen;
 
     protected static ?string $recordTitleAttribute = 'nama_surah';
-    protected static ?string $navigationLabel = 'Setoran Tahfidz';
+    protected static ?string $navigationLabel = 'Setoran';
     protected static ?string $modelLabel = 'Setoran';
     protected static ?string $pluralModelLabel = 'Setoran Tahfidz';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Akademik';
-    protected static ?int $navigationSort = 4;
+    protected static ?string $cluster = Tahfidz::class;
 
 
     public static function canViewAny(): bool
