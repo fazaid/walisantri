@@ -57,7 +57,6 @@
                     Minta Demo Gratis
                 </a>
             </div>
-            <p class="text-sm text-gray-400 mt-4">Tidak perlu kartu kredit · Setup 5 menit</p>
         </div>
     </section>
 
