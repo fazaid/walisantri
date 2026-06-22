@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - dev
 
 jobs:
   test:
@@ -58,7 +59,7 @@ jobs:
     name: Deploy ke VPS (walisantri.com)
     needs: test
     runs-on: ubuntu-latest
-    if: success()
+    if: success() && github.ref == 'refs/heads/main'
 
     steps:
       - name: Deploy via SSH
