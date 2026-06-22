@@ -28,9 +28,11 @@ class PrestasiSantriResource extends Resource
 
     protected static ?int $navigationSort = 10;
 
-    protected static ?string $navigationLabel  = 'Prestasi Santri';
+    protected static ?string $navigationLabel  = 'Prestasi';
     protected static ?string $modelLabel       = 'Prestasi';
     protected static ?string $pluralModelLabel = 'Prestasi Santri';
+
+    protected static ?string $slug = 'prestasi';
 
     public static function canAccess(): bool
     {

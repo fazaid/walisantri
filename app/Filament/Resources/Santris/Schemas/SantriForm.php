@@ -10,6 +10,7 @@ use App\Models\Santri;
 use App\Models\User;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
@@ -33,6 +34,8 @@ class SantriForm
                             ->required()
                             ->maxLength(255)
                             ->columnSpanFull(),
+                        TextInput::make('nama_panggilan')
+                            ->maxLength(100),
                         Select::make('kelas_id')
                             ->label('Kelas')
                             ->options(fn () => Kelas::where('pesantren_id', auth()->user()?->pesantren_id)
@@ -51,6 +54,27 @@ class SantriForm
                             ->native(false),
                         Toggle::make('status_aktif')
                             ->default(true)
+                            ->columnSpanFull(),
+                    ]),
+
+                Section::make('Biodata')
+                    ->columns(2)
+                    ->schema([
+                        TextInput::make('nama_ayah')
+                            ->maxLength(255),
+                        TextInput::make('nama_ibu')
+                            ->maxLength(255),
+                        Textarea::make('alamat_lengkap')
+                            ->rows(2)
+                            ->columnSpanFull(),
+                        TextInput::make('jumlah_saudara')
+                            ->numeric()
+                            ->minValue(0),
+                        TextInput::make('cita_cita')
+                            ->maxLength(255),
+                        Textarea::make('ciri_fisik')
+                            ->label('Ciri Fisik yang Mudah Dikenali')
+                            ->rows(2)
                             ->columnSpanFull(),
                     ]),
 
