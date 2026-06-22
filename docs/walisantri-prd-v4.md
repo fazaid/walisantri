@@ -4,7 +4,9 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Juni 2026 — v4.6
+**Last Updated:** Juni 2026 — v4.7
+
+**Changelog v4.7:** Perubahan operasional & UX panel admin, tidak ada perubahan model bisnis. (1) **Git workflow** — branch `dev` ditambahkan sebagai branch kerja; CI (job `test`) jalan di push ke `dev` maupun `main`, tapi job `deploy` (SSH ke VPS) hanya jalan dari `main`; branch `main` diberi **branch protection** (wajib PR, wajib status check `Test` lolos & up-to-date, tanpa approval review wajib karena solo-dev) — lihat §6.4 & §18. (2) **Biodata Santri** — tambah kolom `nama_panggilan`, `nama_ayah`, `nama_ibu`, `alamat_lengkap`, `jumlah_saudara`, `ciri_fisik`, `cita_cita` pada tabel `santri` (lihat §3.2); tampil di form & halaman detail Filament. "Karakter dominan/Kelebihan/Kekurangan" sengaja tidak ditambahkan (tumpang tindih dengan modul Karakter Rapor yang sudah dinamis/periodik); "Suku" sengaja tidak ditambahkan (data sensitif, tanpa kebutuhan operasional jelas). (3) **Restrukturisasi navigasi Filament** — 3 resource Tahfidz (Setoran/Ujian/Nilai, sebelumnya flat di grup Akademik) digabung jadi satu **Filament Cluster "Tahfidz"** dengan navigasi tab (dipindah ke atas breadcrumbs via render hook, tampil konsisten desktop & mobile); halaman **Rapor Akademik** kini menampilkan section Nilai Akademik **dan** Nilai Tahfidz sekaligus (satu rekap + satu PDF gabungan, model data tetap terpisah); menu **Pengumuman** dipindah ke grup **Manajemen**; menu **Prestasi Santri** diberi label tampilan **Prestasi** (slug URL `/admin/prestasi-santris` → `/admin/prestasi`; nama tabel/model tidak berubah) — lihat §7. (4) **Bug fix** — field `tahun_ajaran` pada input Nilai Akademik & Rapor Tahfidz diubah dari teks bebas jadi dropdown standar (mencegah mismatch format yang menyebabkan nilai tidak muncul di rapor). (5) Landing page: hapus klaim "Tidak perlu kartu kredit · Setup 5 menit" (tidak relevan, sistem ini berbasis trial+konfirmasi manual, bukan kartu kredit otomatis).
 
 **Changelog v4.6:** Revisi **model bisnis & harga** — (1) harga paket **Berkembang** diturunkan Rp 450.000 → **Rp 350.000**/bulan agar lompatan harga lebih gradual (rasio ×2,3 vs ×3 sebelumnya); (2) **paket Gratis dihapus** — diganti model **trial Rintisan 30 hari gratis** (kuota 100 santri, fitur penuh Rintisan) agar calon pelanggan merasakan nilai nyata sebelum berkomitmen; (3) **Modul Kesehatan** dipindah ke **Rintisan+** (sebelumnya Berkembang+) — rekam medis adalah kebutuhan keselamatan dasar boarding school, bukan fitur premium; (4) lifecycle baru: trial 30 hari → expired → **grace period 7 hari** (admin/ustadz redirect `/billing`, wali read-only) → **suspended**; (5) **paket Maju** izinkan X=0 — 1.000 santri = Rp 750.000/bulan (base price, tanpa add-on); (6) opsi durasi **6 bulan** ditambah ke §5.2 (bayar 5, aktif 6); (7) **§5.6 baru** — Kebijakan Retensi (jaminan harga terkunci, program referral); (8) simulasi bisnis & **target milestone klien** di §21 diperbarui; (9) landing page kini memiliki **seksi #harga** dengan toggle bulanan/tahunan dan 4 kartu paket; (10) **paket Tumbuh** ditambah — 250 santri, Rp 299.000/bulan, posisi "Paling Populer" (lihat §5.1); (11) **kebijakan minimum durasi upgrade** — sisa aktif > 6 bulan wajib minimum 6 bulan, sisa > 9 bulan wajib 12 bulan (lihat §16).
 
@@ -359,7 +361,7 @@ erDiagram
 
 **`kamar`** — `id` PK · `pesantren_id` FK cascadeOnDelete · `nama_kamar` string · timestamps. *Unique: `(pesantren_id, nama_kamar)`.* Hanya `admin_pesantren` yang bisa CRUD.
 
-**`santri`** — `id` PK · `pesantren_id` FK cascadeOnDelete · `wali_santri_id` FK→users restrictOnDelete · `pembimbing_ustadz_id` FK→users restrictOnDelete · `kelas_id` FK→kelas nullOnDelete · `kamar_id` FK→kamar nullOnDelete · `uuid` unique (token Magic Link) · `nis` (unique per pesantren) · `nama_lengkap` · `status_aktif` bool default true · `deleted_at` (SoftDeletes) · timestamps. *Index: `(pesantren_id, status_aktif)`, `(pesantren_id, kamar_id)`, `(pesantren_id, kelas_id)`; Unique: `(pesantren_id, nis)`.* Kolom `kelas`/`kamar` string dihapus (migrasi ke FK di v4.3).
+**`santri`** — `id` PK · `pesantren_id` FK cascadeOnDelete · `wali_santri_id` FK→users restrictOnDelete · `pembimbing_ustadz_id` FK→users restrictOnDelete · `kelas_id` FK→kelas nullOnDelete · `kamar_id` FK→kamar nullOnDelete · `uuid` unique (token Magic Link) · `nis` (unique per pesantren) · `nama_lengkap` · `nama_panggilan` null · `nama_ayah` null · `nama_ibu` null · `alamat_lengkap` text null · `jumlah_saudara` smallint null · `ciri_fisik` text null (ciri fisik yang mudah dikenali) · `cita_cita` null · `status_aktif` bool default true · `deleted_at` (SoftDeletes) · timestamps. *Index: `(pesantren_id, status_aktif)`, `(pesantren_id, kamar_id)`, `(pesantren_id, kelas_id)`; Unique: `(pesantren_id, nis)`.* Kolom `kelas`/`kamar` string dihapus (migrasi ke FK di v4.3). Kolom biodata (`nama_panggilan` s.d. `cita_cita`) ditambah di v4.7 — semua nullable, diisi opsional oleh admin/ustadz.
 
 ### Modul Akademik & Tahfidz
 
@@ -548,7 +550,9 @@ Dua bucket: **`walisantri-storage`** (file app — `exports/{pesantren_id}/`, `i
 
 ## 6.4 CI/CD (GitHub Actions)
 
-Push `main` → job `test`: checkout, setup PHP 8.4, `composer install`, jalankan `php artisan test` terhadap service container PostgreSQL 17 (`walisantri_test`) → job `deploy` (hanya jalan bila `test` sukses): SSH ke VPS (`git pull`, `composer install --no-dev`, `npm ci && npm run build`) → `migrate --force`, `config/route/view:cache`, `queue:restart`. Secrets: `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`. Workflow aktif di `.github/workflows/deploy.yml`, sudah diverifikasi sukses end-to-end. Branch flow → §18.
+Push `main` **atau** `dev` → job `test`: checkout, setup PHP 8.4, `composer install`, jalankan `php artisan test` terhadap service container PostgreSQL 17 (`walisantri_test`) → job `deploy` (SSH ke VPS, hanya jalan bila `test` sukses **dan** `github.ref == 'refs/heads/main'` — push ke `dev` tidak pernah deploy, v4.7): `git pull`, `composer install --no-dev`, `npm ci && npm run build` → `migrate --force`, `config/route/view:cache`, `queue:restart`. Secrets: `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`. Workflow aktif di `.github/workflows/deploy.yml`, sudah diverifikasi sukses end-to-end. Branch flow → §18.
+
+**Branch protection `main` (v4.7):** wajib lewat Pull Request (push langsung diblokir, kecuali admin agar tidak terkunci); wajib status check `Test` lolos & branch up-to-date dengan `main` sebelum merge (`required_status_checks.strict`); **0 approval review wajib** (solo-dev, lihat §22); force-push & delete branch `main` diblokir.
 
 ## 6.5 Keamanan Super Admin Panel
 
@@ -580,11 +584,12 @@ Navigasi `app.walisantri.com/admin`:
 Dashboard                        ← semua role
 ── Santri (group) ──
   Santri Users · Kelas AcademicCap [admin_pesantren] · Kamar Home [admin_pesantren]
-  Prestasi Santri Trophy ← admin_pesantren + ustadz
+  Prestasi Trophy ← admin_pesantren + ustadz (label "Prestasi Santri" → "Prestasi", slug /admin/prestasi, v4.7)
 ──
 ── Akademik (group) ──
-  Mata Pelajaran (1) RectangleStack [admin_pesantren] · Nilai Akademik (2) PencilSquare · Rapor Akademik (3) DocumentChartBar [PDF]
-  Setoran Tahfidz (4) BookOpen · Ujian Tahfidz (5) AcademicCap · Rapor Tahfidz (6) DocumentText
+  Mata Pelajaran (1) RectangleStack [admin_pesantren] · Nilai Akademik (2) PencilSquare
+  Rapor Akademik (3) DocumentChartBar [PDF — gabung section Nilai Akademik + Nilai Tahfidz, v4.7]
+  Tahfidz BookOpen (4) [Filament Cluster, v4.7] → tab: Setoran · Ujian · Nilai
 ──
 ── Kesantrian (group) ──
   Mutaba'ah Harian (1) ClipboardDocumentList · Karakter Rapor (2) Star
@@ -597,13 +602,15 @@ Dashboard                        ← semua role
   Order Banknotes · Kupon Tag
 ──
 ── Manajemen (group) ──
-  Pengguna UserGroup [Admin+SuperAdmin]
+  Pengguna UserGroup [Admin+SuperAdmin] · Pengumuman SpeakerWave [v4.7 — pindah dari luar grup]
 ──
-Pengumuman SpeakerWave · Pesantren BuildingOffice2 [SuperAdmin only]
+Pesantren BuildingOffice2 [SuperAdmin only]
 Demo Request [super_admin only] ← masuk di bawah Pesantren
 ```
 
 > Urutan grup navigasi diregistrasi eksplisit di `AdminPanelProvider::navigationGroups()` — `Santri → Akademik → Kesantrian → Keuangan → Langganan → Manajemen` — agar tak lagi bergantung pada nilai `navigationSort` item pertama tiap grup (yang rapuh terhadap reorder/pemindahan resource antar grup).
+
+> **Cluster Tahfidz (v4.7):** 3 resource (Setoran/Ujian/Nilai — sebelumnya `Setoran Tahfidz`/`Ujian Tahfidz`/`Rapor Tahfidz` flat di grup Akademik) digabung jadi satu menu sidebar via `App\Filament\Clusters\Tahfidz`; navigasi antar-resource berupa tab. Filament default merender tab cluster (`SubNavigationPosition::Top`) di bawah header & sebagai dropdown di mobile — di-override via `renderHook(PanelsRenderHook::PAGE_START, …)` di `AdminPanelProvider` (render tab di atas breadcrumbs, ambil halaman aktif via `Livewire::current()`) + CSS (`width:fit-content` agar `margin-inline:auto` bawaan Filament benar-benar men-tengahkan tab, dan sembunyikan dropdown/tab versi default) supaya tampilan konsisten desktop & mobile.
 
 > Kelas & Kamar hanya tampil untuk `admin_pesantren` (bukan ustadz). Ustadz hanya melihat data santri binaannya di semua menu Kesantrian. TagihanSpp hanya `admin_pesantren` + `super_admin` (bukan ustadz).
 
@@ -793,7 +800,9 @@ tests/TenantIsolation/DataIsolationTest.php   ← wajib lulus sebelum go-live (P
 
 > ⚠️ Staging **wajib** kredensial WhatsApp & email terpisah — tanpa ini testing mengirim pesan nyata ke wali sungguhan.
 
-**Branch flow:** `feature/*` (Herd lokal, tanpa deploy) → `develop` (auto-deploy staging) → `main` (auto-deploy production).
+**Branch flow saat ini (tanpa staging, v4.7):** `dev` (kerja & push bebas — CI hanya jalankan job `test`, tidak ada deploy) → buka PR ke `main` (wajib status check `Test` lolos + branch protection, lihat §6.4) → merge → auto-deploy production.
+
+**Branch flow target (setelah staging dibuat):** `feature/*` (Herd lokal, tanpa deploy) → `develop` (auto-deploy staging) → `main` (auto-deploy production).
 
 ---
 
@@ -846,11 +855,11 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 
 # 22. Catatan Implementasi Aktual
 
-**Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali. PRD ini adalah v4.6 (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 30 hari. Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
+**Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali. PRD ini adalah v4.7 (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 30 hari. Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
 
 **Perubahan v4.0:** **login terpusat di `app.walisantri.com`** (tenant di-resolve dari akun, bukan host) — memutus ketergantungan auth pada subdomain · **subdomain `{slug}.walisantri.com` jadi website profil publik**, otomatis aktif saat registrasi · **slug mutable** (cooldown 90 hari) menggantikan immutable · tabel `tenant_domains` sbg sumber resolusi host publik · **custom domain** di roadmap (Cloudflare for SaaS gratis ≤100 hostname, fallback Caddy on-demand TLS) · `dash.walisantri.com` ganti rencana `central.walisantri.com` · **DB pindah ke PostgreSQL 17** (sebelumnya rencana MySQL) — alasan: RLS native, pgvector untuk AI, schema-per-tenant untuk DB-per-tenant · R2 (zero egress) · CI/CD otomatis · hybrid tenancy.
 
-**Bug & fix:** `HasUuids` isi `id` jika tak di-override → `uniqueIds(): ['uuid']` · `$navigationGroup` `?string` error → `string|UnitEnum|null` · index name >63 char (batas PostgreSQL) → nama eksplisit pendek · ingat PostgreSQL tak punya unsigned int (kolom unsigned → signed bigint).
+**Bug & fix:** `HasUuids` isi `id` jika tak di-override → `uniqueIds(): ['uuid']` · `$navigationGroup` `?string` error → `string|UnitEnum|null` · index name >63 char (batas PostgreSQL) → nama eksplisit pendek · ingat PostgreSQL tak punya unsigned int (kolom unsigned → signed bigint) · (v4.7) `tahun_ajaran` di form Nilai Akademik/Rapor Tahfidz semula `TextInput` bebas → mismatch format antar input & filter rapor bikin data tidak muncul → diganti `Select` dropdown seragam (service `TahunAjaranOptions`) · (v4.7) Filament cluster default merender sub-navigation tab di bawah header & dropdown khusus mobile → di-override via render hook + CSS agar tab tampil di atas breadcrumbs, konsisten desktop/mobile (detail di §7).
 
 **Di-skip (post v1.0):** Observer Kesehatan→auto-udzur · Excel Importer massal · WhatsApp Gateway + Queue Job · Feature test isolasi & middleware · PostgreSQL RLS policy per tabel · zero-downtime deploy · migrasi schema-per-tenant (setelah >50 tenant) · Kalender Amalan Harian interaktif (warna) · Daftar Inventaris santri.
 
@@ -886,4 +895,4 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 
 ---
 
-*Confidential — Internal Document | Walisantri.com v4.6 | Juni 2026 (diperbarui 16 Juni 2026)*
+*Confidential — Internal Document | Walisantri.com v4.7 | Juni 2026 (diperbarui 22 Juni 2026)*
