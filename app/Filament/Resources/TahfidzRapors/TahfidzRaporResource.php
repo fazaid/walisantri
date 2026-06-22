@@ -9,6 +9,7 @@ use App\Filament\Resources\TahfidzRapors\Pages\ViewTahfidzRapor;
 use App\Filament\Resources\TahfidzRapors\Schemas\TahfidzRaporForm;
 use App\Filament\Resources\TahfidzRapors\Schemas\TahfidzRaporInfolist;
 use App\Filament\Resources\TahfidzRapors\Tables\TahfidzRaporsTable;
+use App\Filament\Clusters\Tahfidz;
 use App\Models\TahfidzRapor;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -18,7 +19,6 @@ use App\Models\Santri;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use BackedEnum;
-use UnitEnum;
 
 class TahfidzRaporResource extends Resource
 {
@@ -27,12 +27,11 @@ class TahfidzRaporResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
 
     protected static ?string $recordTitleAttribute = 'tahun_ajaran';
-    protected static ?string $navigationLabel = 'Rapor Tahfidz';
-    protected static ?string $modelLabel = 'Rapor';
-    protected static ?string $pluralModelLabel = 'Rapor Tahfidz';
+    protected static ?string $navigationLabel = 'Nilai';
+    protected static ?string $modelLabel = 'Nilai Tahfidz';
+    protected static ?string $pluralModelLabel = 'Nilai Tahfidz';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Akademik';
-    protected static ?int $navigationSort = 6;
+    protected static ?string $cluster = Tahfidz::class;
 
 
     public static function canViewAny(): bool

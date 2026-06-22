@@ -2,3 +2,23 @@
 
 @source '../../../../app/Filament/**/*';
 @source '../../../../resources/views/filament/**/*';
+
+/* Cluster sub-navigation dengan posisi Top: tab dipindah ke atas breadcrumbs
+   (lihat AdminPanelProvider::panel() renderHook PAGE_START) dan dipaksa
+   tampil di semua ukuran layar — bukan dropdown mobile / tab bawah header
+   bawaan Filament. */
+.fi-page-has-sub-navigation-top .fi-page-sub-navigation-dropdown {
+    display: none !important;
+}
+
+.fi-page-has-sub-navigation-top .fi-page-main .fi-page-sub-navigation-tabs {
+    display: none !important;
+}
+
+.fi-page-has-sub-navigation-top > .fi-page-sub-navigation-tabs {
+    display: flex !important;
+    width: fit-content;
+    margin-inline: auto;
+    margin-top: 2rem;
+    overflow-x: auto;
+}

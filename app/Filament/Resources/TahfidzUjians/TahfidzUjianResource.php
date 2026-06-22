@@ -9,6 +9,7 @@ use App\Filament\Resources\TahfidzUjians\Pages\ViewTahfidzUjian;
 use App\Filament\Resources\TahfidzUjians\Schemas\TahfidzUjianForm;
 use App\Filament\Resources\TahfidzUjians\Schemas\TahfidzUjianInfolist;
 use App\Filament\Resources\TahfidzUjians\Tables\TahfidzUjiansTable;
+use App\Filament\Clusters\Tahfidz;
 use App\Models\TahfidzUjian;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -19,7 +20,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use BackedEnum;
 use Illuminate\Support\Facades\Gate;
-use UnitEnum;
 
 class TahfidzUjianResource extends Resource
 {
@@ -28,13 +28,11 @@ class TahfidzUjianResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAcademicCap;
 
     protected static ?string $recordTitleAttribute = 'target_juz';
-    protected static ?string $navigationLabel = 'Ujian Tahfidz';
+    protected static ?string $navigationLabel = 'Ujian';
     protected static ?string $modelLabel = 'Ujian';
     protected static ?string $pluralModelLabel = 'Ujian Tahfidz';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Akademik';
-
-    protected static ?int $navigationSort = 5;
+    protected static ?string $cluster = Tahfidz::class;
 
 
     public static function canViewAny(): bool
