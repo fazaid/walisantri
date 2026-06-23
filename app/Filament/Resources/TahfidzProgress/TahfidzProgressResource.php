@@ -27,6 +27,7 @@ class TahfidzProgressResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBookOpen;
 
     protected static ?string $recordTitleAttribute = 'nama_surah';
+    protected static ?string $slug = 'setoran';
     protected static ?string $navigationLabel = 'Setoran';
     protected static ?string $modelLabel = 'Setoran';
     protected static ?string $pluralModelLabel = 'Setoran Tahfidz';

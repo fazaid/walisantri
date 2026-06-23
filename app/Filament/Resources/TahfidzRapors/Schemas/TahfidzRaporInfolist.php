@@ -16,14 +16,26 @@ class TahfidzRaporInfolist
     {
         return $schema
             ->components([
-                Section::make('Identitas Rapor')->columns(2)->schema([
+                Section::make('Detail Ujian')->columns(3)->schema([
                     TextEntry::make('santri.nama_lengkap')->label('Santri'),
+                    TextEntry::make('penguji.name')->label('Penguji'),
+                    TextEntry::make('tanggal_ujian')->label('Tanggal Ujian')->date('d M Y'),
+                    TextEntry::make('target_juz')->label('Target Juz')
+                        ->formatStateUsing(fn ($state) => $state ? "{$state} Juz" : '—'),
+                    TextEntry::make('status_kelulusan')->label('Status Kelulusan')->badge()
+                        ->color(fn (?string $state): string => match ($state) {
+                            'Lulus'    => 'success',
+                            'Mengulang'=> 'danger',
+                            default    => 'gray',
+                        }),
+                ]),
+                Section::make('Periode Rapor')->columns(2)->schema([
                     TextEntry::make('tahun_ajaran')->label('Tahun Ajaran'),
                     TextEntry::make('periode')->label('Periode')
                         ->formatStateUsing(fn ($state) => str_replace('_', ' ', $state)),
-                    TextEntry::make('nilai_hafalan')->label('Nilai Hafalan'),
                 ]),
-                Section::make('Penilaian')->columns(3)->schema([
+                Section::make('Penilaian')->columns(4)->schema([
+                    TextEntry::make('nilai_hafalan')->label('Nilai Hafalan'),
                     TextEntry::make('nilai_tilawah')->label('Tilawah')->badge(),
                     TextEntry::make('nilai_makhraj')->label('Makhraj')->badge(),
                     TextEntry::make('nilai_tajwid')->label('Tajwid')->badge(),

@@ -169,25 +169,39 @@
 </table>
 @endif
 
-<div class="section-title">📖 Nilai Tahfidz</div>
-@if(! $tahfidzRapor)
-    <p class="no-data">Belum ada nilai tahfidz pada periode ini.</p>
+<div class="section-title">📖 Riwayat & Nilai Ujian Tahfidz</div>
+@if($tahfidzUjianList->isEmpty())
+    <p class="no-data">Belum ada ujian tahfidz pada periode ini.</p>
 @else
 <table class="data-table">
     <tr>
-        <th>Hafalan</th>
-        <th>Tilawah</th>
-        <th>Makhraj</th>
-        <th>Tajwid</th>
+        <th style="width:9%">Tanggal</th>
+        <th style="width:7%">Juz</th>
+        <th style="width:8%">Status</th>
+        <th style="width:7%">Hafalan</th>
+        <th style="width:6%">Tilawah</th>
+        <th style="width:6%">Makhraj</th>
+        <th style="width:6%">Tajwid</th>
+        <th style="width:13%">Penguji</th>
+        <th>Rekomendasi</th>
     </tr>
+    @foreach($tahfidzUjianList as $ujian)
+    @php
+        $clsStatus = $ujian->status_kelulusan === 'Lulus' ? 'badge-hijau' : 'badge-kuning';
+    @endphp
     <tr>
-        <td>{{ $tahfidzRapor->nilai_hafalan }}</td>
-        <td>{{ $tahfidzRapor->nilai_tilawah }}</td>
-        <td>{{ $tahfidzRapor->nilai_makhraj }}</td>
-        <td>{{ $tahfidzRapor->nilai_tajwid }}</td>
+        <td>{{ $ujian->tanggal_ujian?->translatedFormat('d M Y') ?? '—' }}</td>
+        <td>{{ $ujian->target_juz ?? '—' }}</td>
+        <td><span class="badge {{ $clsStatus }}">{{ $ujian->status_kelulusan ?? '—' }}</span></td>
+        <td>{{ $ujian->nilai_hafalan }}</td>
+        <td>{{ $ujian->nilai_tilawah }}</td>
+        <td>{{ $ujian->nilai_makhraj }}</td>
+        <td>{{ $ujian->nilai_tajwid }}</td>
+        <td>{{ $ujian->penguji?->name ?? '—' }}</td>
+        <td>{{ $ujian->rekomendasi_pembimbing ?: '—' }}</td>
     </tr>
+    @endforeach
 </table>
-<p style="margin-top:6px;"><strong>Rekomendasi Pembimbing:</strong><br>{{ $tahfidzRapor->rekomendasi_pembimbing }}</p>
 @endif
 
 </body>

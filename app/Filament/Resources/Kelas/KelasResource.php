@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Kelas;
 
+use App\Filament\Clusters\Santri;
 use App\Filament\Resources\Kelas\Pages\CreateKelas;
 use App\Filament\Resources\Kelas\Pages\EditKelas;
 use App\Filament\Resources\Kelas\Pages\ListKelas;
@@ -14,7 +15,6 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
-use UnitEnum;
 
 class KelasResource extends Resource
 {
@@ -22,7 +22,7 @@ class KelasResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAcademicCap;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Santri';
+    protected static ?string $cluster = Santri::class;
 
     protected static ?int $navigationSort = 2;
 

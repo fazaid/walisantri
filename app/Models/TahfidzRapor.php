@@ -16,6 +16,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable([
     'pesantren_id',
     'santri_id',
+    'penguji_id',
+    'tanggal_ujian',
+    'target_juz',
+    'status_kelulusan',
     'tahun_ajaran',
     'periode',
     'nilai_hafalan',
@@ -28,9 +32,21 @@ class TahfidzRapor extends Model
 {
     use Multitenantable;
 
+    protected function casts(): array
+    {
+        return [
+            'tanggal_ujian' => 'date',
+        ];
+    }
+
     public function santri(): BelongsTo
     {
         return $this->belongsTo(Santri::class);
+    }
+
+    public function penguji(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'penguji_id');
     }
 
     public function pesantren(): BelongsTo
