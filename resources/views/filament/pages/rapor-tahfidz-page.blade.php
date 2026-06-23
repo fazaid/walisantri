@@ -70,22 +70,48 @@
                 @if($setoranStats['total_setoran'] === 0)
                     <p class="p-6 text-center text-sm text-gray-400">Belum ada setoran pada periode ini.</p>
                 @else
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-5">
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 p-5">
                         <div class="text-center">
                             <p class="text-xs text-gray-400 mb-1">Total Setoran</p>
                             <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ $setoranStats['total_setoran'] }}</p>
                         </div>
                         <div class="text-center">
+                            <p class="text-xs text-gray-400 mb-1">Total Ayat</p>
+                            <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ $setoranStats['total_ayat'] }}</p>
+                        </div>
+                        <div class="text-center">
                             <p class="text-xs text-gray-400 mb-1">Hari Aktif</p>
                             <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ $setoranStats['hari_aktif'] }}</p>
                         </div>
-                        @foreach($setoranStats['per_tipe'] as $tipe => $jumlah)
+                        @foreach($setoranStats['per_tipe'] as $tipe => $data)
                         <div class="text-center">
                             <p class="text-xs text-gray-400 mb-1">{{ $tipe }}</p>
-                            <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ $jumlah }}</p>
+                            <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ $data['jumlah'] }}</p>
+                            <p class="text-[11px] text-gray-400">{{ $data['ayat'] }} ayat</p>
                         </div>
                         @endforeach
                     </div>
+
+                    @if($setoranStats['nilai_distribusi']->isNotEmpty())
+                    <div class="px-5 pb-4 space-y-2">
+                        <p class="text-xs font-semibold text-gray-500 dark:text-gray-400">Distribusi Nilai Kelancaran</p>
+                        @foreach(['Mumtaz', 'Jayyid Jiddan', 'Jayyid', 'Maqbul'] as $label)
+                        @php
+                            $cnt = $setoranStats['nilai_distribusi'][$label] ?? 0;
+                            $pct = $cnt > 0 ? round($cnt / $setoranStats['total_setoran'] * 100) : 0;
+                        @endphp
+                        @if($cnt > 0)
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs text-gray-600 dark:text-gray-300 w-28 flex-shrink-0">{{ $label }}</span>
+                            <div class="flex-1 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                                <div class="h-full bg-teal-500 rounded-full" style="width: {{ $pct }}%"></div>
+                            </div>
+                            <span class="text-xs font-medium text-gray-700 dark:text-gray-200 w-20 text-right flex-shrink-0">{{ $cnt }} ({{ $pct }}%)</span>
+                        </div>
+                        @endif
+                        @endforeach
+                    </div>
+                    @endif
 
                     <div class="px-5 pb-5 flex flex-wrap gap-2">
                         @foreach($setoranStats['surah_list'] as $surah)

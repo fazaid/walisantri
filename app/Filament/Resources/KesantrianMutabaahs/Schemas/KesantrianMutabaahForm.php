@@ -1,11 +1,8 @@
 <?php
 
-// ============================================================
-// FILE 1: app/Filament/Resources/KesantrianMutabaahs/Schemas/KesantrianMutabaahForm.php
-// ============================================================
-
 namespace App\Filament\Resources\KesantrianMutabaahs\Schemas;
 
+use App\Models\KesantrianAmalMaster;
 use App\Models\Santri;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
@@ -13,6 +10,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Auth;
 
 class KesantrianMutabaahForm
 {
@@ -36,9 +34,6 @@ class KesantrianMutabaahForm
                         DatePicker::make('tanggal')
                             ->label('Tanggal')
                             ->default(now())->required(),
-                        TextInput::make('jamaah_5_waktu')
-                            ->label('Shalat Jamaah (dari 5)')
-                            ->numeric()->minValue(0)->maxValue(5)->default(5)->required(),
                         Select::make('status_udzur')
                             ->label('Status Udzur')
                             ->options([
@@ -52,14 +47,33 @@ class KesantrianMutabaahForm
 
                 Section::make('Amalan Harian')
                     ->columns(2)
-                    ->schema([
-                        Toggle::make('is_rawatib')->label('Shalat Rawatib')->default(false),
-                        Toggle::make('is_shalat_malam')->label('Shalat Malam')->default(false),
-                        Toggle::make('is_dhuha')->label('Shalat Dhuha')->default(false),
-                        Toggle::make('is_tilawah_1juz')->label('Tilawah 1 Juz')->default(false),
-                        Toggle::make('is_infak')->label('Infak')->default(false),
-                        Toggle::make('is_puasa')->label('Puasa Sunnah')->default(false),
-                    ]),
+                    ->schema(self::amalanFields()),
             ]);
+    }
+
+    protected static function amalanFields(): array
+    {
+        $masterList = KesantrianAmalMaster::where('pesantren_id', Auth::user()?->pesantren_id)
+            ->where('aktif', true)
+            ->orderBy('urutan')
+            ->get();
+
+        return $masterList->map(function (KesantrianAmalMaster $item) {
+            $label = trim(($item->icon ? $item->icon.' ' : '').$item->label);
+
+            if ($item->tipe === 'hitungan') {
+                return TextInput::make("amalan.{$item->kode}")
+                    ->label("{$label} (dari {$item->nilai_maks})")
+                    ->numeric()
+                    ->minValue(0)
+                    ->maxValue($item->nilai_maks)
+                    ->default($item->nilai_maks)
+                    ->required();
+            }
+
+            return Toggle::make("amalan.{$item->kode}")
+                ->label($label)
+                ->default(false);
+        })->all();
     }
 }

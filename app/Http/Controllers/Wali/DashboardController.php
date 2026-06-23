@@ -10,6 +10,7 @@ use App\Models\MasterPengumuman;
 use App\Models\TagihanSpp;
 use App\Models\TahfidzProgress;
 use App\Models\TahfidzRapor;
+use App\Services\MutabaahScoreCalculator;
 use App\Services\TahfidzJuzCalculator;
 
 class DashboardController extends Controller
@@ -65,19 +66,7 @@ class DashboardController extends Controller
         $mutabaah = KesantrianMutabaah::where('santri_id', $santri->id)
             ->whereBetween('tanggal', [now()->subDays(6)->toDateString(), now()->toDateString()])
             ->get();
-        $persentaseAmalan = 0;
-        if ($mutabaah->isNotEmpty()) {
-            $skor = $mutabaah->sum(fn ($m) =>
-                ($m->jamaah_5_waktu * 5)
-                + ($m->is_rawatib      ? 7 : 0)
-                + ($m->is_shalat_malam ? 7 : 0)
-                + ($m->is_dhuha        ? 7 : 0)
-                + ($m->is_tilawah_1juz ? 7 : 0)
-                + ($m->is_infak        ? 7 : 0)
-                + ($m->is_puasa        ? 7 : 0)
-            );
-            $persentaseAmalan = (int) round(($skor / (67 * 7)) * 100);
-        }
+        $persentaseAmalan = MutabaahScoreCalculator::persentaseRataRata($mutabaah);
 
         // Status kesehatan terkini
         $latestKesehatan  = KesantrianKesehatan::where('santri_id', $santri->id)

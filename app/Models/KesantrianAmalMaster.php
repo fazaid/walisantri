@@ -1,9 +1,5 @@
 <?php
 
-// ============================================================
-// FILE 3: app/Models/KesantrianMutabaah.php
-// ============================================================
-
 namespace App\Models;
 
 use App\Traits\Multitenantable;
@@ -12,29 +8,31 @@ use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Table('kesantrian_mutabaah')]
+#[Table('kesantrian_amal_master')]
 #[Fillable([
     'pesantren_id',
-    'santri_id',
-    'tanggal',
-    'amalan',
-    'status_udzur',
+    'kode',
+    'label',
+    'tipe',
+    'nilai_maks',
+    'satuan',
+    'icon',
+    'bobot',
+    'urutan',
+    'aktif',
 ])]
-class KesantrianMutabaah extends Model
+class KesantrianAmalMaster extends Model
 {
     use Multitenantable;
 
     protected function casts(): array
     {
         return [
-            'tanggal' => 'date',
-            'amalan'  => 'array',
+            'nilai_maks' => 'integer',
+            'bobot'      => 'integer',
+            'urutan'     => 'integer',
+            'aktif'      => 'boolean',
         ];
-    }
-
-    public function santri(): BelongsTo
-    {
-        return $this->belongsTo(Santri::class);
     }
 
     public function pesantren(): BelongsTo

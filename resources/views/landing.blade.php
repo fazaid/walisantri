@@ -16,7 +16,6 @@
             <div class="hidden md:flex items-center gap-6">
                 <a href="#fitur" class="text-sm text-gray-500 hover:text-teal-700 font-medium">Fitur</a>
                 <a href="#cara-kerja" class="text-sm text-gray-500 hover:text-teal-700 font-medium">Cara Kerja</a>
-                <a href="#harga" class="text-sm text-gray-500 hover:text-teal-700 font-medium">Harga</a>
                 <a href="{{ route('demo') }}" class="text-sm text-gray-500 hover:text-teal-700 font-medium">Demo</a>
             </div>
             <div class="flex items-center gap-2 shrink-0">
@@ -24,10 +23,10 @@
                    class="text-sm text-gray-600 hover:text-teal-700 font-medium px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap">
                     Masuk
                 </a>
-                <a href="{{ route('register') }}"
+                <a href="{{ route('demo') }}"
                    class="text-sm bg-teal-700 text-white font-medium px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-teal-800 transition-colors whitespace-nowrap">
-                    <span class="sm:hidden">Daftar</span>
-                    <span class="hidden sm:inline">Daftar Gratis</span>
+                    <span class="sm:hidden">Waiting List</span>
+                    <span class="hidden sm:inline">Daftar Waiting List</span>
                 </a>
             </div>
         </div>
@@ -48,13 +47,9 @@
                 SPP bulanan, prestasi santri, dan komunikasi wali — semuanya terintegrasi dalam satu platform yang mudah digunakan.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="{{ route('register') }}"
-                   class="inline-block bg-teal-700 text-white font-semibold px-8 py-3.5 rounded-xl text-base hover:bg-teal-800 transition-colors shadow-sm">
-                    Mulai Gratis Sekarang →
-                </a>
                 <a href="{{ route('demo') }}"
-                   class="inline-block bg-white text-teal-700 font-semibold px-8 py-3.5 rounded-xl text-base border-2 border-teal-200 hover:border-teal-400 hover:bg-teal-50 transition-colors">
-                    Minta Demo Gratis
+                   class="inline-block bg-teal-700 text-white font-semibold px-8 py-3.5 rounded-xl text-base hover:bg-teal-800 transition-colors shadow-sm">
+                    Daftar Waiting List Demo →
                 </a>
             </div>
         </div>
@@ -269,7 +264,7 @@
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             @foreach([
-                ['1', 'Daftar Pesantren', 'Buat akun dengan nama pesantren dan subdomain Anda. Selesai dalam 2 menit.', 'bg-teal-100 text-teal-700'],
+                ['1', 'Daftar Waiting List', 'Isi form singkat dengan nama pesantren Anda. Tim kami akan menghubungi untuk setup awal.', 'bg-teal-100 text-teal-700'],
                 ['2', 'Input Data Santri', 'Tambahkan data santri, buat kelas, dan atur modul yang ingin digunakan.', 'bg-emerald-100 text-emerald-700'],
                 ['3', 'Aktifkan Portal Wali', 'Bagikan link magic ke wali santri — mereka langsung bisa pantau perkembangan anak.', 'bg-blue-100 text-blue-700'],
             ] as $step)
@@ -284,210 +279,6 @@
         </div>
     </section>
 
-    {{-- Harga --}}
-    <section id="harga" class="max-w-6xl mx-auto px-6 py-20">
-        @php
-            use App\Models\BillingSetting;
-
-            $bonusTahunan      = BillingSetting::get('bonus_bulan_tahunan', 2);
-            $bulanBayarTahunan = 12 - $bonusTahunan;
-
-            $paketHarga = [
-                [
-                    'nama'      => 'Rintisan',
-                    'harga'     => BillingSetting::get('harga_rintisan', 150_000),
-                    'kuota'     => BillingSetting::get('kuota_rintisan', 100),
-                    'popular'   => false,
-                    'trial'     => false,
-                    'deskripsi' => 'Untuk pesantren yang baru memulai.',
-                    'fitur'     => ['Trial 30 hari gratis', 'Semua modul tersedia', 'Portal wali santri', 'Ekspor PDF & Excel'],
-                    'cta'       => ['label' => 'Mulai Gratis', 'href' => route('register'), 'style' => 'border'],
-                ],
-                [
-                    'nama'      => 'Tumbuh',
-                    'harga'     => BillingSetting::get('harga_tumbuh', 299_000),
-                    'kuota'     => BillingSetting::get('kuota_tumbuh', 250),
-                    'popular'   => true,
-                    'trial'     => false,
-                    'deskripsi' => 'Pilihan terbaik untuk pesantren aktif.',
-                    'fitur'     => ['Semua modul tersedia', 'Portal wali santri', 'Ekspor PDF & Excel', 'Support prioritas', 'Onboarding gratis'],
-                    'cta'       => ['label' => 'Mulai Sekarang', 'href' => route('register'), 'style' => 'solid'],
-                ],
-                [
-                    'nama'      => 'Berkembang',
-                    'harga'     => BillingSetting::get('harga_berkembang', 350_000),
-                    'kuota'     => BillingSetting::get('kuota_berkembang', 500),
-                    'popular'   => false,
-                    'trial'     => false,
-                    'deskripsi' => 'Untuk pesantren menengah yang berkembang.',
-                    'fitur'     => ['Semua modul tersedia', 'Portal wali santri', 'Ekspor PDF & Excel', 'Support prioritas', 'Onboarding gratis'],
-                    'cta'       => ['label' => 'Mulai Sekarang', 'href' => route('register'), 'style' => 'border'],
-                ],
-                [
-                    'nama'      => 'Maju',
-                    'harga'     => BillingSetting::get('harga_maju_base', 750_000),
-                    'kuota'     => null,
-                    'popular'   => false,
-                    'trial'     => false,
-                    'deskripsi' => 'Untuk pesantren besar dengan kebutuhan khusus.',
-                    'fitur'     => ['Semua modul tersedia', 'Portal wali santri', 'Ekspor PDF & Excel', 'Support prioritas', 'Onboarding gratis', 'Kuota custom 1.000+ santri'],
-                    'cta'       => ['label' => 'Hubungi Kami', 'href' => route('demo'), 'style' => 'border'],
-                ],
-            ];
-        @endphp
-
-        <div class="text-center mb-10">
-            <h2 class="text-3xl font-bold text-gray-900 mb-4">Harga Transparan, Tanpa Biaya Tersembunyi</h2>
-            <p class="text-gray-500 max-w-xl mx-auto">
-                Mulai gratis, upgrade kapan saja sesuai pertumbuhan pesantren Anda.
-            </p>
-        </div>
-
-        {{-- Toggle bulanan / tahunan --}}
-        <div class="flex justify-center mb-10">
-            <div class="bg-gray-100 p-1 rounded-xl inline-flex gap-1">
-                <button id="btn-bulanan" onclick="setPeriode('bulanan')"
-                        class="px-5 py-2 rounded-lg text-sm font-semibold transition-all bg-white text-gray-900 shadow-sm">
-                    Bulanan
-                </button>
-                <button id="btn-tahunan" onclick="setPeriode('tahunan')"
-                        class="px-5 py-2 rounded-lg text-sm font-semibold transition-all text-gray-500">
-                    Tahunan
-                    <span class="ml-1.5 bg-teal-100 text-teal-700 text-xs font-semibold px-2 py-0.5 rounded-full">
-                        Hemat {{ $bonusTahunan }} bulan
-                    </span>
-                </button>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
-            @foreach($paketHarga as $paket)
-            @php
-                $hargaBulanan         = $paket['harga'];
-                $hargaTahunanPerBulan = $hargaBulanan > 0
-                    ? (int) round($hargaBulanan * $bulanBayarTahunan / 12)
-                    : 0;
-                $totalTahunan         = $hargaBulanan * $bulanBayarTahunan;
-
-                $kuotaCalc            = $paket['kuota'] ?? BillingSetting::get('kuota_maju_base', 1000);
-                $hargaPerSantri       = $hargaBulanan > 0
-                    ? (int) ceil($hargaBulanan / $kuotaCalc)
-                    : null;
-                $hargaPerSantriTahunan = $hargaTahunanPerBulan > 0
-                    ? (int) ceil($hargaTahunanPerBulan / $kuotaCalc)
-                    : null;
-            @endphp
-            <div class="relative border rounded-2xl p-6 flex flex-col gap-4
-                {{ $paket['popular'] ? 'border-teal-500 shadow-lg shadow-teal-100 ring-1 ring-teal-500' : 'border-gray-200 hover:border-gray-300' }}">
-
-                @if($paket['trial'])
-                <div class="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                    <span class="bg-teal-600 text-white text-xs font-semibold px-3 py-1 rounded-full">✓ Trial 30 Hari Gratis</span>
-                </div>
-                @elseif($paket['popular'])
-                <div class="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span class="bg-teal-600 text-white text-xs font-semibold px-3 py-1 rounded-full">Paling Populer</span>
-                </div>
-                @endif
-
-                <div>
-                    <div class="font-bold text-gray-900 text-lg mb-1">{{ $paket['nama'] }}</div>
-                    <div class="text-gray-500 text-sm">{{ $paket['deskripsi'] }}</div>
-                </div>
-
-                <div>
-                    @if($hargaBulanan === 0)
-                        <span class="text-3xl font-bold text-gray-900">Gratis</span>
-                        <div class="mt-1 text-sm text-gray-400">selamanya</div>
-                    @else
-                        <div class="flex items-baseline gap-1">
-                            <span class="text-xs text-gray-400">Mulai</span>
-                        </div>
-                        <div>
-                            <span class="text-3xl font-bold text-gray-900 price-display"
-                                  data-bulanan="{{ number_format($hargaBulanan, 0, ',', '.') }}"
-                                  data-tahunan="{{ number_format($hargaTahunanPerBulan, 0, ',', '.') }}">
-                                Rp {{ number_format($hargaBulanan, 0, ',', '.') }}
-                            </span>
-                            <span class="text-sm text-gray-400">/bulan</span>
-                        </div>
-                        <div class="mt-1 text-xs text-gray-400 tagihan-info"
-                             data-bulanan="Ditagih bulanan"
-                             data-tahunan="Ditagih Rp {{ number_format($totalTahunan, 0, ',', '.') }}/tahun">
-                            Ditagih bulanan
-                        </div>
-                    @endif
-                    <div class="mt-1 text-sm font-medium {{ $paket['popular'] ? 'text-teal-600' : 'text-gray-500' }}">
-                        @if($paket['kuota'])
-                            hingga {{ number_format($paket['kuota'], 0, ',', '.') }} santri
-                        @else
-                            kuota custom 1.000+ santri
-                        @endif
-                    </div>
-                </div>
-
-                <ul class="space-y-2 flex-1">
-                    @foreach($paket['fitur'] as $fitur)
-                    <li class="flex items-start gap-2 text-sm text-gray-600">
-                        <span class="text-teal-500 mt-0.5 shrink-0">✓</span>
-                        {{ $fitur }}
-                    </li>
-                    @endforeach
-                    @if($hargaPerSantri)
-                    <li class="flex items-start gap-2 text-sm font-medium text-teal-700">
-                        <span class="mt-0.5 shrink-0">✓</span>
-                        <span class="harga-per-santri"
-                              data-bulanan="hanya Rp {{ number_format($hargaPerSantri, 0, ',', '.') }}/santri"
-                              data-tahunan="hanya Rp {{ number_format($hargaPerSantriTahunan, 0, ',', '.') }}/santri">
-                            hanya Rp {{ number_format($hargaPerSantri, 0, ',', '.') }}/santri
-                        </span>
-                    </li>
-                    @endif
-                </ul>
-
-                <a href="{{ $paket['cta']['href'] }}"
-                   class="block text-center text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors
-                       {{ $paket['cta']['style'] === 'solid'
-                           ? 'bg-teal-600 text-white hover:bg-teal-700'
-                           : 'border border-gray-300 text-gray-700 hover:border-teal-400 hover:text-teal-700' }}">
-                    {{ $paket['cta']['label'] }}
-                </a>
-            </div>
-            @endforeach
-        </div>
-
-        <p class="text-center text-sm text-gray-400 mt-8">
-            Paket 6 bulan juga tersedia dengan bonus 1 bulan gratis.
-            <a href="{{ route('demo') }}" class="text-teal-600 hover:underline">Konsultasi gratis →</a>
-        </p>
-    </section>
-
-    <script>
-        function setPeriode(periode) {
-            const isAnnual = periode === 'tahunan';
-
-            document.getElementById('btn-bulanan').className = isAnnual
-                ? 'px-5 py-2 rounded-lg text-sm font-semibold transition-all text-gray-500'
-                : 'px-5 py-2 rounded-lg text-sm font-semibold transition-all bg-white text-gray-900 shadow-sm';
-
-            document.getElementById('btn-tahunan').className = isAnnual
-                ? 'px-5 py-2 rounded-lg text-sm font-semibold transition-all bg-white text-gray-900 shadow-sm'
-                : 'px-5 py-2 rounded-lg text-sm font-semibold transition-all text-gray-500';
-
-            document.querySelectorAll('.price-display').forEach(el => {
-                el.textContent = 'Rp ' + el.dataset[periode];
-            });
-
-            document.querySelectorAll('.tagihan-info').forEach(el => {
-                el.textContent = el.dataset[periode];
-            });
-
-            document.querySelectorAll('.harga-per-santri').forEach(el => {
-                el.textContent = el.dataset[periode];
-            });
-        }
-    </script>
-
     {{-- CTA Demo --}}
     <section class="bg-gray-900 py-20">
         <div class="max-w-2xl mx-auto px-6 text-center">
@@ -501,10 +292,6 @@
                    class="inline-block bg-teal-600 text-white font-semibold px-8 py-3.5 rounded-xl text-base hover:bg-teal-500 transition-colors">
                     Daftar Waiting List Demo →
                 </a>
-                <a href="{{ route('register') }}"
-                   class="inline-block bg-transparent text-white font-semibold px-8 py-3.5 rounded-xl text-base border border-gray-600 hover:border-gray-400 transition-colors">
-                    Coba Sendiri Gratis
-                </a>
             </div>
         </div>
     </section>
@@ -517,9 +304,7 @@
                 Platform Digitalisasi Pesantren Indonesia
             </p>
             <div class="flex gap-6">
-                <a href="#harga" class="text-sm text-gray-500 hover:text-teal-700">Harga</a>
-                <a href="{{ route('demo') }}" class="text-sm text-gray-500 hover:text-teal-700">Demo</a>
-                <a href="{{ route('register') }}" class="text-sm text-gray-500 hover:text-teal-700">Daftar</a>
+                <a href="{{ route('demo') }}" class="text-sm text-gray-500 hover:text-teal-700">Daftar Waiting List</a>
                 <a href="{{ route('login') }}" class="text-sm text-gray-500 hover:text-teal-700">Masuk</a>
             </div>
         </div>

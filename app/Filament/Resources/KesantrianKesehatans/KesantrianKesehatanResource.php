@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\KesantrianKesehatans;
 
+use App\Filament\Clusters\Kesantrian;
 use App\Filament\Resources\KesantrianKesehatans\Pages\CreateKesantrianKesehatan;
 use App\Filament\Resources\KesantrianKesehatans\Pages\EditKesantrianKesehatan;
 use App\Filament\Resources\KesantrianKesehatans\Pages\ListKesantrianKesehatans;
@@ -19,7 +20,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use BackedEnum;
 use Illuminate\Support\Facades\Gate;
-use UnitEnum;
 
 class KesantrianKesehatanResource extends Resource
 {
@@ -32,8 +32,8 @@ class KesantrianKesehatanResource extends Resource
     protected static ?string $modelLabel = 'Rekam Medis';
     protected static ?string $pluralModelLabel = 'Rekam Medis';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Kesantrian';
-    protected static ?int $navigationSort = 6;
+    protected static ?string $cluster = Kesantrian::class;
+    protected static ?int $navigationSort = 2;
 
 
     public static function canViewAny(): bool

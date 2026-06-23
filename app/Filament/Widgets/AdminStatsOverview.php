@@ -6,6 +6,7 @@ use App\Models\KesantrianKesehatan;
 use App\Models\KesantrianMutabaah;
 use App\Models\Santri;
 use App\Models\User;
+use App\Services\MutabaahScoreCalculator;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
@@ -79,21 +80,7 @@ class AdminStatsOverview extends StatsOverviewWidget
             ->whereBetween('tanggal', [$startOfWeek, $endOfWeek])
             ->get();
 
-        $totalPoin    = 0;
-        $totalMaksimal = 0;
-        foreach ($mutabaahList as $m) {
-            $totalMaksimal += 9;
-            $totalPoin     += ($m->jamaah_5_waktu >= 5 ? 1 : 0)
-                + ($m->is_rawatib      ? 1 : 0)
-                + ($m->is_shalat_malam ? 1 : 0)
-                + ($m->is_dhuha        ? 1 : 0)
-                + ($m->is_tilawah_1juz ? 1 : 0)
-                + ($m->is_infak        ? 1 : 0)
-                + ($m->is_puasa        ? 1 : 0);
-        }
-        $persenAmalan = $totalMaksimal > 0
-            ? round(($totalPoin / $totalMaksimal) * 100)
-            : 0;
+        $persenAmalan = MutabaahScoreCalculator::persentaseRataRata($mutabaahList);
 
         return [
             Stat::make('Santri Aktif', $totalSantri . ' / ' . $kuota)

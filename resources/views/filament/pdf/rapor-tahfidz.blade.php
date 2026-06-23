@@ -111,6 +111,26 @@
             font-size: 9px;
         }
 
+        .distribusi-row {
+            display: table;
+            width: 100%;
+            margin-bottom: 3px;
+        }
+        .distribusi-row .d-label {
+            display: table-cell;
+            width: 110px;
+            font-size: 10px;
+            color: #374151;
+        }
+        .distribusi-row .d-value {
+            display: table-cell;
+            width: 70px;
+            font-size: 10px;
+            color: #1a1a1a;
+            font-weight: bold;
+            text-align: right;
+        }
+
         .footer {
             position: fixed;
             bottom: 0;
@@ -174,17 +194,39 @@
             <span class="stat-value">{{ $setoranStats['total_setoran'] }}</span>
         </td>
         <td>
+            <span class="stat-label">Total Ayat</span>
+            <span class="stat-value">{{ $setoranStats['total_ayat'] }}</span>
+        </td>
+        <td>
             <span class="stat-label">Hari Aktif</span>
             <span class="stat-value">{{ $setoranStats['hari_aktif'] }}</span>
         </td>
-        @foreach($setoranStats['per_tipe'] as $tipe => $jumlah)
+        @foreach($setoranStats['per_tipe'] as $tipe => $data)
         <td>
             <span class="stat-label">{{ $tipe }}</span>
-            <span class="stat-value">{{ $jumlah }}</span>
+            <span class="stat-value">{{ $data['jumlah'] }}</span>
+            <span class="stat-label">{{ $data['ayat'] }} ayat</span>
         </td>
         @endforeach
     </tr>
 </table>
+
+@if($setoranStats['nilai_distribusi']->isNotEmpty())
+<p style="font-size:10px; font-weight:bold; color:#374151; margin-bottom:4px;">Distribusi Nilai Kelancaran</p>
+@foreach(['Mumtaz', 'Jayyid Jiddan', 'Jayyid', 'Maqbul'] as $label)
+@php
+    $cnt = $setoranStats['nilai_distribusi'][$label] ?? 0;
+    $pct = $cnt > 0 ? round($cnt / $setoranStats['total_setoran'] * 100) : 0;
+@endphp
+@if($cnt > 0)
+<div class="distribusi-row">
+    <span class="d-label">{{ $label }}</span>
+    <span class="d-value">{{ $cnt }} ({{ $pct }}%)</span>
+</div>
+@endif
+@endforeach
+<div style="margin-bottom: 10px;"></div>
+@endif
 
 @if($setoranStats['surah_list']->isNotEmpty())
 <p style="margin-bottom: 10px;">
