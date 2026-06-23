@@ -27,9 +27,10 @@ class TahfidzRaporResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
 
     protected static ?string $recordTitleAttribute = 'tahun_ajaran';
-    protected static ?string $navigationLabel = 'Nilai';
-    protected static ?string $modelLabel = 'Nilai Tahfidz';
-    protected static ?string $pluralModelLabel = 'Nilai Tahfidz';
+    protected static ?string $slug = 'ujian';
+    protected static ?string $navigationLabel = 'Ujian';
+    protected static ?string $modelLabel = 'Ujian';
+    protected static ?string $pluralModelLabel = 'Ujian Tahfidz';
 
     protected static ?string $cluster = Tahfidz::class;
 

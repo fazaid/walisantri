@@ -21,6 +21,17 @@ class TahfidzRaporsTable
         return $table
             ->columns([
                 TextColumn::make('santri.nama_lengkap')->label('Santri')->searchable()->sortable(),
+                TextColumn::make('penguji.name')->label('Penguji')->searchable()->sortable(),
+                TextColumn::make('tanggal_ujian')->label('Tanggal Ujian')->date('d M Y')->sortable(),
+                TextColumn::make('target_juz')->label('Target Juz')
+                    ->formatStateUsing(fn ($state) => $state ? "{$state} Juz" : '—')->sortable(),
+                TextColumn::make('status_kelulusan')->label('Status')
+                    ->badge()
+                    ->color(fn (?string $state): string => match ($state) {
+                        'Lulus'    => 'success',
+                        'Mengulang'=> 'danger',
+                        default    => 'gray',
+                    }),
                 TextColumn::make('tahun_ajaran')->label('Tahun Ajaran')->sortable(),
                 TextColumn::make('periode')->label('Periode')
                     ->formatStateUsing(fn ($state) => str_replace('_', ' ', $state)),
@@ -37,6 +48,8 @@ class TahfidzRaporsTable
                         'Semester_Ganjil'=> 'Semester Ganjil',
                         'Semester_Genap' => 'Semester Genap',
                     ]),
+                SelectFilter::make('status_kelulusan')->label('Status')
+                    ->options(['Lulus' => 'Lulus', 'Mengulang' => 'Mengulang']),
             ])
             ->recordActions([ViewAction::make(), EditAction::make()])
             ->toolbarActions([BulkActionGroup::make([DeleteBulkAction::make()])]);

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Santris;
 
+use App\Filament\Clusters\Santri as SantriCluster;
 use App\Filament\Resources\Santris\Pages\CreateSantri;
 use App\Filament\Resources\Santris\Pages\EditSantri;
 use App\Filament\Resources\Santris\Pages\ListSantris;
@@ -18,7 +19,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
 use BackedEnum;
-use UnitEnum;
 
 class SantriResource extends Resource
 {
@@ -26,12 +26,12 @@ class SantriResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUsers;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Santri';
+    protected static ?string $cluster = SantriCluster::class;
 
     protected static ?int $navigationSort = 1;
 
     protected static ?string $recordTitleAttribute = 'nama_lengkap';
-    protected static ?string $navigationLabel = 'Santri';
+    protected static ?string $navigationLabel = 'Data Santri';
     protected static ?string $modelLabel = 'Santri';
     protected static ?string $pluralModelLabel = 'Data Santri';
 

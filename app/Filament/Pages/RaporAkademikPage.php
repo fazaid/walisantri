@@ -99,16 +99,18 @@ class RaporAkademikPage extends Page
         return $nilai->isNotEmpty() ? round((float) $nilai->avg('nilai'), 1) : null;
     }
 
-    public function getTahfidzRapor(): ?TahfidzRapor
+    public function getTahfidzUjianList(): Collection
     {
         if (! $this->santriId) {
-            return null;
+            return collect();
         }
 
-        return TahfidzRapor::where('santri_id', $this->santriId)
+        return TahfidzRapor::with('penguji')
+            ->where('santri_id', $this->santriId)
             ->where('tahun_ajaran', $this->tahunAjaran)
             ->where('periode', $this->periode)
-            ->first();
+            ->orderByDesc('tanggal_ujian')
+            ->get();
     }
 
     protected function getHeaderActions(): array
@@ -121,9 +123,9 @@ class RaporAkademikPage extends Page
                 ->action(function () {
                     $santri = $this->getSantri();
                     $nilai = $this->getNilaiList();
-                    $tahfidzRapor = $this->getTahfidzRapor();
+                    $tahfidzUjianList = $this->getTahfidzUjianList();
 
-                    if (! $santri || ($nilai->isEmpty() && ! $tahfidzRapor)) {
+                    if (! $santri || ($nilai->isEmpty() && $tahfidzUjianList->isEmpty())) {
                         Notification::make()
                             ->title('Belum ada data nilai untuk pilihan ini')
                             ->warning()
@@ -133,12 +135,12 @@ class RaporAkademikPage extends Page
                     }
 
                     $pdf = Pdf::loadView('filament.pdf.rapor-akademik', [
-                        'santri'       => $santri,
-                        'nilai'        => $nilai,
-                        'rataRata'     => $this->getRataRata(),
-                        'tahfidzRapor' => $tahfidzRapor,
-                        'tahunAjaran'  => $this->tahunAjaran,
-                        'periode'      => $this->periode,
+                        'santri'           => $santri,
+                        'nilai'            => $nilai,
+                        'rataRata'         => $this->getRataRata(),
+                        'tahfidzUjianList' => $tahfidzUjianList,
+                        'tahunAjaran'      => $this->tahunAjaran,
+                        'periode'          => $this->periode,
                     ])->setPaper('A4', 'portrait');
 
                     $filename = 'Rapor-Akademik-'

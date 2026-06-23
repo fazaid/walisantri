@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\PrestasiSantris;
 
 use App\Enums\UserRole;
+use App\Filament\Clusters\Santri;
 use App\Filament\Resources\PrestasiSantris\Pages\CreatePrestasiSantri;
 use App\Filament\Resources\PrestasiSantris\Pages\EditPrestasiSantri;
 use App\Filament\Resources\PrestasiSantris\Pages\ListPrestasiSantris;
@@ -16,7 +17,6 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use UnitEnum;
 
 class PrestasiSantriResource extends Resource
 {
@@ -24,9 +24,9 @@ class PrestasiSantriResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTrophy;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Santri';
+    protected static ?string $cluster = Santri::class;
 
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = 4;
 
     protected static ?string $navigationLabel  = 'Prestasi';
     protected static ?string $modelLabel       = 'Prestasi';

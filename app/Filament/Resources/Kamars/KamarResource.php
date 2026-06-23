@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Kamars;
 
+use App\Filament\Clusters\Santri;
 use App\Filament\Resources\Kamars\Pages\CreateKamar;
 use App\Filament\Resources\Kamars\Pages\EditKamar;
 use App\Filament\Resources\Kamars\Pages\ListKamars;
@@ -14,7 +15,6 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
-use UnitEnum;
 
 class KamarResource extends Resource
 {
@@ -22,7 +22,7 @@ class KamarResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedHome;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Santri';
+    protected static ?string $cluster = Santri::class;
 
     protected static ?int $navigationSort = 3;
 
