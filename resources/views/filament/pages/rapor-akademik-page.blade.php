@@ -41,7 +41,6 @@
             $santri = $this->getSantri();
             $nilaiList = $this->getNilaiList();
             $rataRata = $this->getRataRata();
-            $tahfidzUjianList = $this->getTahfidzUjianList();
         @endphp
 
         @if(! $santri)
@@ -86,51 +85,6 @@
                                     <td class="px-5 py-2.5 text-gray-800 dark:text-gray-200">{{ $item->mataPelajaran?->nama_mapel ?? '—' }}</td>
                                     <td class="px-5 py-2.5 font-semibold text-gray-900 dark:text-gray-100">{{ $item->nilai }}</td>
                                     <td class="px-5 py-2.5 text-gray-500 dark:text-gray-400">{{ $item->catatan ?: '—' }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                @endif
-            </div>
-
-            {{-- Riwayat & Nilai Ujian Tahfidz --}}
-            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
-                <div class="px-5 py-3 border-b border-gray-100 dark:border-gray-700">
-                    <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">📖 Riwayat & Nilai Ujian Tahfidz</p>
-                </div>
-                @if($tahfidzUjianList->isEmpty())
-                    <p class="p-6 text-center text-sm text-gray-400">Belum ada ujian tahfidz pada periode ini.</p>
-                @else
-                    <table class="w-full text-sm">
-                        <thead class="bg-gray-50 dark:bg-gray-800 text-xs text-gray-500 dark:text-gray-400 uppercase">
-                            <tr>
-                                <th class="text-left px-5 py-2">Tanggal</th>
-                                <th class="text-left px-5 py-2">Target Juz</th>
-                                <th class="text-left px-5 py-2">Status</th>
-                                <th class="text-left px-5 py-2">Hafalan</th>
-                                <th class="text-left px-5 py-2">Tilawah</th>
-                                <th class="text-left px-5 py-2">Makhraj</th>
-                                <th class="text-left px-5 py-2">Tajwid</th>
-                                <th class="text-left px-5 py-2">Penguji</th>
-                                <th class="text-left px-5 py-2">Rekomendasi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                            @foreach($tahfidzUjianList as $ujian)
-                                <tr>
-                                    <td class="px-5 py-2.5 text-gray-800 dark:text-gray-200">{{ $ujian->tanggal_ujian?->translatedFormat('d M Y') ?? '—' }}</td>
-                                    <td class="px-5 py-2.5 text-gray-800 dark:text-gray-200">{{ $ujian->target_juz ? "{$ujian->target_juz} Juz" : '—' }}</td>
-                                    <td class="px-5 py-2.5">
-                                        <span class="{{ $ujian->status_kelulusan === 'Lulus' ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400' }} font-semibold">
-                                            {{ $ujian->status_kelulusan ?? '—' }}
-                                        </span>
-                                    </td>
-                                    <td class="px-5 py-2.5 font-semibold text-gray-900 dark:text-gray-100">{{ $ujian->nilai_hafalan }}</td>
-                                    <td class="px-5 py-2.5 text-gray-800 dark:text-gray-200">{{ $ujian->nilai_tilawah }}</td>
-                                    <td class="px-5 py-2.5 text-gray-800 dark:text-gray-200">{{ $ujian->nilai_makhraj }}</td>
-                                    <td class="px-5 py-2.5 text-gray-800 dark:text-gray-200">{{ $ujian->nilai_tajwid }}</td>
-                                    <td class="px-5 py-2.5 text-gray-600 dark:text-gray-300">{{ $ujian->penguji?->name ?? '—' }}</td>
-                                    <td class="px-5 py-2.5 text-gray-500 dark:text-gray-400">{{ $ujian->rekomendasi_pembimbing ?: '—' }}</td>
                                 </tr>
                             @endforeach
                         </tbody>

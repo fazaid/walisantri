@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Wali;
 use App\Http\Controllers\Controller;
 use App\Models\Santri;
 use App\Models\TahfidzProgress;
+use App\Services\TahfidzJuzCalculator;
 use Illuminate\Support\Facades\DB;
 
 class TahfidzStatsController extends Controller
@@ -50,14 +51,7 @@ class TahfidzStatsController extends Controller
         $totalSabqi  = TahfidzProgress::where('santri_id', $santri->id)->where('tipe_setoran', 'Sabqi')->count();
         $totalManzil = TahfidzProgress::where('santri_id', $santri->id)->where('tipe_setoran', 'Manzil')->count();
 
-        // Estimasi juz dari total ayat per surah
-        $sumMaxAyat = TahfidzProgress::where('santri_id', $santri->id)
-            ->select('nama_surah', DB::raw('MAX(ayat_selesai) as max_ayat'))
-            ->groupBy('nama_surah')
-            ->pluck('max_ayat')
-            ->sum();
-
-        $estimasiJuz = $sumMaxAyat > 0 ? round($sumMaxAyat / 6236 * 30, 1) : 0;
+        $juz = TahfidzJuzCalculator::calculate($santri->id);
 
         // Distribusi nilai kelancaran
         $distribusiNilai = TahfidzProgress::where('santri_id', $santri->id)
@@ -80,7 +74,7 @@ class TahfidzStatsController extends Controller
             'totalSabaq',
             'totalSabqi',
             'totalManzil',
-            'estimasiJuz',
+            'juz',
             'distribusiNilai',
             'setoranTerbaru',
         ));

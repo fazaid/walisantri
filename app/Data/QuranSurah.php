@@ -140,4 +140,30 @@ class QuranSurah
         }
         return 286; // fallback
     }
+
+    public static function surahNoByName(string $namaSurah): ?int
+    {
+        foreach (self::DATA as $no => [$nama, $ayat]) {
+            if ($nama === $namaSurah) {
+                return $no;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Jumlah ayat total dari surah 1 s.d. (surahNo - 1).
+     * Dipakai untuk konversi (surah, ayat) ke indeks ayat global 1..6236.
+     */
+    public static function cumulativeBefore(int $surahNo): int
+    {
+        $total = 0;
+        foreach (self::DATA as $no => [$nama, $ayat]) {
+            if ($no >= $surahNo) {
+                break;
+            }
+            $total += $ayat;
+        }
+        return $total;
+    }
 }

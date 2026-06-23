@@ -11,7 +11,7 @@ use App\Models\PrestasiSantri;
 use App\Models\Santri;
 use App\Models\TahfidzProgress;
 use App\Models\TahfidzRapor;
-use Illuminate\Support\Facades\DB;
+use App\Services\TahfidzJuzCalculator;
 
 class ReportController extends Controller
 {
@@ -54,17 +54,8 @@ class ReportController extends Controller
             ->limit(5)
             ->get();
 
-        // ── Summary Card 1: Total Juz Hafalan ────────────────────────────────
-        // Per surah: ambil ayat_selesai tertinggi, lalu estimasi juz dari total ayat.
-        $sumMaxAyat = TahfidzProgress::where('santri_id', $santri->id)
-            ->select('nama_surah', DB::raw('MAX(ayat_selesai) as max_ayat'))
-            ->groupBy('nama_surah')
-            ->pluck('max_ayat')
-            ->sum();
-
-        $totalJuzHafalan = $sumMaxAyat > 0
-            ? round($sumMaxAyat / 6236 * 30, 1)
-            : 0;
+        // ── Summary Card 1: Capaian Juz Hafalan ──────────────────────────────
+        $juz = TahfidzJuzCalculator::calculate($santri->id);
 
         // ── Summary Card 2: Persentase Amalan 7 Hari Terakhir ────────────────
         $mutabaahMingguIni = KesantrianMutabaah::where('santri_id', $santri->id)
@@ -122,7 +113,7 @@ class ReportController extends Controller
             'santri',
             'tahfidzRecent',
             'kesehatanRecent',
-            'totalJuzHafalan',
+            'juz',
             'persentaseAmalanMingguIni',
             'mutabaahWeek',
             'statusKesehatanTerkini',
