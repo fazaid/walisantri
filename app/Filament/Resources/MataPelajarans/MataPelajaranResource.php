@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\MataPelajarans;
 
+use App\Filament\Clusters\Akademik;
 use App\Filament\Resources\MataPelajarans\Pages\CreateMataPelajaran;
 use App\Filament\Resources\MataPelajarans\Pages\EditMataPelajaran;
 use App\Filament\Resources\MataPelajarans\Pages\ListMataPelajaran;
@@ -14,7 +15,6 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
-use UnitEnum;
 
 class MataPelajaranResource extends Resource
 {
@@ -22,12 +22,12 @@ class MataPelajaranResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Akademik';
+    protected static ?string $cluster = Akademik::class;
 
     protected static ?int $navigationSort = 1;
 
     protected static ?string $recordTitleAttribute = 'nama_mapel';
-    protected static ?string $navigationLabel = 'Mata Pelajaran';
+    protected static ?string $navigationLabel = 'Pelajaran';
     protected static ?string $modelLabel = 'Mata Pelajaran';
     protected static ?string $pluralModelLabel = 'Mata Pelajaran';
 

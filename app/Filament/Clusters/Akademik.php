@@ -8,15 +8,15 @@ use Filament\Pages\Enums\SubNavigationPosition;
 use Filament\Support\Icons\Heroicon;
 use UnitEnum;
 
-class Tahfidz extends Cluster
+class Akademik extends Cluster
 {
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBookOpen;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAcademicCap;
 
     protected static string|UnitEnum|null $navigationGroup = null;
 
-    protected static ?string $navigationLabel = 'Tahfidz';
+    protected static ?string $navigationLabel = 'Akademik';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 1;
 
     protected static ?SubNavigationPosition $subNavigationPosition = SubNavigationPosition::Top;
 }

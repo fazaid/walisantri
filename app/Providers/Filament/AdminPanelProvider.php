@@ -41,7 +41,6 @@ class AdminPanelProvider extends PanelProvider
                 'primary' => Color::Teal,
             ])
             ->navigationGroups([
-                'Akademik',
                 'Kesantrian',
                 'Keuangan',
                 'Langganan',

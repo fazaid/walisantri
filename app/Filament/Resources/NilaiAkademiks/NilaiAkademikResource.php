@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\NilaiAkademiks;
 
+use App\Filament\Clusters\Akademik;
 use App\Filament\Resources\NilaiAkademiks\Pages\CreateNilaiAkademik;
 use App\Filament\Resources\NilaiAkademiks\Pages\EditNilaiAkademik;
 use App\Filament\Resources\NilaiAkademiks\Pages\ListNilaiAkademik;
@@ -16,7 +17,6 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
-use UnitEnum;
 
 class NilaiAkademikResource extends Resource
 {
@@ -24,12 +24,12 @@ class NilaiAkademikResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedPencilSquare;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Akademik';
+    protected static ?string $cluster = Akademik::class;
 
     protected static ?int $navigationSort = 2;
 
     protected static ?string $recordTitleAttribute = 'id';
-    protected static ?string $navigationLabel = 'Nilai Akademik';
+    protected static ?string $navigationLabel = 'Nilai';
     protected static ?string $modelLabel = 'Nilai Akademik';
     protected static ?string $pluralModelLabel = 'Nilai Akademik';
 
