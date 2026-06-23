@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Clusters\Akademik;
 use App\Models\MataPelajaran;
 use App\Models\NilaiAkademik;
 use App\Models\Santri;
@@ -15,15 +16,14 @@ use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
-use UnitEnum;
 
 class RaporAkademikPage extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentChartBar;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Akademik';
+    protected static ?string $cluster = Akademik::class;
 
-    protected static ?string $navigationLabel = 'Rapor Akademik';
+    protected static ?string $navigationLabel = 'Rapor';
 
     protected static ?string $title = 'Rapor Akademik';
 

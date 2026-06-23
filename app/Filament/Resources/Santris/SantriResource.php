@@ -31,7 +31,7 @@ class SantriResource extends Resource
     protected static ?int $navigationSort = 1;
 
     protected static ?string $recordTitleAttribute = 'nama_lengkap';
-    protected static ?string $navigationLabel = 'Data Santri';
+    protected static ?string $navigationLabel = 'Santri';
     protected static ?string $modelLabel = 'Santri';
     protected static ?string $pluralModelLabel = 'Data Santri';
 
