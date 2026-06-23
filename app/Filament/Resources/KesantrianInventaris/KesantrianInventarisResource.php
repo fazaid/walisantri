@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\KesantrianInventaris;
 
+use App\Filament\Clusters\Kesantrian;
 use App\Filament\Resources\KesantrianInventaris\Pages\CreateKesantrianInventaris;
 use App\Filament\Resources\KesantrianInventaris\Pages\EditKesantrianInventaris;
 use App\Filament\Resources\KesantrianInventaris\Pages\ListKesantrianInventaris;
@@ -18,7 +19,6 @@ use App\Models\Santri;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use BackedEnum;
-use UnitEnum;
 
 class KesantrianInventarisResource extends Resource
 {
@@ -31,8 +31,8 @@ class KesantrianInventarisResource extends Resource
     protected static ?string $modelLabel = 'Inventaris';
     protected static ?string $pluralModelLabel = 'Data Inventaris';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Kesantrian';
-    protected static ?int $navigationSort = 7;
+    protected static ?string $cluster = Kesantrian::class;
+    protected static ?int $navigationSort = 3;
 
 
     public static function canViewAny(): bool

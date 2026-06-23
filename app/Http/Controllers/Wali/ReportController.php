@@ -11,6 +11,7 @@ use App\Models\PrestasiSantri;
 use App\Models\Santri;
 use App\Models\TahfidzProgress;
 use App\Models\TahfidzRapor;
+use App\Services\MutabaahScoreCalculator;
 use App\Services\TahfidzJuzCalculator;
 
 class ReportController extends Controller
@@ -62,20 +63,7 @@ class ReportController extends Controller
             ->whereBetween('tanggal', [now()->subDays(6)->toDateString(), now()->toDateString()])
             ->get();
 
-        $persentaseAmalanMingguIni = 0;
-
-        if ($mutabaahMingguIni->isNotEmpty()) {
-            $totalSkor = $mutabaahMingguIni->sum(function ($m) {
-                return ($m->jamaah_5_waktu * 5)   // max 25
-                    + ($m->is_rawatib      ? 7 : 0)
-                    + ($m->is_shalat_malam ? 7 : 0)
-                    + ($m->is_dhuha        ? 7 : 0)
-                    + ($m->is_tilawah_1juz ? 7 : 0)
-                    + ($m->is_infak        ? 7 : 0)
-                    + ($m->is_puasa        ? 7 : 0);
-            });
-            $persentaseAmalanMingguIni = (int) round(($totalSkor / (67 * 7)) * 100);
-        }
+        $persentaseAmalanMingguIni = MutabaahScoreCalculator::persentaseRataRata($mutabaahMingguIni);
 
         $mutabaahWeek = $mutabaahMingguIni->keyBy(fn ($m) => $m->tanggal->toDateString());
 

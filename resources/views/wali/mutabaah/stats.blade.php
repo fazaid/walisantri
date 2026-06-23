@@ -32,15 +32,16 @@
             <p class="text-xs text-teal-500 mt-1">hari</p>
         </div>
 
+        @php
+            $amalUtama = collect($breakdownAmal)->firstWhere('tipe', 'hitungan') ?? collect($breakdownAmal)->first();
+        @endphp
+        @if($amalUtama)
         <div class="bg-amber-50 border border-amber-100 rounded-2xl p-4">
-            <p class="text-xs font-medium text-amber-600 mb-1">Berjamaah</p>
-            @php
-                $jamaahData = collect($breakdownAmal)->firstWhere('label', 'Berjamaah');
-                $jamaahPct  = $jamaahData['max'] > 0 ? round($jamaahData['total'] / $jamaahData['max'] * 100) : 0;
-            @endphp
-            <p class="text-3xl font-bold text-amber-700 leading-tight">{{ $jamaahPct }}<span class="text-base font-medium ml-0.5">%</span></p>
-            <p class="text-xs text-amber-500 mt-1">{{ $jamaahData['total'] }}/{{ $jamaahData['max'] }} waktu</p>
+            <p class="text-xs font-medium text-amber-600 mb-1">{{ $amalUtama['icon'] }} {{ $amalUtama['label'] }}</p>
+            <p class="text-3xl font-bold text-amber-700 leading-tight">{{ $amalUtama['pct'] }}<span class="text-base font-medium ml-0.5">%</span></p>
+            <p class="text-xs text-amber-500 mt-1">{{ $amalUtama['total'] }}/{{ $amalUtama['max'] }} {{ $amalUtama['unit'] }}</p>
         </div>
+        @endif
 
     </div>
 
@@ -59,7 +60,7 @@
         <div class="space-y-3">
             @foreach($breakdownAmal as $aml)
             @php
-                $pct = $aml['max'] > 0 ? round($aml['total'] / $aml['max'] * 100) : 0;
+                $pct = $aml['pct'];
                 $barColor = $pct >= 80 ? 'bg-green-400' : ($pct >= 50 ? 'bg-yellow-400' : 'bg-red-300');
             @endphp
             <div>
@@ -88,14 +89,7 @@
 
         @forelse($riwayat as $rec)
         @php
-            $dayScore = $rec->jamaah_5_waktu
-                + ($rec->is_rawatib      ? 1 : 0)
-                + ($rec->is_shalat_malam ? 1 : 0)
-                + ($rec->is_dhuha        ? 1 : 0)
-                + ($rec->is_tilawah_1juz ? 1 : 0)
-                + ($rec->is_infak        ? 1 : 0)
-                + ($rec->is_puasa        ? 1 : 0);
-            $dayPct = round($dayScore / 11 * 100);
+            $dayPct = \App\Services\MutabaahScoreCalculator::persentase($rec);
             $scoreBg = $dayPct >= 80 ? 'bg-green-100 text-green-700' : ($dayPct >= 50 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700');
         @endphp
         <div class="px-4 py-3 border-b border-gray-50 last:border-0">
@@ -114,23 +108,21 @@
 
                 {{-- Amal icons --}}
                 <div class="flex items-center gap-1 flex-1 flex-wrap">
-                    {{-- Berjamaah: angka / 5 --}}
+                    @foreach($amalMasterList as $item)
+                    @php
+                        $nilai = $rec->amalan[$item->kode] ?? null;
+                    @endphp
+                    @if($item->tipe === 'hitungan')
                     <span class="text-[10px] px-1.5 py-0.5 rounded font-medium
-                        {{ $rec->jamaah_5_waktu >= 4 ? 'bg-teal-100 text-teal-700' : ($rec->jamaah_5_waktu >= 2 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500') }}">
-                        🕌{{ $rec->jamaah_5_waktu }}/5
+                        {{ $nilai >= $item->nilai_maks * 0.8 ? 'bg-teal-100 text-teal-700' : ($nilai >= $item->nilai_maks * 0.4 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500') }}">
+                        {{ $item->icon }}{{ $nilai ?? 0 }}/{{ $item->nilai_maks }}
                     </span>
-                    @foreach([
-                        ['🌙', $rec->is_rawatib],
-                        ['🌃', $rec->is_shalat_malam],
-                        ['🌅', $rec->is_dhuha],
-                        ['📖', $rec->is_tilawah_1juz],
-                        ['💰', $rec->is_infak],
-                        ['🤲', $rec->is_puasa],
-                    ] as [$icon, $val])
+                    @else
                     <span class="text-[10px] w-6 h-6 flex items-center justify-center rounded
-                        {{ $val ? 'bg-green-100' : 'bg-gray-100 opacity-40' }}">
-                        {{ $icon }}
+                        {{ $nilai ? 'bg-green-100' : 'bg-gray-100 opacity-40' }}">
+                        {{ $item->icon }}
                     </span>
+                    @endif
                     @endforeach
                 </div>
 

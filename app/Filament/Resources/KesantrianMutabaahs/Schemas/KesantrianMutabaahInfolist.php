@@ -6,10 +6,14 @@
 
 namespace App\Filament\Resources\KesantrianMutabaahs\Schemas;
 
+use App\Models\KesantrianAmalMaster;
+use App\Models\KesantrianMutabaah;
+use App\Services\MutabaahScoreCalculator;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Auth;
 
 class KesantrianMutabaahInfolist
 {
@@ -20,7 +24,10 @@ class KesantrianMutabaahInfolist
                 Section::make('Data Santri & Tanggal')->columns(2)->schema([
                     TextEntry::make('santri.nama_lengkap')->label('Santri'),
                     TextEntry::make('tanggal')->label('Tanggal')->date('d M Y'),
-                    TextEntry::make('jamaah_5_waktu')->label('Shalat Jamaah'),
+                    TextEntry::make('skor')
+                        ->label('Skor Amalan')
+                        ->state(fn (KesantrianMutabaah $record) => MutabaahScoreCalculator::persentase($record).'%')
+                        ->badge(),
                     TextEntry::make('status_udzur')->label('Status Udzur')
                         ->formatStateUsing(fn ($state) => str_replace('_', ' ', $state))
                         ->badge()
@@ -33,14 +40,29 @@ class KesantrianMutabaahInfolist
                             default        => 'gray',
                         }),
                 ]),
-                Section::make('Amalan Harian')->columns(3)->schema([
-                    IconEntry::make('is_rawatib')->label('Rawatib')->boolean(),
-                    IconEntry::make('is_shalat_malam')->label('Shalat Malam')->boolean(),
-                    IconEntry::make('is_dhuha')->label('Dhuha')->boolean(),
-                    IconEntry::make('is_tilawah_1juz')->label('Tilawah 1 Juz')->boolean(),
-                    IconEntry::make('is_infak')->label('Infak')->boolean(),
-                    IconEntry::make('is_puasa')->label('Puasa Sunnah')->boolean(),
-                ]),
+                Section::make('Amalan Harian')->columns(3)->schema(self::amalanEntries()),
             ]);
+    }
+
+    protected static function amalanEntries(): array
+    {
+        $masterList = KesantrianAmalMaster::where('pesantren_id', Auth::user()?->pesantren_id)
+            ->where('aktif', true)
+            ->orderBy('urutan')
+            ->get();
+
+        return $masterList->map(function (KesantrianAmalMaster $item) {
+            $label = trim(($item->icon ? $item->icon.' ' : '').$item->label);
+
+            if ($item->tipe === 'hitungan') {
+                return TextEntry::make("amalan.{$item->kode}")
+                    ->label($label)
+                    ->suffix("/{$item->nilai_maks} {$item->satuan}");
+            }
+
+            return IconEntry::make("amalan.{$item->kode}")
+                ->label($label)
+                ->boolean();
+        })->all();
     }
 }

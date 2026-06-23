@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\KesantrianMutabaahs;
 
+use App\Filament\Clusters\Mutabaah;
 use App\Filament\Resources\KesantrianMutabaahs\Pages\CreateKesantrianMutabaah;
 use App\Filament\Resources\KesantrianMutabaahs\Pages\EditKesantrianMutabaah;
 use App\Filament\Resources\KesantrianMutabaahs\Pages\ListKesantrianMutabaahs;
@@ -18,7 +19,6 @@ use App\Models\Santri;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use BackedEnum;
-use UnitEnum;
 
 class KesantrianMutabaahResource extends Resource
 {
@@ -27,12 +27,12 @@ class KesantrianMutabaahResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
 
     protected static ?string $recordTitleAttribute = 'tanggal';
-    protected static ?string $navigationLabel = 'Mutabaah';
+    protected static ?string $navigationLabel = 'Riwayat';
     protected static ?string $modelLabel = 'Mutabaah';
     protected static ?string $pluralModelLabel = 'Data Mutabaah';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Kesantrian';
-    protected static ?int $navigationSort = 4;
+    protected static ?string $cluster = Mutabaah::class;
+    protected static ?int $navigationSort = 2;
 
 
     public static function canViewAny(): bool
