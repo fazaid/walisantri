@@ -54,7 +54,7 @@
         $rapor     = $child['raporTerakhir'];
         $kesehatan = $child['statusKesehatan'];
         $amalan    = $child['persentaseAmalan'];
-        $juz       = $child['totalJuz'];
+        $juz       = $child['juz'];
 
         [$kBg, $kBorder, $kText, $kLabel] = match($kesehatan['status_pemulihan'] ?? null) {
             'Rawat_Mandiri'   => ['bg-yellow-50','border-yellow-200','text-yellow-700','Rawat Mandiri'],
@@ -99,8 +99,11 @@
                     <span class="text-base">📖</span>
                     <span class="text-xs font-medium text-teal-600">Hafalan</span>
                 </div>
-                @if($juz > 0)
-                    <p class="text-2xl font-bold text-teal-700">{{ $juz }}<span class="text-sm ml-1">Juz</span></p>
+                @if($juz['juz_selesai'] > 0 || $juz['juz_sedang'])
+                    <p class="text-2xl font-bold text-teal-700">{{ $juz['juz_selesai'] }}<span class="text-sm ml-1">Juz</span></p>
+                    @if($juz['juz_sedang'])
+                        <p class="text-xs text-teal-500 mt-0.5">Juz {{ $juz['juz_sedang'] }} ({{ $juz['persen_sedang'] }}%)</p>
+                    @endif
                 @else
                     <p class="text-sm font-medium text-teal-400">Belum ada</p>
                 @endif

@@ -42,16 +42,19 @@
 
     <div class="grid grid-cols-2 gap-3">
 
-        {{-- Card 1 — Estimasi Hafalan --}}
+        {{-- Card 1 — Capaian Hafalan --}}
         <div class="bg-teal-50 border border-teal-200 rounded-2xl p-4">
             <div class="flex items-center gap-1.5 mb-2">
                 <span class="text-lg leading-none">📖</span>
-                <span class="text-xs font-medium text-teal-600">Estimasi Hafalan</span>
+                <span class="text-xs font-medium text-teal-600">Capaian Hafalan</span>
             </div>
-            @if($totalJuzHafalan > 0)
+            @if($juz['juz_selesai'] > 0 || $juz['juz_sedang'])
                 <p class="text-2xl font-bold text-teal-700 leading-tight">
-                    {{ $totalJuzHafalan }}<span class="text-sm font-medium ml-1">Juz</span>
+                    {{ $juz['juz_selesai'] }}<span class="text-sm font-medium ml-1">Juz selesai</span>
                 </p>
+                @if($juz['juz_sedang'])
+                    <p class="text-xs text-teal-500 mt-1">Sedang Juz {{ $juz['juz_sedang'] }} ({{ $juz['persen_sedang'] }}%)</p>
+                @endif
             @else
                 <p class="text-sm font-medium text-teal-400">Belum ada data</p>
             @endif

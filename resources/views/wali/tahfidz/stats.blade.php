@@ -15,11 +15,15 @@
     {{-- Summary Cards --}}
     <div class="grid grid-cols-2 gap-3">
         <div class="bg-teal-50 border border-teal-100 rounded-2xl p-4 col-span-2">
-            <p class="text-xs text-teal-600 font-medium mb-1">Estimasi Hafalan</p>
+            <p class="text-xs text-teal-600 font-medium mb-1">Capaian Hafalan</p>
             <p class="text-3xl font-bold text-teal-700 leading-tight">
-                {{ $estimasiJuz }}<span class="text-base font-medium ml-1">juz</span>
+                {{ $juz['juz_selesai'] }}<span class="text-base font-medium ml-1">juz selesai</span>
             </p>
-            <p class="text-xs text-teal-500 mt-1">dari total ayat yang disetorkan</p>
+            @if($juz['juz_sedang'])
+                <p class="text-xs text-teal-500 mt-1">Sedang Juz {{ $juz['juz_sedang'] }} ({{ $juz['persen_sedang'] }}% tercapai)</p>
+            @else
+                <p class="text-xs text-teal-500 mt-1">dari batas Juz yang sebenarnya</p>
+            @endif
         </div>
 
         <div class="bg-green-50 border border-green-100 rounded-2xl p-4">

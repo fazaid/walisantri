@@ -10,7 +10,7 @@ use App\Models\MasterPengumuman;
 use App\Models\TagihanSpp;
 use App\Models\TahfidzProgress;
 use App\Models\TahfidzRapor;
-use Illuminate\Support\Facades\DB;
+use App\Services\TahfidzJuzCalculator;
 
 class DashboardController extends Controller
 {
@@ -59,11 +59,7 @@ class DashboardController extends Controller
 
     private function buildChildData($santri): array
     {
-        // Estimasi juz
-        $sumMaxAyat = TahfidzProgress::where('santri_id', $santri->id)
-            ->select('nama_surah', DB::raw('MAX(ayat_selesai) as max_ayat'))
-            ->groupBy('nama_surah')->pluck('max_ayat')->sum();
-        $totalJuz = $sumMaxAyat > 0 ? round($sumMaxAyat / 6236 * 30, 1) : 0;
+        $juz = TahfidzJuzCalculator::calculate($santri->id);
 
         // Persentase amalan 7 hari terakhir
         $mutabaah = KesantrianMutabaah::where('santri_id', $santri->id)
@@ -108,7 +104,7 @@ class DashboardController extends Controller
 
         return compact(
             'santri',
-            'totalJuz',
+            'juz',
             'persentaseAmalan',
             'statusKesehatan',
             'raporTerakhir',
