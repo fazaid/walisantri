@@ -76,6 +76,19 @@
         table.data-table tr:last-child td { border-bottom: none; }
         table.data-table tr:nth-child(even) td { background: #f9fafb; }
 
+        .stat-grid {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .stat-grid td {
+            text-align: center;
+            padding: 8px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+        }
+        .stat-grid .stat-label { display: block; font-size: 9px; color: #6b7280; margin-bottom: 2px; }
+        .stat-grid .stat-value { display: block; font-size: 14px; font-weight: bold; color: #1a1a1a; }
+
         .badge {
             display: inline-block;
             padding: 1px 7px;
@@ -87,6 +100,16 @@
         .badge-biru   { background: #dbeafe; color: #1d4ed8; }
         .badge-kuning { background: #fef9c3; color: #854d0e; }
         .badge-merah  { background: #fee2e2; color: #991b1b; }
+
+        .surah-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            margin: 2px;
+            border-radius: 10px;
+            background: #f0fdf4;
+            color: #166534;
+            font-size: 9px;
+        }
 
         .footer {
             position: fixed;
@@ -114,7 +137,7 @@
     @if($santri->pesantren)
     <div class="pesantren-name">{{ $santri->pesantren->nama_pesantren }}</div>
     @endif
-    <div class="meta">NILAI AKADEMIK</div>
+    <div class="meta">RAPOR TAHFIDZ</div>
 </div>
 
 <div class="info-card">
@@ -134,36 +157,74 @@
         <tr>
             <td>Kelas</td>
             <td>: {{ $santri->kelas?->nama_kelas ?? '—' }}</td>
-            <td>Rata-rata</td>
-            <td>: <strong>{{ $rataRata }}</strong></td>
+            <td>Capaian Juz (Lulus)</td>
+            <td>: <strong>{{ $totalJuzLulus }} Juz</strong></td>
         </tr>
     </table>
 </div>
 
-<div class="section-title">📚 Nilai per Mata Pelajaran</div>
-@if($nilai->isEmpty())
-    <p class="no-data">Belum ada nilai akademik pada periode ini.</p>
+<div class="section-title">📈 Ringkasan Setoran Periode Ini</div>
+@if($setoranStats['total_setoran'] === 0)
+    <p class="no-data">Belum ada setoran pada periode ini.</p>
+@else
+<table class="stat-grid">
+    <tr>
+        <td>
+            <span class="stat-label">Total Setoran</span>
+            <span class="stat-value">{{ $setoranStats['total_setoran'] }}</span>
+        </td>
+        <td>
+            <span class="stat-label">Hari Aktif</span>
+            <span class="stat-value">{{ $setoranStats['hari_aktif'] }}</span>
+        </td>
+        @foreach($setoranStats['per_tipe'] as $tipe => $jumlah)
+        <td>
+            <span class="stat-label">{{ $tipe }}</span>
+            <span class="stat-value">{{ $jumlah }}</span>
+        </td>
+        @endforeach
+    </tr>
+</table>
+
+@if($setoranStats['surah_list']->isNotEmpty())
+<p style="margin-bottom: 10px;">
+    @foreach($setoranStats['surah_list'] as $surah)
+        <span class="surah-tag">{{ $surah }}</span>
+    @endforeach
+</p>
+@endif
+@endif
+
+<div class="section-title">📖 Hasil Ujian Tahfidz</div>
+@if($ujianList->isEmpty())
+    <p class="no-data">Belum ada ujian tahfidz pada periode ini.</p>
 @else
 <table class="data-table">
     <tr>
-        <th style="width:45%">Mata Pelajaran</th>
-        <th style="width:15%">Nilai</th>
-        <th>Catatan</th>
+        <th style="width:9%">Tanggal</th>
+        <th style="width:7%">Juz</th>
+        <th style="width:8%">Status</th>
+        <th style="width:7%">Hafalan</th>
+        <th style="width:6%">Tilawah</th>
+        <th style="width:6%">Makhraj</th>
+        <th style="width:6%">Tajwid</th>
+        <th style="width:13%">Penguji</th>
+        <th>Rekomendasi</th>
     </tr>
-    @foreach($nilai as $item)
+    @foreach($ujianList as $ujian)
     @php
-        $skor = $item->nilai;
-        $cls = match (true) {
-            $skor >= 85 => 'badge-hijau',
-            $skor >= 70 => 'badge-biru',
-            $skor >= 60 => 'badge-kuning',
-            default     => 'badge-merah',
-        };
+        $clsStatus = $ujian->status_kelulusan === 'Lulus' ? 'badge-hijau' : 'badge-kuning';
     @endphp
     <tr>
-        <td>{{ $item->mataPelajaran?->nama_mapel ?? '—' }}</td>
-        <td><span class="badge {{ $cls }}">{{ $skor }}</span></td>
-        <td>{{ $item->catatan ?: '—' }}</td>
+        <td>{{ $ujian->tanggal_ujian?->translatedFormat('d M Y') ?? '—' }}</td>
+        <td>{{ $ujian->target_juz ?? '—' }}</td>
+        <td><span class="badge {{ $clsStatus }}">{{ $ujian->status_kelulusan ?? '—' }}</span></td>
+        <td>{{ $ujian->nilai_hafalan }}</td>
+        <td>{{ $ujian->nilai_tilawah }}</td>
+        <td>{{ $ujian->nilai_makhraj }}</td>
+        <td>{{ $ujian->nilai_tajwid }}</td>
+        <td>{{ $ujian->penguji?->name ?? '—' }}</td>
+        <td>{{ $ujian->rekomendasi_pembimbing ?: '—' }}</td>
     </tr>
     @endforeach
 </table>
