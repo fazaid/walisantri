@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'nis',
     'nama_lengkap',
     'nama_panggilan',
+    'tanggal_lahir',
     'nama_ayah',
     'nama_ibu',
     'alamat_lengkap',
@@ -42,6 +43,13 @@ class Santri extends Model
     public function uniqueIds(): array
     {
         return ['uuid'];
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'tanggal_lahir' => 'date',
+        ];
     }
 
     // --- Relations ---

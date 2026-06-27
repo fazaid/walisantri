@@ -72,6 +72,11 @@
                   {{ $activeTab === 'karakter' ? 'border-teal-600 text-teal-700 bg-teal-50' : 'border-transparent text-gray-500 hover:text-gray-700' }}">
             🌱 Karakter
         </a>
+        <a href="{{ request()->fullUrlWithQuery(['tab' => 'akademik']) }}"
+           class="flex-1 text-center py-3 text-sm font-medium border-b-2 transition-colors
+                  {{ $activeTab === 'akademik' ? 'border-teal-600 text-teal-700 bg-teal-50' : 'border-transparent text-gray-500 hover:text-gray-700' }}">
+            📚 Akademik
+        </a>
     </div>
 
     {{-- ══════════════════════════════════════════════════════════════════ --}}
@@ -215,6 +220,49 @@
     @endif
 
     @endif {{-- /karakter tab --}}
+
+    {{-- ══════════════════════════════════════════════════════════════════ --}}
+    {{-- TAB: AKADEMIK                                                     --}}
+    {{-- ══════════════════════════════════════════════════════════════════ --}}
+    @if($activeTab === 'akademik')
+
+    @forelse($raporAkademik as $periode => $nilaiList)
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        {{-- Badge Periode + Rata-rata --}}
+        <div class="px-4 py-3 bg-teal-50 border-b border-teal-100 flex items-center justify-between">
+            <span class="text-xs font-semibold px-3 py-1 rounded-full bg-teal-700 text-white">
+                {{ $periodeLabel($periode) }}
+            </span>
+            <span class="text-xs text-teal-700 font-bold">
+                Rata-rata {{ round($nilaiList->avg('nilai'), 1) }}
+            </span>
+        </div>
+
+        <div class="divide-y divide-gray-50">
+            @foreach($nilaiList as $nilai)
+            <div class="px-4 py-2.5 flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                    <p class="text-sm text-gray-700 truncate">{{ $nilai->mataPelajaran?->nama_mapel ?? '—' }}</p>
+                    @if($nilai->catatan)
+                    <p class="text-xs text-gray-400 italic truncate">{{ $nilai->catatan }}</p>
+                    @endif
+                </div>
+                <span class="text-sm font-bold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-800 shrink-0">
+                    {{ $nilai->nilai }}
+                </span>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @empty
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 px-4 py-10 text-center">
+        <p class="text-3xl mb-2">📚</p>
+        <p class="text-sm font-medium text-gray-600">Belum ada data rapor akademik</p>
+        <p class="text-xs text-gray-400 mt-1">Rapor akademik untuk tahun {{ $tahunAjaran }} belum tersedia.</p>
+    </div>
+    @endforelse
+
+    @endif {{-- /akademik tab --}}
 
     {{-- ── Tombol Export PDF ────────────────────────────────────────────── --}}
     @if($santriId)

@@ -9,6 +9,7 @@ use App\Models\Kelas;
 use App\Models\Santri;
 use App\Models\User;
 use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -36,6 +37,10 @@ class SantriForm
                             ->columnSpanFull(),
                         TextInput::make('nama_panggilan')
                             ->maxLength(100),
+                        DatePicker::make('tanggal_lahir')
+                            ->label('Tanggal Lahir')
+                            ->native(false)
+                            ->maxDate(now()),
                         Select::make('kelas_id')
                             ->label('Kelas')
                             ->options(fn () => Kelas::where('pesantren_id', auth()->user()?->pesantren_id)

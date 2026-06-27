@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Wali;
 
 use App\Http\Controllers\Controller;
 use App\Models\KesantrianKarakterRapor;
+use App\Models\NilaiAkademik;
 use App\Models\TahfidzRapor;
 
 class RaporController extends Controller
@@ -28,6 +29,12 @@ class RaporController extends Controller
             ->latest('tanggal_input')
             ->first();
 
+        $raporAkademik = NilaiAkademik::with('mataPelajaran')
+            ->where('santri_id', $santriId)
+            ->where('tahun_ajaran', $tahunAjaran)
+            ->get()
+            ->groupBy('periode');
+
         $tahunList = TahfidzRapor::where('santri_id', $santriId)
             ->distinct()
             ->orderByDesc('tahun_ajaran')
@@ -40,6 +47,7 @@ class RaporController extends Controller
             'tahunList',
             'raporTahfidz',
             'raporKarakter',
+            'raporAkademik',
         ));
     }
 }

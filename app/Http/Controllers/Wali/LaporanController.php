@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Wali;
 
 use App\Http\Controllers\Controller;
 use App\Models\KesantrianKarakterRapor;
+use App\Models\NilaiAkademik;
 use App\Models\Santri;
 use App\Models\TahfidzProgress;
 use App\Models\TahfidzRapor;
@@ -36,6 +37,12 @@ class LaporanController extends Controller
             ->latest('tanggal_input')
             ->first();
 
+        $raporAkademik = NilaiAkademik::with('mataPelajaran')
+            ->where('santri_id', $santriId)
+            ->where('tahun_ajaran', $tahunAjaran)
+            ->where('periode', $periode)
+            ->get();
+
         $progressTahfidz = TahfidzProgress::where('santri_id', $santriId)
             ->whereBetween('tanggal', [now()->startOfYear(), now()->endOfYear()])
             ->latest('tanggal')
@@ -46,6 +53,7 @@ class LaporanController extends Controller
             'santri',
             'raporTahfidz',
             'raporKarakter',
+            'raporAkademik',
             'progressTahfidz',
             'tahunAjaran',
             'periode',
