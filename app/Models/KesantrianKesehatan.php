@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable([
     'pesantren_id',
     'santri_id',
+    'jenis_rekam',
     'tanggal_periksa',
     'berat_badan',
     'tinggi_badan',

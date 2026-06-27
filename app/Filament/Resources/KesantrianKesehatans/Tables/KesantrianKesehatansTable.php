@@ -28,10 +28,22 @@ class KesantrianKesehatansTable
                     ->label('Santri')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('jenis_rekam')
+                    ->label('Jenis')
+                    ->badge()
+                    ->color(fn (?string $state): string => match ($state) {
+                        'rutin'   => 'success',
+                        default   => 'danger',
+                    })
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'rutin'   => 'Rutin',
+                        default   => 'Keluhan',
+                    }),
                 TextColumn::make('kategori_keluhan')
                     ->label('Keluhan')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->placeholder('—')
+                    ->color(fn (?string $state): string => match ($state) {
                         'Demam'       => 'danger',
                         'Batuk_Pilek' => 'warning',
                         'Sakit_Perut' => 'warning',
@@ -43,10 +55,12 @@ class KesantrianKesehatansTable
                 TextColumn::make('status_pemulihan')
                     ->label('Status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->placeholder('—')
+                    ->color(fn (?string $state): string => match ($state) {
                         'Rawat_Mandiri'   => 'success',
                         'Istirahat_Total' => 'warning',
                         'Rujukan_Luar'    => 'danger',
+                        default           => 'gray',
                     }),
                 TextColumn::make('berat_badan')
                     ->label('BB (kg)')
@@ -62,6 +76,12 @@ class KesantrianKesehatansTable
             ])
             ->defaultSort('tanggal_periksa', 'desc')
             ->filters([
+                SelectFilter::make('jenis_rekam')
+                    ->label('Jenis Rekam')
+                    ->options([
+                        'keluhan' => 'Keluhan Sakit',
+                        'rutin'   => 'Pemeriksaan Rutin',
+                    ]),
                 SelectFilter::make('kategori_keluhan')
                     ->label('Kategori Keluhan')
                     ->options([

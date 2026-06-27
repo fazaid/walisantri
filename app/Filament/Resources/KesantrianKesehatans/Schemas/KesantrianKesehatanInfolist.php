@@ -1,7 +1,5 @@
 <?php
 
-// File: app/Filament/Resources/KesantrianKesehatans/Schemas/KesantrianKesehatanInfolist.php
-
 namespace App\Filament\Resources\KesantrianKesehatans\Schemas;
 
 use Filament\Infolists\Components\TextEntry;
@@ -30,15 +28,28 @@ class KesantrianKesehatanInfolist
                             ->label('Tinggi Badan')
                             ->suffix(' cm')
                             ->placeholder('-'),
+                        TextEntry::make('jenis_rekam')
+                            ->label('Jenis Rekam')
+                            ->badge()
+                            ->color(fn (?string $state): string => match ($state) {
+                                'rutin'   => 'success',
+                                default   => 'danger',
+                            })
+                            ->formatStateUsing(fn (?string $state): string => match ($state) {
+                                'rutin'   => 'Pemeriksaan Rutin',
+                                default   => 'Keluhan Sakit',
+                            })
+                            ->columnSpanFull(),
                     ]),
 
                 Section::make('Keluhan & Tindakan')
                     ->columns(1)
+                    ->hidden(fn ($record) => $record?->jenis_rekam === 'rutin')
                     ->schema([
                         TextEntry::make('kategori_keluhan')
                             ->label('Kategori Keluhan')
                             ->badge()
-                            ->color(fn (string $state): string => match ($state) {
+                            ->color(fn (?string $state): string => match ($state) {
                                 'Demam'       => 'danger',
                                 'Batuk_Pilek' => 'warning',
                                 'Sakit_Perut' => 'warning',
@@ -51,14 +62,16 @@ class KesantrianKesehatanInfolist
                             ->label('Detail Keluhan')
                             ->placeholder('Tidak ada detail'),
                         TextEntry::make('tindakan_dan_obat')
-                            ->label('Tindakan & Obat'),
+                            ->label('Tindakan & Obat')
+                            ->placeholder('-'),
                         TextEntry::make('status_pemulihan')
                             ->label('Status Pemulihan')
                             ->badge()
-                            ->color(fn (string $state): string => match ($state) {
+                            ->color(fn (?string $state): string => match ($state) {
                                 'Rawat_Mandiri'   => 'success',
                                 'Istirahat_Total' => 'warning',
                                 'Rujukan_Luar'    => 'danger',
+                                default           => 'gray',
                             }),
                     ]),
 

@@ -9,6 +9,7 @@ use Filament\Forms\Components\Get;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
@@ -69,23 +70,43 @@ class KesantrianKesehatanForm
                             ->maxValue(250)
                             ->step(0.1)
                             ->nullable(),
+                        ToggleButtons::make('jenis_rekam')
+                            ->label('Jenis Rekam')
+                            ->options([
+                                'keluhan' => 'Keluhan Sakit',
+                                'rutin'   => 'Pemeriksaan Rutin',
+                            ])
+                            ->icons([
+                                'keluhan' => 'heroicon-o-heart',
+                                'rutin'   => 'heroicon-o-clipboard-document-check',
+                            ])
+                            ->colors([
+                                'keluhan' => 'danger',
+                                'rutin'   => 'success',
+                            ])
+                            ->default('keluhan')
+                            ->inline()
+                            ->live()
+                            ->required()
+                            ->columnSpanFull(),
                     ]),
 
                 Section::make('Keluhan & Tindakan')
                     ->columns(1)
+                    ->hidden(fn (Get $get) => $get('jenis_rekam') === 'rutin')
                     ->schema([
                         Select::make('kategori_keluhan')
                             ->label('Kategori Keluhan')
                             ->options([
-                                'Demam'      => 'Demam',
-                                'Batuk_Pilek'=> 'Batuk / Pilek',
-                                'Sakit_Perut'=> 'Sakit Perut',
-                                'Pusing'     => 'Pusing',
-                                'Kulit_Gatal'=> 'Kulit Gatal',
-                                'Luka_Fisik' => 'Luka Fisik',
-                                'Lainnya'    => 'Lainnya',
+                                'Demam'       => 'Demam',
+                                'Batuk_Pilek' => 'Batuk / Pilek',
+                                'Sakit_Perut' => 'Sakit Perut',
+                                'Pusing'      => 'Pusing',
+                                'Kulit_Gatal' => 'Kulit Gatal',
+                                'Luka_Fisik'  => 'Luka Fisik',
+                                'Lainnya'     => 'Lainnya',
                             ])
-                            ->required(),
+                            ->required(fn (Get $get) => $get('jenis_rekam') !== 'rutin'),
                         Textarea::make('detail_keluhan_teks')
                             ->label('Detail Keluhan')
                             ->rows(3)
@@ -93,15 +114,15 @@ class KesantrianKesehatanForm
                         Textarea::make('tindakan_dan_obat')
                             ->label('Tindakan & Obat')
                             ->rows(3)
-                            ->required(),
+                            ->required(fn (Get $get) => $get('jenis_rekam') !== 'rutin'),
                         Select::make('status_pemulihan')
                             ->label('Status Pemulihan')
                             ->options([
-                                'Rawat_Mandiri'  => 'Rawat Mandiri',
-                                'Istirahat_Total'=> 'Istirahat Total',
-                                'Rujukan_Luar'   => 'Rujukan Luar',
+                                'Rawat_Mandiri'   => 'Rawat Mandiri',
+                                'Istirahat_Total' => 'Istirahat Total',
+                                'Rujukan_Luar'    => 'Rujukan Luar',
                             ])
-                            ->required(),
+                            ->required(fn (Get $get) => $get('jenis_rekam') !== 'rutin'),
                     ]),
             ]);
     }
