@@ -1,16 +1,17 @@
 <?php
 
-// File: app/Filament/Resources/KesantrianKesehatans/Schemas/KesantrianKesehatanForm.php
-
 namespace App\Filament\Resources\KesantrianKesehatans\Schemas;
 
+use App\Models\KesantrianKesehatan;
 use App\Models\Santri;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Get;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Model;
 
 class KesantrianKesehatanForm
 {
@@ -35,16 +36,38 @@ class KesantrianKesehatanForm
                         DatePicker::make('tanggal_periksa')
                             ->label('Tanggal Periksa')
                             ->default(now())
-                            ->required(),
+                            ->maxDate(now())
+                            ->native(false)
+                            ->required()
+                            ->rules([
+                                fn (Get $get, ?Model $record) => function (string $attribute, $value, \Closure $fail) use ($get, $record) {
+                                    $santriId = $get('santri_id');
+                                    if (! $santriId || ! $value) {
+                                        return;
+                                    }
+                                    $exists = KesantrianKesehatan::where('santri_id', $santriId)
+                                        ->where('tanggal_periksa', $value)
+                                        ->where('pesantren_id', auth()->user()?->pesantren_id)
+                                        ->when($record, fn ($q) => $q->where('id', '!=', $record->id))
+                                        ->exists();
+                                    if ($exists) {
+                                        $fail('Rekam medis untuk santri ini pada tanggal tersebut sudah ada.');
+                                    }
+                                },
+                            ]),
                         TextInput::make('berat_badan')
                             ->label('Berat Badan (kg)')
                             ->numeric()
                             ->minValue(1)
+                            ->maxValue(200)
+                            ->step(0.1)
                             ->nullable(),
                         TextInput::make('tinggi_badan')
                             ->label('Tinggi Badan (cm)')
                             ->numeric()
                             ->minValue(1)
+                            ->maxValue(250)
+                            ->step(0.1)
                             ->nullable(),
                     ]),
 

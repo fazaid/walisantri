@@ -1,16 +1,18 @@
 <?php
 
-// File: app/Filament/Resources/KesantrianKesehatans/Tables/KesantrianKesehatansTable.php
-
 namespace App\Filament\Resources\KesantrianKesehatans\Tables;
 
+use Carbon\Carbon;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class KesantrianKesehatansTable
 {
@@ -82,6 +84,26 @@ class KesantrianKesehatansTable
                     ->label('Santri')
                     ->relationship('santri', 'nama_lengkap')
                     ->searchable(),
+                Filter::make('tanggal_range')
+                    ->label('Rentang Tanggal')
+                    ->form([
+                        DatePicker::make('dari')->label('Dari')->native(false),
+                        DatePicker::make('sampai')->label('Sampai')->native(false)->default(now()),
+                    ])
+                    ->query(fn (Builder $query, array $data) => $query
+                        ->when($data['dari'], fn ($q) => $q->whereDate('tanggal_periksa', '>=', $data['dari']))
+                        ->when($data['sampai'], fn ($q) => $q->whereDate('tanggal_periksa', '<=', $data['sampai']))
+                    )
+                    ->indicateUsing(function (array $data) {
+                        $indicators = [];
+                        if ($data['dari']) {
+                            $indicators[] = 'Dari: ' . Carbon::parse($data['dari'])->format('d M Y');
+                        }
+                        if ($data['sampai']) {
+                            $indicators[] = 'Sampai: ' . Carbon::parse($data['sampai'])->format('d M Y');
+                        }
+                        return $indicators;
+                    }),
             ])
             ->recordActions([
                 ViewAction::make(),
