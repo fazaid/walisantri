@@ -5,7 +5,7 @@ namespace App\Filament\Resources\KesantrianKesehatans\Schemas;
 use App\Models\KesantrianKesehatan;
 use App\Models\Santri;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Get;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
