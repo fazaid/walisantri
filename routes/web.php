@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ExportController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\WaliLoginController;
 use App\Http\Controllers\DemoController;
@@ -104,6 +105,16 @@ Route::domain($appDomain)->group(function () {
         request()->session()->regenerateToken();
         return redirect()->route('login');
     })->middleware('auth')->name('wali.logout');
+
+    // --- Export Excel (admin panel) ---
+    Route::middleware(['auth', 'tenant.resolve'])
+        ->prefix('admin-export')
+        ->name('admin.export.')
+        ->group(function () {
+            Route::get('santri', [ExportController::class, 'santri'])->name('santri');
+            Route::get('mutabaah', [ExportController::class, 'mutabaah'])->name('mutabaah');
+            Route::get('rekam-medis', [ExportController::class, 'rekamMedis'])->name('rekam-medis');
+        });
 });
 
 // =============================================================================

@@ -1,0 +1,65 @@
+<?php
+
+namespace App\Exports;
+
+use App\Models\Santri;
+use Illuminate\Support\Collection;
+use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Concerns\WithTitle;
+
+class DataSantriExport implements FromCollection, WithHeadings, WithMapping, WithTitle, ShouldAutoSize
+{
+    public function __construct(private int $pesantrenId) {}
+
+    public function collection(): Collection
+    {
+        return Santri::with(['kelas', 'kamar', 'wali', 'pembimbing'])
+            ->where('pesantren_id', $this->pesantrenId)
+            ->orderBy('nama_lengkap')
+            ->get();
+    }
+
+    public function headings(): array
+    {
+        return [
+            'NIS',
+            'Nama Lengkap',
+            'Nama Panggilan',
+            'Tanggal Lahir',
+            'Nama Ayah',
+            'Nama Ibu',
+            'Kelas',
+            'Kamar',
+            'Ustadz Pembimbing',
+            'Wali Santri',
+            'No HP Wali',
+            'Status',
+        ];
+    }
+
+    public function map($santri): array
+    {
+        return [
+            $santri->nis,
+            $santri->nama_lengkap,
+            $santri->nama_panggilan,
+            $santri->tanggal_lahir?->format('d/m/Y'),
+            $santri->nama_ayah,
+            $santri->nama_ibu,
+            $santri->kelas?->nama_kelas,
+            $santri->kamar?->nama_kamar,
+            $santri->pembimbing?->name,
+            $santri->wali?->name,
+            $santri->wali?->phone_number,
+            $santri->status_aktif ? 'Aktif' : 'Non-Aktif',
+        ];
+    }
+
+    public function title(): string
+    {
+        return 'Data Santri';
+    }
+}
