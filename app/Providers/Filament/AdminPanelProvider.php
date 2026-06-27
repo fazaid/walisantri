@@ -2,8 +2,12 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Widgets\AdminSppStatusChart;
 use App\Filament\Widgets\AdminStatsOverview;
+use App\Filament\Widgets\AdminTrendAmalanChart;
 use App\Filament\Widgets\SuperAdminStatsOverview;
+use App\Filament\Widgets\UstadzAmalanChart;
+use App\Filament\Widgets\UstadzNilaiSetoranChart;
 use App\Filament\Widgets\UstadzStatsOverview;
 use App\Http\Middleware\CheckTenantQuota;
 use App\Http\Middleware\FilamentAuthenticate;
@@ -87,6 +91,10 @@ class AdminPanelProvider extends PanelProvider
                 AdminStatsOverview::class,
                 UstadzStatsOverview::class,
                 SuperAdminStatsOverview::class,
+                AdminTrendAmalanChart::class,
+                AdminSppStatusChart::class,
+                UstadzNilaiSetoranChart::class,
+                UstadzAmalanChart::class,
             ])
             ->middleware([
                 EncryptCookies::class,
