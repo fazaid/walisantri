@@ -40,6 +40,7 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Teal,
             ])
+            ->sidebarFullyCollapsibleOnDesktop()
             ->navigationGroups([
                 'Kesantrian',
                 'Keuangan',
@@ -75,6 +76,10 @@ class AdminPanelProvider extends PanelProvider
                         'navigation' => $navigation,
                     ])->render();
                 },
+            )
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn (): string => view('filament.admin.bottom-nav')->render(),
             )
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([

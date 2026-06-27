@@ -197,6 +197,32 @@
 <p class="no-data">Belum ada data rapor tahfidz untuk periode ini.</p>
 @endif
 
+{{-- ── Rapor Akademik ───────────────────────────────────────────────────── --}}
+<div class="section-title">📚 Rapor Akademik</div>
+@if($raporAkademik->isNotEmpty())
+<table class="data-table">
+    <tr>
+        <th style="width:40%">Mata Pelajaran</th>
+        <th style="width:15%">Nilai</th>
+        <th>Catatan</th>
+    </tr>
+    @foreach($raporAkademik as $nilai)
+    <tr>
+        <td>{{ $nilai->mataPelajaran?->nama_mapel ?? '—' }}</td>
+        <td><span class="badge" style="background:#f3f4f6;color:#1a1a1a;">{{ $nilai->nilai }}</span></td>
+        <td>{{ $nilai->catatan ?: '—' }}</td>
+    </tr>
+    @endforeach
+    <tr>
+        <td><strong>Rata-rata</strong></td>
+        <td><strong>{{ round($raporAkademik->avg('nilai'), 1) }}</strong></td>
+        <td></td>
+    </tr>
+</table>
+@else
+<p class="no-data">Belum ada data rapor akademik untuk periode ini.</p>
+@endif
+
 {{-- ── Rapor Karakter ──────────────────────────────────────────────────── --}}
 <div class="section-title">🌱 Rapor Karakter</div>
 @if($raporKarakter)

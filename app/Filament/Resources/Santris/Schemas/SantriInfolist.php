@@ -27,6 +27,10 @@ class SantriInfolist
                         TextEntry::make('nama_panggilan')
                             ->label('Nama Panggilan')
                             ->placeholder('—'),
+                        TextEntry::make('tanggal_lahir')
+                            ->label('Tanggal Lahir')
+                            ->date('d M Y')
+                            ->placeholder('—'),
                         TextEntry::make('kelas.nama_kelas')
                             ->label('Kelas'),
                         TextEntry::make('kamar.nama_kamar')
