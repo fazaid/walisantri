@@ -9,8 +9,10 @@ use App\Models\KesantrianInventaris;
 use App\Models\KesantrianKarakterRapor;
 use App\Models\KesantrianKesehatan;
 use App\Models\KesantrianMutabaah;
+use App\Models\EkskulMaster;
 use App\Models\MasterPengumuman;
 use App\Models\MataPelajaran;
+use App\Models\SantriEkskul;
 use App\Models\NilaiAkademik;
 use App\Models\PembayaranSpp;
 use App\Models\Pesantren;
@@ -46,12 +48,13 @@ class AlIkhlashDummySeeder extends Seeder
         $this->pesantren = Pesantren::withoutGlobalScope('pesantren')
             ->where('slug', 'alikhlash')->firstOrFail();
 
-        $kelasList  = $this->seedKelas();
-        $kamarList  = $this->seedKamar();
-        $ustadzList = $this->seedUstadz();
-        $waliList   = $this->seedWali();
-        $santriList = $this->seedSantri($kelasList, $kamarList, $ustadzList, $waliList);
-        $mapelList  = $this->seedMataPelajaran($kelasList, $ustadzList);
+        $kelasList   = $this->seedKelas();
+        $kamarList   = $this->seedKamar();
+        $ustadzList  = $this->seedUstadz();
+        $waliList    = $this->seedWali();
+        $santriList  = $this->seedSantri($kelasList, $kamarList, $ustadzList, $waliList);
+        $mapelList   = $this->seedMataPelajaran($kelasList, $ustadzList);
+        $ekskulList  = $this->seedEkskulMaster();
 
         foreach ($santriList as $i => $santri) {
             $this->seedTahfidzProgress($santri);
@@ -65,6 +68,7 @@ class AlIkhlashDummySeeder extends Seeder
             }
             $this->seedSpp($santri);
             $this->seedNilaiAkademik($santri, $mapelList);
+            $this->seedSantriEkskul($santri, $ekskulList);
         }
 
         $this->seedPengumuman();
@@ -463,6 +467,43 @@ class AlIkhlashDummySeeder extends Seeder
                 'nilai'             => rand(70, 95),
                 'catatan'           => null,
             ]);
+        }
+    }
+
+    /** @return EkskulMaster[] */
+    private function seedEkskulMaster(): array
+    {
+        $ekskuls = [
+            'Berenang', 'Berkuda', 'Memanah', 'Bela Diri', 'Tata Boga',
+            'Tata Busana', 'Handicraft', 'Muhadhoroh', 'Kaligrafi',
+            'Nasyid', 'Animasi', 'Pramuka/Kepanduan', 'Sapala', 'Leadership',
+        ];
+
+        return collect($ekskuls)->map(fn ($nama) => EkskulMaster::firstOrCreate(
+            ['pesantren_id' => $this->pesantren->id, 'nama' => $nama],
+            ['pesantren_id' => $this->pesantren->id, 'nama' => $nama, 'aktif' => true],
+        ))->all();
+    }
+
+    private function seedSantriEkskul(Santri $santri, array $ekskulList): void
+    {
+        if (SantriEkskul::where('santri_id', $santri->id)->exists()) {
+            return;
+        }
+
+        $levels  = ['pemula', 'pemula', 'menengah', 'mahir'];
+        $pilihan = array_rand(array_fill(0, count($ekskulList), null), rand(2, 4));
+
+        foreach ((array) $pilihan as $idx) {
+            SantriEkskul::firstOrCreate(
+                ['santri_id' => $santri->id, 'ekskul_id' => $ekskulList[$idx]->id],
+                [
+                    'pesantren_id'  => $this->pesantren->id,
+                    'level'         => $levels[array_rand($levels)],
+                    'tanggal_mulai' => now()->subMonths(rand(1, 6)),
+                    'aktif'         => true,
+                ]
+            );
         }
     }
 

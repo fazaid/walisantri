@@ -2,9 +2,10 @@
 
 namespace App\Filament\Pages;
 
-use App\Filament\Clusters\Akademik;
+use App\Filament\Clusters\Rapor;
 use App\Models\MataPelajaran;
 use App\Models\NilaiAkademik;
+use App\Models\SantriEkskul;
 use App\Models\Santri;
 use App\Services\TahunAjaranOptions;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -20,13 +21,13 @@ class RaporAkademikPage extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentChartBar;
 
-    protected static ?string $cluster = Akademik::class;
+    protected static ?string $cluster = Rapor::class;
 
     protected static ?string $navigationLabel = 'Rapor';
 
     protected static ?string $title = 'Rapor Akademik';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 2;
 
     protected string $view = 'filament.pages.rapor-akademik-page';
 
@@ -88,6 +89,19 @@ class RaporAkademikPage extends Page
             ->where('santri_id', $this->santriId)
             ->where('tahun_ajaran', $this->tahunAjaran)
             ->where('periode', $this->periode)
+            ->get();
+    }
+
+    public function getEkskulList(): \Illuminate\Support\Collection
+    {
+        if (! $this->santriId) {
+            return collect();
+        }
+
+        return SantriEkskul::with('ekskulMaster')
+            ->where('santri_id', $this->santriId)
+            ->where('aktif', true)
+            ->orderBy('tanggal_mulai')
             ->get();
     }
 

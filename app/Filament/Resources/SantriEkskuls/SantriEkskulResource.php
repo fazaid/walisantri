@@ -27,9 +27,9 @@ class SantriEkskulResource extends Resource
     protected static ?int $navigationSort = 4;
 
     protected static ?string $recordTitleAttribute = 'id';
-    protected static ?string $navigationLabel = 'Keikutsertaan Ekskul';
-    protected static ?string $modelLabel = 'Keikutsertaan Ekskul';
-    protected static ?string $pluralModelLabel = 'Keikutsertaan Ekskul';
+    protected static ?string $navigationLabel = 'Ekskul Santri';
+    protected static ?string $modelLabel = 'Ekskul Santri';
+    protected static ?string $pluralModelLabel = 'Ekskul Santri';
 
     public static function canViewAny(): bool
     {
