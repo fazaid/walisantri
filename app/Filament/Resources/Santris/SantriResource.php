@@ -109,9 +109,15 @@ class SantriResource extends Resource
 
     public static function getRecordRouteBindingEloquentQuery(): Builder
     {
-        return parent::getRecordRouteBindingEloquentQuery()
+        $query = parent::getRecordRouteBindingEloquentQuery()
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+
+        if (Auth::user()?->role === 'ustadz') {
+            $query->where('pembimbing_ustadz_id', Auth::id());
+        }
+
+        return $query;
     }
 }
