@@ -8,17 +8,15 @@ use Filament\Pages\Enums\SubNavigationPosition;
 use Filament\Support\Icons\Heroicon;
 use UnitEnum;
 
-class PengaturanPesantren extends Cluster
+class Keuangan extends Cluster
 {
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
 
     protected static string|UnitEnum|null $navigationGroup = 'Manajemen';
 
-    protected static ?string $navigationLabel = 'Pengaturan';
+    protected static ?string $navigationLabel = 'Keuangan';
 
-    protected static ?string $slug = 'pengaturan';
-
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 2;
 
     protected static ?SubNavigationPosition $subNavigationPosition = SubNavigationPosition::Top;
 }

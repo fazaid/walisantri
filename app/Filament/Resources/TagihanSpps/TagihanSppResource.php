@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\TagihanSpps;
 
 use App\Enums\UserRole;
+use App\Filament\Clusters\Keuangan;
 use App\Filament\Resources\TagihanSpps\Pages\ListTagihanSpps;
 use App\Filament\Resources\TagihanSpps\Pages\ViewTagihanSpp;
 use App\Filament\Resources\TagihanSpps\Schemas\TagihanSppInfolist;
@@ -21,11 +22,11 @@ class TagihanSppResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Manajemen';
+    protected static ?string $cluster = Keuangan::class;
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 2;
 
-    protected static ?string $navigationLabel  = 'Keuangan';
+    protected static ?string $navigationLabel  = 'Tagihan';
     protected static ?string $modelLabel       = 'Tagihan SPP';
     protected static ?string $pluralModelLabel = 'Tagihan SPP';
 

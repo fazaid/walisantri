@@ -14,6 +14,7 @@ use App\Http\Controllers\Wali\ReportController;
 use App\Http\Controllers\Wali\KesehatanStatsController;
 use App\Http\Controllers\Wali\MutabaahStatsController;
 use App\Http\Controllers\Wali\SppController;
+use App\Http\Controllers\Wali\UangSakuController;
 use App\Http\Controllers\Wali\TahfidzStatsController;
 use App\Models\Order;
 use Illuminate\Support\Facades\Auth;
@@ -80,6 +81,8 @@ Route::domain($appDomain)->group(function () {
             Route::get('/laporan/pdf', [LaporanController::class, 'exportPdf'])->name('laporan.pdf');
             Route::get('/spp', [SppController::class, 'index'])->name('spp');
             Route::post('/spp/{tagihan}/konfirmasi', [SppController::class, 'konfirmasi'])->name('spp.konfirmasi');
+            Route::get('/uang-saku', [UangSakuController::class, 'index'])->name('uang-saku');
+            Route::get('/uang-saku/{santri}', [UangSakuController::class, 'show'])->name('uang-saku.show');
         });
 
     // --- Magic Link — /report/{uuid} (§4.3) ---

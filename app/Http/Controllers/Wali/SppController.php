@@ -6,6 +6,7 @@ use App\Enums\StatusTagihanSpp;
 use App\Http\Controllers\Controller;
 use App\Models\TagihanSpp;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class SppController extends Controller
 {
@@ -34,7 +35,10 @@ class SppController extends Controller
         // Pastikan tagihan ini milik santri wali yang login
         $waliSantriIds = auth()->user()->anakSantri()->pluck('id');
         abort_unless($waliSantriIds->contains($tagihan->santri_id), 403);
-        abort_unless($tagihan->status === StatusTagihanSpp::BelumBayar, 422, 'Status tagihan tidak valid.');
+        abort_unless(
+            in_array($tagihan->status, [StatusTagihanSpp::BelumBayar, StatusTagihanSpp::MenungguKonfirmasi]),
+            422, 'Status tagihan tidak valid.'
+        );
 
         $request->validate([
             'bukti_transfer' => ['required', 'image', 'max:5120'], // maks 5 MB
@@ -43,6 +47,10 @@ class SppController extends Controller
             'bukti_transfer.image'    => 'File harus berupa gambar (JPG, PNG, dll).',
             'bukti_transfer.max'      => 'Ukuran file maksimal 5 MB.',
         ]);
+
+        if ($tagihan->bukti_transfer) {
+            Storage::disk('public')->delete($tagihan->bukti_transfer);
+        }
 
         $path = $request->file('bukti_transfer')->store('bukti-spp', 'public');
 

@@ -28,6 +28,8 @@ class MasterPengumumanResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Manajemen';
 
+    protected static ?int $navigationSort = 3;
+
     protected static ?string $recordTitleAttribute = 'judul_maklumat';
     protected static ?string $navigationLabel = 'Pengumuman';
     protected static ?string $modelLabel = 'Pengumuman';
