@@ -2,9 +2,10 @@
 
 namespace App\Filament\Resources\KesantrianMutabaahRapors\Tables;
 
-use Filament\Tables\Actions\DeleteAction;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Filament\Tables\Actions\ViewAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -74,12 +75,7 @@ class KesantrianMutabaahRaporsTable
                         10 => 'Oktober', 11 => 'November', 12 => 'Desember',
                     ]),
             ])
-            ->actions([
-                ViewAction::make(),
-                DeleteAction::make(),
-            ])
-            ->bulkActions([
-                DeleteBulkAction::make(),
-            ]);
+            ->recordActions([ViewAction::make(), DeleteAction::make()])
+            ->toolbarActions([BulkActionGroup::make([DeleteBulkAction::make()])]);
     }
 }
