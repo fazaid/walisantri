@@ -17,13 +17,6 @@ class PengumumanController extends Controller
             ->latest()
             ->get();
 
-        // Pengumuman global dari Super Admin (pesantren_id = null, target wali/semua)
-        $pengumumanCentral = MasterPengumuman::withoutGlobalScope('pesantren')
-            ->whereNull('pesantren_id')
-            ->forWali()
-            ->latest()
-            ->get();
-
-        return view('wali.pengumuman', compact('pengumumanPesantren', 'pengumumanCentral'));
+        return view('wali.pengumuman', compact('pengumumanPesantren'));
     }
 }
