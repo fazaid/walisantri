@@ -6,6 +6,7 @@ use App\Models\KesantrianKesehatan;
 use App\Models\KesantrianMutabaah;
 use App\Models\PrestasiSantri;
 use App\Models\Santri;
+use App\Models\SantriEkskul;
 use App\Models\TahfidzProgress;
 use App\Models\TahfidzRapor;
 
@@ -61,6 +62,12 @@ class SantriDetailPresenter
             ->orderByDesc('tanggal')
             ->get();
 
+        $ekskul = SantriEkskul::where('santri_id', $santri->id)
+            ->with('ekskulMaster')
+            ->orderBy('aktif', 'desc')
+            ->orderBy('tanggal_mulai', 'asc')
+            ->get();
+
         return compact(
             'tahfidzRecent',
             'kesehatanRecent',
@@ -70,6 +77,7 @@ class SantriDetailPresenter
             'statusKesehatanTerkini',
             'raporTahfidzTerakhir',
             'prestasi',
+            'ekskul',
         );
     }
 

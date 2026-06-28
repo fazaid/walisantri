@@ -289,6 +289,39 @@
         @endif
     </div>
 
+    {{-- Ekstrakurikuler --}}
+    @if($ekskul->isNotEmpty())
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-100">
+            <h2 class="font-semibold text-gray-800 text-sm">⭐ Kegiatan Ekstrakurikuler</h2>
+        </div>
+        <div class="divide-y divide-gray-50">
+            @foreach($ekskul as $item)
+            <div class="px-4 py-3 flex items-center gap-3">
+                <div class="flex-1 min-w-0">
+                    <p class="font-medium text-gray-800 text-sm leading-snug {{ $item->aktif ? '' : 'text-gray-400' }}">
+                        {{ $item->ekskulMaster?->nama ?? '—' }}
+                        @if(!$item->aktif)<span class="text-xs text-gray-400 ml-1">(tidak aktif)</span>@endif
+                    </p>
+                    @if($item->ekskulMaster?->pengajar)
+                    <p class="text-xs text-gray-400 mt-0.5">Pembina: {{ $item->ekskulMaster->pengajar }}</p>
+                    @endif
+                </div>
+                <span class="text-xs px-2 py-0.5 rounded-full font-medium
+                    {{ match($item->level) {
+                        'pemula'   => 'bg-yellow-50 text-yellow-700',
+                        'menengah' => 'bg-blue-50 text-blue-700',
+                        'mahir'    => 'bg-green-50 text-green-700',
+                        default    => 'bg-gray-100 text-gray-600',
+                    } }}">
+                    {{ $item->labelLevel() }}
+                </span>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
+
     {{-- Prestasi --}}
     @if($prestasi->isNotEmpty())
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
