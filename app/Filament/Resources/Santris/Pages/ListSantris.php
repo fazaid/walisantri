@@ -8,9 +8,12 @@ use App\Imports\SantriImport;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Placeholder;
+use Filament\Schemas\Components\Actions as FormActions;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\HtmlString;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ListSantris extends ListRecords
@@ -20,19 +23,30 @@ class ListSantris extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('download_template')
-                ->label('Unduh Template')
-                ->icon('heroicon-o-document-arrow-down')
-                ->color('gray')
-                ->visible(fn () => auth()->user()?->role === 'admin_pesantren')
-                ->action(fn () => Excel::download(new SantriTemplateExport(), 'template-import-santri.xlsx')),
-
             Action::make('import_santri')
                 ->label('Import Excel')
                 ->icon('heroicon-o-arrow-up-tray')
                 ->color('warning')
                 ->visible(fn () => auth()->user()?->role === 'admin_pesantren')
+                ->modalHeading('Import Data Santri')
                 ->form([
+                    Placeholder::make('panduan')
+                        ->label('Panduan')
+                        ->content(new HtmlString(
+                            '<ul class="text-sm list-disc list-inside space-y-1 text-gray-600 dark:text-gray-400">' .
+                            '<li><strong>Kolom wajib:</strong> <code>nis</code>, <code>nama_lengkap</code></li>' .
+                            '<li><strong>Kolom opsional:</strong> nama_panggilan, tanggal_lahir <em>(DD/MM/YYYY)</em>, nama_ayah, nama_ibu, alamat_lengkap, jumlah_saudara, cita_cita</li>' .
+                            '<li>Kolom <code>kelas</code> dan <code>kamar</code> harus sesuai nama yang sudah terdaftar di sistem.</li>' .
+                            '<li>Baris dengan NIS yang sudah terdaftar akan dilewati.</li>' .
+                            '</ul>'
+                        )),
+                    FormActions::make([
+                        Action::make('unduh_template')
+                            ->label('Unduh Template Excel')
+                            ->icon('heroicon-o-document-arrow-down')
+                            ->color('gray')
+                            ->action(fn () => Excel::download(new SantriTemplateExport(), 'template-import-santri.xlsx')),
+                    ])->fullWidth(),
                     FileUpload::make('file')
                         ->label('File Excel (.xlsx)')
                         ->disk('local')
@@ -43,7 +57,7 @@ class ListSantris extends ListRecords
                         ])
                         ->required()
                         ->maxSize(5120)
-                        ->helperText('Gunakan template yang sudah diunduh. Kolom nis dan nama_lengkap wajib diisi. Maks. 5 MB.'),
+                        ->helperText('Maks. 5 MB.'),
                 ])
                 ->action(function (array $data): void {
                     $pesantrenId = auth()->user()->pesantren_id;

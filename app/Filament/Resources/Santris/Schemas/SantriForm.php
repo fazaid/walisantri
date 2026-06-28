@@ -99,7 +99,7 @@ class SantriForm
                                     ->pluck('name', 'id')
                             )
                             ->searchable()
-                            ->required(),
+                            ->nullable(),
                         Select::make('pembimbing_ustadz_id')
                             ->label('Ustadz Pembimbing')
                             ->options(function () {
@@ -116,7 +116,7 @@ class SantriForm
                                     ]);
                             })
                             ->searchable()
-                            ->required()
+                            ->nullable()
                             ->rules([
                                 fn ($get, $record) => function (string $attribute, $value, $fail) use ($record) {
                                     $count = Santri::where('pembimbing_ustadz_id', $value)
