@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Wali;
 
 use App\Http\Controllers\Controller;
 use App\Enums\StatusTagihanSpp;
+use App\Models\KesantrianInventaris;
 use App\Models\MasterPengumuman;
 use App\Models\TagihanSpp;
 use App\Services\SantriDetailPresenter;
@@ -15,7 +16,7 @@ class DashboardController extends Controller
         $wali = auth()->user();
 
         $anakList = $wali->anakSantri()
-            ->with(['pesantren', 'kelas', 'kamar', 'pembimbing'])
+            ->with(['pesantren', 'kelas', 'kamar'])
             ->where('status_aktif', true)
             ->get();
 
@@ -60,6 +61,9 @@ class DashboardController extends Controller
             ->where('status', StatusTagihanSpp::BelumBayar)
             ->count();
 
+        $totalInventaris = KesantrianInventaris::whereIn('santri_id', $santriIds)->count();
+        $firstSantriId   = $anakList->first()?->id;
+
         return view('wali.dashboard', compact(
             'wali',
             'santri',
@@ -69,6 +73,8 @@ class DashboardController extends Controller
             'pengumuman',
             'pengumumanCentral',
             'tunggakanSpp',
+            'totalInventaris',
+            'firstSantriId',
         ));
     }
 }

@@ -4,11 +4,17 @@
     {{-- Info Card Santri --}}
     <div class="bg-teal-700 text-white rounded-2xl p-4 shadow">
         <div class="flex items-center gap-4">
+            @if($santri->foto_profil)
+            <img src="{{ Storage::disk('public')->url($santri->foto_profil) }}"
+                 alt="{{ $santri->nama_lengkap }}"
+                 class="w-14 h-14 rounded-full object-cover flex-shrink-0 border-2 border-teal-400">
+            @else
             <div class="w-14 h-14 rounded-full bg-teal-500 flex items-center justify-center flex-shrink-0">
                 <span class="text-2xl font-bold">
                     {{ strtoupper(substr($santri->nama_lengkap, 0, 1)) }}
                 </span>
             </div>
+            @endif
             <div>
                 <p class="font-bold text-lg leading-tight">
                     {{ $santri->nama_lengkap }}
@@ -17,25 +23,14 @@
                     @endif
                 </p>
                 <p class="text-teal-200 text-sm">NIS: {{ $santri->nis }}</p>
-                @if($santri->tanggal_lahir)
-                    <p class="text-teal-200 text-sm">
-                        Lahir: {{ $santri->tanggal_lahir->translatedFormat('d M Y') }}
-                        ({{ $santri->tanggal_lahir->age }} tahun)
-                    </p>
+                @if($santri->kelas)
+                <p class="text-teal-200 text-sm">Kelas: {{ $santri->kelas->nama_kelas }}</p>
                 @endif
-                <p class="text-teal-200 text-sm">Pembimbing: {{ $santri->pembimbing->name }}</p>
+                @if($santri->kamar)
+                <p class="text-teal-200 text-sm">Kamar: {{ $santri->kamar->nama_kamar }}</p>
+                @endif
             </div>
         </div>
-        @if($santri->cita_cita || $santri->ciri_fisik)
-        <div class="mt-3 pt-3 border-t border-teal-600 space-y-1">
-            @if($santri->cita_cita)
-            <p class="text-xs text-teal-100">🎯 Cita-cita: {{ $santri->cita_cita }}</p>
-            @endif
-            @if($santri->ciri_fisik)
-            <p class="text-xs text-teal-100">👤 Ciri fisik: {{ $santri->ciri_fisik }}</p>
-            @endif
-        </div>
-        @endif
     </div>
 
     {{-- ═══════════════════════════════════════════════════════════════════════

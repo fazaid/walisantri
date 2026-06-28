@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 #[Table('santri')]
 #[Fillable([
@@ -33,6 +34,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'kelas_id',
     'kamar_id',
     'status_aktif',
+    'foto_profil',
 ])]
 #[Hidden(['pesantren_id'])]
 class Santri extends Model
@@ -50,6 +52,13 @@ class Santri extends Model
         return [
             'tanggal_lahir' => 'date',
         ];
+    }
+
+    public function getFotoProfilUrlAttribute(): ?string
+    {
+        return $this->foto_profil
+            ? Storage::disk('public')->url($this->foto_profil)
+            : null;
     }
 
     // --- Relations ---

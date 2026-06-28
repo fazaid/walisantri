@@ -49,9 +49,15 @@
             <a href="{{ route('wali.santri.show', $cardSantri->id) }}"
                class="block bg-white rounded-2xl shadow-sm border border-gray-100 p-4 hover:border-teal-200 transition-colors">
                 <div class="flex items-center gap-3">
+                    @if($cardSantri->foto_profil)
+                    <img src="{{ Storage::disk('public')->url($cardSantri->foto_profil) }}"
+                         alt="{{ $cardSantri->nama_lengkap }}"
+                         class="w-12 h-12 rounded-full object-cover flex-shrink-0">
+                    @else
                     <div class="w-12 h-12 rounded-full bg-teal-700 flex items-center justify-center flex-shrink-0">
                         <span class="text-white text-lg font-bold">{{ strtoupper(substr($cardSantri->nama_lengkap, 0, 1)) }}</span>
                     </div>
+                    @endif
                     <div class="flex-1 min-w-0">
                         <p class="font-semibold text-gray-800 text-sm truncate">{{ $cardSantri->nama_lengkap }}</p>
                         <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5">
@@ -91,6 +97,25 @@
             </svg>
         </div>
     </a>
+    @endif
+
+    {{-- Inventaris --}}
+    @if($firstSantriId)
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 px-4 py-3">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-xl">📦</span>
+                <div>
+                    <p class="text-sm font-semibold text-gray-800">Inventaris Santri</p>
+                    <p class="text-xs text-gray-400">{{ $totalInventaris }} barang tercatat</p>
+                </div>
+            </div>
+            <a href="{{ route('wali.santri.inventaris', $firstSantriId) }}"
+               class="text-xs font-medium text-teal-600 hover:text-teal-800">
+                Detail →
+            </a>
+        </div>
+    </div>
     @endif
 
     {{-- Pengumuman --}}
