@@ -28,6 +28,14 @@ class KesantrianKesehatanResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'kategori_keluhan';
     protected static ?string $navigationLabel = 'Kesehatan';
+
+    public static function getRecordTitle(?\Illuminate\Database\Eloquent\Model $record): \Illuminate\Contracts\Support\Htmlable|string|null
+    {
+        if (! $record) {
+            return null;
+        }
+        return $record->santri?->nama_lengkap ?? 'Rekam Medis';
+    }
     protected static ?string $modelLabel = 'Rekam Medis';
     protected static ?string $pluralModelLabel = 'Rekam Medis';
 

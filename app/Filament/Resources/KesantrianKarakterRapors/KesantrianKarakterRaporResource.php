@@ -28,6 +28,14 @@ class KesantrianKarakterRaporResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'santri.nama_lengkap';
     protected static ?string $navigationLabel = 'Karakter';
+
+    public static function getRecordTitle(?\Illuminate\Database\Eloquent\Model $record): \Illuminate\Contracts\Support\Htmlable|string|null
+    {
+        if (! $record) {
+            return null;
+        }
+        return $record->santri?->nama_lengkap ?? 'Karakter';
+    }
     protected static ?string $modelLabel = 'Karakter';
     protected static ?string $pluralModelLabel = 'Karakter';
 

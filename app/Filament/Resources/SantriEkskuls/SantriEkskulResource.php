@@ -28,6 +28,14 @@ class SantriEkskulResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'id';
     protected static ?string $navigationLabel = 'Ekskul Santri';
+
+    public static function getRecordTitle(?\Illuminate\Database\Eloquent\Model $record): \Illuminate\Contracts\Support\Htmlable|string|null
+    {
+        if (! $record) {
+            return null;
+        }
+        return $record->santri?->nama_lengkap ?? 'Ekskul Santri';
+    }
     protected static ?string $modelLabel = 'Ekskul Santri';
     protected static ?string $pluralModelLabel = 'Ekskul Santri';
 
