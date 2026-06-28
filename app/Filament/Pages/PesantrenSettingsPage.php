@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Rules\SlugNotReserved;
 use App\Rules\ValidTenantSlug;
+use App\Filament\Clusters\PengaturanPesantren;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Repeater;
@@ -31,13 +32,13 @@ class PesantrenSettingsPage extends Page implements HasForms
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Manajemen';
+    protected static ?string $cluster = PengaturanPesantren::class;
 
-    protected static ?string $navigationLabel = 'Pengaturan Pesantren';
+    protected static ?string $navigationLabel = 'Pengaturan';
 
-    protected static ?string $title = 'Pengaturan Pesantren';
+    protected static ?string $title = 'Pengaturan';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 1;
 
     protected string $view = 'filament.pages.pesantren-settings-page';
 

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\MasterPengumumen\Pages;
 
+use App\Enums\UserRole;
 use App\Filament\Resources\MasterPengumumen\MasterPengumumanResource;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Auth;
@@ -16,7 +17,7 @@ class CreateMasterPengumuman extends CreateRecord
     {
         $user = Auth::user();
 
-        $data['pesantren_id'] = $user->role === 'super_admin'
+        $data['pesantren_id'] = $user->role === UserRole::SuperAdmin->value
             ? null
             : $user->pesantren_id;
 

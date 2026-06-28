@@ -65,18 +65,18 @@ class MasterPengumumanResource extends Resource
 
     public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
     {
-        return in_array(auth()->user()?->role, [
-            UserRole::SuperAdmin->value,
-            UserRole::AdminPesantren->value,
-        ]);
+        $role = auth()->user()?->role;
+        if ($role === UserRole::SuperAdmin->value) return true;
+        if ($role === UserRole::AdminPesantren->value) return $record->pesantren_id !== null;
+        return false;
     }
 
     public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
     {
-        return in_array(auth()->user()?->role, [
-            UserRole::SuperAdmin->value,
-            UserRole::AdminPesantren->value,
-        ]);
+        $role = auth()->user()?->role;
+        if ($role === UserRole::SuperAdmin->value) return true;
+        if ($role === UserRole::AdminPesantren->value) return $record->pesantren_id !== null;
+        return false;
     }
 
     public static function canDeleteAny(): bool

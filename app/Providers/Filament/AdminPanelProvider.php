@@ -47,7 +47,6 @@ class AdminPanelProvider extends PanelProvider
             ->sidebarFullyCollapsibleOnDesktop()
             ->navigationGroups([
                 'Kesantrian',
-                'Keuangan',
                 'Langganan',
                 'Manajemen',
             ])

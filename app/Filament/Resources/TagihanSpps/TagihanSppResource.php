@@ -21,11 +21,11 @@ class TagihanSppResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Keuangan';
+    protected static string|UnitEnum|null $navigationGroup = 'Manajemen';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 4;
 
-    protected static ?string $navigationLabel  = 'Tagihan SPP';
+    protected static ?string $navigationLabel  = 'Keuangan';
     protected static ?string $modelLabel       = 'Tagihan SPP';
     protected static ?string $pluralModelLabel = 'Tagihan SPP';
 
