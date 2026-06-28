@@ -23,11 +23,11 @@ class RaporAkademikPage extends Page
 
     protected static ?string $cluster = Rapor::class;
 
-    protected static ?string $navigationLabel = 'Rapor';
+    protected static ?string $navigationLabel = 'Akademik';
 
     protected static ?string $title = 'Rapor Akademik';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 1;
 
     protected string $view = 'filament.pages.rapor-akademik-page';
 
