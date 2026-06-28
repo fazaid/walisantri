@@ -14,6 +14,10 @@ class CreateUser extends CreateRecord
     {
         if (auth()->user()?->role === UserRole::AdminPesantren->value) {
             $data['pesantren_id'] = auth()->user()->pesantren_id;
+
+            if (isset($data['role']) && $data['role'] === UserRole::SuperAdmin->value) {
+                $data['role'] = UserRole::WaliSantri->value;
+            }
         }
 
         return $data;

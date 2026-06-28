@@ -174,12 +174,12 @@ class PesantrenSettingsPage extends Page implements HasForms
         $pesantren->update([
             'nama_pesantren' => $data['nama_pesantren'],
             'slug'           => Str::slug($data['pesantren_slug']),
-            'profil'         => [
+            'profil'         => array_merge($pesantren->profil ?? [], [
                 'alamat'    => $data['alamat'],
                 'telepon'   => $data['telepon'],
                 'deskripsi' => $data['deskripsi'],
                 'rekening'  => $data['rekening'] ?? [],
-            ],
+            ]),
         ]);
 
         Notification::make()
