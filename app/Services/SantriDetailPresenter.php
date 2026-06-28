@@ -8,7 +8,7 @@ use App\Models\PrestasiSantri;
 use App\Models\Santri;
 use App\Models\SantriEkskul;
 use App\Models\TahfidzProgress;
-use App\Models\TahfidzRapor;
+use App\Models\TahfidzUjian;
 
 class SantriDetailPresenter
 {
@@ -44,7 +44,7 @@ class SantriDetailPresenter
             'status_pemulihan' => $latestKesehatan->status_pemulihan,
         ] : null;
 
-        $latestRapor = TahfidzRapor::where('santri_id', $santri->id)
+        $latestRapor = TahfidzUjian::where('santri_id', $santri->id)
             ->orderByDesc('created_at')
             ->first();
 

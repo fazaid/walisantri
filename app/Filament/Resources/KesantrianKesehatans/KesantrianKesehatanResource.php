@@ -19,7 +19,6 @@ use App\Models\Santri;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use BackedEnum;
-use Illuminate\Support\Facades\Gate;
 
 class KesantrianKesehatanResource extends Resource
 {
@@ -34,6 +33,7 @@ class KesantrianKesehatanResource extends Resource
 
     protected static ?string $cluster = Kesantrian::class;
     protected static ?int $navigationSort = 2;
+    protected static ?string $slug = 'kesehatan';
 
 
     public static function canViewAny(): bool
@@ -106,11 +106,15 @@ class KesantrianKesehatanResource extends Resource
         ];
     }
 
-    public static function canAccess(): bool
+    public static function getRecordRouteBindingEloquentQuery(): Builder
     {
-        return in_array(Auth::user()?->role, [
-            'admin_pesantren',
-            'ustadz',
-        ]);
+        $query = parent::getRecordRouteBindingEloquentQuery();
+
+        if (Auth::user()?->role === 'ustadz') {
+            $santriIds = Santri::where('pembimbing_ustadz_id', Auth::id())->pluck('id');
+            $query->whereIn('santri_id', $santriIds);
+        }
+
+        return $query;
     }
 }

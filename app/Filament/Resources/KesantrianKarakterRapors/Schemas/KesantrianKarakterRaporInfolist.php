@@ -16,10 +16,14 @@ class KesantrianKarakterRaporInfolist
     {
         return $schema
             ->components([
-                Section::make('Identitas')->columns(3)->schema([
+                Section::make('Identitas')->columns(4)->schema([
                     TextEntry::make('santri.nama_lengkap')->label('Santri'),
-                    TextEntry::make('tanggal_input')->label('Tanggal')->date('d M Y'),
-                    TextEntry::make('periode')->label('Periode'),
+                    TextEntry::make('tahun_ajaran')->label('Tahun Ajaran'),
+                    TextEntry::make('periode')
+                        ->label('Periode')
+                        ->formatStateUsing(fn (string $state) => str_replace('_', ' ', $state)),
+                    TextEntry::make('bulan')->label('Bulan')->placeholder('-'),
+                    TextEntry::make('tanggal_input')->label('Tanggal Input')->date('d M Y'),
                 ]),
                 Section::make('Adab')->columns(4)->schema([
                     TextEntry::make('adab_ustadz')->label('Ustadz')->badge(),

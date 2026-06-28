@@ -30,9 +30,9 @@ class KirimMagicLinkAction extends Action
             ->modalCancelActionLabel('Tutup')
             ->visible(fn () => in_array(Auth::user()?->role, ['admin_pesantren', 'ustadz']))
             ->mountUsing(function (Santri $record): void {
-                ActivityLogger::log('magic_link.sent', $record, null, [
+                ActivityLogger::log('magic_link.viewed', $record, null, [
                     'wali_id' => $record->wali_santri_id,
-                    'sent_by' => Auth::id(),
+                    'viewed_by' => Auth::id(),
                 ]);
             });
     }

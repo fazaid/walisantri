@@ -26,13 +26,14 @@ class KesantrianKarakterRaporResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedStar;
 
-    protected static ?string $recordTitleAttribute = 'tanggal_input';
+    protected static ?string $recordTitleAttribute = 'santri.nama_lengkap';
     protected static ?string $navigationLabel = 'Karakter';
     protected static ?string $modelLabel = 'Karakter';
     protected static ?string $pluralModelLabel = 'Karakter';
 
     protected static ?string $cluster = Kesantrian::class;
     protected static ?int $navigationSort = 1;
+    protected static ?string $slug = 'karakter';
 
 
     public static function canViewAny(): bool
@@ -103,5 +104,17 @@ class KesantrianKarakterRaporResource extends Resource
             'view' => ViewKesantrianKarakterRapor::route('/{record}'),
             'edit' => EditKesantrianKarakterRapor::route('/{record}/edit'),
         ];
+    }
+
+    public static function getRecordRouteBindingEloquentQuery(): Builder
+    {
+        $query = parent::getRecordRouteBindingEloquentQuery();
+
+        if (Auth::user()?->role === 'ustadz') {
+            $santriIds = Santri::where('pembimbing_ustadz_id', Auth::id())->pluck('id');
+            $query->whereIn('santri_id', $santriIds);
+        }
+
+        return $query;
     }
 }

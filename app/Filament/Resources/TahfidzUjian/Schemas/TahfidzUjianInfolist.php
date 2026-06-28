@@ -1,16 +1,12 @@
 <?php
 
-// ============================================================
-// FILE 2: app/Filament/Resources/TahfidzRapors/Schemas/TahfidzRaporInfolist.php
-// ============================================================
-
-namespace App\Filament\Resources\TahfidzRapors\Schemas;
+namespace App\Filament\Resources\TahfidzUjian\Schemas;
 
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
-class TahfidzRaporInfolist
+class TahfidzUjianInfolist
 {
     public static function configure(Schema $schema): Schema
     {
@@ -24,15 +20,18 @@ class TahfidzRaporInfolist
                         ->formatStateUsing(fn ($state) => $state ? "{$state} Juz" : '—'),
                     TextEntry::make('status_kelulusan')->label('Status Kelulusan')->badge()
                         ->color(fn (?string $state): string => match ($state) {
-                            'Lulus'    => 'success',
-                            'Mengulang'=> 'danger',
-                            default    => 'gray',
+                            'Lulus'     => 'success',
+                            'Mengulang' => 'danger',
+                            default     => 'gray',
                         }),
                 ]),
-                Section::make('Periode Rapor')->columns(2)->schema([
+                Section::make('Periode Rapor')->columns(3)->schema([
                     TextEntry::make('tahun_ajaran')->label('Tahun Ajaran'),
                     TextEntry::make('periode')->label('Periode')
                         ->formatStateUsing(fn ($state) => str_replace('_', ' ', $state)),
+                    TextEntry::make('bulan')->label('Bulan')
+                        ->placeholder('—')
+                        ->visible(fn ($record) => $record?->periode === 'Bulanan'),
                 ]),
                 Section::make('Penilaian')->columns(4)->schema([
                     TextEntry::make('nilai_hafalan')->label('Nilai Hafalan'),

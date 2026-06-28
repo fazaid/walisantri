@@ -51,12 +51,16 @@ class NilaiAkademikForm
                                 ->where('status_aktif', true)
                                 ->pluck('nama_lengkap', 'id');
                         })
+                        ->disabled(fn (callable $get) => ! $get('mata_pelajaran_id'))
+                        ->placeholder('Pilih mata pelajaran dulu')
                         ->searchable()
                         ->required(),
                     Select::make('tahun_ajaran')
                         ->label('Tahun Ajaran')
                         ->options(TahunAjaranOptions::options())
                         ->default(TahunAjaranOptions::current())
+                        ->live()
+                        ->afterStateUpdated(fn (callable $set) => $set('bulan', null))
                         ->required(),
                     Select::make('periode')
                         ->label('Periode')
@@ -65,7 +69,34 @@ class NilaiAkademikForm
                             'Semester_Ganjil' => 'Semester Ganjil',
                             'Semester_Genap'  => 'Semester Genap',
                         ])
+                        ->live()
+                        ->afterStateUpdated(fn (callable $set) => $set('bulan', null))
                         ->required(),
+                    Select::make('bulan')
+                        ->label('Bulan')
+                        ->options(function (callable $get) {
+                            $tahunAjaran = $get('tahun_ajaran');
+                            if (! $tahunAjaran) return [];
+
+                            [$startYear, $endYear] = array_map('intval', explode('/', $tahunAjaran));
+                            $nama = [
+                                1=>'Januari', 2=>'Februari', 3=>'Maret',    4=>'April',
+                                5=>'Mei',     6=>'Juni',     7=>'Juli',      8=>'Agustus',
+                                9=>'September',10=>'Oktober',11=>'November',12=>'Desember',
+                            ];
+
+                            $options = [];
+                            for ($m = 7; $m <= 12; $m++) {
+                                $options["{$m}-{$startYear}"] = $nama[$m] . ' ' . $startYear;
+                            }
+                            for ($m = 1; $m <= 6; $m++) {
+                                $options["{$m}-{$endYear}"] = $nama[$m] . ' ' . $endYear;
+                            }
+                            return $options;
+                        })
+                        ->visible(fn (callable $get) => $get('periode') === 'Bulanan')
+                        ->required(fn (callable $get) => $get('periode') === 'Bulanan')
+                        ->columnSpanFull(),
                 ]),
 
             Section::make('Nilai')

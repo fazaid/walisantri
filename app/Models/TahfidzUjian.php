@@ -1,9 +1,5 @@
 <?php
 
-// ============================================================
-// FILE 2: app/Models/TahfidzRapor.php
-// ============================================================
-
 namespace App\Models;
 
 use App\Traits\Multitenantable;
@@ -22,13 +18,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'status_kelulusan',
     'tahun_ajaran',
     'periode',
+    'bulan',
     'nilai_hafalan',
     'nilai_tilawah',
     'nilai_makhraj',
     'nilai_tajwid',
     'rekomendasi_pembimbing',
 ])]
-class TahfidzRapor extends Model
+class TahfidzUjian extends Model
 {
     use Multitenantable;
 
@@ -37,6 +34,11 @@ class TahfidzRapor extends Model
         return [
             'tanggal_ujian' => 'date',
         ];
+    }
+
+    public function getNamaSantriAttribute(): string
+    {
+        return $this->santri?->nama_lengkap ?? '—';
     }
 
     public function santri(): BelongsTo

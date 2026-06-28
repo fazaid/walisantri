@@ -37,9 +37,33 @@ class RaporAkademikPage extends Page
 
     public string $periode = 'Semester_Ganjil';
 
+    public string $bulan = '';
+
     public function mount(): void
     {
         $this->tahunAjaran = TahunAjaranOptions::current();
+        $this->bulan       = now()->month . '-' . now()->year;
+    }
+
+    public function getBulanOptions(): array
+    {
+        [$startYear, $endYear] = array_map('intval', explode('/', $this->tahunAjaran));
+
+        $nama = [
+            1=>'Januari', 2=>'Februari', 3=>'Maret',    4=>'April',
+            5=>'Mei',     6=>'Juni',     7=>'Juli',      8=>'Agustus',
+            9=>'September',10=>'Oktober',11=>'November',12=>'Desember',
+        ];
+
+        $options = [];
+        for ($m = 7; $m <= 12; $m++) {
+            $options["{$m}-{$startYear}"] = $nama[$m] . ' ' . $startYear;
+        }
+        for ($m = 1; $m <= 6; $m++) {
+            $options["{$m}-{$endYear}"] = $nama[$m] . ' ' . $endYear;
+        }
+
+        return $options;
     }
 
     public function getTahunAjaranOptions(): array
@@ -89,10 +113,11 @@ class RaporAkademikPage extends Page
             ->where('santri_id', $this->santriId)
             ->where('tahun_ajaran', $this->tahunAjaran)
             ->where('periode', $this->periode)
+            ->when($this->periode === 'Bulanan' && $this->bulan, fn ($q) => $q->where('bulan', $this->bulan))
             ->get();
     }
 
-    public function getEkskulList(): \Illuminate\Support\Collection
+    public function getEkskulList(): Collection
     {
         if (! $this->santriId) {
             return collect();

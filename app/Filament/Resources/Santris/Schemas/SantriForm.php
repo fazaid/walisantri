@@ -30,7 +30,12 @@ class SantriForm
                             ->label('NIS')
                             ->required()
                             ->maxLength(30)
-                            ->unique(ignoreRecord: true),
+                            ->unique(
+                                table: 'santri',
+                                column: 'nis',
+                                modifyRuleUsing: fn ($rule) => $rule->where('pesantren_id', auth()->user()?->pesantren_id),
+                                ignoreRecord: true,
+                            ),
                         TextInput::make('nama_lengkap')
                             ->required()
                             ->maxLength(255)
@@ -94,7 +99,7 @@ class SantriForm
                                     ->pluck('name', 'id')
                             )
                             ->searchable()
-                            ->required(),
+                            ->nullable(),
                         Select::make('pembimbing_ustadz_id')
                             ->label('Ustadz Pembimbing')
                             ->options(function () {
@@ -111,7 +116,7 @@ class SantriForm
                                     ]);
                             })
                             ->searchable()
-                            ->required()
+                            ->nullable()
                             ->rules([
                                 fn ($get, $record) => function (string $attribute, $value, $fail) use ($record) {
                                     $count = Santri::where('pembimbing_ustadz_id', $value)

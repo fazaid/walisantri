@@ -1,9 +1,6 @@
 <?php
-// ============================================================
-// FILE 1: app/Filament/Resources/TahfidzRapors/Schemas/TahfidzRaporForm.php
-// ============================================================
 
-namespace App\Filament\Resources\TahfidzRapors\Schemas;
+namespace App\Filament\Resources\TahfidzUjian\Schemas;
 
 use App\Models\Santri;
 use App\Models\User;
@@ -15,7 +12,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
-class TahfidzRaporForm
+class TahfidzUjianForm
 {
     public static function configure(Schema $schema): Schema
     {
@@ -60,20 +57,49 @@ class TahfidzRaporForm
                     ]),
 
                 Section::make('Periode Rapor')
-                    ->columns(2)
+                    ->columns(3)
                     ->schema([
                         Select::make('tahun_ajaran')
                             ->label('Tahun Ajaran')
                             ->options(TahunAjaranOptions::options())
                             ->default(TahunAjaranOptions::current())
+                            ->live()
+                            ->afterStateUpdated(fn (callable $set) => $set('bulan', null))
                             ->required(),
                         Select::make('periode')
                             ->label('Periode')
                             ->options([
-                                'Bulanan'        => 'Bulanan',
-                                'Semester_Ganjil'=> 'Semester Ganjil',
-                                'Semester_Genap' => 'Semester Genap',
-                            ])->required(),
+                                'Bulanan'         => 'Bulanan',
+                                'Semester_Ganjil' => 'Semester Ganjil',
+                                'Semester_Genap'  => 'Semester Genap',
+                            ])
+                            ->live()
+                            ->afterStateUpdated(fn (callable $set) => $set('bulan', null))
+                            ->required(),
+                        Select::make('bulan')
+                            ->label('Bulan')
+                            ->options(function (callable $get) {
+                                $tahunAjaran = $get('tahun_ajaran');
+                                if (! $tahunAjaran) return [];
+
+                                [$startYear, $endYear] = array_map('intval', explode('/', $tahunAjaran));
+                                $nama = [
+                                    1=>'Januari',2=>'Februari',3=>'Maret',4=>'April',
+                                    5=>'Mei',6=>'Juni',7=>'Juli',8=>'Agustus',
+                                    9=>'September',10=>'Oktober',11=>'November',12=>'Desember',
+                                ];
+
+                                $options = [];
+                                for ($m = 7; $m <= 12; $m++) {
+                                    $options["{$m}-{$startYear}"] = $nama[$m] . ' ' . $startYear;
+                                }
+                                for ($m = 1; $m <= 6; $m++) {
+                                    $options["{$m}-{$endYear}"] = $nama[$m] . ' ' . $endYear;
+                                }
+                                return $options;
+                            })
+                            ->visible(fn (callable $get) => $get('periode') === 'Bulanan')
+                            ->required(fn (callable $get) => $get('periode') === 'Bulanan'),
                     ]),
 
                 Section::make('Penilaian')

@@ -7,7 +7,7 @@ use App\Models\KesantrianKarakterRapor;
 use App\Models\NilaiAkademik;
 use App\Models\Santri;
 use App\Models\TahfidzProgress;
-use App\Models\TahfidzRapor;
+use App\Models\TahfidzUjian;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class LaporanController extends Controller
@@ -24,7 +24,7 @@ class LaporanController extends Controller
             ->with(['pesantren', 'kelas', 'kamar'])
             ->firstOrFail();
 
-        $raporTahfidz = TahfidzRapor::where('santri_id', $santriId)
+        $raporTahfidz = TahfidzUjian::where('santri_id', $santriId)
             ->where('tahun_ajaran', $tahunAjaran)
             ->where('periode', $periode)
             ->first();

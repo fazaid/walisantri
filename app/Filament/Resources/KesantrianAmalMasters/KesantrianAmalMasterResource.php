@@ -29,6 +29,7 @@ class KesantrianAmalMasterResource extends Resource
 
     protected static ?string $cluster = Mutabaah::class;
     protected static ?int $navigationSort = 3;
+    protected static ?string $slug = 'amal-master';
 
     public static function canViewAny(): bool
     {

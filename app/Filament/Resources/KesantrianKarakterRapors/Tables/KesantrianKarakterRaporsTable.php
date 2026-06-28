@@ -6,6 +6,7 @@
 
 namespace App\Filament\Resources\KesantrianKarakterRapors\Tables;
 
+use App\Models\Santri;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -22,16 +23,30 @@ class KesantrianKarakterRaporsTable
             ->columns([
                 TextColumn::make('tanggal_input')->label('Tanggal')->date('d M Y')->sortable(),
                 TextColumn::make('santri.nama_lengkap')->label('Santri')->searchable()->sortable(),
-                TextColumn::make('periode')->label('Periode'),
+                TextColumn::make('tahun_ajaran')->label('Tahun Ajaran')->sortable(),
+                TextColumn::make('periode')
+                    ->label('Periode')
+                    ->formatStateUsing(fn (string $state) => str_replace('_', ' ', $state)),
                 TextColumn::make('adab_ustadz')->label('Adab Ustadz')->badge(),
                 TextColumn::make('kepribadian_kedisiplinan')->label('Kedisiplinan')->badge(),
             ])
             ->defaultSort('tanggal_input', 'desc')
             ->filters([
                 SelectFilter::make('periode')->label('Periode')
-                    ->options(['Bulanan'=>'Bulanan','Semester'=>'Semester']),
-                SelectFilter::make('santri')->label('Santri')
-                    ->relationship('santri', 'nama_lengkap')->searchable(),
+                    ->options([
+                        'Bulanan'         => 'Bulanan',
+                        'Semester_Ganjil' => 'Semester Ganjil',
+                        'Semester_Genap'  => 'Semester Genap',
+                    ]),
+                SelectFilter::make('santri_id')->label('Santri')
+                    ->options(function () {
+                        $query = Santri::where('status_aktif', true);
+                        if (auth()->user()?->role === 'ustadz') {
+                            $query->where('pembimbing_ustadz_id', auth()->id());
+                        }
+                        return $query->orderBy('nama_lengkap')->pluck('nama_lengkap', 'id');
+                    })
+                    ->searchable(),
             ])
             ->recordActions([ViewAction::make(), EditAction::make()])
             ->toolbarActions([BulkActionGroup::make([DeleteBulkAction::make()])]);

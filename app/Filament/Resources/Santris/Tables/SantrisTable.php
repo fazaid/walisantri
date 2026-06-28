@@ -17,6 +17,7 @@ use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 
@@ -67,12 +68,10 @@ class SantrisTable
                 SelectFilter::make('kamar_id')
                     ->label('Filter Kamar')
                     ->relationship('kamar', 'nama_kamar'),
-                SelectFilter::make('status_aktif')
+                TernaryFilter::make('status_aktif')
                     ->label('Status')
-                    ->options([
-                        '1' => 'Aktif',
-                        '0' => 'Non-Aktif',
-                    ]),
+                    ->trueLabel('Aktif')
+                    ->falseLabel('Non-Aktif'),
                 TrashedFilter::make(),
             ])
             ->recordActions([

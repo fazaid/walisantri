@@ -32,7 +32,14 @@ class KesantrianInventarisForm
                         ->searchable()->required(),
                     TextInput::make('nama_barang_umum')->label('Nama Barang')->required(),
                     TextInput::make('kode_unik_fisik')->label('Kode Unik Fisik')
-                        ->placeholder('FZ-SRG-01')->required()->unique(ignoreRecord: true),
+                        ->placeholder('FZ-SRG-01')
+                        ->required()
+                        ->unique(
+                            table: 'kesantrian_inventaris',
+                            column: 'kode_unik_fisik',
+                            modifyRuleUsing: fn ($rule) => $rule->where('pesantren_id', auth()->user()?->pesantren_id),
+                            ignoreRecord: true,
+                        ),
                     TextInput::make('kuota_regulasi_maksimal')->label('Kuota Maks')->numeric()->required(),
                     Select::make('kondisi_barang')->label('Kondisi')
                         ->options([

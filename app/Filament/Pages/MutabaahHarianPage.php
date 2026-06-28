@@ -41,6 +41,8 @@ class MutabaahHarianPage extends Page implements HasForms
 
     protected static ?int $navigationSort = 1;
 
+    protected static ?string $slug = 'mutabaah-harian';
+
     protected string $view = 'filament.pages.mutabaah-harian-page';
 
     public ?string $tanggal = null;
