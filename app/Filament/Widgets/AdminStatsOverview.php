@@ -11,7 +11,6 @@ use App\Services\MutabaahScoreCalculator;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class AdminStatsOverview extends StatsOverviewWidget
 {
@@ -84,25 +83,6 @@ class AdminStatsOverview extends StatsOverviewWidget
 
         $persenAmalan = MutabaahScoreCalculator::persentaseRataRata($mutabaahList);
 
-        // SPP bulan ini
-        $totalTagihan = (int) DB::table('tagihan_spp')
-            ->where('pesantren_id', $pesantrenId)
-            ->where('bulan', now()->month)
-            ->where('tahun', now()->year)
-            ->sum('nominal');
-
-        $totalTerkumpul = (int) DB::table('pembayaran_spp')
-            ->where('pesantren_id', $pesantrenId)
-            ->whereMonth('tanggal_bayar', now()->month)
-            ->whereYear('tanggal_bayar', now()->year)
-            ->sum('jumlah');
-
-        $santriTunggak = DB::table('tagihan_spp')
-            ->where('pesantren_id', $pesantrenId)
-            ->where('status', 'belum_bayar')
-            ->distinct()
-            ->count('santri_id');
-
         return [
             Stat::make('Santri Aktif', $totalSantri . ' / ' . $kuota)
                 ->description($persenKuota . '% dari kuota paket')
@@ -128,21 +108,6 @@ class AdminStatsOverview extends StatsOverviewWidget
                 ->description('Rata-rata seluruh santri')
                 ->descriptionIcon('heroicon-m-check-circle')
                 ->color($persenAmalan >= 75 ? 'success' : ($persenAmalan >= 50 ? 'warning' : 'danger')),
-
-            Stat::make('Tagihan SPP Bulan Ini', $this->formatRupiah($totalTagihan))
-                ->description('Total nominal ' . now()->translatedFormat('F Y'))
-                ->descriptionIcon('heroicon-m-document-text')
-                ->color('info'),
-
-            Stat::make('Terkumpul Bulan Ini', $this->formatRupiah($totalTerkumpul))
-                ->description($totalTagihan > 0 ? round(($totalTerkumpul / $totalTagihan) * 100) . '% dari total tagihan' : 'Belum ada tagihan')
-                ->descriptionIcon('heroicon-m-banknotes')
-                ->color($totalTagihan > 0 && $totalTerkumpul >= $totalTagihan ? 'success' : 'warning'),
-
-            Stat::make('Santri Tunggak SPP', $santriTunggak)
-                ->description('Belum melunasi tagihan')
-                ->descriptionIcon('heroicon-m-exclamation-triangle')
-                ->color($santriTunggak > 0 ? 'danger' : 'success'),
 
             Stat::make('Langganan', $statusLabel)
                 ->description(
