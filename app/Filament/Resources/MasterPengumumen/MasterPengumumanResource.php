@@ -67,7 +67,7 @@ class MasterPengumumanResource extends Resource
     {
         $role = auth()->user()?->role;
         if ($role === UserRole::SuperAdmin->value) return true;
-        if ($role === UserRole::AdminPesantren->value) return $record->pesantren_id !== null;
+        if ($role === UserRole::AdminPesantren->value) return $record->pesantren_id === auth()->user()->pesantren_id;
         return false;
     }
 
@@ -75,7 +75,7 @@ class MasterPengumumanResource extends Resource
     {
         $role = auth()->user()?->role;
         if ($role === UserRole::SuperAdmin->value) return true;
-        if ($role === UserRole::AdminPesantren->value) return $record->pesantren_id !== null;
+        if ($role === UserRole::AdminPesantren->value) return $record->pesantren_id === auth()->user()->pesantren_id;
         return false;
     }
 
