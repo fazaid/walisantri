@@ -41,7 +41,8 @@ class NilaiAkademikTest extends TestCase
             'santri_id'         => $santri->id,
             'mata_pelajaran_id' => $mapel->id,
             'tahun_ajaran'      => '2026/2027',
-            'periode'           => 'Semester_Ganjil',
+            'periode'           => 'Bulanan',
+            'bulan'             => '06',
             'nilai'             => 90,
         ];
 
