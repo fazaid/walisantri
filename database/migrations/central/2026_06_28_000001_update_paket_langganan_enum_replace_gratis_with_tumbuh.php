@@ -7,32 +7,28 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Data migration sudah dilakukan di migrate_gratis_tenants_to_rintisan
-        // Sekarang update definisi kolom enum
-        if (DB::getDriverName() === 'sqlite') {
-            // SQLite tidak support ALTER COLUMN untuk enum; skip (test env)
+        $driver = DB::getDriverName();
+
+        if ($driver === 'sqlite') {
             return;
         }
 
-        DB::statement("
-            ALTER TABLE pesantrens
-            MODIFY COLUMN paket_langganan
-            ENUM('rintisan', 'tumbuh', 'berkembang', 'maju')
-            NOT NULL DEFAULT 'rintisan'
-        ");
+        // PostgreSQL: enum diimplementasikan sebagai varchar + CHECK constraint
+        DB::statement("ALTER TABLE pesantrens DROP CONSTRAINT IF EXISTS pesantrens_paket_langganan_check");
+        DB::statement("ALTER TABLE pesantrens ADD CONSTRAINT pesantrens_paket_langganan_check CHECK (paket_langganan IN ('rintisan', 'tumbuh', 'berkembang', 'maju'))");
+        DB::statement("ALTER TABLE pesantrens ALTER COLUMN paket_langganan SET DEFAULT 'rintisan'");
     }
 
     public function down(): void
     {
-        if (DB::getDriverName() === 'sqlite') {
+        $driver = DB::getDriverName();
+
+        if ($driver === 'sqlite') {
             return;
         }
 
-        DB::statement("
-            ALTER TABLE pesantrens
-            MODIFY COLUMN paket_langganan
-            ENUM('gratis', 'rintisan', 'berkembang', 'maju')
-            NOT NULL DEFAULT 'gratis'
-        ");
+        DB::statement("ALTER TABLE pesantrens DROP CONSTRAINT IF EXISTS pesantrens_paket_langganan_check");
+        DB::statement("ALTER TABLE pesantrens ADD CONSTRAINT pesantrens_paket_langganan_check CHECK (paket_langganan IN ('gratis', 'rintisan', 'berkembang', 'maju'))");
+        DB::statement("ALTER TABLE pesantrens ALTER COLUMN paket_langganan SET DEFAULT 'gratis'");
     }
 };
