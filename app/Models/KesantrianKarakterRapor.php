@@ -17,6 +17,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'pesantren_id',
     'santri_id',
     'periode',
+    'tahun_ajaran',
+    'bulan',
     'tanggal_input',
     'adab_ustadz',
     'adab_tamu',
