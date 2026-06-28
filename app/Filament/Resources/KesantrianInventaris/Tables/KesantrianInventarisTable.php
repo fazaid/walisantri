@@ -37,8 +37,15 @@ class KesantrianInventarisTable
             ->filters([
                 SelectFilter::make('kondisi_barang')->label('Kondisi')
                     ->options(['Baik'=>'Baik','Layak_Rusak'=>'Layak Rusak','Hilang'=>'Hilang']),
-                SelectFilter::make('santri')->label('Santri')
-                    ->relationship('santri', 'nama_lengkap')->searchable(),
+                SelectFilter::make('santri_id')->label('Santri')
+                    ->options(function () {
+                        $query = \App\Models\Santri::where('status_aktif', true);
+                        if (auth()->user()?->role === 'ustadz') {
+                            $query->where('pembimbing_ustadz_id', auth()->id());
+                        }
+                        return $query->orderBy('nama_lengkap')->pluck('nama_lengkap', 'id');
+                    })
+                    ->searchable(),
             ])
             ->recordActions([ViewAction::make(), EditAction::make()])
             ->toolbarActions([BulkActionGroup::make([DeleteBulkAction::make()])]);

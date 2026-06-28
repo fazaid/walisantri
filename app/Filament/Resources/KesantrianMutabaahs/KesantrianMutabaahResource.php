@@ -33,6 +33,7 @@ class KesantrianMutabaahResource extends Resource
 
     protected static ?string $cluster = Mutabaah::class;
     protected static ?int $navigationSort = 2;
+    protected static ?string $slug = 'riwayat';
 
 
     public static function canViewAny(): bool
@@ -103,5 +104,17 @@ class KesantrianMutabaahResource extends Resource
             'view' => ViewKesantrianMutabaah::route('/{record}'),
             'edit' => EditKesantrianMutabaah::route('/{record}/edit'),
         ];
+    }
+
+    public static function getRecordRouteBindingEloquentQuery(): Builder
+    {
+        $query = parent::getRecordRouteBindingEloquentQuery();
+
+        if (Auth::user()?->role === 'ustadz') {
+            $santriIds = Santri::where('pembimbing_ustadz_id', Auth::id())->pluck('id');
+            $query->whereIn('santri_id', $santriIds);
+        }
+
+        return $query;
     }
 }

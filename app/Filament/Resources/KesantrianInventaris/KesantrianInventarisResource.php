@@ -33,6 +33,7 @@ class KesantrianInventarisResource extends Resource
 
     protected static ?string $cluster = Kesantrian::class;
     protected static ?int $navigationSort = 3;
+    protected static ?string $slug = 'inventaris';
 
 
     public static function canViewAny(): bool
@@ -103,5 +104,17 @@ class KesantrianInventarisResource extends Resource
             'view' => ViewKesantrianInventaris::route('/{record}'),
             'edit' => EditKesantrianInventaris::route('/{record}/edit'),
         ];
+    }
+
+    public static function getRecordRouteBindingEloquentQuery(): Builder
+    {
+        $query = parent::getRecordRouteBindingEloquentQuery();
+
+        if (Auth::user()?->role === 'ustadz') {
+            $santriIds = Santri::where('pembimbing_ustadz_id', Auth::id())->pluck('id');
+            $query->whereIn('santri_id', $santriIds);
+        }
+
+        return $query;
     }
 }

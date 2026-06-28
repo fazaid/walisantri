@@ -100,9 +100,15 @@ class KesantrianKesehatansTable
                         'Istirahat_Total' => 'Istirahat Total',
                         'Rujukan_Luar'    => 'Rujukan Luar',
                     ]),
-                SelectFilter::make('santri')
+                SelectFilter::make('santri_id')
                     ->label('Santri')
-                    ->relationship('santri', 'nama_lengkap')
+                    ->options(function () {
+                        $query = \App\Models\Santri::where('status_aktif', true);
+                        if (auth()->user()?->role === 'ustadz') {
+                            $query->where('pembimbing_ustadz_id', auth()->id());
+                        }
+                        return $query->orderBy('nama_lengkap')->pluck('nama_lengkap', 'id');
+                    })
                     ->searchable(),
                 Filter::make('tanggal_range')
                     ->label('Rentang Tanggal')
