@@ -33,6 +33,7 @@ class NilaiAkademikTable
                         'Bulanan'         => 'info',
                         'Semester_Ganjil' => 'warning',
                         'Semester_Genap'  => 'success',
+                        default           => 'gray',
                     }),
                 TextColumn::make('nilai')
                     ->label('Nilai')

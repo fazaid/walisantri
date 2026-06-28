@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Wali;
 use App\Http\Controllers\Controller;
 use App\Models\KesantrianKarakterRapor;
 use App\Models\NilaiAkademik;
-use App\Models\TahfidzRapor;
+use App\Models\TahfidzUjian;
 
 class RaporController extends Controller
 {
@@ -18,7 +18,7 @@ class RaporController extends Controller
         $santriId    = request('santri_id', $anakList->first()?->id);
         $tahunAjaran = request('tahun_ajaran', date('Y') . '/' . (date('Y') + 1));
 
-        $raporTahfidz = TahfidzRapor::where('santri_id', $santriId)
+        $raporTahfidz = TahfidzUjian::where('santri_id', $santriId)
             ->where('tahun_ajaran', $tahunAjaran)
             ->orderBy('periode')
             ->get();
@@ -35,7 +35,7 @@ class RaporController extends Controller
             ->get()
             ->groupBy('periode');
 
-        $tahunList = TahfidzRapor::where('santri_id', $santriId)
+        $tahunList = TahfidzUjian::where('santri_id', $santriId)
             ->distinct()
             ->orderByDesc('tahun_ajaran')
             ->pluck('tahun_ajaran');

@@ -23,6 +23,13 @@ class NilaiAkademik extends Model
 {
     use HasFactory, Multitenantable;
 
+    protected function casts(): array
+    {
+        return [
+            'nilai' => 'integer',
+        ];
+    }
+
     public function pesantren(): BelongsTo
     {
         return $this->belongsTo(Pesantren::class);

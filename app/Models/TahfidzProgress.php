@@ -37,6 +37,11 @@ class TahfidzProgress extends Model
         ];
     }
 
+    public function getNamaSantriAttribute(): string
+    {
+        return $this->santri?->nama_lengkap ?? '—';
+    }
+
     public function santri(): BelongsTo
     {
         return $this->belongsTo(Santri::class);

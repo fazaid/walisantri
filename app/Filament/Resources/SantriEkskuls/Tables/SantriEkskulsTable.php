@@ -51,6 +51,10 @@ class SantriEkskulsTable
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
+                SelectFilter::make('santri')
+                    ->label('Santri')
+                    ->relationship('santri', 'nama_lengkap')
+                    ->searchable(),
                 SelectFilter::make('ekskulMaster')
                     ->label('Ekskul')
                     ->relationship('ekskulMaster', 'nama')

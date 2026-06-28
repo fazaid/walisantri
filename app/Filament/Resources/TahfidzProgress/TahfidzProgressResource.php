@@ -24,10 +24,11 @@ class TahfidzProgressResource extends Resource
 {
     protected static ?string $model = TahfidzProgress::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBookOpen;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
 
-    protected static ?string $recordTitleAttribute = 'nama_surah';
+    protected static ?string $recordTitleAttribute = 'nama_santri';
     protected static ?string $slug = 'setoran';
+    protected static ?int $navigationSort = 1;
     protected static ?string $navigationLabel = 'Setoran';
     protected static ?string $modelLabel = 'Setoran';
     protected static ?string $pluralModelLabel = 'Setoran Tahfidz';

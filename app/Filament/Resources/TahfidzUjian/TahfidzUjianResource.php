@@ -1,16 +1,16 @@
 <?php
 
-namespace App\Filament\Resources\TahfidzRapors;
+namespace App\Filament\Resources\TahfidzUjian;
 
-use App\Filament\Resources\TahfidzRapors\Pages\CreateTahfidzRapor;
-use App\Filament\Resources\TahfidzRapors\Pages\EditTahfidzRapor;
-use App\Filament\Resources\TahfidzRapors\Pages\ListTahfidzRapors;
-use App\Filament\Resources\TahfidzRapors\Pages\ViewTahfidzRapor;
-use App\Filament\Resources\TahfidzRapors\Schemas\TahfidzRaporForm;
-use App\Filament\Resources\TahfidzRapors\Schemas\TahfidzRaporInfolist;
-use App\Filament\Resources\TahfidzRapors\Tables\TahfidzRaporsTable;
+use App\Filament\Resources\TahfidzUjian\Pages\CreateTahfidzUjian;
+use App\Filament\Resources\TahfidzUjian\Pages\EditTahfidzUjian;
+use App\Filament\Resources\TahfidzUjian\Pages\ListTahfidzUjian;
+use App\Filament\Resources\TahfidzUjian\Pages\ViewTahfidzUjian;
+use App\Filament\Resources\TahfidzUjian\Schemas\TahfidzUjianForm;
+use App\Filament\Resources\TahfidzUjian\Schemas\TahfidzUjianInfolist;
+use App\Filament\Resources\TahfidzUjian\Tables\TahfidzUjianTable;
 use App\Filament\Clusters\Tahfidz;
-use App\Models\TahfidzRapor;
+use App\Models\TahfidzUjian;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -20,20 +20,20 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use BackedEnum;
 
-class TahfidzRaporResource extends Resource
+class TahfidzUjianResource extends Resource
 {
-    protected static ?string $model = TahfidzRapor::class;
+    protected static ?string $model = TahfidzUjian::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
 
-    protected static ?string $recordTitleAttribute = 'tahun_ajaran';
+    protected static ?string $recordTitleAttribute = 'nama_santri';
     protected static ?string $slug = 'ujian';
+    protected static ?int $navigationSort = 2;
     protected static ?string $navigationLabel = 'Ujian';
     protected static ?string $modelLabel = 'Ujian';
     protected static ?string $pluralModelLabel = 'Ujian Tahfidz';
 
     protected static ?string $cluster = Tahfidz::class;
-
 
     public static function canViewAny(): bool
     {
@@ -75,33 +75,31 @@ class TahfidzRaporResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return TahfidzRaporForm::configure($schema);
+        return TahfidzUjianForm::configure($schema);
     }
 
     public static function infolist(Schema $schema): Schema
     {
-        return TahfidzRaporInfolist::configure($schema);
+        return TahfidzUjianInfolist::configure($schema);
     }
 
     public static function table(Table $table): Table
     {
-        return TahfidzRaporsTable::configure($table);
+        return TahfidzUjianTable::configure($table);
     }
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => ListTahfidzRapors::route('/'),
-            'create' => CreateTahfidzRapor::route('/create'),
-            'view' => ViewTahfidzRapor::route('/{record}'),
-            'edit' => EditTahfidzRapor::route('/{record}/edit'),
+            'index'  => ListTahfidzUjian::route('/'),
+            'create' => CreateTahfidzUjian::route('/create'),
+            'view'   => ViewTahfidzUjian::route('/{record}'),
+            'edit'   => EditTahfidzUjian::route('/{record}/edit'),
         ];
     }
 }

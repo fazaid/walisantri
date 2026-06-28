@@ -6,7 +6,7 @@ use App\Data\QuranSurah;
 use App\Filament\Clusters\Tahfidz;
 use App\Models\Santri;
 use App\Models\TahfidzProgress;
-use App\Models\TahfidzRapor;
+use App\Models\TahfidzUjian;
 use App\Services\TahunAjaranOptions;
 use Barryvdh\DomPDF\Facade\Pdf;
 use BackedEnum;
@@ -24,6 +24,8 @@ class RaporTahfidzPage extends Page
 
     protected static ?string $cluster = Tahfidz::class;
 
+    protected static ?string $slug = 'rapor-tahfidz';
+
     protected static ?string $navigationLabel = 'Rapor';
 
     protected static ?string $title = 'Rapor Tahfidz';
@@ -38,9 +40,35 @@ class RaporTahfidzPage extends Page
 
     public string $periode = 'Semester_Ganjil';
 
+    public string $bulan = '';
+
     public function mount(): void
     {
         $this->tahunAjaran = TahunAjaranOptions::current();
+        $this->bulan       = now()->month . '-' . now()->year;
+    }
+
+    public function getBulanOptions(): array
+    {
+        [$startYear, $endYear] = array_map('intval', explode('/', $this->tahunAjaran));
+
+        $options = [];
+        $bulanNama = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+        ];
+
+        // Juli s.d. Desember tahun awal
+        for ($m = 7; $m <= 12; $m++) {
+            $options["{$m}-{$startYear}"] = $bulanNama[$m] . ' ' . $startYear;
+        }
+        // Januari s.d. Juni tahun akhir
+        for ($m = 1; $m <= 6; $m++) {
+            $options["{$m}-{$endYear}"] = $bulanNama[$m] . ' ' . $endYear;
+        }
+
+        return $options;
     }
 
     public function getTahunAjaranOptions(): array
@@ -83,6 +111,12 @@ class RaporTahfidzPage extends Page
     {
         [$startYear, $endYear] = array_map('intval', explode('/', $this->tahunAjaran));
 
+        if ($this->periode === 'Bulanan' && $this->bulan) {
+            [$month, $year] = array_map('intval', explode('-', $this->bulan));
+            $start = Carbon::create($year, $month, 1)->startOfDay();
+            return [$start, $start->copy()->endOfMonth()->endOfDay()];
+        }
+
         return match ($this->periode) {
             'Semester_Ganjil' => [Carbon::create($startYear, 7, 1)->startOfDay(), Carbon::create($startYear, 12, 31)->endOfDay()],
             'Semester_Genap'  => [Carbon::create($endYear, 1, 1)->startOfDay(), Carbon::create($endYear, 6, 30)->endOfDay()],
@@ -96,10 +130,11 @@ class RaporTahfidzPage extends Page
             return collect();
         }
 
-        return TahfidzRapor::with('penguji')
+        return TahfidzUjian::with('penguji')
             ->where('santri_id', $this->santriId)
             ->where('tahun_ajaran', $this->tahunAjaran)
             ->where('periode', $this->periode)
+            ->when($this->periode === 'Bulanan' && $this->bulan, fn ($q) => $q->where('bulan', $this->bulan))
             ->orderByDesc('tanggal_ujian')
             ->get();
     }
@@ -156,7 +191,7 @@ class RaporTahfidzPage extends Page
             return 0;
         }
 
-        return (int) (TahfidzRapor::where('santri_id', $this->santriId)
+        return (int) (TahfidzUjian::where('santri_id', $this->santriId)
             ->where('status_kelulusan', 'Lulus')
             ->max('target_juz') ?? 0);
     }

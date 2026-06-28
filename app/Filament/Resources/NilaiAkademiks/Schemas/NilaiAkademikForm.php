@@ -51,6 +51,8 @@ class NilaiAkademikForm
                                 ->where('status_aktif', true)
                                 ->pluck('nama_lengkap', 'id');
                         })
+                        ->disabled(fn (callable $get) => ! $get('mata_pelajaran_id'))
+                        ->placeholder('Pilih mata pelajaran dulu')
                         ->searchable()
                         ->required(),
                     Select::make('tahun_ajaran')
