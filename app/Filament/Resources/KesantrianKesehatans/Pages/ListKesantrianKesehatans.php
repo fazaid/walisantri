@@ -6,7 +6,7 @@ use App\Filament\Resources\KesantrianKesehatans\KesantrianKesehatanResource;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Grid;
+use Filament\Schemas\Components\Grid;
 use Filament\Resources\Pages\ListRecords;
 
 class ListKesantrianKesehatans extends ListRecords
