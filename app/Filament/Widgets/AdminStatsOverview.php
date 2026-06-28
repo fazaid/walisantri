@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Pages\BillingPage;
 use App\Models\KesantrianKesehatan;
 use App\Models\KesantrianMutabaah;
 use App\Models\Santri;
@@ -117,7 +118,7 @@ class AdminStatsOverview extends StatsOverviewWidget
                         : 'Paket: ' . ucfirst($pesantren?->paket_langganan ?? '-')
                 )
                 ->descriptionIcon('heroicon-m-credit-card')
-                ->url(route('filament.admin.pages.billing-page'))
+                ->url(BillingPage::getUrl())
                 ->color($billingColor),
         ];
     }
