@@ -63,6 +63,9 @@ class UpgradePage extends Page implements HasForms
     public function mount(): void
     {
         $pesantren = Auth::user()->pesantren;
+
+        abort_unless($pesantren, 403, 'Pesantren tidak ditemukan.');
+
         $this->paket_target            = $pesantren->paket_langganan ?? 'rintisan';
         $this->max_santri_kuota_target = $pesantren->max_santri_kuota ?? 1000;
         $this->min_durasi_upgrade      = $this->hitungMinDurasi($pesantren);

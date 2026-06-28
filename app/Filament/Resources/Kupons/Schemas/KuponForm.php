@@ -9,6 +9,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 
 class KuponForm
@@ -24,6 +25,9 @@ class KuponForm
                     ->alphaDash()
                     ->maxLength(32)
                     ->hint('Hanya huruf, angka, dan tanda hubung')
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(fn (Set $set, ?string $state) => $set('kode', strtoupper(trim($state ?? ''))))
+                    ->dehydrateStateUsing(fn (?string $state) => strtoupper(trim($state ?? '')))
                     ->columnSpan(1),
 
                 Select::make('tipe_diskon')
@@ -37,6 +41,7 @@ class KuponForm
                     ->label('Nilai Diskon')
                     ->numeric()
                     ->minValue(1)
+                    ->maxValue(fn ($get) => $get('tipe_diskon') === TipeDiskon::Persentase->value ? 100 : null)
                     ->required()
                     ->prefix(fn ($get) => $get('tipe_diskon') === TipeDiskon::Nominal->value ? 'Rp' : null)
                     ->suffix(fn ($get) => $get('tipe_diskon') === TipeDiskon::Persentase->value ? '%' : null)

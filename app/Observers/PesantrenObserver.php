@@ -45,7 +45,7 @@ class PesantrenObserver
             TenantDomain::where('pesantren_id', $pesantren->id)
                 ->where('type', 'subdomain')
                 ->where('is_primary', true)
-                ->update(['hostname' => "{$pesantren->slug}.walisantri.com"]);
+                ->update(['hostname' => "{$pesantren->slug}." . config('app.base_domain', 'walisantri.com')]);
 
             ActivityLogger::log('pesantren.slug_changed', $pesantren,
                 ['slug' => $oldSlug],
