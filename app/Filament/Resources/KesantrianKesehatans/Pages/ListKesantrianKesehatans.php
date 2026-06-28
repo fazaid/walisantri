@@ -17,11 +17,11 @@ class ListKesantrianKesehatans extends ListRecords
     {
         return [
             Action::make('export_excel')
-                ->label('Export Excel')
+                ->label('Ekspor Excel')
                 ->icon('heroicon-o-arrow-down-tray')
                 ->color('success')
-                ->modalHeading('Export Rekam Medis')
-                ->modalSubmitActionLabel('Download')
+                ->modalHeading('Ekspor Rekam Medis')
+                ->modalSubmitActionLabel('Unduh')
                 ->form([
                     Grid::make(2)->schema([
                         DatePicker::make('dari')

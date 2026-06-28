@@ -23,9 +23,9 @@ class DemoRequestResource extends Resource
 
     protected static ?int $navigationSort = 5;
 
-    protected static ?string $navigationLabel  = 'Waiting List Demo';
+    protected static ?string $navigationLabel  = 'Antrean Demo';
     protected static ?string $modelLabel       = 'Permintaan Demo';
-    protected static ?string $pluralModelLabel = 'Waiting List Demo';
+    protected static ?string $pluralModelLabel = 'Antrean Demo';
 
     public static function canAccess(): bool
     {

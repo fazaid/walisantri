@@ -25,9 +25,9 @@ class OrderResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
-    protected static ?string $navigationLabel   = 'Order Upgrade';
-    protected static ?string $modelLabel        = 'Order';
-    protected static ?string $pluralModelLabel  = 'Order Upgrade';
+    protected static ?string $navigationLabel   = 'Pesanan Upgrade';
+    protected static ?string $modelLabel        = 'Pesanan';
+    protected static ?string $pluralModelLabel  = 'Pesanan Upgrade';
 
     public static function canAccess(): bool
     {

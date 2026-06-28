@@ -18,11 +18,11 @@ class ListKesantrianMutabaahs extends ListRecords
     {
         return [
             Action::make('export_excel')
-                ->label('Export Excel')
+                ->label('Ekspor Excel')
                 ->icon('heroicon-o-arrow-down-tray')
                 ->color('success')
-                ->modalHeading('Export Rekap Mutaba\'ah')
-                ->modalSubmitActionLabel('Download')
+                ->modalHeading('Ekspor Rekap Mutaba\'ah')
+                ->modalSubmitActionLabel('Unduh')
                 ->form([
                     Grid::make(2)->schema([
                         Select::make('bulan')

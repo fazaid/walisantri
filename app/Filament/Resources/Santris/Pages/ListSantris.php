@@ -15,7 +15,7 @@ class ListSantris extends ListRecords
     {
         return [
             Action::make('export_excel')
-                ->label('Export Excel')
+                ->label('Ekspor Excel')
                 ->icon('heroicon-o-arrow-down-tray')
                 ->color('success')
                 ->visible(fn () => auth()->user()?->role === 'admin_pesantren')
