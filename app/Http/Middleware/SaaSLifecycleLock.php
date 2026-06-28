@@ -5,6 +5,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Filament\Pages\BillingPage;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -125,7 +126,7 @@ class SaaSLifecycleLock
             ], 402);
         }
 
-        return redirect()->route('filament.admin.pages.billing-page');
+        return redirect(BillingPage::getUrl());
     }
 
     private function lockResponse(Request $request, string $message, int $status = 403): Response
