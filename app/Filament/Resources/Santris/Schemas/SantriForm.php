@@ -95,10 +95,9 @@ class SantriForm
                             ->label('Foto Profil')
                             ->disk('public')
                             ->directory('foto-profil')
-                            ->image()
                             ->acceptedFileTypes(['image/jpeg', 'image/png'])
-                            ->rules(['image'])
                             ->maxSize(2048)
+                            ->previewable(false)
                             ->nullable(),
                     ]),
 
