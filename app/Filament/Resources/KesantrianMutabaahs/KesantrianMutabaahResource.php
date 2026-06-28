@@ -28,6 +28,14 @@ class KesantrianMutabaahResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'tanggal';
     protected static ?string $navigationLabel = 'Riwayat';
+
+    public static function getRecordTitle(?\Illuminate\Database\Eloquent\Model $record): \Illuminate\Contracts\Support\Htmlable|string|null
+    {
+        if (! $record) {
+            return null;
+        }
+        return $record->santri?->nama_lengkap ?? 'Mutabaah';
+    }
     protected static ?string $modelLabel = 'Mutabaah';
     protected static ?string $pluralModelLabel = 'Data Mutabaah';
 

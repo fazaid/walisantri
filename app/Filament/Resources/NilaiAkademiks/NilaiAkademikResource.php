@@ -30,6 +30,14 @@ class NilaiAkademikResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'id';
     protected static ?string $navigationLabel = 'Nilai';
+
+    public static function getRecordTitle(?\Illuminate\Database\Eloquent\Model $record): \Illuminate\Contracts\Support\Htmlable|string|null
+    {
+        if (! $record) {
+            return null;
+        }
+        return $record->santri?->nama_lengkap ?? 'Nilai Akademik';
+    }
     protected static ?string $modelLabel = 'Nilai Akademik';
     protected static ?string $pluralModelLabel = 'Nilai Akademik';
 

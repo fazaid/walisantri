@@ -28,6 +28,14 @@ class KesantrianInventarisResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'nama_barang_umum';
     protected static ?string $navigationLabel = 'Inventaris';
+
+    public static function getRecordTitle(?\Illuminate\Database\Eloquent\Model $record): \Illuminate\Contracts\Support\Htmlable|string|null
+    {
+        if (! $record) {
+            return null;
+        }
+        return $record->santri?->nama_lengkap ?? 'Inventaris';
+    }
     protected static ?string $modelLabel = 'Inventaris';
     protected static ?string $pluralModelLabel = 'Data Inventaris';
 
