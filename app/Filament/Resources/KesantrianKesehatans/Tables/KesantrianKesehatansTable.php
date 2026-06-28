@@ -57,11 +57,17 @@ class KesantrianKesehatansTable
                     ->badge()
                     ->placeholder('—')
                     ->color(fn (?string $state): string => match ($state) {
-                        'Rawat_Mandiri'   => 'success',
+                        'Sembuh'          => 'success',
+                        'Rawat_Mandiri'   => 'info',
                         'Istirahat_Total' => 'warning',
                         'Rujukan_Luar'    => 'danger',
                         default           => 'gray',
                     }),
+                TextColumn::make('tanggal_sembuh')
+                    ->label('Sembuh')
+                    ->date('d M Y')
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('berat_badan')
                     ->label('BB (kg)')
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -99,6 +105,7 @@ class KesantrianKesehatansTable
                         'Rawat_Mandiri'   => 'Rawat Mandiri',
                         'Istirahat_Total' => 'Istirahat Total',
                         'Rujukan_Luar'    => 'Rujukan Luar',
+                        'Sembuh'          => 'Sembuh',
                     ]),
                 SelectFilter::make('santri_id')
                     ->label('Santri')

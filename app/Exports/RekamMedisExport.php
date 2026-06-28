@@ -47,6 +47,7 @@ class RekamMedisExport implements FromCollection, WithHeadings, WithMapping, Wit
             'Detail Keluhan',
             'Tindakan & Obat',
             'Status Pemulihan',
+            'Tanggal Sembuh',
         ];
     }
 
@@ -62,6 +63,7 @@ class RekamMedisExport implements FromCollection, WithHeadings, WithMapping, Wit
             $record->detail_keluhan_teks ?? '-',
             $record->tindakan_dan_obat ?? '-',
             str_replace('_', ' ', $record->status_pemulihan ?? '-'),
+            $record->tanggal_sembuh?->format('d/m/Y') ?? '-',
         ];
     }
 

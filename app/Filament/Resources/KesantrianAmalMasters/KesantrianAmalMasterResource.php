@@ -23,13 +23,13 @@ class KesantrianAmalMasterResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAdjustmentsHorizontal;
 
     protected static ?string $recordTitleAttribute = 'label';
-    protected static ?string $navigationLabel = 'Pengaturan Amal';
+    protected static ?string $navigationLabel = 'Amal';
     protected static ?string $modelLabel = 'Amal Mutabaah';
     protected static ?string $pluralModelLabel = 'Pengaturan Amal Mutabaah';
 
     protected static ?string $cluster = Mutabaah::class;
     protected static ?int $navigationSort = 3;
-    protected static ?string $slug = 'amal-master';
+    protected static ?string $slug = 'amal';
 
     public static function canViewAny(): bool
     {

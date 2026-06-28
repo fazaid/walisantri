@@ -6,8 +6,10 @@ use App\Enums\StatusTagihanSpp;
 use App\Models\PembayaranSpp;
 use App\Models\Santri;
 use App\Models\TagihanSpp;
+use App\Models\TarifSpp;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
+use Illuminate\Support\Facades\Storage;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -95,11 +97,6 @@ class TagihanSppsTable
                             ->minValue(2020)
                             ->maxValue(2099)
                             ->required(),
-                        TextInput::make('nominal')
-                            ->label('Nominal SPP (Rp)')
-                            ->numeric()
-                            ->minValue(1)
-                            ->required(),
                         DatePicker::make('jatuh_tempo')
                             ->label('Jatuh Tempo (opsional)'),
                         TextInput::make('keterangan')
@@ -109,12 +106,16 @@ class TagihanSppsTable
                     ->action(function (array $data): void {
                         $pesantrenId = auth()->user()->pesantren_id;
 
+                        $tarifMap = TarifSpp::where('pesantren_id', $pesantrenId)
+                            ->pluck('nominal', 'kelas_id');
+
                         $santris = Santri::where('pesantren_id', $pesantrenId)
                             ->where('status_aktif', true)
                             ->get();
 
-                        $created = 0;
-                        $skipped = 0;
+                        $created  = 0;
+                        $skipped  = 0;
+                        $noTarif  = 0;
 
                         foreach ($santris as $santri) {
                             $exists = TagihanSpp::withoutGlobalScope('pesantren')
@@ -128,12 +129,17 @@ class TagihanSppsTable
                                 continue;
                             }
 
+                            if (! $santri->kelas_id || ! isset($tarifMap[$santri->kelas_id])) {
+                                $noTarif++;
+                                continue;
+                            }
+
                             TagihanSpp::create([
                                 'pesantren_id' => $pesantrenId,
                                 'santri_id'    => $santri->id,
                                 'bulan'        => $data['bulan'],
                                 'tahun'        => $data['tahun'],
-                                'nominal'      => $data['nominal'],
+                                'nominal'      => $tarifMap[$santri->kelas_id],
                                 'jatuh_tempo'  => $data['jatuh_tempo'] ?? null,
                                 'keterangan'   => $data['keterangan'],
                                 'status'       => StatusTagihanSpp::BelumBayar,
@@ -142,8 +148,12 @@ class TagihanSppsTable
                             $created++;
                         }
 
+                        $msg = "{$created} tagihan dibuat";
+                        if ($skipped) $msg .= ", {$skipped} dilewati (sudah ada)";
+                        if ($noTarif) $msg .= ", {$noTarif} dilewati (tarif belum diatur)";
+
                         Notification::make()
-                            ->title("{$created} tagihan dibuat" . ($skipped ? ", {$skipped} dilewati (sudah ada)" : '') . '.')
+                            ->title($msg . '.')
                             ->success()
                             ->send();
                     }),
@@ -189,6 +199,31 @@ class TagihanSppsTable
                         Notification::make()
                             ->title('Tagihan ditandai lunas.')
                             ->success()
+                            ->send();
+                    }),
+
+                Action::make('tolak_konfirmasi')
+                    ->label('Tolak')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->visible(fn (TagihanSpp $record): bool => $record->isMenungguKonfirmasi())
+                    ->requiresConfirmation()
+                    ->modalHeading('Tolak Konfirmasi Bukti Transfer')
+                    ->modalDescription('Status tagihan akan dikembalikan ke Belum Bayar dan bukti transfer dihapus.')
+                    ->action(function (TagihanSpp $record): void {
+                        if ($record->bukti_transfer) {
+                            Storage::disk('public')->delete($record->bukti_transfer);
+                        }
+
+                        $record->update([
+                            'bukti_transfer'       => null,
+                            'dikonfirmasi_wali_at' => null,
+                            'status'               => StatusTagihanSpp::BelumBayar,
+                        ]);
+
+                        Notification::make()
+                            ->title('Konfirmasi ditolak.')
+                            ->warning()
                             ->send();
                     }),
             ]);

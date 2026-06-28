@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'detail_keluhan_teks',
     'tindakan_dan_obat',
     'status_pemulihan',
+    'tanggal_sembuh',
 ])]
 class KesantrianKesehatan extends Model
 {
@@ -32,6 +33,7 @@ class KesantrianKesehatan extends Model
     {
         return [
             'tanggal_periksa' => 'date',
+            'tanggal_sembuh'  => 'date',
             'berat_badan'     => 'float',
             'tinggi_badan'    => 'float',
         ];

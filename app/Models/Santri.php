@@ -93,4 +93,9 @@ class Santri extends Model
     {
         return $this->hasMany(SantriEkskul::class);
     }
+
+    public function uangSaku(): HasMany
+    {
+        return $this->hasMany(UangSakuSantri::class)->withoutGlobalScope('pesantren');
+    }
 }

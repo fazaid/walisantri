@@ -121,8 +121,15 @@ class KesantrianKesehatanForm
                                 'Rawat_Mandiri'   => 'Rawat Mandiri',
                                 'Istirahat_Total' => 'Istirahat Total',
                                 'Rujukan_Luar'    => 'Rujukan Luar',
+                                'Sembuh'          => 'Sembuh',
                             ])
-                            ->required(fn (Get $get) => $get('jenis_rekam') !== 'rutin'),
+                            ->required(fn (Get $get) => $get('jenis_rekam') !== 'rutin')
+                            ->live(),
+                        DatePicker::make('tanggal_sembuh')
+                            ->label('Tanggal Sembuh')
+                            ->native(false)
+                            ->hidden(fn (Get $get) => $get('status_pemulihan') !== 'Sembuh')
+                            ->required(fn (Get $get) => $get('status_pemulihan') === 'Sembuh'),
                     ]),
             ]);
     }

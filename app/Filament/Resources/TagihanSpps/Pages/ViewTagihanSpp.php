@@ -13,6 +13,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Storage;
 
 class ViewTagihanSpp extends ViewRecord
 {
@@ -63,6 +64,33 @@ class ViewTagihanSpp extends ViewRecord
                     Notification::make()
                         ->title('Tagihan ditandai lunas.')
                         ->success()
+                        ->send();
+                }),
+
+            Action::make('tolak_konfirmasi')
+                ->label('Tolak Konfirmasi')
+                ->icon('heroicon-o-x-circle')
+                ->color('danger')
+                ->visible(fn (): bool => $this->record->isMenungguKonfirmasi())
+                ->requiresConfirmation()
+                ->modalHeading('Tolak Konfirmasi Bukti Transfer')
+                ->modalDescription('Status tagihan akan dikembalikan ke Belum Bayar dan bukti transfer dihapus. Wali santri bisa upload ulang.')
+                ->action(function (): void {
+                    if ($this->record->bukti_transfer) {
+                        Storage::disk('public')->delete($this->record->bukti_transfer);
+                    }
+
+                    $this->record->update([
+                        'bukti_transfer'       => null,
+                        'dikonfirmasi_wali_at' => null,
+                        'status'               => StatusTagihanSpp::BelumBayar,
+                    ]);
+
+                    $this->record->refresh();
+
+                    Notification::make()
+                        ->title('Konfirmasi ditolak. Status dikembalikan ke Belum Bayar.')
+                        ->warning()
                         ->send();
                 }),
         ];

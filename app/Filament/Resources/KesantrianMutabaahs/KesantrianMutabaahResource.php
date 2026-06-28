@@ -27,7 +27,7 @@ class KesantrianMutabaahResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
 
     protected static ?string $recordTitleAttribute = 'tanggal';
-    protected static ?string $navigationLabel = 'Riwayat';
+    protected static ?string $navigationLabel = 'Mutabaah';
 
     public static function getRecordTitle(?\Illuminate\Database\Eloquent\Model $record): \Illuminate\Contracts\Support\Htmlable|string|null
     {
@@ -40,8 +40,8 @@ class KesantrianMutabaahResource extends Resource
     protected static ?string $pluralModelLabel = 'Data Mutabaah';
 
     protected static ?string $cluster = Mutabaah::class;
-    protected static ?int $navigationSort = 2;
-    protected static ?string $slug = 'riwayat';
+    protected static ?int $navigationSort = 1;
+    protected static ?string $slug = 'mutabaah';
 
 
     public static function canViewAny(): bool

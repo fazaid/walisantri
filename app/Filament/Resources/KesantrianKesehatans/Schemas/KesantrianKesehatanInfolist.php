@@ -68,11 +68,17 @@ class KesantrianKesehatanInfolist
                             ->label('Status Pemulihan')
                             ->badge()
                             ->color(fn (?string $state): string => match ($state) {
-                                'Rawat_Mandiri'   => 'success',
+                                'Sembuh'          => 'success',
+                                'Rawat_Mandiri'   => 'info',
                                 'Istirahat_Total' => 'warning',
                                 'Rujukan_Luar'    => 'danger',
                                 default           => 'gray',
                             }),
+                        TextEntry::make('tanggal_sembuh')
+                            ->label('Tanggal Sembuh')
+                            ->date('d M Y')
+                            ->placeholder('-')
+                            ->hidden(fn ($record) => $record?->tanggal_sembuh === null),
                     ]),
 
                 Section::make('Timestamps')

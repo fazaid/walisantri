@@ -62,6 +62,7 @@
         $isPengumumanActive = request()->routeIs('wali.pengumuman');
         $isSppActive        = request()->routeIs('wali.spp');
         $isRaporActive      = request()->routeIs('wali.rapor');
+        $isUangSakuActive   = request()->routeIs('wali.uang-saku') || request()->routeIs('wali.uang-saku.show');
     @endphp
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-20">
         <div class="max-w-lg mx-auto flex items-stretch">
@@ -100,6 +101,18 @@
                           d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                 </svg>
                 Pengumuman
+            </a>
+
+            {{-- Tab: Uang Saku --}}
+            <a href="{{ route('wali.uang-saku') }}"
+               class="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-xs font-medium transition-colors
+                      {{ $isUangSakuActive ? 'text-teal-600' : 'text-gray-400 hover:text-gray-600' }}">
+                <svg class="w-6 h-6" fill="{{ $isUangSakuActive ? 'currentColor' : 'none' }}"
+                     stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M21 12a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 12m18 0v6a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 9m18 0V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v3"/>
+                </svg>
+                Uang Saku
             </a>
 
             {{-- Tab: Rapor --}}
