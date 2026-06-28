@@ -4,7 +4,7 @@
         {{-- Filter --}}
         <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-5">
             <h2 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Pilih Santri & Periode</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                     <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Santri</label>
                     <select wire:model.live="santriId"
@@ -33,6 +33,15 @@
                         @endforeach
                     </select>
                 </div>
+                <div @class(['invisible' => $periode !== 'Bulanan'])>
+                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Bulan</label>
+                    <select wire:model.live="bulan"
+                            class="fi-input block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-800 text-sm">
+                        @foreach($this->getBulanOptions() as $value => $label)
+                            <option value="{{ $value }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -52,7 +61,12 @@
                 <div>
                     <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ $santri->nama_lengkap }}</p>
                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        {{ $santri->kelas?->nama_kelas ?? '—' }} · {{ $tahunAjaran }} · {{ str_replace('_', ' ', $periode) }}
+                        {{ $santri->kelas?->nama_kelas ?? '—' }} · {{ $tahunAjaran }} ·
+                        @if($periode === 'Bulanan' && $bulan)
+                            {{ $this->getBulanOptions()[$bulan] ?? $bulan }}
+                        @else
+                            {{ str_replace('_', ' ', $periode) }}
+                        @endif
                     </p>
                 </div>
                 @if($rataRata !== null)

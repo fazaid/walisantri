@@ -35,6 +35,10 @@ class NilaiAkademikTable
                         'Semester_Genap'  => 'success',
                         default           => 'gray',
                     }),
+                TextColumn::make('bulan')
+                    ->label('Bulan')
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('nilai')
                     ->label('Nilai')
                     ->badge()

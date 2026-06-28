@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'mata_pelajaran_id',
     'tahun_ajaran',
     'periode',
+    'bulan',
     'nilai',
     'catatan',
 ])]
