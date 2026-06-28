@@ -13,14 +13,20 @@ class PengumumanCentralWidget extends Widget
 
     protected int|string|array $columnSpan = 'full';
 
+    protected static ?int $sort = -2;
+
     public static function canView(): bool
     {
         $role = auth()->user()?->role;
 
-        return in_array($role, [
+        if (! in_array($role, [
             UserRole::AdminPesantren->value,
             UserRole::Ustadz->value,
-        ]);
+        ])) {
+            return false;
+        }
+
+        return MasterPengumumanCentral::where('is_active', true)->exists();
     }
 
     protected function getViewData(): array

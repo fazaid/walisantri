@@ -10,6 +10,7 @@ use App\Models\Santri;
 use App\Models\User;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -86,6 +87,18 @@ class SantriForm
                             ->label('Ciri Fisik yang Mudah Dikenali')
                             ->rows(2)
                             ->columnSpanFull(),
+                    ]),
+
+                Section::make('Foto Profil')
+                    ->schema([
+                        FileUpload::make('foto_profil')
+                            ->label('Foto Profil')
+                            ->disk('public')
+                            ->directory('foto-profil')
+                            ->acceptedFileTypes(['image/jpeg', 'image/png'])
+                            ->maxSize(2048)
+                            ->previewable(false)
+                            ->nullable(),
                     ]),
 
                 Section::make('Relasi')

@@ -7,6 +7,7 @@ use App\Http\Controllers\DemoController;
 use App\Http\Controllers\PublicProfileController;
 use App\Http\Controllers\SlugCheckController;
 use App\Http\Controllers\Wali\DashboardController;
+use App\Http\Controllers\Wali\InventarisController;
 use App\Http\Controllers\Wali\LaporanController;
 use App\Http\Controllers\Wali\PengumumanController;
 use App\Http\Controllers\Wali\RaporController;
@@ -76,6 +77,7 @@ Route::domain($appDomain)->group(function () {
             Route::get('/santri/{santri}/tahfidz', [TahfidzStatsController::class, 'show'])->name('santri.tahfidz');
             Route::get('/santri/{santri}/kesehatan', [KesehatanStatsController::class, 'show'])->name('santri.kesehatan');
             Route::get('/santri/{santri}/mutabaah', [MutabaahStatsController::class, 'show'])->name('santri.mutabaah');
+            Route::get('/santri/{santri}/inventaris', [InventarisController::class, 'show'])->name('santri.inventaris');
             Route::get('/pengumuman', [PengumumanController::class, 'index'])->name('pengumuman');
             Route::get('/rapor', [RaporController::class, 'index'])->name('rapor');
             Route::get('/laporan/pdf', [LaporanController::class, 'exportPdf'])->name('laporan.pdf');

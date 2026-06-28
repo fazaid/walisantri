@@ -6,6 +6,7 @@ namespace App\Filament\Resources\Santris\Schemas;
 
 use App\Models\Santri;
 use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\ImageEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Schema;
@@ -67,6 +68,15 @@ class SantriInfolist
                             ->label('Ciri Fisik yang Mudah Dikenali')
                             ->placeholder('—')
                             ->columnSpanFull(),
+                    ]),
+
+                Section::make('Foto Profil')
+                    ->schema([
+                        ImageEntry::make('foto_profil')
+                            ->label('Foto Profil')
+                            ->disk('public')
+                            ->height(200)
+                            ->placeholder('Belum ada foto'),
                     ]),
 
                 Section::make('Relasi')
