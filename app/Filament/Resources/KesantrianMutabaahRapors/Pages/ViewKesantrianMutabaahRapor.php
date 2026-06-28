@@ -6,6 +6,7 @@ use App\Filament\Resources\KesantrianMutabaahRapors\KesantrianMutabaahRaporResou
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\ViewRecord;
 
+
 class ViewKesantrianMutabaahRapor extends ViewRecord
 {
     protected static string $resource = KesantrianMutabaahRaporResource::class;
