@@ -16,20 +16,20 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Bulan</label>
-                    <select wire:model.live="bulan"
-                            class="fi-input block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-800 text-sm">
-                        @foreach($this->getBulanOptions() as $value => $label)
-                            <option value="{{ $value }}" @selected((int)$value === $bulan)>{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
                     <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Tahun</label>
                     <select wire:model.live="tahun"
                             class="fi-input block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-800 text-sm">
                         @foreach($this->getTahunOptions() as $value => $label)
                             <option value="{{ $value }}" @selected($value === $tahun)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Bulan</label>
+                    <select wire:model.live="bulan"
+                            class="fi-input block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-800 text-sm">
+                        @foreach($this->getBulanOptions() as $value => $label)
+                            <option value="{{ $value }}" @selected((int)$value === $bulan)>{{ $label }}</option>
                         @endforeach
                     </select>
                 </div>
