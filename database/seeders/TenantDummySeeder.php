@@ -256,7 +256,7 @@ class TenantDummySeeder extends Seeder
             ['slug' => 'pesantren-darul-ilmi'],
             [
                 'nama_pesantren'      => 'Pesantren Darul Ilmi',
-                'paket_langganan'     => 'gratis',
+                'paket_langganan'     => 'rintisan',
                 'max_santri_kuota'    => 10,
                 'status_berlangganan' => 'trial',
                 'expired_at'          => now()->addDays(7),

@@ -16,7 +16,7 @@ class PesantrenFactory extends Factory
         return [
             'nama_pesantren'             => 'Pesantren ' . ucwords($nama),
             'slug'                       => Str::slug($nama) . '-' . fake()->numerify('##'),
-            'paket_langganan'            => 'gratis',
+            'paket_langganan'            => 'rintisan',
             'max_santri_kuota'           => 10,
             'status_berlangganan'        => 'trial',
             'expired_at'                 => now()->addDays(14),
