@@ -4,7 +4,6 @@ namespace App\Providers\Filament;
 
 use App\Filament\Widgets\AdminDistribusiSantriChart;
 use App\Filament\Widgets\AdminKesehatanTrendChart;
-use App\Filament\Widgets\AdminPrestasiChart;
 use App\Filament\Widgets\AdminSppStatusChart;
 use App\Filament\Widgets\AdminStatsOverview;
 use App\Filament\Widgets\SuperAdminStatsOverview;
@@ -98,7 +97,6 @@ class AdminPanelProvider extends PanelProvider
                 AdminSppStatusChart::class,
                 AdminDistribusiSantriChart::class,
                 AdminKesehatanTrendChart::class,
-                AdminPrestasiChart::class,
                 // Ustadz
                 UstadzStatsOverview::class,
                 UstadzNilaiSetoranChart::class,
