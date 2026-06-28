@@ -42,7 +42,8 @@ class ListSantris extends ListRecords
                             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                         ])
                         ->required()
-                        ->helperText('Gunakan template yang sudah diunduh. Kolom nis dan nama_lengkap wajib diisi.'),
+                        ->maxSize(5120)
+                        ->helperText('Gunakan template yang sudah diunduh. Kolom nis dan nama_lengkap wajib diisi. Maks. 5 MB.'),
                 ])
                 ->action(function (array $data): void {
                     $pesantrenId = auth()->user()->pesantren_id;
@@ -50,14 +51,20 @@ class ListSantris extends ListRecords
 
                     try {
                         Excel::import($import, $data['file'], 'local');
+                    } catch (\Throwable $e) {
+                        Notification::make()
+                            ->title('File Tidak Valid')
+                            ->body('Gagal memproses file. Pastikan format .xlsx dan menggunakan template yang benar.')
+                            ->danger()
+                            ->send();
+                        return;
                     } finally {
                         Storage::disk('local')->delete($data['file']);
                     }
 
                     $body = "Berhasil mengimpor {$import->imported} santri.";
-                    if ($import->errors) {
-                        $skipped = count($import->errors);
-                        $body   .= " {$skipped} baris dilewati.";
+                    if ($import->skipped > 0) {
+                        $body .= " {$import->skipped} baris dilewati.";
                     }
 
                     if ($import->imported > 0) {

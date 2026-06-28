@@ -15,6 +15,8 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
 {
     public int $imported = 0;
 
+    public int $skipped = 0;
+
     public array $errors = [];
 
     private array $kelasCache = [];
@@ -37,11 +39,13 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
 
             if ($nis === '' || $namaLengkap === '') {
                 $this->errors[] = "Baris {$rowNum}: NIS dan Nama Lengkap wajib diisi.";
+                $this->skipped++;
                 continue;
             }
 
             if (Santri::where('pesantren_id', $this->pesantrenId)->where('nis', $nis)->exists()) {
                 $this->errors[] = "Baris {$rowNum}: NIS '{$nis}' sudah terdaftar, dilewati.";
+                $this->skipped++;
                 continue;
             }
 
