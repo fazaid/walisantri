@@ -20,7 +20,7 @@ class NilaiAkademikTest extends TestCase
     private function makePesantren(): Pesantren
     {
         return Pesantren::factory()->create([
-            'paket_langganan'     => 'gratis',
+            'paket_langganan'     => 'rintisan',
             'status_berlangganan' => 'active',
             'expired_at'          => now()->addYear(),
         ]);
