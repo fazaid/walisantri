@@ -8,7 +8,6 @@ use App\Filament\Widgets\AdminKesehatanTrendChart;
 use App\Filament\Widgets\AdminPrestasiChart;
 use App\Filament\Widgets\AdminSppStatusChart;
 use App\Filament\Widgets\AdminStatsOverview;
-use App\Filament\Widgets\AdminTrendAmalanChart;
 use App\Filament\Widgets\SuperAdminStatsOverview;
 use App\Filament\Widgets\UstadzAmalanChart;
 use App\Filament\Widgets\UstadzKonsistensiMutabaahChart;
@@ -97,7 +96,6 @@ class AdminPanelProvider extends PanelProvider
                 AccountWidget::class,
                 // Admin Pesantren
                 AdminStatsOverview::class,
-                AdminTrendAmalanChart::class,
                 AdminSppStatusChart::class,
                 AdminKeuanganSppChart::class,
                 AdminDistribusiSantriChart::class,
