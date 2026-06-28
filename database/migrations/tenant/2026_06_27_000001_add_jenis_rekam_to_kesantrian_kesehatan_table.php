@@ -11,18 +11,14 @@ return new class extends Migration
     {
         Schema::table('kesantrian_kesehatan', function (Blueprint $table) {
             $table->string('jenis_rekam', 10)->default('keluhan')->after('santri_id');
-
-            // Rekam rutin tidak memerlukan keluhan — jadikan nullable
-            $table->enum('kategori_keluhan', [
-                'Demam', 'Batuk_Pilek', 'Sakit_Perut', 'Pusing', 'Kulit_Gatal', 'Luka_Fisik', 'Lainnya',
-            ])->nullable()->change();
-
-            $table->text('tindakan_dan_obat')->nullable()->change();
-
-            $table->enum('status_pemulihan', [
-                'Rawat_Mandiri', 'Istirahat_Total', 'Rujukan_Luar',
-            ])->nullable()->change();
         });
+
+        // SQLite (test in-memory) tidak perlu — hanya enforce di PostgreSQL (production/CI)
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement('ALTER TABLE kesantrian_kesehatan ALTER COLUMN kategori_keluhan DROP NOT NULL');
+            DB::statement('ALTER TABLE kesantrian_kesehatan ALTER COLUMN tindakan_dan_obat DROP NOT NULL');
+            DB::statement('ALTER TABLE kesantrian_kesehatan ALTER COLUMN status_pemulihan DROP NOT NULL');
+        }
     }
 
     public function down(): void
@@ -38,18 +34,14 @@ return new class extends Migration
             ->whereNull('status_pemulihan')
             ->update(['status_pemulihan' => 'Rawat_Mandiri']);
 
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement('ALTER TABLE kesantrian_kesehatan ALTER COLUMN kategori_keluhan SET NOT NULL');
+            DB::statement('ALTER TABLE kesantrian_kesehatan ALTER COLUMN tindakan_dan_obat SET NOT NULL');
+            DB::statement('ALTER TABLE kesantrian_kesehatan ALTER COLUMN status_pemulihan SET NOT NULL');
+        }
+
         Schema::table('kesantrian_kesehatan', function (Blueprint $table) {
             $table->dropColumn('jenis_rekam');
-
-            $table->enum('kategori_keluhan', [
-                'Demam', 'Batuk_Pilek', 'Sakit_Perut', 'Pusing', 'Kulit_Gatal', 'Luka_Fisik', 'Lainnya',
-            ])->nullable(false)->change();
-
-            $table->text('tindakan_dan_obat')->nullable(false)->change();
-
-            $table->enum('status_pemulihan', [
-                'Rawat_Mandiri', 'Istirahat_Total', 'Rujukan_Luar',
-            ])->nullable(false)->change();
         });
     }
 };
