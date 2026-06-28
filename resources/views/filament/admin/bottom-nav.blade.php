@@ -23,6 +23,15 @@
             ];
         }
 
+        if (\App\Filament\Clusters\Akademik::canAccessClusteredComponents()) {
+            $tabs[] = [
+                'label'  => 'Akademik',
+                'url'    => \App\Filament\Clusters\Akademik::getUrl(),
+                'active' => request()->routeIs('filament.admin.akademik*'),
+                'icon'   => 'M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222',
+            ];
+        }
+
         if (\App\Filament\Clusters\Tahfidz::canAccessClusteredComponents()) {
             $tabs[] = [
                 'label'  => 'Tahfidz',
@@ -47,15 +56,6 @@
                 'url'    => \App\Filament\Clusters\Kesantrian::getUrl(),
                 'active' => request()->routeIs('filament.admin.kesantrian*'),
                 'icon'   => 'M12 2.714l6.825 2.731c.6.24 1.05.84 1.05 1.514 0 5.439-2.748 10.575-7.875 12.792-5.127-2.217-7.875-7.353-7.875-12.792 0-.674.45-1.274 1.05-1.514L12 2.714zM9 12.75L11.25 15 15 9.75',
-            ];
-        }
-
-        if (\App\Filament\Clusters\Akademik::canAccessClusteredComponents()) {
-            $tabs[] = [
-                'label'  => 'Akademik',
-                'url'    => \App\Filament\Clusters\Akademik::getUrl(),
-                'active' => request()->routeIs('filament.admin.akademik*'),
-                'icon'   => 'M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222',
             ];
         }
     @endphp
