@@ -95,7 +95,8 @@ class NilaiAkademikForm
                             return $options;
                         })
                         ->visible(fn (callable $get) => $get('periode') === 'Bulanan')
-                        ->required(fn (callable $get) => $get('periode') === 'Bulanan'),
+                        ->required(fn (callable $get) => $get('periode') === 'Bulanan')
+                        ->columnSpanFull(),
                 ]),
 
             Section::make('Nilai')

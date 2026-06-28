@@ -117,7 +117,7 @@ class RaporAkademikPage extends Page
             ->get();
     }
 
-    public function getEkskulList(): \Illuminate\Support\Collection
+    public function getEkskulList(): Collection
     {
         if (! $this->santriId) {
             return collect();
