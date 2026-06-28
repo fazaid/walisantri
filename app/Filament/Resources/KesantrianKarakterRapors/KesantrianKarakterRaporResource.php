@@ -37,7 +37,7 @@ class KesantrianKarakterRaporResource extends Resource
         return $record->santri?->nama_lengkap ?? 'Karakter';
     }
     protected static ?string $modelLabel = 'Karakter';
-    protected static ?string $pluralModelLabel = 'Karakter';
+    protected static ?string $pluralModelLabel = 'Data Karakter';
 
     protected static ?string $cluster = Kesantrian::class;
     protected static ?int $navigationSort = 1;

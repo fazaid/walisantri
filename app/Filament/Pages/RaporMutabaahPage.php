@@ -25,7 +25,7 @@ class RaporMutabaahPage extends Page
 
     protected static ?string $title = 'Rapor Mutabaah';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 3;
 
     protected string $view = 'filament.pages.rapor-mutabaah-page';
 
