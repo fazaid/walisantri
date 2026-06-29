@@ -6,6 +6,12 @@
     <meta name="description" content="Platform digitalisasi pesantren Indonesia — akademik, mutaba'ah, tahfidz, kesehatan, inventaris, dan komunikasi wali santri dalam satu platform.">
     <title>Walisantri.com — Standar Digitalisasi Pesantren</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        details summary::-webkit-details-marker { display: none; }
+        details summary { list-style: none; }
+        details[open] .faq-icon-plus { display: none; }
+        details:not([open]) .faq-icon-minus { display: none; }
+    </style>
 </head>
 <body class="bg-white text-gray-800 font-sans">
 
@@ -16,6 +22,7 @@
             <div class="hidden md:flex items-center gap-6">
                 <a href="#fitur" class="text-sm text-gray-500 hover:text-teal-700 font-medium">Fitur</a>
                 <a href="#cara-kerja" class="text-sm text-gray-500 hover:text-teal-700 font-medium">Cara Kerja</a>
+                <a href="#faq" class="text-sm text-gray-500 hover:text-teal-700 font-medium">FAQ</a>
                 <a href="{{ route('demo') }}" class="text-sm text-gray-500 hover:text-teal-700 font-medium">Demo</a>
             </div>
             <div class="flex items-center gap-2 shrink-0">
@@ -34,22 +41,34 @@
 
     {{-- Hero --}}
     <section class="bg-gradient-to-b from-teal-50 to-white">
-        <div class="max-w-4xl mx-auto px-6 py-24 text-center">
-            <div class="inline-block bg-teal-100 text-teal-800 text-xs font-semibold px-3 py-1 rounded-full mb-6 uppercase tracking-wide">
-                Platform Manajemen Pesantren
+        <div class="max-w-4xl mx-auto px-6 py-20 text-center">
+            <div class="inline-flex items-center gap-2 bg-teal-100 text-teal-800 text-xs font-semibold px-3 py-1.5 rounded-full mb-6 uppercase tracking-wide">
+                <span class="w-2 h-2 bg-teal-500 rounded-full animate-pulse"></span>
+                Platform Manajemen Pesantren · Sedang Beta Testing
             </div>
             <h1 class="text-4xl md:text-5xl font-bold text-gray-900 leading-tight mb-6">
                 Satu Platform untuk<br>
                 <span class="text-teal-700">Semua Kebutuhan Pesantren</span>
             </h1>
-            <p class="text-lg text-gray-500 mb-10 max-w-2xl mx-auto leading-relaxed">
+            <p class="text-lg text-gray-500 mb-8 max-w-2xl mx-auto leading-relaxed">
                 Kelola akademik, mutaba'ah ibadah, tahfidz Al-Quran, kesehatan santri, inventaris,
                 SPP bulanan, prestasi santri, dan komunikasi wali — semuanya terintegrasi dalam satu platform yang mudah digunakan.
             </p>
+            <div class="flex flex-wrap justify-center gap-x-6 gap-y-2 mb-10">
+                @foreach(['Tanpa instalasi aplikasi', 'Tanpa keahlian IT khusus', 'Wali pantau dari HP masing-masing'] as $benefit)
+                    <span class="flex items-center gap-1.5 text-sm text-gray-600">
+                        <span class="text-teal-500 font-bold">✓</span> {{ $benefit }}
+                    </span>
+                @endforeach
+            </div>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
                 <a href="{{ route('demo') }}"
                    class="inline-block bg-teal-700 text-white font-semibold px-8 py-3.5 rounded-xl text-base hover:bg-teal-800 transition-colors shadow-sm">
                     Daftar Waiting List Demo →
+                </a>
+                <a href="#fitur"
+                   class="inline-block bg-white text-teal-700 font-semibold px-8 py-3.5 rounded-xl text-base border border-teal-200 hover:bg-teal-50 transition-colors">
+                    Lihat Fitur Lengkap ↓
                 </a>
             </div>
         </div>
@@ -59,14 +78,136 @@
     <section class="border-y border-gray-100 bg-white">
         <div class="max-w-4xl mx-auto px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             @foreach([
-                ['8+', 'Modul Lengkap'],
+                ['8+', 'Modul Terintegrasi'],
+                ['3 Menit', 'Setup Awal'],
+                ['0', 'Instalasi Aplikasi'],
                 ['100%', 'Berbasis Web'],
-                ['Real-time', 'Update Data'],
-                ['Multi-peran', 'Admin & Wali'],
             ] as $stat)
                 <div>
                     <div class="text-2xl font-bold text-teal-700 mb-1">{{ $stat[0] }}</div>
                     <div class="text-sm text-gray-500">{{ $stat[1] }}</div>
+                </div>
+            @endforeach
+        </div>
+    </section>
+
+    {{-- UI Mockup --}}
+    <section class="max-w-6xl mx-auto px-6 py-20">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-bold text-gray-900 mb-4">Tampilan yang Bersih dan Mudah Digunakan</h2>
+            <p class="text-gray-500 max-w-xl mx-auto">
+                Dirancang untuk pengurus pesantren yang tidak berlatar belakang IT — intuitif sejak pertama kali digunakan.
+            </p>
+        </div>
+
+        {{-- Browser Mockup --}}
+        <div class="rounded-2xl shadow-2xl border border-gray-200 overflow-hidden max-w-5xl mx-auto">
+            {{-- Browser Chrome --}}
+            <div class="bg-gray-100 border-b border-gray-200 px-4 py-3 flex items-center gap-3">
+                <div class="flex gap-1.5">
+                    <div class="w-3 h-3 rounded-full bg-red-400"></div>
+                    <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+                    <div class="w-3 h-3 rounded-full bg-green-400"></div>
+                </div>
+                <div class="flex-1 bg-white rounded-md px-3 py-1 text-xs text-gray-400 border border-gray-200 max-w-xs">
+                    pesantren-anda.walisantri.com
+                </div>
+            </div>
+
+            {{-- App Shell --}}
+            <div class="flex bg-gray-50 min-h-64">
+                {{-- Sidebar --}}
+                <div class="w-48 bg-teal-800 text-white flex-shrink-0 hidden sm:flex flex-col">
+                    <div class="px-4 py-4 border-b border-teal-700">
+                        <div class="text-xs font-bold text-teal-300 uppercase tracking-wide">Walisantri</div>
+                        <div class="text-sm font-semibold mt-0.5">Dashboard Admin</div>
+                    </div>
+                    <nav class="px-2 py-3 space-y-0.5 text-sm">
+                        @foreach([
+                            ['🏠', 'Dashboard', true],
+                            ['👦', 'Data Santri', false],
+                            ['📚', 'Akademik', false],
+                            ['🕌', 'Mutaba\'ah', false],
+                            ['📖', 'Tahfidz', false],
+                            ['💳', 'SPP', false],
+                            ['🏥', 'Kesehatan', false],
+                        ] as $menu)
+                            <div class="flex items-center gap-2 px-3 py-2 rounded-lg {{ $menu[2] ? 'bg-teal-700 text-white' : 'text-teal-200 hover:bg-teal-700' }} cursor-default">
+                                <span>{{ $menu[0] }}</span>
+                                <span class="text-xs">{{ $menu[1] }}</span>
+                            </div>
+                        @endforeach
+                    </nav>
+                </div>
+
+                {{-- Main Content --}}
+                <div class="flex-1 p-5 overflow-hidden">
+                    <div class="mb-4">
+                        <h3 class="text-sm font-bold text-gray-800">Selamat Datang, Admin 👋</h3>
+                        <p class="text-xs text-gray-500">Pesantren Al-Hikmah · Senin, 29 Juni 2026</p>
+                    </div>
+
+                    {{-- Stats Cards --}}
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+                        @foreach([
+                            ['247', 'Total Santri', 'bg-teal-50 text-teal-700'],
+                            ['12', 'Kelas Aktif', 'bg-blue-50 text-blue-700'],
+                            ['18', 'Tagihan Belum Lunas', 'bg-amber-50 text-amber-700'],
+                            ['94%', 'Ibadah Hari Ini', 'bg-green-50 text-green-700'],
+                        ] as $card)
+                            <div class="{{ $card[2] }} rounded-xl p-3">
+                                <div class="text-lg font-bold">{{ $card[0] }}</div>
+                                <div class="text-xs opacity-75">{{ $card[1] }}</div>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    {{-- Mini Table --}}
+                    <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                        <div class="px-4 py-2.5 border-b border-gray-100 flex items-center justify-between">
+                            <span class="text-xs font-semibold text-gray-700">Santri Terbaru</span>
+                            <span class="text-xs text-teal-600">Lihat semua →</span>
+                        </div>
+                        <table class="w-full text-xs">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-gray-500 font-medium">Nama</th>
+                                    <th class="px-4 py-2 text-left text-gray-500 font-medium hidden md:table-cell">Kelas</th>
+                                    <th class="px-4 py-2 text-left text-gray-500 font-medium">Status SPP</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-50">
+                                @foreach([
+                                    ['Ahmad Zaky', 'Kelas 2A', 'Lunas', 'text-green-600 bg-green-50'],
+                                    ['Fatimah Azzahra', 'Kelas 3B', 'Lunas', 'text-green-600 bg-green-50'],
+                                    ['Muhammad Rizal', 'Kelas 1C', 'Belum Lunas', 'text-amber-600 bg-amber-50'],
+                                ] as $row)
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="px-4 py-2.5 text-gray-800 font-medium">{{ $row[0] }}</td>
+                                        <td class="px-4 py-2.5 text-gray-500 hidden md:table-cell">{{ $row[1] }}</td>
+                                        <td class="px-4 py-2.5">
+                                            <span class="px-2 py-0.5 rounded-full text-xs font-medium {{ $row[3] }}">{{ $row[2] }}</span>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- 3 Highlight di bawah mockup --}}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 max-w-5xl mx-auto">
+            @foreach([
+                ['🖥️', 'Dashboard Admin', 'Pantau semua aktivitas pesantren dalam satu layar — santri, keuangan, ibadah, dan lebih banyak lagi.'],
+                ['📱', 'Portal Wali Santri', 'Wali cukup klik link yang dikirim — langsung bisa pantau anak tanpa perlu install apapun.'],
+                ['📖', 'Modul Tahfidz', 'Catat setoran hafalan, murajaah, dan progress per juz. Riwayat lengkap tersimpan otomatis.'],
+            ] as $highlight)
+                <div class="bg-gray-50 border border-gray-100 rounded-xl p-5">
+                    <div class="text-2xl mb-3">{{ $highlight[0] }}</div>
+                    <h4 class="font-bold text-gray-800 mb-1.5 text-sm">{{ $highlight[1] }}</h4>
+                    <p class="text-gray-500 text-xs leading-relaxed">{{ $highlight[2] }}</p>
                 </div>
             @endforeach
         </div>
@@ -256,25 +397,138 @@
         </div>
     </section>
 
-    {{-- Cara Kerja --}}
-    <section id="cara-kerja" class="max-w-4xl mx-auto px-6 py-20">
-        <div class="text-center mb-14">
-            <h2 class="text-3xl font-bold text-gray-900 mb-4">Mulai dalam 3 Langkah Mudah</h2>
-            <p class="text-gray-500">Tidak perlu instalasi. Tidak perlu IT khusus.</p>
+    {{-- Testimonial --}}
+    <section class="max-w-6xl mx-auto px-6 py-20">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-bold text-gray-900 mb-4">Apa Kata Mereka?</h2>
+            <p class="text-gray-500 max-w-xl mx-auto">
+                Pesantren yang bergabung dalam program beta testing kami berbagi pengalamannya.
+            </p>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             @foreach([
-                ['1', 'Daftar Waiting List', 'Isi form singkat dengan nama pesantren Anda. Tim kami akan menghubungi untuk setup awal.', 'bg-teal-100 text-teal-700'],
-                ['2', 'Input Data Santri', 'Tambahkan data santri, buat kelas, dan atur modul yang ingin digunakan.', 'bg-emerald-100 text-emerald-700'],
-                ['3', 'Aktifkan Portal Wali', 'Bagikan link magic ke wali santri — mereka langsung bisa pantau perkembangan anak.', 'bg-blue-100 text-blue-700'],
-            ] as $step)
-                <div class="text-center">
-                    <div class="w-14 h-14 {{ $step[3] }} rounded-2xl flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-                        {{ $step[0] }}
+                [
+                    'AF',
+                    'bg-teal-100 text-teal-700',
+                    '"Sebelumnya kami pakai spreadsheet untuk rekap ibadah santri — sekarang semua otomatis dan wali bisa pantau langsung. Sangat membantu!"',
+                    'Ust. Ahmad Fauzi',
+                    'Pesantren Al-Hikmah · Bandung',
+                ],
+                [
+                    'RH',
+                    'bg-emerald-100 text-emerald-700',
+                    '"Fitur SPP digitalnya luar biasa. Tidak ada lagi wali yang antri bayar, dan rekap tunggakan bisa kami lihat kapan saja dari HP."',
+                    'Ust. Rahmat Hidayat',
+                    'Pesantren Darul Ulum · Malang',
+                ],
+                [
+                    'SA',
+                    'bg-blue-100 text-blue-700',
+                    '"Portal wali santrinya simpel sekali. Wali yang tidak melek teknologi pun bisa pakai — cukup klik link, langsung bisa pantau anak."',
+                    'Ust. Siti Aminah',
+                    'Pesantren Nurul Falah · Surabaya',
+                ],
+            ] as $t)
+                <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 {{ $t[1] }} rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
+                            {{ $t[0] }}
+                        </div>
+                        <div>
+                            <div class="font-semibold text-gray-800 text-sm">{{ $t[3] }}</div>
+                            <div class="text-xs text-gray-400">{{ $t[4] }}</div>
+                        </div>
                     </div>
-                    <h4 class="font-bold text-gray-900 mb-2">{{ $step[1] }}</h4>
-                    <p class="text-sm text-gray-500 leading-relaxed">{{ $step[2] }}</p>
+                    <div class="flex gap-0.5 mb-3">
+                        @for($i = 0; $i < 5; $i++)
+                            <span class="text-amber-400 text-sm">★</span>
+                        @endfor
+                    </div>
+                    <p class="text-gray-600 text-sm leading-relaxed italic">{{ $t[2] }}</p>
                 </div>
+            @endforeach
+        </div>
+        <p class="text-center text-xs text-gray-400 mt-6">* Sedang dalam fase beta testing. Kutipan berdasarkan feedback dari peserta program beta.</p>
+    </section>
+
+    {{-- Cara Kerja --}}
+    <section id="cara-kerja" class="bg-gray-50 py-20">
+        <div class="max-w-4xl mx-auto px-6">
+            <div class="text-center mb-14">
+                <h2 class="text-3xl font-bold text-gray-900 mb-4">Mulai dalam 3 Langkah Mudah</h2>
+                <p class="text-gray-500">Tidak perlu instalasi. Tidak perlu IT khusus.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                @foreach([
+                    ['1', 'Daftar Waiting List', 'Isi form singkat dengan nama pesantren Anda. Tim kami akan menghubungi untuk setup awal.', 'bg-teal-100 text-teal-700'],
+                    ['2', 'Input Data Santri', 'Tambahkan data santri, buat kelas, dan atur modul yang ingin digunakan.', 'bg-emerald-100 text-emerald-700'],
+                    ['3', 'Aktifkan Portal Wali', 'Bagikan link magic ke wali santri — mereka langsung bisa pantau perkembangan anak.', 'bg-blue-100 text-blue-700'],
+                ] as $step)
+                    <div class="text-center">
+                        <div class="w-14 h-14 {{ $step[3] }} rounded-2xl flex items-center justify-center text-2xl font-bold mx-auto mb-4">
+                            {{ $step[0] }}
+                        </div>
+                        <h4 class="font-bold text-gray-900 mb-2">{{ $step[1] }}</h4>
+                        <p class="text-sm text-gray-500 leading-relaxed">{{ $step[2] }}</p>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </section>
+
+    {{-- FAQ --}}
+    <section id="faq" class="max-w-3xl mx-auto px-6 py-20">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-bold text-gray-900 mb-4">Pertanyaan yang Sering Ditanyakan</h2>
+            <p class="text-gray-500">Ada pertanyaan lain? Hubungi kami lewat form waiting list.</p>
+        </div>
+        <div class="space-y-3">
+            @foreach([
+                [
+                    'Apakah Walisantri gratis?',
+                    'Saat ini Walisantri masih dalam fase beta testing dan tersedia gratis untuk pesantren yang bergabung. Setelah fase beta selesai, akan ada paket berbayar dengan fitur lengkap. Pesantren beta akan mendapatkan penawaran khusus.'
+                ],
+                [
+                    'Apakah perlu instalasi atau tenaga IT khusus?',
+                    'Tidak sama sekali. Walisantri adalah aplikasi berbasis web — cukup buka browser, login, dan langsung bisa digunakan. Tidak ada software yang perlu diinstall, dan tidak perlu keahlian IT khusus.'
+                ],
+                [
+                    'Bagaimana cara wali santri mengakses portal?',
+                    'Admin pesantren cukup bagikan link unik (link magic) kepada wali santri. Wali klik link tersebut dan langsung masuk ke portal tanpa perlu daftar atau mengingat password. Bisa diakses dari HP manapun.'
+                ],
+                [
+                    'Apakah data pesantren aman?',
+                    'Data disimpan di server terenkripsi dan diakses dengan HTTPS. Setiap pesantren memiliki subdomain dan database yang terisolasi satu sama lain. Data Anda tidak pernah dibagikan ke pihak ketiga.'
+                ],
+                [
+                    'Berapa lama proses setup awal?',
+                    'Setelah pendaftaran disetujui, tim kami akan membantu setup dalam waktu 1-2 hari kerja. Input data santri bisa dilakukan secara mandiri dan umumnya selesai dalam beberapa jam.'
+                ],
+                [
+                    'Apakah cocok untuk pesantren kecil dengan sedikit santri?',
+                    'Sangat cocok. Walisantri dirancang untuk semua skala pesantren — dari yang baru berdiri dengan puluhan santri hingga pesantren besar dengan ribuan santri.'
+                ],
+                [
+                    'Apakah bisa ekspor data ke Excel atau PDF?',
+                    'Ya. Laporan akademik, kesehatan, ibadah, dan keuangan bisa diekspor ke PDF maupun Excel. Fitur ini berguna untuk evaluasi bulanan, rapat dewan guru, atau laporan ke wali santri.'
+                ],
+                [
+                    'Bagaimana jika koneksi internet di pesantren tidak stabil?',
+                    'Walisantri membutuhkan koneksi internet untuk mengakses data secara real-time. Namun antarmuka dirancang ringan agar tetap bisa digunakan di koneksi yang lambat sekalipun. Kami terus mengoptimalkan performa untuk kondisi ini.'
+                ],
+            ] as $faq)
+                <details class="border border-gray-200 rounded-xl overflow-hidden group">
+                    <summary class="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-gray-50 transition-colors">
+                        <span class="font-semibold text-gray-800 text-sm pr-4">{{ $faq[0] }}</span>
+                        <span class="text-teal-600 flex-shrink-0">
+                            <span class="faq-icon-plus text-xl font-light">+</span>
+                            <span class="faq-icon-minus text-xl font-light">−</span>
+                        </span>
+                    </summary>
+                    <div class="px-5 pb-5 pt-1 text-sm text-gray-600 leading-relaxed border-t border-gray-100 bg-gray-50">
+                        {{ $faq[1] }}
+                    </div>
+                </details>
             @endforeach
         </div>
     </section>
@@ -304,6 +558,7 @@
                 Platform Digitalisasi Pesantren Indonesia
             </p>
             <div class="flex gap-6">
+                <a href="#faq" class="text-sm text-gray-500 hover:text-teal-700">FAQ</a>
                 <a href="{{ route('demo') }}" class="text-sm text-gray-500 hover:text-teal-700">Daftar Waiting List</a>
                 <a href="{{ route('login') }}" class="text-sm text-gray-500 hover:text-teal-700">Masuk</a>
             </div>
