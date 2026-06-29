@@ -277,18 +277,17 @@
                         </div>
 
                         {{-- Bottom Nav --}}
-                        <div class="bg-white border-t border-gray-100 px-1 py-2">
+                        <div class="bg-white border-t border-gray-100 px-2 py-2">
                             <div class="flex justify-around items-center">
                                 @foreach([
                                     ['🏠', 'Beranda', true],
                                     ['💳', 'SPP', false],
-                                    ['📢', 'Pengumuman', false],
                                     ['💵', 'Uang Saku', false],
                                     ['📋', 'Rapor', false],
                                 ] as $tab)
                                     <div class="flex flex-col items-center gap-0.5 cursor-default">
-                                        <span class="text-base leading-none">{{ $tab[0] }}</span>
-                                        <span class="text-xs {{ $tab[2] ? 'text-teal-600 font-semibold' : 'text-gray-400' }}">{{ $tab[1] }}</span>
+                                        <span class="text-sm leading-none">{{ $tab[0] }}</span>
+                                        <span class="text-[10px] {{ $tab[2] ? 'text-teal-600 font-semibold' : 'text-gray-400' }}">{{ $tab[1] }}</span>
                                     </div>
                                 @endforeach
                             </div>
