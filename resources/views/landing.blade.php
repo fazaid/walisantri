@@ -100,101 +100,204 @@
             </p>
         </div>
 
-        {{-- Browser Mockup --}}
-        <div class="rounded-2xl shadow-2xl border border-gray-200 overflow-hidden max-w-5xl mx-auto">
-            {{-- Browser Chrome --}}
-            <div class="bg-gray-100 border-b border-gray-200 px-4 py-3 flex items-center gap-3">
-                <div class="flex gap-1.5">
-                    <div class="w-3 h-3 rounded-full bg-red-400"></div>
-                    <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
-                    <div class="w-3 h-3 rounded-full bg-green-400"></div>
-                </div>
-                <div class="flex-1 bg-white rounded-md px-3 py-1 text-xs text-gray-400 border border-gray-200 max-w-xs">
-                    pesantren-anda.walisantri.com
-                </div>
-            </div>
+        {{-- 2-kolom: Browser Admin (kiri) + Phone Wali (kanan) --}}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start max-w-5xl mx-auto">
 
-            {{-- App Shell --}}
-            <div class="flex bg-gray-50 min-h-64">
-                {{-- Sidebar --}}
-                <div class="w-48 bg-teal-800 text-white flex-shrink-0 hidden sm:flex flex-col">
-                    <div class="px-4 py-4 border-b border-teal-700">
-                        <div class="text-xs font-bold text-teal-300 uppercase tracking-wide">Walisantri</div>
-                        <div class="text-sm font-semibold mt-0.5">Dashboard Admin</div>
-                    </div>
-                    <nav class="px-2 py-3 space-y-0.5 text-sm">
-                        @foreach([
-                            ['🏠', 'Dashboard', true],
-                            ['👦', 'Data Santri', false],
-                            ['📚', 'Akademik', false],
-                            ['🕌', 'Mutaba\'ah', false],
-                            ['📖', 'Tahfidz', false],
-                            ['💳', 'SPP', false],
-                            ['🏥', 'Kesehatan', false],
-                        ] as $menu)
-                            <div class="flex items-center gap-2 px-3 py-2 rounded-lg {{ $menu[2] ? 'bg-teal-700 text-white' : 'text-teal-200 hover:bg-teal-700' }} cursor-default">
-                                <span>{{ $menu[0] }}</span>
-                                <span class="text-xs">{{ $menu[1] }}</span>
-                            </div>
-                        @endforeach
-                    </nav>
-                </div>
-
-                {{-- Main Content --}}
-                <div class="flex-1 p-5 overflow-hidden">
-                    <div class="mb-4">
-                        <h3 class="text-sm font-bold text-gray-800">Selamat Datang, Admin 👋</h3>
-                        <p class="text-xs text-gray-500">Pesantren Al-Hikmah · Senin, 29 Juni 2026</p>
-                    </div>
-
-                    {{-- Stats Cards --}}
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-                        @foreach([
-                            ['247', 'Total Santri', 'bg-teal-50 text-teal-700'],
-                            ['12', 'Kelas Aktif', 'bg-blue-50 text-blue-700'],
-                            ['18', 'Tagihan Belum Lunas', 'bg-amber-50 text-amber-700'],
-                            ['94%', 'Ibadah Hari Ini', 'bg-green-50 text-green-700'],
-                        ] as $card)
-                            <div class="{{ $card[2] }} rounded-xl p-3">
-                                <div class="text-lg font-bold">{{ $card[0] }}</div>
-                                <div class="text-xs opacity-75">{{ $card[1] }}</div>
-                            </div>
-                        @endforeach
-                    </div>
-
-                    {{-- Mini Table --}}
-                    <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
-                        <div class="px-4 py-2.5 border-b border-gray-100 flex items-center justify-between">
-                            <span class="text-xs font-semibold text-gray-700">Santri Terbaru</span>
-                            <span class="text-xs text-teal-600">Lihat semua →</span>
+            {{-- Kiri: Browser Mockup Dashboard Admin --}}
+            <div class="flex flex-col gap-3">
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide text-center">🖥️ Dashboard Admin</p>
+                <div class="rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+                    {{-- Browser Chrome --}}
+                    <div class="bg-gray-100 border-b border-gray-200 px-4 py-2.5 flex items-center gap-3">
+                        <div class="flex gap-1.5">
+                            <div class="w-2.5 h-2.5 rounded-full bg-red-400"></div>
+                            <div class="w-2.5 h-2.5 rounded-full bg-yellow-400"></div>
+                            <div class="w-2.5 h-2.5 rounded-full bg-green-400"></div>
                         </div>
-                        <table class="w-full text-xs">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-4 py-2 text-left text-gray-500 font-medium">Nama</th>
-                                    <th class="px-4 py-2 text-left text-gray-500 font-medium hidden md:table-cell">Kelas</th>
-                                    <th class="px-4 py-2 text-left text-gray-500 font-medium">Status SPP</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-50">
+                        <div class="flex-1 bg-white rounded-md px-3 py-1 text-xs text-gray-400 border border-gray-200 max-w-xs">
+                            pesantren-anda.walisantri.com
+                        </div>
+                    </div>
+
+                    {{-- App Shell --}}
+                    <div class="flex bg-gray-50">
+                        {{-- Sidebar --}}
+                        <div class="w-36 bg-teal-800 text-white flex-shrink-0 hidden sm:flex flex-col">
+                            <div class="px-3 py-3 border-b border-teal-700">
+                                <div class="text-xs font-bold text-teal-300 uppercase tracking-wide">Walisantri</div>
+                                <div class="text-xs font-semibold mt-0.5">Dashboard Admin</div>
+                            </div>
+                            <nav class="px-1.5 py-2 space-y-0.5">
                                 @foreach([
-                                    ['Ahmad Zaky', 'Kelas 2A', 'Lunas', 'text-green-600 bg-green-50'],
-                                    ['Fatimah Azzahra', 'Kelas 3B', 'Lunas', 'text-green-600 bg-green-50'],
-                                    ['Muhammad Rizal', 'Kelas 1C', 'Belum Lunas', 'text-amber-600 bg-amber-50'],
-                                ] as $row)
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="px-4 py-2.5 text-gray-800 font-medium">{{ $row[0] }}</td>
-                                        <td class="px-4 py-2.5 text-gray-500 hidden md:table-cell">{{ $row[1] }}</td>
-                                        <td class="px-4 py-2.5">
-                                            <span class="px-2 py-0.5 rounded-full text-xs font-medium {{ $row[3] }}">{{ $row[2] }}</span>
-                                        </td>
-                                    </tr>
+                                    ['🏠', 'Dashboard', true],
+                                    ['👦', 'Data Santri', false],
+                                    ['📚', 'Akademik', false],
+                                    ['🕌', 'Mutaba\'ah', false],
+                                    ['📖', 'Tahfidz', false],
+                                    ['💳', 'SPP', false],
+                                    ['🏥', 'Kesehatan', false],
+                                ] as $menu)
+                                    <div class="flex items-center gap-1.5 px-2 py-1.5 rounded-lg {{ $menu[2] ? 'bg-teal-700 text-white' : 'text-teal-200' }} cursor-default">
+                                        <span class="text-xs">{{ $menu[0] }}</span>
+                                        <span class="text-xs">{{ $menu[1] }}</span>
+                                    </div>
                                 @endforeach
-                            </tbody>
-                        </table>
+                            </nav>
+                        </div>
+
+                        {{-- Main Content --}}
+                        <div class="flex-1 p-4 overflow-hidden">
+                            <div class="mb-3">
+                                <h3 class="text-xs font-bold text-gray-800">Selamat Datang, Admin 👋</h3>
+                                <p class="text-xs text-gray-400">Pesantren Al-Hikmah · Senin, 29 Juni 2026</p>
+                            </div>
+
+                            {{-- Stats Cards --}}
+                            <div class="grid grid-cols-2 gap-2 mb-3">
+                                @foreach([
+                                    ['247', 'Total Santri', 'bg-teal-50 text-teal-700'],
+                                    ['12', 'Kelas Aktif', 'bg-blue-50 text-blue-700'],
+                                    ['18', 'Belum Lunas', 'bg-amber-50 text-amber-700'],
+                                    ['94%', 'Ibadah Hari Ini', 'bg-green-50 text-green-700'],
+                                ] as $card)
+                                    <div class="{{ $card[2] }} rounded-lg p-2">
+                                        <div class="text-sm font-bold">{{ $card[0] }}</div>
+                                        <div class="text-xs opacity-75">{{ $card[1] }}</div>
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            {{-- Mini Table --}}
+                            <div class="bg-white rounded-lg border border-gray-100 overflow-hidden">
+                                <div class="px-3 py-2 border-b border-gray-100 flex items-center justify-between">
+                                    <span class="text-xs font-semibold text-gray-700">Santri Terbaru</span>
+                                    <span class="text-xs text-teal-600">Lihat semua →</span>
+                                </div>
+                                <table class="w-full text-xs">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-3 py-1.5 text-left text-gray-500 font-medium">Nama</th>
+                                            <th class="px-3 py-1.5 text-left text-gray-500 font-medium">Status SPP</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-50">
+                                        @foreach([
+                                            ['Ahmad Zaky', 'Lunas', 'text-green-600 bg-green-50'],
+                                            ['Fatimah Azzahra', 'Lunas', 'text-green-600 bg-green-50'],
+                                            ['Muhammad Rizal', 'Belum Lunas', 'text-amber-600 bg-amber-50'],
+                                        ] as $row)
+                                            <tr>
+                                                <td class="px-3 py-2 text-gray-800 font-medium">{{ $row[0] }}</td>
+                                                <td class="px-3 py-2">
+                                                    <span class="px-1.5 py-0.5 rounded-full text-xs font-medium {{ $row[2] }}">{{ $row[1] }}</span>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            {{-- Kanan: Phone Mockup Portal Wali --}}
+            <div class="flex flex-col items-center gap-3">
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide text-center">📱 Portal Wali Santri</p>
+                {{-- Phone Frame --}}
+                <div class="relative bg-gray-800 rounded-[2.5rem] p-2.5 shadow-2xl border-4 border-gray-700 w-64">
+                    {{-- Notch --}}
+                    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-5 bg-gray-800 rounded-b-xl z-10"></div>
+                    {{-- Screen --}}
+                    <div class="bg-gray-100 rounded-[2rem] overflow-hidden">
+                        {{-- Status bar --}}
+                        <div class="bg-teal-700 px-4 pt-5 pb-3">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-teal-200 text-xs">9:41</span>
+                                <div class="flex gap-1 items-center">
+                                    <span class="text-teal-200 text-xs">●●●</span>
+                                    <span class="text-teal-200 text-xs">▲</span>
+                                    <span class="text-teal-200 text-xs">🔋</span>
+                                </div>
+                            </div>
+                            <p class="text-teal-200 text-xs">Assalamu'alaikum,</p>
+                            <p class="text-white text-sm font-bold">Bpk. Hasan</p>
+                        </div>
+
+                        {{-- Santri Info Card --}}
+                        <div class="mx-3 -mt-3 bg-white rounded-2xl shadow-md p-3 border border-gray-100">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-10 h-10 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-sm font-bold flex-shrink-0">AF</div>
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800">Ahmad Fauzan</p>
+                                    <p class="text-xs text-gray-400">NIS 2024001 · Kelas 2A</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Summary Cards 2x2 --}}
+                        <div class="grid grid-cols-2 gap-2 mx-3 mt-2">
+                            @foreach([
+                                ['📖', 'Hafalan', '12 Juz', 'bg-teal-50 text-teal-700'],
+                                ['✨', 'Amalan', '87%', 'bg-green-50 text-green-700'],
+                                ['🏥', 'Kesehatan', 'Sehat', 'bg-green-50 text-green-700'],
+                                ['⭐', 'Rapor', '88.5', 'bg-blue-50 text-blue-700'],
+                            ] as $c)
+                                <div class="{{ $c[3] }} rounded-xl p-2.5">
+                                    <div class="text-xs opacity-60 mb-0.5">{{ $c[0] }} {{ $c[1] }}</div>
+                                    <div class="text-sm font-bold">{{ $c[2] }}</div>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        {{-- Setoran Terakhir --}}
+                        <div class="mx-3 mt-2 mb-2 bg-white rounded-xl border border-gray-100 overflow-hidden">
+                            <div class="px-3 py-2 border-b border-gray-50 flex items-center justify-between">
+                                <span class="text-xs font-semibold text-gray-700">Setoran Terakhir</span>
+                                <span class="text-xs text-teal-600">Lihat →</span>
+                            </div>
+                            <div class="px-3 py-2">
+                                <p class="text-xs font-medium text-gray-800">Al-Baqarah · Ayat 1–10</p>
+                                <div class="flex gap-1 mt-1">
+                                    <span class="text-xs bg-green-50 text-green-700 px-1.5 py-0.5 rounded-full font-medium">Sabaq</span>
+                                    <span class="text-xs bg-green-50 text-green-700 px-1.5 py-0.5 rounded-full font-medium">Mumtaz</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Pengumuman mini --}}
+                        <div class="mx-3 mb-2 bg-white rounded-xl border border-gray-100 overflow-hidden">
+                            <div class="px-3 py-2 border-b border-gray-50">
+                                <span class="text-xs font-semibold text-gray-700">Pengumuman</span>
+                            </div>
+                            <div class="px-3 py-2">
+                                <p class="text-xs font-medium text-gray-800">Libur Idul Adha 1446 H</p>
+                                <p class="text-xs text-gray-400 mt-0.5">2 jam lalu</p>
+                            </div>
+                        </div>
+
+                        {{-- Bottom Nav --}}
+                        <div class="bg-white border-t border-gray-100 px-1 py-2">
+                            <div class="flex justify-around items-center">
+                                @foreach([
+                                    ['🏠', 'Beranda', true],
+                                    ['💳', 'SPP', false],
+                                    ['📢', 'Pengumuman', false],
+                                    ['💵', 'Uang Saku', false],
+                                    ['📋', 'Rapor', false],
+                                ] as $tab)
+                                    <div class="flex flex-col items-center gap-0.5 cursor-default">
+                                        <span class="text-base leading-none">{{ $tab[0] }}</span>
+                                        <span class="text-xs {{ $tab[2] ? 'text-teal-600 font-semibold' : 'text-gray-400' }}">{{ $tab[1] }}</span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-400 text-center max-w-48">Akses via link — tanpa install aplikasi</p>
+            </div>
+
         </div>
 
         {{-- 3 Highlight di bawah mockup --}}
