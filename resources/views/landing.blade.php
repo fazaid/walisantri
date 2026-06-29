@@ -78,10 +78,10 @@
     <section class="border-y border-gray-100 bg-white">
         <div class="max-w-4xl mx-auto px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             @foreach([
-                ['8+', 'Modul Terintegrasi'],
+                ['8+', 'Modul Lengkap'],
+                ['10+', 'Pesantren Bergabung'],
+                ['298+', 'Wali Terdaftar'],
                 ['3 Menit', 'Setup Awal'],
-                ['0', 'Instalasi Aplikasi'],
-                ['100%', 'Berbasis Web'],
             ] as $stat)
                 <div>
                     <div class="text-2xl font-bold text-teal-700 mb-1">{{ $stat[0] }}</div>
