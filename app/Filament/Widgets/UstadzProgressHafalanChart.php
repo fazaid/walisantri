@@ -74,7 +74,7 @@ class UstadzProgressHafalanChart extends ChartWidget
                     'yAxisID'         => 'y',
                 ],
                 [
-                    'label'           => 'Estimasi Juz Hafalan',
+                    'label'           => 'Estimasi Hafalan',
                     'data'            => $dataJuz,
                     'backgroundColor' => '#10b981',
                     'borderRadius'    => 6,
@@ -87,23 +87,24 @@ class UstadzProgressHafalanChart extends ChartWidget
 
     protected function getOptions(): array|RawJs|null
     {
-        return [
-            'scales' => [
-                'y' => [
-                    'beginAtZero' => true,
-                    'position'    => 'left',
-                    'ticks'       => ['stepSize' => 1],
-                ],
-                'y2' => [
-                    'beginAtZero' => true,
-                    'max'         => 30,
-                    'position'    => 'right',
-                    'grid'        => ['drawOnChartArea' => false],
-                ],
-            ],
-            'plugins' => [
-                'legend' => ['display' => true],
-            ],
-        ];
+        return RawJs::make("{
+            scales: {
+                y: { beginAtZero: true, position: 'left', ticks: { stepSize: 1 } },
+                y2: { beginAtZero: true, max: 30, position: 'right', grid: { drawOnChartArea: false } },
+            },
+            plugins: {
+                legend: { display: true },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            if (ctx.dataset.yAxisID === 'y2') {
+                                return 'Estimasi hafalan: ' + ctx.parsed.y + ' Juz';
+                            }
+                            return ctx.dataset.label + ': ' + ctx.parsed.y;
+                        }
+                    }
+                }
+            }
+        }");
     }
 }
