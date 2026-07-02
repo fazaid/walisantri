@@ -6,6 +6,7 @@ use App\Filament\Clusters\Tahfidz;
 use App\Models\Santri;
 use App\Models\TahfidzProgress;
 use App\Models\TahfidzUjian;
+use App\Services\TahfidzJuzCalculator;
 use App\Services\TahunAjaranOptions;
 use Barryvdh\DomPDF\Facade\Pdf;
 use BackedEnum;
@@ -160,7 +161,7 @@ class RaporTahfidzPage extends Page
         if ($list->isEmpty()) {
             return [
                 'total_setoran'    => 0,
-                'total_halaman'    => 0,
+                'total_juz'        => 0,
                 'hari_aktif'       => 0,
                 'per_tipe'         => collect(),
                 'nilai_distribusi' => collect(),
@@ -174,7 +175,7 @@ class RaporTahfidzPage extends Page
 
         return [
             'total_setoran'    => $list->count(),
-            'total_halaman'    => $list->sum($jumlahHalaman),
+            'total_juz'        => TahfidzJuzCalculator::juzFromRanges($list),
             'hari_aktif'       => $list->pluck('tanggal')->map(fn ($d) => $d->toDateString())->unique()->count(),
             'per_tipe'         => $list->groupBy('tipe_setoran')->map(fn ($g) => [
                 'jumlah'  => $g->count(),

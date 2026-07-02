@@ -5,6 +5,10 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
+        @page {
+            margin: 2.2cm 1.8cm;
+        }
+
         body {
             font-family: 'DejaVu Sans', sans-serif;
             font-size: 11px;
@@ -22,16 +26,10 @@
             height: 44px;
             margin-bottom: 6px;
         }
-        .header .app-name {
+        .header .pesantren-name {
             font-size: 18px;
             font-weight: bold;
             color: #166534;
-        }
-        .header .pesantren-name {
-            font-size: 13px;
-            font-weight: bold;
-            color: #1a1a1a;
-            margin-top: 2px;
         }
         .header .meta {
             font-size: 10px;
@@ -136,7 +134,6 @@
     @if($santri->pesantren?->logo_path)
     <img src="{{ $santri->pesantren->logo_path }}" class="logo" alt="Logo">
     @endif
-    <div class="app-name">Walisantri.com</div>
     @if($santri->pesantren)
     <div class="pesantren-name">{{ $santri->pesantren->nama_pesantren }}</div>
     @endif
