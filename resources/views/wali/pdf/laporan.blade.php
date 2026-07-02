@@ -19,6 +19,10 @@
             padding-bottom: 12px;
             margin-bottom: 16px;
         }
+        .header .logo {
+            height: 44px;
+            margin-bottom: 6px;
+        }
         .header .app-name {
             font-size: 18px;
             font-weight: bold;
@@ -129,6 +133,9 @@
 
 {{-- ── Header ──────────────────────────────────────────────────────────── --}}
 <div class="header">
+    @if($santri->pesantren?->logo_path)
+    <img src="{{ $santri->pesantren->logo_path }}" class="logo" alt="Logo">
+    @endif
     <div class="app-name">Walisantri.com</div>
     @if($santri->pesantren)
     <div class="pesantren-name">{{ $santri->pesantren->nama_pesantren }}</div>

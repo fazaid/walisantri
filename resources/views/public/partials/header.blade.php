@@ -1,8 +1,8 @@
 {{-- Header profil publik — dipakai beranda & halaman placeholder (§1.4) --}}
 <header class="bg-teal-700 text-white">
     <div class="max-w-3xl mx-auto px-6 py-8 flex items-center gap-5">
-        @if($pesantren->profil['logo'] ?? null)
-            <img src="{{ $pesantren->profil['logo'] }}"
+        @if($pesantren->logo_url)
+            <img src="{{ $pesantren->logo_url }}"
                  alt="Logo {{ $pesantren->nama_pesantren }}"
                  class="w-16 h-16 rounded-xl object-cover shadow-md">
         @else

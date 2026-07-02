@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Storage;
 
 #[Table('pesantrens')]
 #[Fillable([
@@ -87,5 +88,33 @@ class Pesantren extends Model
     public function jumlahSantriAktif(): int
     {
         return $this->santri()->where('status_aktif', true)->count();
+    }
+
+    public function getLogoUrlAttribute(): ?string
+    {
+        $path = $this->profil['logo'] ?? null;
+
+        return $path ? Storage::disk('public')->url($path) : null;
+    }
+
+    public function getGaleriUrlsAttribute(): array
+    {
+        return collect($this->profil['galeri'] ?? [])
+            ->map(fn (string $path) => Storage::disk('public')->url($path))
+            ->all();
+    }
+
+    // Path filesystem absolut logo — dipakai render PDF (DomPDF, enable_remote=false, tak bisa fetch URL)
+    public function getLogoPathAttribute(): ?string
+    {
+        $path = $this->profil['logo'] ?? null;
+
+        if (! $path) {
+            return null;
+        }
+
+        $fullPath = Storage::disk('public')->path($path);
+
+        return file_exists($fullPath) ? $fullPath : null;
     }
 }
