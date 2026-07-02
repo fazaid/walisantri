@@ -8,6 +8,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\RawJs;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\ChartWidget\Concerns\HasFiltersSchema;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Auth;
 
 class AdminKesehatanTrendChart extends ChartWidget
@@ -16,17 +17,25 @@ class AdminKesehatanTrendChart extends ChartWidget
 
     protected ?string $heading = 'Tren Insiden Kesehatan';
 
-    protected ?string $description = 'Jumlah kunjungan klinik per hari';
-
     protected static ?int $sort = 25;
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = ['default' => 2, 'md' => 1];
 
     protected ?string $maxHeight = '260px';
 
     public static function canView(): bool
     {
         return Auth::user()?->role === 'admin_pesantren';
+    }
+
+    public function getDescription(): string|Htmlable|null
+    {
+        $data = $this->getCachedData()['datasets'][0]['data'] ?? [];
+        $days = (int) ($this->filters['period'] ?? 30);
+
+        return array_sum($data) === 0
+            ? "Belum ada rekam kesehatan pada {$days} hari terakhir."
+            : 'Jumlah kunjungan klinik per hari';
     }
 
     public function filtersSchema(Schema $schema): Schema
