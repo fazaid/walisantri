@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Auth;
 
 class UstadzNilaiAkademikChart extends ChartWidget
 {
-    protected ?string $heading = 'Rata-rata Nilai Akademik Halaqah';
+    protected ?string $heading = 'Rata-rata Nilai Akademik Santri';
 
     protected ?string $description = 'Nilai rata-rata seluruh mata pelajaran per santri tahun ajaran ini';
 

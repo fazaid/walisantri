@@ -13,7 +13,7 @@ class UstadzProgressHafalanChart extends ChartWidget
 {
     protected ?string $heading = 'Progress Hafalan Santri';
 
-    protected ?string $description = 'Total setoran & estimasi juz hafalan per santri halaqah';
+    protected ?string $description = 'Total setoran & estimasi juz hafalan per santri';
 
     protected static ?int $sort = 5;
 

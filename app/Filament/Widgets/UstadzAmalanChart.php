@@ -29,7 +29,7 @@ class UstadzAmalanChart extends ChartWidget
         $labels = $this->getCachedData()['labels'] ?? [];
         return empty($labels)
             ? 'Belum ada data mutabaah yang diinput dalam 7 hari terakhir.'
-            : 'Persentase amalan tiap santri halaqah Anda';
+            : 'Persentase amalan tiap santri Anda';
     }
 
     protected function getType(): string

@@ -12,7 +12,7 @@ class UstadzTrendSetoranChart extends ChartWidget
 {
     protected ?string $heading = 'Tren Setoran 7 Hari Terakhir';
 
-    protected ?string $description = 'Jumlah setoran hafalan santri halaqah per hari';
+    protected ?string $description = 'Jumlah setoran hafalan santri per hari';
 
     protected static ?int $sort = 15;
 
