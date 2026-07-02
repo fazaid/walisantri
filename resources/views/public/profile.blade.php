@@ -75,11 +75,11 @@
         @endif
 
         {{-- Galeri --}}
-        @if(!empty($pesantren->profil['galeri']))
+        @if(!empty($pesantren->galeri_urls))
             <section class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                 <h2 class="font-semibold text-gray-900 mb-4">Galeri</h2>
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    @foreach($pesantren->profil['galeri'] as $img)
+                    @foreach($pesantren->galeri_urls as $img)
                         <img src="{{ $img }}" alt="Galeri" class="rounded-xl object-cover w-full h-32">
                     @endforeach
                 </div>

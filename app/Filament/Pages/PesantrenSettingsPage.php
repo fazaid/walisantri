@@ -7,6 +7,7 @@ use App\Rules\ValidTenantSlug;
 use App\Filament\Clusters\PengaturanPesantren;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -22,6 +23,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use UnitEnum;
@@ -51,6 +53,8 @@ class PesantrenSettingsPage extends Page implements HasForms
     public array  $program         = [];
     public ?string $tahun_berdiri  = null;
     public ?string $akreditasi     = null;
+    public $logo                  = null; // FileUpload state (single) hydrates sebagai array secara internal
+    public array  $galeri          = [];
 
     public static function canAccess(): bool
     {
@@ -71,6 +75,8 @@ class PesantrenSettingsPage extends Page implements HasForms
             'program'        => $pesantren->profil['program']       ?? [],
             'tahun_berdiri'  => $pesantren->profil['tahun_berdiri'] ?? null,
             'akreditasi'     => $pesantren->profil['akreditasi']    ?? null,
+            'logo'           => $pesantren->profil['logo']          ?? null,
+            'galeri'         => $pesantren->profil['galeri']        ?? [],
         ]);
     }
 
@@ -107,6 +113,33 @@ class PesantrenSettingsPage extends Page implements HasForms
                             ])
                             ->hint('Mengubah slug akan melepas slug lama ke cooldown 90 hari.')
                             ->hintColor('warning'),
+                    ]),
+
+                Section::make('Logo & Galeri Pesantren')
+                    ->description('Tampil di halaman profil publik pesantren.')
+                    ->schema([
+                        FileUpload::make('logo')
+                            ->label('Logo Pesantren')
+                            ->disk('public')
+                            ->directory('logo-pesantren')
+                            ->image()
+                            ->acceptedFileTypes(['image/png', 'image/jpeg', 'image/svg+xml'])
+                            ->maxSize(1024)
+                            ->previewable(false)
+                            ->nullable(),
+
+                        FileUpload::make('galeri')
+                            ->label('Galeri Foto')
+                            ->multiple()
+                            ->disk('public')
+                            ->directory('galeri-pesantren')
+                            ->image()
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                            ->maxSize(2048)
+                            ->maxFiles(12)
+                            ->reorderable()
+                            ->previewable(false)
+                            ->nullable(),
                     ]),
 
                 Section::make('Profil Publik')
@@ -213,11 +246,23 @@ class PesantrenSettingsPage extends Page implements HasForms
     {
         $data      = $this->form->getState();
         $pesantren = Auth::user()->pesantren;
+        $oldProfil = $pesantren->profil ?? [];
+
+        // profil hanya ditulis dari halaman ini — cleanup file lama inline, tanpa Observer terpisah
+        $oldLogo = $oldProfil['logo'] ?? null;
+        if ($oldLogo && $oldLogo !== $data['logo']) {
+            Storage::disk('public')->delete($oldLogo);
+        }
+
+        $removedGaleri = array_diff($oldProfil['galeri'] ?? [], $data['galeri'] ?? []);
+        if ($removedGaleri) {
+            Storage::disk('public')->delete($removedGaleri);
+        }
 
         $pesantren->update([
             'nama_pesantren' => $data['nama_pesantren'],
             'slug'           => Str::slug($data['pesantren_slug']),
-            'profil'         => array_merge($pesantren->profil ?? [], [
+            'profil'         => array_merge($oldProfil, [
                 'alamat'        => $data['alamat'],
                 'telepon'       => $data['telepon'],
                 'deskripsi'     => $data['deskripsi'],
@@ -225,6 +270,8 @@ class PesantrenSettingsPage extends Page implements HasForms
                 'program'       => $data['program'] ?? [],
                 'tahun_berdiri' => $data['tahun_berdiri'],
                 'akreditasi'    => $data['akreditasi'],
+                'logo'          => $data['logo'],
+                'galeri'        => $data['galeri'] ?? [],
             ]),
         ]);
 

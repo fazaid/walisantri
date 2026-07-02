@@ -22,8 +22,8 @@
 
         {{-- Header / Branding --}}
         <div class="text-center mb-8">
-            @if($pesantren && ($pesantren->profil['logo'] ?? null))
-                <img src="{{ $pesantren->profil['logo'] }}"
+            @if($pesantren && $pesantren->logo_url)
+                <img src="{{ $pesantren->logo_url }}"
                      alt="Logo {{ $pesantren->nama_pesantren }}"
                      class="w-16 h-16 rounded-2xl object-cover mx-auto mb-3 shadow-lg">
             @else
