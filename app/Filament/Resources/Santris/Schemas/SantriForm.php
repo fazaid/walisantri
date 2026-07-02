@@ -4,6 +4,7 @@
 
 namespace App\Filament\Resources\Santris\Schemas;
 
+use App\Enums\JenisKelamin;
 use App\Models\Kamar;
 use App\Models\Kelas;
 use App\Models\Santri;
@@ -47,6 +48,10 @@ class SantriForm
                             ->label('Tanggal Lahir')
                             ->native(false)
                             ->maxDate(now()),
+                        Select::make('jenis_kelamin')
+                            ->label('Jenis Kelamin')
+                            ->options(JenisKelamin::options())
+                            ->native(false),
                         Select::make('kelas_id')
                             ->label('Kelas')
                             ->options(fn () => Kelas::where('pesantren_id', auth()->user()?->pesantren_id)

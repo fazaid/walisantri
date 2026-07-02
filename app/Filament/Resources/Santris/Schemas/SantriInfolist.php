@@ -32,6 +32,10 @@ class SantriInfolist
                             ->label('Tanggal Lahir')
                             ->date('d M Y')
                             ->placeholder('—'),
+                        TextEntry::make('jenis_kelamin')
+                            ->label('Jenis Kelamin')
+                            ->formatStateUsing(fn ($state) => $state?->label())
+                            ->placeholder('—'),
                         TextEntry::make('kelas.nama_kelas')
                             ->label('Kelas'),
                         TextEntry::make('kamar.nama_kamar')
