@@ -13,9 +13,9 @@ class UstadzAmalanChart extends ChartWidget
 {
     protected ?string $heading = 'Amalan per Santri — 7 Hari';
 
-    protected static ?int $sort = 11;
+    protected static ?int $sort = 50;
 
-    protected int|string|array $columnSpan = ['default' => 2, 'md' => 1];
+    protected int|string|array $columnSpan = 'full';
 
     protected ?string $maxHeight = '260px';
 

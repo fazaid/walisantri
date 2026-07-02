@@ -15,7 +15,7 @@ class UstadzProgressHafalanChart extends ChartWidget
 
     protected ?string $description = 'Total setoran & estimasi juz hafalan per santri halaqah';
 
-    protected static ?int $sort = 0;
+    protected static ?int $sort = 5;
 
     protected int|string|array $columnSpan = 'full';
 

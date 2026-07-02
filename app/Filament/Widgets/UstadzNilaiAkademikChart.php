@@ -17,7 +17,7 @@ class UstadzNilaiAkademikChart extends ChartWidget
 
     protected static ?int $sort = 30;
 
-    protected int|string|array $columnSpan = ['default' => 2, 'md' => 1];
+    protected int|string|array $columnSpan = 'full';
 
     protected ?string $maxHeight = '280px';
 
