@@ -88,17 +88,20 @@ class AdminTrendAmalanChart extends ChartWidget
 
     protected function getOptions(): array|\Filament\Support\RawJs|null
     {
-        return [
-            'scales' => [
-                'y' => [
-                    'min'   => 0,
-                    'max'   => 100,
-                    'ticks' => ['callback' => \Filament\Support\RawJs::make("(v) => v + '%'")],
-                ],
-            ],
-            'plugins' => [
-                'legend' => ['display' => false],
-            ],
-        ];
+        // Seluruh options harus jadi satu RawJs (bukan array PHP dengan RawJs
+        // tersisip di dalamnya) — kalau di-nest, seluruh struktur di-json_encode()
+        // dan RawJs untuk callback tick berubah jadi objek kosong {} (tidak bisa
+        // dipanggil), bikin Chart.js crash saat generateTickLabels(). Pola yang
+        // benar ini sudah dipakai di UstadzAmalanChart.
+        return \Filament\Support\RawJs::make("{
+            scales: {
+                y: {
+                    min: 0,
+                    max: 100,
+                    ticks: { callback: (v) => v + '%' }
+                }
+            },
+            plugins: { legend: { display: false } }
+        }");
     }
 }
