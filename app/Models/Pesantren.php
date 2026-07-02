@@ -82,4 +82,10 @@ class Pesantren extends Model
         return $this->santri()->where('status_aktif', true)->count()
             >= $this->max_santri_kuota;
     }
+
+    // Helper: jumlah santri aktif — dipakai untuk statistik ringkas di profil publik
+    public function jumlahSantriAktif(): int
+    {
+        return $this->santri()->where('status_aktif', true)->count();
+    }
 }

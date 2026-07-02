@@ -48,6 +48,9 @@ class PesantrenSettingsPage extends Page implements HasForms
     public string $telepon         = '';
     public string $deskripsi       = '';
     public array  $rekening        = [];
+    public array  $program         = [];
+    public ?string $tahun_berdiri  = null;
+    public ?string $akreditasi     = null;
 
     public static function canAccess(): bool
     {
@@ -63,8 +66,11 @@ class PesantrenSettingsPage extends Page implements HasForms
             'pesantren_slug' => $pesantren->slug,
             'alamat'         => $pesantren->profil['alamat']    ?? '',
             'telepon'        => $pesantren->profil['telepon']   ?? '',
-            'deskripsi'      => $pesantren->profil['deskripsi'] ?? '',
-            'rekening'       => $pesantren->profil['rekening']  ?? [],
+            'deskripsi'      => $pesantren->profil['deskripsi']     ?? '',
+            'rekening'       => $pesantren->profil['rekening']      ?? [],
+            'program'        => $pesantren->profil['program']       ?? [],
+            'tahun_berdiri'  => $pesantren->profil['tahun_berdiri'] ?? null,
+            'akreditasi'     => $pesantren->profil['akreditasi']    ?? null,
         ]);
     }
 
@@ -121,6 +127,43 @@ class PesantrenSettingsPage extends Page implements HasForms
                             ->maxLength(1000),
                     ]),
 
+                Section::make('Program & Jenjang Pendidikan')
+                    ->description('Ditampilkan di halaman profil publik pesantren.')
+                    ->schema([
+                        Repeater::make('program')
+                            ->label('')
+                            ->schema([
+                                TextInput::make('nama')
+                                    ->label('Nama Program')
+                                    ->placeholder('Tahfidz Al-Qur\'an')
+                                    ->required()
+                                    ->maxLength(100),
+                                TextInput::make('jenjang')
+                                    ->label('Jenjang')
+                                    ->placeholder('Setingkat SMP / SMA')
+                                    ->maxLength(100),
+                            ])
+                            ->columns(2)
+                            ->addActionLabel('+ Tambah Program')
+                            ->defaultItems(0)
+                            ->reorderable(false),
+                    ]),
+
+                Section::make('Statistik Ringkas')
+                    ->description('Ditampilkan di halaman profil publik pesantren. Jumlah santri dihitung otomatis dari data aktif.')
+                    ->schema([
+                        TextInput::make('tahun_berdiri')
+                            ->label('Tahun Berdiri')
+                            ->numeric()
+                            ->minValue(1900)
+                            ->maxValue((int) date('Y')),
+
+                        TextInput::make('akreditasi')
+                            ->label('Akreditasi')
+                            ->placeholder('A / B / C')
+                            ->maxLength(20),
+                    ]),
+
                 Section::make('Rekening Pembayaran SPP')
                     ->description('Informasi rekening yang ditampilkan ke wali santri saat melihat tagihan SPP.')
                     ->schema([
@@ -175,10 +218,13 @@ class PesantrenSettingsPage extends Page implements HasForms
             'nama_pesantren' => $data['nama_pesantren'],
             'slug'           => Str::slug($data['pesantren_slug']),
             'profil'         => array_merge($pesantren->profil ?? [], [
-                'alamat'    => $data['alamat'],
-                'telepon'   => $data['telepon'],
-                'deskripsi' => $data['deskripsi'],
-                'rekening'  => $data['rekening'] ?? [],
+                'alamat'        => $data['alamat'],
+                'telepon'       => $data['telepon'],
+                'deskripsi'     => $data['deskripsi'],
+                'rekening'      => $data['rekening'] ?? [],
+                'program'       => $data['program'] ?? [],
+                'tahun_berdiri' => $data['tahun_berdiri'],
+                'akreditasi'    => $data['akreditasi'],
             ]),
         ]);
 
