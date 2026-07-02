@@ -16,7 +16,8 @@ class UstadzTrendSetoranChart extends ChartWidget
 
     protected static ?int $sort = 15;
 
-    protected int|string|array $columnSpan = ['default' => 2, 'md' => 1];
+    // span 1, bukan ['default'=>2,'md'=>1] — lihat AdminSppStatusChart untuk alasannya.
+    protected int|string|array $columnSpan = 1;
 
     protected ?string $maxHeight = '260px';
 

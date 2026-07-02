@@ -15,7 +15,14 @@ class AdminSppStatusChart extends ChartWidget
 
     protected static ?int $sort = 11;
 
-    protected int|string|array $columnSpan = ['default' => 2, 'md' => 1];
+    // Grid dashboard Filament (Filament\Pages\Dashboard::getColumns()) cuma 1 kolom
+    // eksplisit di bawah breakpoint lg (1024px), baru 2 kolom di lg+ — bukan 2 kolom
+    // sejak awal seperti asumsi ['default'=>2,'md'=>1] sebelumnya. Asumsi lama bikin
+    // widget minta grid-column:span 2 di grid ber-1-kolom pada mobile (<768px), CSS
+    // Grid terpaksa bikin kolom implisit auto-size → overflow/scroll horizontal.
+    // span 1 otomatis benar di semua breakpoint: full-width saat grid 1 kolom,
+    // setengah-lebar (berpasangan) saat grid 2 kolom di lg+.
+    protected int|string|array $columnSpan = 1;
 
     protected ?string $maxHeight = '260px';
 
