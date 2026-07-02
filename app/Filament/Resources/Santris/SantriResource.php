@@ -51,7 +51,10 @@ class SantriResource extends Resource
 
     public static function canEdit($record): bool
     {
-        return Auth::user()?->role === 'admin_pesantren';
+        $user = Auth::user();
+        if ($user?->role === 'admin_pesantren') return true;
+        if ($user?->role === 'ustadz') return $record->pembimbing_ustadz_id === $user->id;
+        return false;
     }
 
     public static function canDelete($record): bool

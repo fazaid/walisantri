@@ -6,15 +6,14 @@ use App\Models\KesantrianMutabaah;
 use App\Models\Santri;
 use App\Services\MutabaahScoreCalculator;
 use Filament\Widgets\ChartWidget;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Auth;
 
 class UstadzAmalanChart extends ChartWidget
 {
     protected ?string $heading = 'Amalan per Santri — 7 Hari';
 
-    protected ?string $description = 'Persentase amalan tiap santri halaqah Anda';
-
-    protected static ?int $sort = 11;
+    protected static ?int $sort = 50;
 
     protected int|string|array $columnSpan = 'full';
 
@@ -23,6 +22,14 @@ class UstadzAmalanChart extends ChartWidget
     public static function canView(): bool
     {
         return Auth::user()?->role === 'ustadz';
+    }
+
+    public function getDescription(): string|Htmlable|null
+    {
+        $labels = $this->getCachedData()['labels'] ?? [];
+        return empty($labels)
+            ? 'Belum ada data mutabaah yang diinput dalam 7 hari terakhir.'
+            : 'Persentase amalan tiap santri Anda';
     }
 
     protected function getType(): string
@@ -52,6 +59,10 @@ class UstadzAmalanChart extends ChartWidget
             ->whereBetween('tanggal', [$start, $end])
             ->get()
             ->groupBy('santri_id');
+
+        if ($allMutabaah->isEmpty()) {
+            return ['datasets' => [['label' => '', 'data' => []]], 'labels' => []];
+        }
 
         $labels = [];
         $data   = [];
@@ -85,17 +96,15 @@ class UstadzAmalanChart extends ChartWidget
 
     protected function getOptions(): array|\Filament\Support\RawJs|null
     {
-        return [
-            'scales' => [
-                'y' => [
-                    'min'   => 0,
-                    'max'   => 100,
-                    'ticks' => ['callback' => \Filament\Support\RawJs::make("(v) => v + '%'")],
-                ],
-            ],
-            'plugins' => [
-                'legend' => ['display' => false],
-            ],
-        ];
+        return \Filament\Support\RawJs::make("{
+            scales: {
+                y: {
+                    min: 0,
+                    max: 100,
+                    ticks: { callback: (v) => v + '%' }
+                }
+            },
+            plugins: { legend: { display: false } }
+        }");
     }
 }

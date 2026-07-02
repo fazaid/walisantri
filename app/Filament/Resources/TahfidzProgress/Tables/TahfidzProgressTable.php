@@ -34,14 +34,15 @@ class TahfidzProgressTable
                         'Sabqi'  => 'info',
                         'Manzil' => 'warning',
                     }),
+                TextColumn::make('halaman_mulai')
+                    ->label('Halaman')
+                    ->formatStateUsing(fn ($record): string =>
+                        $record->halaman_mulai . ' – ' . $record->halaman_selesai
+                    ),
                 TextColumn::make('nama_surah')
                     ->label('Surah')
+                    ->placeholder('—')
                     ->searchable(),
-                TextColumn::make('ayat_mulai')
-                    ->label('Ayat')
-                    ->formatStateUsing(fn ($record): string =>
-                        $record->ayat_mulai . ' - ' . $record->ayat_selesai
-                    ),
                 TextColumn::make('nilai_kelancaran')
                     ->label('Nilai')
                     ->badge()

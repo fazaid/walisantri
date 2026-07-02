@@ -73,13 +73,11 @@
                 <span class="text-lg leading-none">📖</span>
                 <span class="text-xs font-medium text-teal-600">Capaian Hafalan</span>
             </div>
-            @if($juz['juz_selesai'] > 0 || $juz['juz_sedang'])
+            @if($juz['juz_hafal'] > 0)
                 <p class="text-2xl font-bold text-teal-700 leading-tight">
-                    {{ $juz['juz_selesai'] }}<span class="text-sm font-medium ml-1">Juz selesai</span>
+                    {{ number_format($juz['juz_hafal'], 1) }}<span class="text-sm font-medium ml-1">juz</span>
                 </p>
-                @if($juz['juz_sedang'])
-                    <p class="text-xs text-teal-500 mt-1">Sedang Juz {{ $juz['juz_sedang'] }} ({{ $juz['persen_sedang'] }}%)</p>
-                @endif
+                <p class="text-xs text-teal-500 mt-1">dari 30 juz Al-Quran</p>
             @else
                 <p class="text-sm font-medium text-teal-400">Belum ada data</p>
             @endif
@@ -149,10 +147,12 @@
         <div class="px-4 py-3 border-b border-gray-50 last:border-0">
             <div class="flex items-start justify-between gap-2">
                 <div class="flex-1 min-w-0">
-                    <p class="font-medium text-gray-800 text-sm">{{ $progress->nama_surah }}</p>
+                    <p class="font-medium text-gray-800 text-sm">
+                        Hal. {{ $progress->halaman_mulai }}–{{ $progress->halaman_selesai }}
+                        @if($progress->nama_surah) <span class="font-normal text-gray-500 text-xs">({{ $progress->nama_surah }})</span> @endif
+                    </p>
                     <p class="text-xs text-gray-500">
-                        Ayat {{ $progress->ayat_mulai }}–{{ $progress->ayat_selesai }}
-                        · {{ $progress->tanggal->translatedFormat('d M Y') }}
+                        {{ $progress->tanggal->translatedFormat('d M Y') }}
                     </p>
                     @if($progress->catatan_evaluasi)
                     <p class="text-xs text-gray-400 mt-1 italic">{{ $progress->catatan_evaluasi }}</p>

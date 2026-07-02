@@ -11,11 +11,11 @@ class UstadzNilaiSetoranChart extends ChartWidget
 {
     protected ?string $heading = 'Distribusi Nilai Setoran 7 Hari';
 
-    protected ?string $description = 'Kualitas hafalan santri halaqah Anda';
+    protected ?string $description = 'Kualitas hafalan santri Anda';
 
     protected static ?int $sort = 10;
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = ['default' => 2, 'md' => 1];
 
     protected ?string $maxHeight = '260px';
 

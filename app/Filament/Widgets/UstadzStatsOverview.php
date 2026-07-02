@@ -33,9 +33,10 @@ class UstadzStatsOverview extends StatsOverviewWidget
 
         $totalHalaqah = $santriHalaqah->count();
 
-        // Setoran tahfidz hari ini dari santri halaqahnya
+        // Setoran tahfidz hari ini khusus dari santri halaqahnya
         $setoranHariIni = TahfidzProgress::where('pesantren_id', $pesantrenId)
             ->where('ustadz_id', $ustadzId)
+            ->whereIn('santri_id', $santriHalaqah)
             ->where('tanggal', $today)
             ->count();
 
@@ -55,7 +56,7 @@ class UstadzStatsOverview extends StatsOverviewWidget
             ->count();
 
         return [
-            Stat::make('Santri Halaqah', $totalHalaqah)
+            Stat::make('Santri Binaan', $totalHalaqah)
                 ->description('Santri binaan Anda')
                 ->descriptionIcon('heroicon-m-users')
                 ->color('success'),
@@ -66,7 +67,7 @@ class UstadzStatsOverview extends StatsOverviewWidget
                 ->color($setoranHariIni > 0 ? 'success' : 'warning'),
 
             Stat::make('Belum Input Mutaba\'ah', $belumInput)
-                ->description('Dari ' . $totalHalaqah . ' santri halaqah')
+                ->description('Dari ' . $totalHalaqah . ' santri')
                 ->descriptionIcon('heroicon-m-clipboard-document-list')
                 ->color($belumInput === 0 ? 'success' : ($belumInput <= 3 ? 'warning' : 'danger')),
 

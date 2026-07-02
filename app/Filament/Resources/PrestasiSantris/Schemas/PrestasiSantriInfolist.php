@@ -35,7 +35,7 @@ class PrestasiSantriInfolist
                     ImageEntry::make('dokumen')
                         ->label('Sertifikat / Foto')
                         ->disk('public')
-                        ->height(300)
+                        ->extraImgAttributes(['class' => 'w-full h-auto object-contain rounded-lg'])
                         ->placeholder('Tidak ada dokumen'),
                 ]),
         ]);

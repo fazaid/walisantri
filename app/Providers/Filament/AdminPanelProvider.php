@@ -2,17 +2,6 @@
 
 namespace App\Providers\Filament;
 
-use App\Filament\Widgets\AdminKesehatanTrendChart;
-use App\Filament\Widgets\AdminSppStatusChart;
-use App\Filament\Widgets\AdminStatsOverview;
-use App\Filament\Widgets\SuperAdminStatsOverview;
-use App\Filament\Widgets\UstadzAmalanChart;
-use App\Filament\Widgets\UstadzKonsistensiMutabaahChart;
-use App\Filament\Widgets\UstadzNilaiAkademikChart;
-use App\Filament\Widgets\UstadzNilaiSetoranChart;
-use App\Filament\Widgets\UstadzProgressHafalanChart;
-use App\Filament\Widgets\UstadzStatsOverview;
-use App\Filament\Widgets\UstadzTrendSetoranChart;
 use App\Http\Middleware\CheckTenantQuota;
 use App\Http\Middleware\FilamentAuthenticate;
 use App\Http\Middleware\ResolveTenantFromAccount;
@@ -91,20 +80,6 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
                 AccountWidget::class,
-                // Admin Pesantren
-                AdminStatsOverview::class,
-                AdminSppStatusChart::class,
-                AdminKesehatanTrendChart::class,
-                // Ustadz
-                UstadzStatsOverview::class,
-                UstadzNilaiSetoranChart::class,
-                UstadzAmalanChart::class,
-                UstadzTrendSetoranChart::class,
-                UstadzProgressHafalanChart::class,
-                UstadzKonsistensiMutabaahChart::class,
-                UstadzNilaiAkademikChart::class,
-                // Super Admin
-                SuperAdminStatsOverview::class,
             ])
             ->middleware([
                 EncryptCookies::class,

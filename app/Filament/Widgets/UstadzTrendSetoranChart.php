@@ -10,13 +10,13 @@ use Illuminate\Support\Facades\DB;
 
 class UstadzTrendSetoranChart extends ChartWidget
 {
-    protected ?string $heading = 'Tren Setoran 30 Hari Terakhir';
+    protected ?string $heading = 'Tren Setoran 7 Hari Terakhir';
 
-    protected ?string $description = 'Jumlah setoran hafalan santri halaqah per hari';
+    protected ?string $description = 'Jumlah setoran hafalan santri per hari';
 
     protected static ?int $sort = 15;
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = ['default' => 2, 'md' => 1];
 
     protected ?string $maxHeight = '260px';
 
@@ -35,7 +35,8 @@ class UstadzTrendSetoranChart extends ChartWidget
         $ustadzId    = Auth::id();
         $pesantrenId = Auth::user()?->pesantren_id;
 
-        $santriIds = Santri::where('pembimbing_ustadz_id', $ustadzId)
+        $santriIds = Santri::where('pesantren_id', $pesantrenId)
+            ->where('pembimbing_ustadz_id', $ustadzId)
             ->where('status_aktif', true)
             ->pluck('id');
 
@@ -43,7 +44,7 @@ class UstadzTrendSetoranChart extends ChartWidget
             return ['datasets' => [['label' => '', 'data' => []]], 'labels' => []];
         }
 
-        $start = now()->subDays(29)->toDateString();
+        $start = now()->subDays(6)->toDateString();
 
         $rows = DB::table('tahfidz_progress')
             ->whereIn('santri_id', $santriIds)
@@ -56,10 +57,10 @@ class UstadzTrendSetoranChart extends ChartWidget
         $labels = [];
         $data   = [];
 
-        for ($i = 29; $i >= 0; $i--) {
-            $date     = now()->subDays($i)->toDateString();
-            $labels[] = now()->subDays($i)->format('d/m');
-            $data[]   = (int) ($rows[$date] ?? 0);
+        for ($i = 6; $i >= 0; $i--) {
+            $day      = now()->subDays($i);
+            $labels[] = $day->format('d/m');
+            $data[]   = (int) ($rows[$day->toDateString()] ?? 0);
         }
 
         return [

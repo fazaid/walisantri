@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Santri;
+use App\Services\TahfidzJuzCalculator;
 use Filament\Support\RawJs;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\Auth;
@@ -12,13 +13,13 @@ class UstadzProgressHafalanChart extends ChartWidget
 {
     protected ?string $heading = 'Progress Hafalan Santri';
 
-    protected ?string $description = 'Total setoran yang telah diterima per santri halaqah';
+    protected ?string $description = 'Total setoran & estimasi juz hafalan per santri';
 
-    protected static ?int $sort = 20;
+    protected static ?int $sort = 5;
 
     protected int|string|array $columnSpan = 'full';
 
-    protected ?string $maxHeight = '280px';
+    protected ?string $maxHeight = '300px';
 
     public static function canView(): bool
     {
@@ -51,22 +52,33 @@ class UstadzProgressHafalanChart extends ChartWidget
             ->groupBy('santri_id')
             ->pluck('total_setoran', 'santri_id');
 
-        $labels = [];
-        $data   = [];
+        $labels      = [];
+        $dataSetoran = [];
+        $dataJuz     = [];
 
         foreach ($santriList as $santri) {
-            $nama     = $santri->nama_panggilan ?: explode(' ', $santri->nama_lengkap)[0];
-            $labels[] = $nama;
-            $data[]   = (int) ($rows[$santri->id] ?? 0);
+            $progress      = TahfidzJuzCalculator::calculate($santri->id);
+            $nama          = $santri->nama_panggilan ?: explode(' ', $santri->nama_lengkap)[0];
+            $labels[]      = $nama;
+            $dataSetoran[] = (int) ($rows[$santri->id] ?? 0);
+            $dataJuz[]     = $progress['juz_hafal'];
         }
 
         return [
             'datasets' => [
                 [
                     'label'           => 'Total Setoran',
-                    'data'            => $data,
+                    'data'            => $dataSetoran,
                     'backgroundColor' => '#3b82f6',
                     'borderRadius'    => 6,
+                    'yAxisID'         => 'y',
+                ],
+                [
+                    'label'           => 'Estimasi Hafalan',
+                    'data'            => $dataJuz,
+                    'backgroundColor' => '#10b981',
+                    'borderRadius'    => 6,
+                    'yAxisID'         => 'y2',
                 ],
             ],
             'labels' => $labels,
@@ -75,16 +87,24 @@ class UstadzProgressHafalanChart extends ChartWidget
 
     protected function getOptions(): array|RawJs|null
     {
-        return [
-            'scales' => [
-                'y' => [
-                    'beginAtZero' => true,
-                    'ticks'       => ['stepSize' => 1],
-                ],
-            ],
-            'plugins' => [
-                'legend' => ['display' => false],
-            ],
-        ];
+        return RawJs::make("{
+            scales: {
+                y: { beginAtZero: true, position: 'left', ticks: { stepSize: 1 } },
+                y2: { beginAtZero: true, max: 30, position: 'right', grid: { drawOnChartArea: false } },
+            },
+            plugins: {
+                legend: { display: true },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            if (ctx.dataset.yAxisID === 'y2') {
+                                return 'Estimasi hafalan: ' + ctx.parsed.y + ' Juz';
+                            }
+                            return ctx.dataset.label + ': ' + ctx.parsed.y;
+                        }
+                    }
+                }
+            }
+        }");
     }
 }

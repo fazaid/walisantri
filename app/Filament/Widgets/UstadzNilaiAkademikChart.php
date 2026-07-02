@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Auth;
 
 class UstadzNilaiAkademikChart extends ChartWidget
 {
-    protected ?string $heading = 'Rata-rata Nilai Akademik Halaqah';
+    protected ?string $heading = 'Rata-rata Nilai Akademik Santri';
 
     protected ?string $description = 'Nilai rata-rata seluruh mata pelajaran per santri tahun ajaran ini';
 
@@ -34,8 +34,10 @@ class UstadzNilaiAkademikChart extends ChartWidget
     protected function getData(): array
     {
         $ustadzId    = Auth::id();
+        $pesantrenId = Auth::user()?->pesantren_id;
 
-        $santriList = Santri::where('pembimbing_ustadz_id', $ustadzId)
+        $santriList = Santri::where('pesantren_id', $pesantrenId)
+            ->where('pembimbing_ustadz_id', $ustadzId)
             ->where('status_aktif', true)
             ->orderBy('nama_lengkap')
             ->get(['id', 'nama_lengkap', 'nama_panggilan']);
@@ -57,12 +59,15 @@ class UstadzNilaiAkademikChart extends ChartWidget
         $colors = [];
 
         foreach ($santriList as $santri) {
-            $nama      = $santri->nama_panggilan ?: explode(' ', $santri->nama_lengkap)[0];
-            $avg       = (float) ($rows[$santri->id] ?? 0);
+            $nama    = $santri->nama_panggilan ?: explode(' ', $santri->nama_lengkap)[0];
+            $hasData = isset($rows[$santri->id]);
+            $avg     = (float) ($rows[$santri->id] ?? 0);
 
             $labels[] = $nama;
             $data[]   = $avg;
-            $colors[] = $avg >= 80 ? '#10b981' : ($avg >= 65 ? '#f59e0b' : '#ef4444');
+            $colors[] = ! $hasData
+                ? '#9ca3af'
+                : ($avg >= 80 ? '#10b981' : ($avg >= 65 ? '#f59e0b' : '#ef4444'));
         }
 
         return [

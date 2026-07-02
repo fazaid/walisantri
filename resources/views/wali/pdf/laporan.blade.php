@@ -292,7 +292,7 @@
         <th>Tanggal</th>
         <th>Tipe</th>
         <th>Surah</th>
-        <th>Ayat</th>
+        <th>Halaman</th>
         <th>Nilai</th>
     </tr>
     @foreach($progressTahfidz as $p)
@@ -300,8 +300,8 @@
     <tr>
         <td>{{ $p->tanggal->format('d/m/Y') }}</td>
         <td>{{ $p->tipe_setoran }}</td>
-        <td>{{ $p->nama_surah }}</td>
-        <td>{{ $p->ayat_mulai }}–{{ $p->ayat_selesai }}</td>
+        <td>{{ $p->nama_surah ?: '—' }}</td>
+        <td>{{ $p->halaman_mulai }}–{{ $p->halaman_selesai }}</td>
         <td><span class="badge {{ $cls }}" style="font-size:9px;">{{ $nk }}</span></td>
     </tr>
     @endforeach
