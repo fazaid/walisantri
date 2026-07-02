@@ -393,7 +393,7 @@ erDiagram
 
 ## 3.1 DB Central
 
-**`pesantrens`** — `id` PK · `nama_pesantren` · `slug` (unique, **mutable** + cooldown 90 hari, sumber subdomain default) · `paket_langganan` enum(`rintisan`/`berkembang`/`maju`) · `max_santri_kuota` int · `status_berlangganan` enum(`trial`/`active`/`suspended`/`expired`) · `expired_at` ts null · `santri_count_cache` int default 0 · `onboarding_completed_steps` jsonb null · `profil` jsonb null (konten situs publik: deskripsi, alamat, kontak, galeri) · timestamps. *Index: `(status_berlangganan, expired_at)`.*
+**`pesantrens`** — `id` PK · `nama_pesantren` · `slug` (unique, **mutable** + cooldown 90 hari, sumber subdomain default) · `paket_langganan` enum(`rintisan`/`tumbuh`/`berkembang`/`maju`) · `max_santri_kuota` int · `status_berlangganan` enum(`trial`/`active`/`suspended`/`expired`) · `expired_at` ts null · `santri_count_cache` int default 0 · `onboarding_completed_steps` jsonb null · `profil` jsonb null (konten situs publik: deskripsi, alamat, kontak, galeri) · timestamps. *Index: `(status_berlangganan, expired_at)`.*
 
 **`users`** — `id` PK · `pesantren_id` FK null (null = Super Admin) · `name` · `email` unique (global) · `phone_number` null (WhatsApp) · `password` · `role` enum(`super_admin`/`admin_pesantren`/`ustadz`/`wali_santri`) · `remember_token` · timestamps. *Index: `(pesantren_id, role)`.*
 
@@ -549,14 +549,6 @@ Diskon berlangganan tahunan via enum `DurasiLangganan`:
 
 Kalkulasi di `BillingCalculatorService` pakai `bulanBayar()` (bukan `value`) untuk total harga, dan `totalBulan()` untuk menambah `expired_at`. UI billing menampilkan "Durasi bayar: X bulan · Gratis: +Y bulan · Total aktif: Z bulan."
 
-## 5.6 Kebijakan Retensi
-
-**Jaminan harga terkunci:** Tenant yang aktif berlangganan berbayar tidak dikenai kenaikan harga selama masa aktif — harga terkunci pada saat pertama kali berlangganan. Kenaikan harga hanya berlaku untuk pelanggan baru atau setelah jeda berlangganan (status `expired`/`suspended`). Dikomunikasikan eksplisit di halaman `/billing` sebagai nilai jual.
-
-**Program Referral:** Admin pesantren yang berhasil mereferensikan 1 pesantren baru hingga berlangganan berbayar mendapatkan **1 bulan gratis** (dikreditkan ke tagihan bulan berikutnya). Dikelola manual oleh Super Admin via panel Filament — tidak ada otomasi tracking kode referral di MVP.
-
-> *Kedua kebijakan ini tidak butuh perubahan skema DB di MVP — cukup dicatat di dashboard billing dan dieksekusi manual oleh Super Admin. Otomasi kode referral bisa dibangun saat volume klien sudah signifikan.*
-
 ## 5.3 Formula Kuota Custom Maju (`BillingCalculatorService`)
 
 Base paket Maju: 1.000 santri = Rp 750.000/bulan (X=0). Add-on per blok 100 santri di atas 1.000: `X = CEIL((N - 1000) / 100)` · `Total = Rp 750.000 + (X × Rp 100.000)` · `Kuota = 1000 + (X × 100)`.
@@ -584,6 +576,14 @@ Satu ustadz hanya dapat membimbing **maks 20 santri aktif** (`status_aktif = tru
 | Subdomain not found | 404 bertema Walisantri | 404 bertema Walisantri |
 
 > *Grace period 7 hari setelah `expired_at` diimplementasikan di `CheckExpiredTenants` job (harian 00.01): step 1 — `trial`/`active` → `expired` saat `expired_at < now()`; step 2 — `expired` → `suspended` saat `expired_at < now() - 7 hari`.*
+
+## 5.6 Kebijakan Retensi
+
+**Jaminan harga terkunci:** Tenant yang aktif berlangganan berbayar tidak dikenai kenaikan harga selama masa aktif — harga terkunci pada saat pertama kali berlangganan. Kenaikan harga hanya berlaku untuk pelanggan baru atau setelah jeda berlangganan (status `expired`/`suspended`). Dikomunikasikan eksplisit di halaman `/billing` sebagai nilai jual.
+
+**Program Referral:** Admin pesantren yang berhasil mereferensikan 1 pesantren baru hingga berlangganan berbayar mendapatkan **1 bulan gratis** (dikreditkan ke tagihan bulan berikutnya). Dikelola manual oleh Super Admin via panel Filament — tidak ada otomasi tracking kode referral di MVP.
+
+> *Kedua kebijakan ini tidak butuh perubahan skema DB di MVP — cukup dicatat di dashboard billing dan dieksekusi manual oleh Super Admin. Otomasi kode referral bisa dibangun saat volume klien sudah signifikan.*
 
 ---
 
@@ -931,8 +931,6 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 
 **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali. PRD ini adalah v4.9 (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 30 hari. Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
 
-**Perubahan v4.0:** **login terpusat di `app.walisantri.com`** (tenant di-resolve dari akun, bukan host) — memutus ketergantungan auth pada subdomain · **subdomain `{slug}.walisantri.com` jadi website profil publik**, otomatis aktif saat registrasi · **slug mutable** (cooldown 90 hari) menggantikan immutable · tabel `tenant_domains` sbg sumber resolusi host publik · **custom domain** di roadmap (Cloudflare for SaaS gratis ≤100 hostname, fallback Caddy on-demand TLS) · `dash.walisantri.com` ganti rencana `central.walisantri.com` · **DB pindah ke PostgreSQL 17** (sebelumnya rencana MySQL) — alasan: RLS native, pgvector untuk AI, schema-per-tenant untuk DB-per-tenant · R2 (zero egress) · CI/CD otomatis · hybrid tenancy.
-
 **Bug & fix:** `HasUuids` isi `id` jika tak di-override → `uniqueIds(): ['uuid']` · `$navigationGroup` `?string` error → `string|UnitEnum|null` · index name >63 char (batas PostgreSQL) → nama eksplisit pendek · ingat PostgreSQL tak punya unsigned int (kolom unsigned → signed bigint) · (v4.7) `tahun_ajaran` di form Nilai Akademik/Rapor Tahfidz semula `TextInput` bebas → mismatch format antar input & filter rapor bikin data tidak muncul → diganti `Select` dropdown seragam (service `TahunAjaranOptions`) · (v4.7) Filament cluster default merender sub-navigation tab di bawah header & dropdown khusus mobile → di-override via render hook + CSS agar tab tampil di atas breadcrumbs, konsisten desktop/mobile (detail di §7).
 
 **Di-skip (post v1.0):** WhatsApp Gateway + Queue Job · Feature test isolasi & middleware · PostgreSQL RLS policy per tabel · zero-downtime deploy · migrasi schema-per-tenant (setelah >50 tenant) · Kalender Amalan Harian interaktif (warna). *(v4.9: "Excel Importer massal" dan "Daftar Inventaris santri" dipindah keluar dari daftar ini — sudah selesai, lihat §3.2/§22 changelog dan §8.)*
@@ -971,4 +969,4 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 
 ---
 
-*Confidential — Internal Document | Walisantri.com v4.8 | Juni 2026 (diperbarui 27 Juni 2026)*
+*Confidential — Internal Document | Walisantri.com v4.9 | Juli 2026*
