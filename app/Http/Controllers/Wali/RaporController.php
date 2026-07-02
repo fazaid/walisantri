@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\KesantrianKarakterRapor;
 use App\Models\NilaiAkademik;
 use App\Models\TahfidzUjian;
+use App\Services\TahunAjaranOptions;
 
 class RaporController extends Controller
 {
@@ -16,7 +17,7 @@ class RaporController extends Controller
         $anakList = $wali->anakSantri()->where('status_aktif', true)->get();
 
         $santriId    = request('santri_id', $anakList->first()?->id);
-        $tahunAjaran = request('tahun_ajaran', date('Y') . '/' . (date('Y') + 1));
+        $tahunAjaran = request('tahun_ajaran', TahunAjaranOptions::current());
 
         $raporTahfidz = TahfidzUjian::where('santri_id', $santriId)
             ->where('tahun_ajaran', $tahunAjaran)

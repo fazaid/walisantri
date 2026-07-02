@@ -69,6 +69,7 @@ class NilaiAkademikForm
                             'Semester_Ganjil' => 'Semester Ganjil',
                             'Semester_Genap'  => 'Semester Genap',
                         ])
+                        ->default(TahunAjaranOptions::currentPeriode())
                         ->live()
                         ->afterStateUpdated(fn (callable $set) => $set('bulan', null))
                         ->required(),

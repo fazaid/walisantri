@@ -11,6 +11,11 @@ class TahunAjaranOptions
             : (now()->year - 1) . '/' . now()->year;
     }
 
+    public static function currentPeriode(): string
+    {
+        return now()->month >= 7 ? 'Semester_Ganjil' : 'Semester_Genap';
+    }
+
     public static function options(int $before = 2, int $after = 1): array
     {
         $startYear = now()->month >= 7 ? now()->year : now()->year - 1;

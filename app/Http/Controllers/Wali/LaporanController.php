@@ -8,6 +8,7 @@ use App\Models\NilaiAkademik;
 use App\Models\Santri;
 use App\Models\TahfidzProgress;
 use App\Models\TahfidzUjian;
+use App\Services\TahunAjaranOptions;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class LaporanController extends Controller
@@ -15,8 +16,8 @@ class LaporanController extends Controller
     public function exportPdf()
     {
         $santriId    = request('santri_id');
-        $periode     = request('periode', 'Semester_Ganjil');
-        $tahunAjaran = request('tahun_ajaran', date('Y') . '/' . (date('Y') + 1));
+        $periode     = request('periode', TahunAjaranOptions::currentPeriode());
+        $tahunAjaran = request('tahun_ajaran', TahunAjaranOptions::current());
 
         // Validasi: santri harus milik wali yang sedang login
         $santri = Santri::where('id', $santriId)

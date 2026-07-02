@@ -269,7 +269,7 @@
     <a href="{{ route('wali.laporan.pdf', [
             'santri_id'    => $santriId,
             'tahun_ajaran' => $tahunAjaran,
-            'periode'      => 'Semester_Ganjil',
+            'periode'      => \App\Services\TahunAjaranOptions::currentPeriode(),
         ]) }}"
        class="flex items-center justify-center gap-2 w-full py-3 px-4
               bg-green-700 text-white rounded-xl font-medium text-sm
