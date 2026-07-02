@@ -65,7 +65,7 @@ class PublicTenantResolverTest extends TestCase
             'ssl_status'   => 'active',
         ]);
 
-        $this->get('http://' . $this->hostFor('darul-ilmi') . '/pengumuman')
+        $this->get('http://' . $this->hostFor('darul-ilmi') . '/kegiatan')
             ->assertOk()
             ->assertViewHas('pesantren', fn (Pesantren $viewPesantren) => $viewPesantren->id === $pesantren->id);
     }
