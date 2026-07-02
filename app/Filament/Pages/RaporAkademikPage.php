@@ -35,13 +35,14 @@ class RaporAkademikPage extends Page
 
     public string $tahunAjaran = '';
 
-    public string $periode = 'Semester_Ganjil';
+    public string $periode = '';
 
     public string $bulan = '';
 
     public function mount(): void
     {
         $this->tahunAjaran = TahunAjaranOptions::current();
+        $this->periode     = TahunAjaranOptions::currentPeriode();
         $this->bulan       = now()->month . '-' . now()->year;
     }
 
