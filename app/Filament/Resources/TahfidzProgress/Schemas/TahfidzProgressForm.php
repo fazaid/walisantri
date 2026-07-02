@@ -56,6 +56,42 @@ class TahfidzProgressForm
                             'Manzil' => 'Manzil (Hafalan Lama)',
                         ])
                         ->required(),
+                ]),
+
+            Section::make('Halaman yang Disetorkan')
+                ->schema([
+                    Repeater::make('ranges')
+                        ->label('')
+                        ->addActionLabel('+ Tambah Range Halaman')
+                        ->minItems(1)
+                        ->defaultItems(1)
+                        ->columns(3)
+                        ->schema([
+                            TextInput::make('halaman_mulai')
+                                ->label('Halaman Mulai')
+                                ->numeric()
+                                ->minValue(1)
+                                ->maxValue(600)
+                                ->required(),
+                            TextInput::make('halaman_selesai')
+                                ->label('Halaman Selesai')
+                                ->numeric()
+                                ->minValue(fn ($get) => (int) ($get('halaman_mulai') ?: 1))
+                                ->maxValue(600)
+                                ->required()
+                                ->helperText('Maks: hal. 600 (Juz 30)'),
+                            Select::make('nama_surah')
+                                ->label('Surah (Referensi)')
+                                ->options(QuranSurah::options())
+                                ->searchable()
+                                ->optionsLimit(114)
+                                ->native(false),
+                        ]),
+                ]),
+
+            Section::make('Penilaian')
+                ->columns(1)
+                ->schema([
                     Select::make('nilai_kelancaran')
                         ->label('Nilai Kelancaran')
                         ->options([
@@ -67,52 +103,8 @@ class TahfidzProgressForm
                         ->required(),
                     Textarea::make('catatan_evaluasi')
                         ->label('Catatan Evaluasi')
-                        ->rows(2)
-                        ->nullable()
-                        ->columnSpanFull(),
-                ]),
-
-            Section::make('Surah yang Disetorkan')
-                ->schema([
-                    Repeater::make('surahs')
-                        ->label('')
-                        ->addActionLabel('+ Tambah Surah')
-                        ->minItems(1)
-                        ->defaultItems(1)
-                        ->columns(3)
-                        ->schema([
-                            Select::make('nama_surah')
-                                ->label('Nama Surah')
-                                ->options(QuranSurah::options())
-                                ->searchable()
-                                ->optionsLimit(114)
-                                ->required()
-                                ->native(false)
-                                ->live()
-                                ->afterStateUpdated(function ($state, callable $set) {
-                                    $set('ayat_mulai', 1);
-                                    $set('ayat_selesai', null);
-                                }),
-                            TextInput::make('ayat_mulai')
-                                ->label('Ayat Mulai')
-                                ->numeric()
-                                ->minValue(1)
-                                ->maxValue(fn ($get) => $get('nama_surah')
-                                    ? QuranSurah::ayatCount($get('nama_surah'))
-                                    : 286)
-                                ->required(),
-                            TextInput::make('ayat_selesai')
-                                ->label('Ayat Selesai')
-                                ->numeric()
-                                ->minValue(fn ($get) => (int) ($get('ayat_mulai') ?: 1))
-                                ->maxValue(fn ($get) => $get('nama_surah')
-                                    ? QuranSurah::ayatCount($get('nama_surah'))
-                                    : 286)
-                                ->required()
-                                ->helperText(fn ($get) => $get('nama_surah')
-                                    ? 'Maks: ayat ' . QuranSurah::ayatCount($get('nama_surah'))
-                                    : ''),
-                        ]),
+                        ->rows(3)
+                        ->nullable(),
                 ]),
         ]);
     }
@@ -159,40 +151,35 @@ class TahfidzProgressForm
                             ->required(),
                     ]),
 
-                Section::make('Detail Ayat')
-                    ->columns(3)
+                Section::make('Halaman yang Disetorkan')
                     ->schema([
-                        Select::make('nama_surah')
-                            ->label('Nama Surah')
-                            ->options(QuranSurah::options())
-                            ->searchable()
-                            ->optionsLimit(114)
-                            ->required()
-                            ->native(false)
-                            ->live()
-                            ->afterStateUpdated(function ($state, callable $set) {
-                                $set('ayat_mulai', 1);
-                                $set('ayat_selesai', null);
-                            }),
-                        TextInput::make('ayat_mulai')
-                            ->label('Ayat Mulai')
-                            ->numeric()
-                            ->minValue(1)
-                            ->maxValue(fn ($get) => $get('nama_surah')
-                                ? QuranSurah::ayatCount($get('nama_surah'))
-                                : 286)
-                            ->required(),
-                        TextInput::make('ayat_selesai')
-                            ->label('Ayat Selesai')
-                            ->numeric()
-                            ->minValue(fn ($get) => (int) ($get('ayat_mulai') ?: 1))
-                            ->maxValue(fn ($get) => $get('nama_surah')
-                                ? QuranSurah::ayatCount($get('nama_surah'))
-                                : 286)
-                            ->required()
-                            ->helperText(fn ($get) => $get('nama_surah')
-                                ? 'Maks: ayat ' . QuranSurah::ayatCount($get('nama_surah'))
-                                : ''),
+                        Repeater::make('ranges')
+                            ->label('')
+                            ->addActionLabel('+ Tambah Range Halaman')
+                            ->minItems(1)
+                            ->defaultItems(1)
+                            ->columns(3)
+                            ->schema([
+                                TextInput::make('halaman_mulai')
+                                    ->label('Halaman Mulai')
+                                    ->numeric()
+                                    ->minValue(1)
+                                    ->maxValue(600)
+                                    ->required(),
+                                TextInput::make('halaman_selesai')
+                                    ->label('Halaman Selesai')
+                                    ->numeric()
+                                    ->minValue(fn ($get) => (int) ($get('halaman_mulai') ?: 1))
+                                    ->maxValue(600)
+                                    ->required()
+                                    ->helperText('Maks: hal. 600 (Juz 30)'),
+                                Select::make('nama_surah')
+                                    ->label('Surah (Referensi)')
+                                    ->options(QuranSurah::options())
+                                    ->searchable()
+                                    ->optionsLimit(114)
+                                    ->native(false),
+                            ]),
                     ]),
 
                 Section::make('Penilaian')

@@ -194,8 +194,8 @@
             <span class="stat-value">{{ $setoranStats['total_setoran'] }}</span>
         </td>
         <td>
-            <span class="stat-label">Total Ayat</span>
-            <span class="stat-value">{{ $setoranStats['total_ayat'] }}</span>
+            <span class="stat-label">Total Halaman</span>
+            <span class="stat-value">{{ $setoranStats['total_halaman'] }}</span>
         </td>
         <td>
             <span class="stat-label">Hari Aktif</span>
@@ -205,7 +205,7 @@
         <td>
             <span class="stat-label">{{ $tipe }}</span>
             <span class="stat-value">{{ $data['jumlah'] }}</span>
-            <span class="stat-label">{{ $data['ayat'] }} ayat</span>
+            <span class="stat-label">{{ $data['halaman'] }} hal.</span>
         </td>
         @endforeach
     </tr>

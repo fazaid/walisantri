@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Data\QuranSurah;
 use App\Models\Kamar;
 use App\Models\Kelas;
 use App\Models\KesantrianInventaris;
@@ -20,7 +19,7 @@ use App\Models\PrestasiSantri;
 use App\Models\Santri;
 use App\Models\TagihanSpp;
 use App\Models\TahfidzProgress;
-use App\Models\TahfidzRapor;
+use App\Models\TahfidzUjian;
 use App\Models\User;
 use App\Services\TahunAjaranOptions;
 use Illuminate\Database\Seeder;
@@ -37,11 +36,6 @@ class AlIkhlashDummySeeder extends Seeder
 {
     private Pesantren $pesantren;
 
-    private const SURAH_JUZ30 = [
-        'An-Nas', 'Al-Falaq', 'Al-Ikhlas', 'Al-Masad', 'An-Nasr', 'Al-Kafirun',
-        'Al-Kawthar', "Al-Ma'un", 'Quraysh', 'Al-Fil', 'Al-Humazah', "At-Takathur",
-        'Al-Qariah', "Al-'Adiyat", 'Az-Zalzalah', 'Al-Bayyinah', 'Al-Qadr', 'Al-Alaq',
-    ];
 
     public function run(): void
     {
@@ -225,11 +219,13 @@ class AlIkhlashDummySeeder extends Seeder
         $tipeSetoran = ['Sabaq', 'Sabqi', 'Manzil'];
         $nilaiList   = ['Mumtaz', 'Jayyid Jiddan', 'Jayyid', 'Maqbul'];
 
+        // Range halaman realistis: Juz 28–30 (hal. 541–600)
+        $baseRanges = [
+            [591, 600], [581, 590], [571, 580], [561, 570], [551, 560], [541, 550],
+        ];
+
         for ($i = 0; $i < 6; $i++) {
-            $surah = self::SURAH_JUZ30[array_rand(self::SURAH_JUZ30)];
-            $max   = QuranSurah::ayatCount($surah);
-            $start = rand(1, max(1, $max - 5));
-            $end   = min($max, $start + rand(3, 10));
+            [$start, $end] = $baseRanges[$i];
 
             TahfidzProgress::create([
                 'pesantren_id'     => $this->pesantren->id,
@@ -237,9 +233,9 @@ class AlIkhlashDummySeeder extends Seeder
                 'ustadz_id'        => $santri->pembimbing_ustadz_id,
                 'tanggal'          => now()->subDays($i * 4 + rand(0, 2)),
                 'tipe_setoran'     => $tipeSetoran[array_rand($tipeSetoran)],
-                'nama_surah'       => $surah,
-                'ayat_mulai'       => $start,
-                'ayat_selesai'     => $end,
+                'halaman_mulai'    => $start,
+                'halaman_selesai'  => $end,
+                'nama_surah'       => null,
                 'nilai_kelancaran' => $nilaiList[array_rand($nilaiList)],
                 'catatan_evaluasi' => 'Perlu lebih diperhatikan panjang bacaan dan tajwid.',
             ]);
@@ -248,13 +244,13 @@ class AlIkhlashDummySeeder extends Seeder
 
     private function seedTahfidzRapor(Santri $santri, array $ustadzList): void
     {
-        if (TahfidzRapor::where('santri_id', $santri->id)->exists()) {
+        if (TahfidzUjian::where('santri_id', $santri->id)->exists()) {
             return;
         }
 
         $grade = ['A', 'B', 'C'];
 
-        TahfidzRapor::create([
+        TahfidzUjian::create([
             'pesantren_id'           => $this->pesantren->id,
             'santri_id'              => $santri->id,
             'penguji_id'             => $santri->pembimbing_ustadz_id,

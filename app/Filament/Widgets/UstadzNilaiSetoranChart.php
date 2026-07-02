@@ -15,7 +15,7 @@ class UstadzNilaiSetoranChart extends ChartWidget
 
     protected static ?int $sort = 10;
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = ['default' => 2, 'md' => 1];
 
     protected ?string $maxHeight = '260px';
 

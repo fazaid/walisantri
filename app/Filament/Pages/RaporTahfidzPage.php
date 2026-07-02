@@ -2,7 +2,6 @@
 
 namespace App\Filament\Pages;
 
-use App\Data\QuranSurah;
 use App\Filament\Clusters\Tahfidz;
 use App\Models\Santri;
 use App\Models\TahfidzProgress;
@@ -160,7 +159,7 @@ class RaporTahfidzPage extends Page
         if ($list->isEmpty()) {
             return [
                 'total_setoran'    => 0,
-                'total_ayat'       => 0,
+                'total_halaman'    => 0,
                 'hari_aktif'       => 0,
                 'per_tipe'         => collect(),
                 'nilai_distribusi' => collect(),
@@ -168,20 +167,20 @@ class RaporTahfidzPage extends Page
             ];
         }
 
-        $jumlahAyat = fn ($p) => $p->ayat_selesai - $p->ayat_mulai + 1;
+        $jumlahHalaman = fn ($p) => ($p->halaman_mulai && $p->halaman_selesai)
+            ? $p->halaman_selesai - $p->halaman_mulai + 1
+            : 0;
 
         return [
             'total_setoran'    => $list->count(),
-            'total_ayat'       => $list->sum($jumlahAyat),
+            'total_halaman'    => $list->sum($jumlahHalaman),
             'hari_aktif'       => $list->pluck('tanggal')->map(fn ($d) => $d->toDateString())->unique()->count(),
             'per_tipe'         => $list->groupBy('tipe_setoran')->map(fn ($g) => [
-                'jumlah' => $g->count(),
-                'ayat'   => $g->sum($jumlahAyat),
+                'jumlah'  => $g->count(),
+                'halaman' => $g->sum($jumlahHalaman),
             ]),
             'nilai_distribusi' => $list->groupBy('nilai_kelancaran')->map->count(),
-            'surah_list'       => $list->pluck('nama_surah')->unique()
-                ->sortBy(fn ($surah) => QuranSurah::surahNoByName($surah) ?? 999)
-                ->values(),
+            'surah_list'       => $list->pluck('nama_surah')->filter()->unique()->values(),
         ];
     }
 

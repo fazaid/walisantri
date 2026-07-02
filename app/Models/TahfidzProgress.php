@@ -19,8 +19,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'tanggal',
     'tipe_setoran',
     'nama_surah',
-    'ayat_mulai',
-    'ayat_selesai',
+    'halaman_mulai',
+    'halaman_selesai',
     'nilai_kelancaran',
     'catatan_evaluasi',
 ])]
@@ -31,9 +31,9 @@ class TahfidzProgress extends Model
     protected function casts(): array
     {
         return [
-            'tanggal'    => 'date',
-            'ayat_mulai' => 'integer',
-            'ayat_selesai' => 'integer',
+            'tanggal'         => 'date',
+            'halaman_mulai'   => 'integer',
+            'halaman_selesai' => 'integer',
         ];
     }
 

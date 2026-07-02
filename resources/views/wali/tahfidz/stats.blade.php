@@ -17,13 +17,9 @@
         <div class="bg-teal-50 border border-teal-100 rounded-2xl p-4 col-span-2">
             <p class="text-xs text-teal-600 font-medium mb-1">Capaian Hafalan</p>
             <p class="text-3xl font-bold text-teal-700 leading-tight">
-                {{ $juz['juz_selesai'] }}<span class="text-base font-medium ml-1">juz selesai</span>
+                {{ number_format($juz['juz_hafal'], 1) }}<span class="text-base font-medium ml-1">juz</span>
             </p>
-            @if($juz['juz_sedang'])
-                <p class="text-xs text-teal-500 mt-1">Sedang Juz {{ $juz['juz_sedang'] }} ({{ $juz['persen_sedang'] }}% tercapai)</p>
-            @else
-                <p class="text-xs text-teal-500 mt-1">dari batas Juz yang sebenarnya</p>
-            @endif
+            <p class="text-xs text-teal-500 mt-1">dari 30 juz Al-Quran</p>
         </div>
 
         <div class="bg-green-50 border border-green-100 rounded-2xl p-4">
@@ -92,10 +88,12 @@
         <div class="px-4 py-3 border-b border-gray-50 last:border-0">
             <div class="flex items-start justify-between gap-2">
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-gray-800">{{ $s->nama_surah }}</p>
+                    <p class="text-sm font-medium text-gray-800">
+                        Hal. {{ $s->halaman_mulai }}–{{ $s->halaman_selesai }}
+                        @if($s->nama_surah) <span class="font-normal text-gray-500">({{ $s->nama_surah }})</span> @endif
+                    </p>
                     <p class="text-xs text-gray-500">
-                        Ayat {{ $s->ayat_mulai }}–{{ $s->ayat_selesai }}
-                        · {{ $s->tanggal->translatedFormat('d M Y') }}
+                        {{ $s->tanggal->translatedFormat('d M Y') }}
                     </p>
                 </div>
                 <div class="flex flex-col items-end gap-1 flex-shrink-0">

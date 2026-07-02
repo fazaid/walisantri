@@ -44,7 +44,7 @@
         <div class="max-w-4xl mx-auto px-6 py-20 text-center">
             <div class="inline-flex items-center gap-2 bg-teal-100 text-teal-800 text-xs font-semibold px-3 py-1.5 rounded-full mb-6 uppercase tracking-wide">
                 <span class="w-2 h-2 bg-teal-500 rounded-full animate-pulse"></span>
-                Platform Manajemen Pesantren · Sedang Beta Testing
+                Platform Manajemen Pesantren
             </div>
             <h1 class="text-4xl md:text-5xl font-bold text-gray-900 leading-tight mb-6">
                 Satu Platform untuk<br>

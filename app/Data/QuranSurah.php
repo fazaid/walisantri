@@ -138,7 +138,7 @@ class QuranSurah
                 return $ayat;
             }
         }
-        return 286; // fallback
+        return 0;
     }
 
     public static function surahNoByName(string $namaSurah): ?int

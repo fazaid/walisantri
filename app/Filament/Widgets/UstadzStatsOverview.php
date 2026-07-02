@@ -33,9 +33,10 @@ class UstadzStatsOverview extends StatsOverviewWidget
 
         $totalHalaqah = $santriHalaqah->count();
 
-        // Setoran tahfidz hari ini dari santri halaqahnya
+        // Setoran tahfidz hari ini khusus dari santri halaqahnya
         $setoranHariIni = TahfidzProgress::where('pesantren_id', $pesantrenId)
             ->where('ustadz_id', $ustadzId)
+            ->whereIn('santri_id', $santriHalaqah)
             ->where('tanggal', $today)
             ->count();
 

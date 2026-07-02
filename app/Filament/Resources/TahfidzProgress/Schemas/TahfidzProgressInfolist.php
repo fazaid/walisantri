@@ -34,15 +34,16 @@ class TahfidzProgressInfolist
                             }),
                     ]),
 
-                Section::make('Detail Ayat')
+                Section::make('Halaman yang Disetorkan')
                     ->columns(3)
                     ->schema([
+                        TextEntry::make('halaman_mulai')
+                            ->label('Halaman Mulai'),
+                        TextEntry::make('halaman_selesai')
+                            ->label('Halaman Selesai'),
                         TextEntry::make('nama_surah')
-                            ->label('Surah'),
-                        TextEntry::make('ayat_mulai')
-                            ->label('Ayat Mulai'),
-                        TextEntry::make('ayat_selesai')
-                            ->label('Ayat Selesai'),
+                            ->label('Surah (Referensi)')
+                            ->placeholder('—'),
                     ]),
 
                 Section::make('Penilaian')

@@ -61,7 +61,7 @@
                     <div class="flex-1 min-w-0">
                         <p class="font-semibold text-gray-800 text-sm truncate">{{ $cardSantri->nama_lengkap }}</p>
                         <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5">
-                            <span class="text-xs text-gray-500">📖 Juz {{ $cardJuz['juz_selesai'] }}</span>
+                            <span class="text-xs text-gray-500">📖 {{ number_format($cardJuz['juz_hafal'], 1) }} juz</span>
                             <span class="text-xs text-gray-500">✨ Amalan {{ $cardAmalan }}%</span>
                             <span class="text-xs px-1.5 py-0.5 rounded-full {{ $kBg }} {{ $kText }} font-medium">{{ $kLabel }}</span>
                         </div>

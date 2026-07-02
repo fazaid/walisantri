@@ -90,8 +90,8 @@
                             <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ $setoranStats['total_setoran'] }}</p>
                         </div>
                         <div class="text-center">
-                            <p class="text-xs text-gray-400 mb-1">Total Ayat</p>
-                            <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ $setoranStats['total_ayat'] }}</p>
+                            <p class="text-xs text-gray-400 mb-1">Total Halaman</p>
+                            <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ $setoranStats['total_halaman'] }}</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-400 mb-1">Hari Aktif</p>
@@ -101,7 +101,7 @@
                         <div class="text-center">
                             <p class="text-xs text-gray-400 mb-1">{{ $tipe }}</p>
                             <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ $data['jumlah'] }}</p>
-                            <p class="text-[11px] text-gray-400">{{ $data['ayat'] }} ayat</p>
+                            <p class="text-[11px] text-gray-400">{{ $data['halaman'] }} hal.</p>
                         </div>
                         @endforeach
                     </div>

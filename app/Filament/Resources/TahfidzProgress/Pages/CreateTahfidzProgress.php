@@ -20,12 +20,12 @@ class CreateTahfidzProgress extends CreateRecord
 
     protected function handleRecordCreation(array $data): Model
     {
-        $surahs = $data['surahs'] ?? [];
-        unset($data['surahs']);
+        $ranges = $data['ranges'] ?? [];
+        unset($data['ranges']);
 
         $last = null;
-        foreach ($surahs as $surah) {
-            $last = TahfidzProgress::create(array_merge($data, $surah));
+        foreach ($ranges as $range) {
+            $last = TahfidzProgress::create(array_merge($data, $range));
         }
 
         return $last ?? TahfidzProgress::create($data);
