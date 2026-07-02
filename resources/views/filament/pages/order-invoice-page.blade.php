@@ -27,7 +27,7 @@
     <x-filament::section>
         <x-slot name="heading">Detail Order</x-slot>
 
-        <dl class="divide-y divide-gray-100">
+        <dl class="divide-y divide-gray-100 dark:divide-gray-700">
             @foreach([
                 'Nomor Order'    => $this->order->nomor_order,
                 'Nomor Invoice'  => $this->invoice->nomor_invoice,
@@ -40,27 +40,27 @@
                 'Dibuat'         => $this->order->created_at->translatedFormat('d F Y, H:i'),
             ] as $label => $value)
             <div class="flex justify-between items-center py-3">
-                <dt class="text-sm text-gray-500">{{ $label }}</dt>
-                <dd class="text-sm font-medium text-gray-800">{{ $value }}</dd>
+                <dt class="text-sm text-gray-500 dark:text-gray-400">{{ $label }}</dt>
+                <dd class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ $value }}</dd>
             </div>
             @endforeach
 
             @if($this->order->kode_kupon_snapshot)
             <div class="flex justify-between items-center py-3">
-                <dt class="text-sm text-gray-500">Kupon</dt>
-                <dd class="text-sm font-medium text-emerald-600">{{ $this->order->kode_kupon_snapshot }}</dd>
+                <dt class="text-sm text-gray-500 dark:text-gray-400">Kupon</dt>
+                <dd class="text-sm font-medium text-emerald-600 dark:text-emerald-400">{{ $this->order->kode_kupon_snapshot }}</dd>
             </div>
             <div class="flex justify-between items-center py-3">
-                <dt class="text-sm text-gray-500">Diskon</dt>
-                <dd class="text-sm font-medium text-emerald-600">
+                <dt class="text-sm text-gray-500 dark:text-gray-400">Diskon</dt>
+                <dd class="text-sm font-medium text-emerald-600 dark:text-emerald-400">
                     − {{ $this->formatRupiah($this->order->diskon_nominal) }}
                 </dd>
             </div>
             @endif
 
             <div class="flex justify-between items-center py-3">
-                <dt class="text-sm font-bold text-gray-800">Total Pembayaran</dt>
-                <dd class="text-lg font-bold text-primary-600">
+                <dt class="text-sm font-bold text-gray-800 dark:text-gray-100">Total Pembayaran</dt>
+                <dd class="text-lg font-bold text-primary-600 dark:text-primary-400">
                     {{ $this->formatRupiah($this->order->harga_total) }}
                 </dd>
             </div>
