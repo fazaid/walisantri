@@ -4,6 +4,7 @@
 
 namespace App\Models;
 
+use App\Enums\JenisKelamin;
 use App\Traits\Multitenantable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -25,6 +26,7 @@ use Illuminate\Support\Facades\Storage;
     'nama_lengkap',
     'nama_panggilan',
     'tanggal_lahir',
+    'jenis_kelamin',
     'nama_ayah',
     'nama_ibu',
     'alamat_lengkap',
@@ -50,7 +52,8 @@ class Santri extends Model
     protected function casts(): array
     {
         return [
-            'tanggal_lahir' => 'date',
+            'tanggal_lahir'  => 'date',
+            'jenis_kelamin'  => JenisKelamin::class,
         ];
     }
 

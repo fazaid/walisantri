@@ -2,6 +2,7 @@
 
 namespace App\Imports;
 
+use App\Enums\JenisKelamin;
 use App\Models\Kamar;
 use App\Models\Kelas;
 use App\Models\Santri;
@@ -47,6 +48,7 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
             }
 
             $tanggalLahir = $this->parseTanggal($row['tanggal_lahir'] ?? null, $rowNum);
+            $jenisKelamin = $this->resolveJenisKelamin($row['jenis_kelamin'] ?? null, $rowNum);
             $kelasId      = $this->resolveKelas($row['kelas'] ?? null, $rowNum);
             $kamarId      = $this->resolveKamar($row['kamar'] ?? null, $rowNum);
 
@@ -56,6 +58,7 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
                 'nama_lengkap'   => $namaLengkap,
                 'nama_panggilan' => $this->nullable($row['nama_panggilan'] ?? null),
                 'tanggal_lahir'  => $tanggalLahir,
+                'jenis_kelamin'  => $jenisKelamin,
                 'nama_ayah'      => $this->nullable($row['nama_ayah'] ?? null),
                 'nama_ibu'       => $this->nullable($row['nama_ibu'] ?? null),
                 'alamat_lengkap' => $this->nullable($row['alamat_lengkap'] ?? null),
@@ -87,6 +90,28 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
             $this->errors[] = "Baris {$rowNum}: Format tanggal lahir '{$value}' tidak valid, kolom diabaikan.";
             return null;
         }
+    }
+
+    private function resolveJenisKelamin(mixed $value, int $rowNum): ?string
+    {
+        $raw = trim((string) ($value ?? ''));
+
+        if ($raw === '') {
+            return null;
+        }
+
+        $normalized = strtolower(str_replace([' ', '-'], '', $raw));
+
+        if (in_array($normalized, ['l', 'laki', 'lakilaki', 'pria'], true)) {
+            return JenisKelamin::LakiLaki->value;
+        }
+
+        if (in_array($normalized, ['p', 'perempuan', 'wanita'], true)) {
+            return JenisKelamin::Perempuan->value;
+        }
+
+        $this->errors[] = "Baris {$rowNum}: Jenis kelamin '{$raw}' tidak dikenali, kolom diabaikan.";
+        return null;
     }
 
     private function resolveKelas(mixed $value, int $rowNum): ?int

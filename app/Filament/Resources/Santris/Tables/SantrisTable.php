@@ -4,6 +4,7 @@
 
 namespace App\Filament\Resources\Santris\Tables;
 
+use App\Enums\JenisKelamin;
 use App\Filament\Resources\Santris\Actions\KirimMagicLinkAction;
 use App\Filament\Resources\Santris\Actions\PindahKamarBulkAction;
 use App\Filament\Resources\Santris\Actions\PindahKelasBulkAction;
@@ -35,6 +36,10 @@ class SantrisTable
                     ->label('Nama Lengkap')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('jenis_kelamin')
+                    ->label('Jenis Kelamin')
+                    ->formatStateUsing(fn ($state) => $state?->label())
+                    ->toggleable(),
                 TextColumn::make('kelas.nama_kelas')
                     ->label('Kelas')
                     ->searchable()
@@ -62,6 +67,9 @@ class SantrisTable
             ])
             ->defaultSort('nama_lengkap', 'asc')
             ->filters([
+                SelectFilter::make('jenis_kelamin')
+                    ->label('Filter Jenis Kelamin')
+                    ->options(JenisKelamin::options()),
                 SelectFilter::make('kelas_id')
                     ->label('Filter Kelas')
                     ->relationship('kelas', 'nama_kelas'),
