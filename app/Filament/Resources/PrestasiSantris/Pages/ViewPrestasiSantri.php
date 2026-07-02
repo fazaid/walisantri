@@ -4,6 +4,7 @@ namespace App\Filament\Resources\PrestasiSantris\Pages;
 
 use App\Filament\Resources\PrestasiSantris\PrestasiSantriResource;
 use App\Filament\Resources\PrestasiSantris\Schemas\PrestasiSantriInfolist;
+use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Schemas\Schema;
 
@@ -14,5 +15,12 @@ class ViewPrestasiSantri extends ViewRecord
     public function infolist(Schema $schema): Schema
     {
         return PrestasiSantriInfolist::configure($schema);
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            EditAction::make(),
+        ];
     }
 }
