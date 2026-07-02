@@ -130,5 +130,6 @@ Route::domain('{slug}.' . $baseDomain)
     ->middleware('public.tenant')
     ->group(function () {
         Route::get('/', [PublicProfileController::class, 'index'])->name('public.profile');
-        Route::get('/pengumuman', [PublicProfileController::class, 'pengumuman'])->name('public.pengumuman');
+        Route::get('/kegiatan', [PublicProfileController::class, 'kegiatan'])->name('public.kegiatan');
+        Route::get('/artikel', [PublicProfileController::class, 'artikel'])->name('public.artikel');
     });
