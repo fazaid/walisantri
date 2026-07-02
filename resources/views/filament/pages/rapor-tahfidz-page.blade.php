@@ -90,8 +90,8 @@
                             <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ $setoranStats['total_setoran'] }}</p>
                         </div>
                         <div class="text-center">
-                            <p class="text-xs text-gray-400 mb-1">Total Halaman</p>
-                            <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ $setoranStats['total_halaman'] }}</p>
+                            <p class="text-xs text-gray-400 mb-1">Total Juz</p>
+                            <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ $setoranStats['total_juz'] }}</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-400 mb-1">Hari Aktif</p>
