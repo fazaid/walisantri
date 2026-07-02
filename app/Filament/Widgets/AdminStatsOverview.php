@@ -122,18 +122,4 @@ class AdminStatsOverview extends StatsOverviewWidget
                 ->color($billingColor),
         ];
     }
-
-    private function formatRupiah(int $amount): string
-    {
-        if ($amount >= 1_000_000_000) {
-            return 'Rp ' . number_format($amount / 1_000_000_000, 1) . 'M';
-        }
-        if ($amount >= 1_000_000) {
-            return 'Rp ' . number_format($amount / 1_000_000, 1) . 'Jt';
-        }
-        if ($amount >= 1_000) {
-            return 'Rp ' . number_format($amount / 1_000, 0) . 'Rb';
-        }
-        return 'Rp ' . $amount;
-    }
 }

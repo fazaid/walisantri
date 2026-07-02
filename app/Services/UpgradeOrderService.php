@@ -53,7 +53,7 @@ class UpgradeOrderService
 
         return DB::transaction(function () use (
             $pesantren, $paketTarget, $durasibulan, $maxSantriKuota,
-            $hargaPerBulan, $hargaTotalSebelumDiskon, $diskonNominal,
+            $hargaPerBulan, $effectiveKuota, $hargaTotalSebelumDiskon, $diskonNominal,
             $hargaTotal, $bonusBulan, $totalBulan, $kodeKupon, $kupon
         ) {
             $nomorOrder = $this->generateNomor(

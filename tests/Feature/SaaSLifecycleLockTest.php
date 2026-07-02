@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Pages\BillingPage;
+use App\Filament\Pages\UpgradePage;
 use App\Models\Pesantren;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -101,5 +103,35 @@ class SaaSLifecycleLockTest extends TestCase
         $this->actingAs($wali)
             ->postJson('/test-saas')
             ->assertStatus(403);
+    }
+
+    // ─── Billing whitelist (route asli Filament, bukan /test-saas) ────────────
+
+    public function test_admin_expired_bisa_akses_halaman_billing_asli(): void
+    {
+        $pesantren = $this->makePesantren([
+            'status_berlangganan' => 'expired',
+            'expired_at'          => now()->subDays(3),
+        ]);
+        $admin = $this->makeUser($pesantren, 'admin_pesantren');
+
+        // Sebelum fix: whitelist path-string tidak cocok dengan URL cluster
+        // "admin/pengaturan/billing-page" → infinite redirect loop.
+        $this->actingAs($admin)
+            ->get(BillingPage::getUrl())
+            ->assertOk();
+    }
+
+    public function test_admin_expired_bisa_akses_halaman_upgrade_asli(): void
+    {
+        $pesantren = $this->makePesantren([
+            'status_berlangganan' => 'expired',
+            'expired_at'          => now()->subDays(3),
+        ]);
+        $admin = $this->makeUser($pesantren, 'admin_pesantren');
+
+        $this->actingAs($admin)
+            ->get(UpgradePage::getUrl())
+            ->assertOk();
     }
 }
