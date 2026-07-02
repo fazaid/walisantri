@@ -6,9 +6,11 @@
 namespace App\Providers;
 
 use App\Models\Pesantren;
+use App\Models\PlatformBankAccount;
 use App\Models\Santri;
 use App\Models\User;
 use App\Observers\PesantrenObserver;
+use App\Observers\PlatformBankAccountObserver;
 use App\Observers\SantriObserver;
 use App\Observers\UserObserver;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -84,6 +86,7 @@ class AppServiceProvider extends ServiceProvider
         Santri::observe(SantriObserver::class);
         User::observe(UserObserver::class);
         Pesantren::observe(PesantrenObserver::class);
+        PlatformBankAccount::observe(PlatformBankAccountObserver::class);
     }
 
     // -----------------------------------------------------------------

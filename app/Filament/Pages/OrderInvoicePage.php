@@ -4,7 +4,9 @@ namespace App\Filament\Pages;
 
 use App\Models\Invoice;
 use App\Models\Order;
+use App\Models\PlatformBankAccount;
 use App\Services\UpgradeOrderService;
+use Illuminate\Database\Eloquent\Collection;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
@@ -62,6 +64,13 @@ class OrderInvoicePage extends Page implements HasForms
         $this->invoice = $this->order->invoice;
 
         $this->form->fill();
+    }
+
+    public function getBankAccounts(): Collection
+    {
+        return PlatformBankAccount::where('aktif', true)
+            ->orderBy('urutan')
+            ->get();
     }
 
     public function form(Schema $schema): Schema

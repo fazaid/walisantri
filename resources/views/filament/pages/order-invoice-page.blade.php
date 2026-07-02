@@ -76,18 +76,58 @@
         </x-slot>
 
         <div class="space-y-3">
-            @foreach(config('billing.bank_transfer', []) as $bank)
-            <div class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-4">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">
-                            {{ $bank['bank'] }}
-                        </p>
-                        <p class="text-xl font-bold font-mono tracking-widest text-gray-800">
-                            {{ $bank['nomor'] }}
-                        </p>
-                        <p class="text-sm text-gray-500 mt-1">a.n. {{ $bank['atas_nama'] }}</p>
+            @foreach($this->getBankAccounts() as $bank)
+            <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-4">
+                <div class="flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-3 min-w-0">
+                        @if($bank->logo)
+                        <img
+                            src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($bank->logo) }}"
+                            alt="{{ $bank->bank }}"
+                            class="h-10 w-10 rounded-lg object-contain bg-white dark:bg-gray-700 shrink-0 p-1 border border-gray-200 dark:border-gray-600"
+                        >
+                        @endif
+                        <div class="min-w-0">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
+                                {{ $bank->bank }}
+                            </p>
+                            <p
+                                id="rekening-{{ $bank->id }}"
+                                class="text-xl font-bold font-mono tracking-widest text-gray-800 dark:text-gray-100 truncate"
+                            >
+                                {{ $bank->nomor_rekening }}
+                            </p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">a.n. {{ $bank->atas_nama }}</p>
+                        </div>
                     </div>
+                    <button
+                        type="button"
+                        onclick="
+                            var nomor = document.getElementById('rekening-{{ $bank->id }}').textContent.trim();
+                            var copied = false;
+                            if (navigator.clipboard && window.isSecureContext) {
+                                navigator.clipboard.writeText(nomor).then(function() {
+                                    copied = true;
+                                }).catch(function() {
+                                    copied = false;
+                                });
+                            } else {
+                                var tmp = document.createElement('textarea');
+                                tmp.value = nomor;
+                                tmp.style.position = 'fixed';
+                                tmp.style.opacity = '0';
+                                document.body.appendChild(tmp);
+                                tmp.select();
+                                copied = document.execCommand('copy');
+                                document.body.removeChild(tmp);
+                            }
+                            var btn = this;
+                            var original = btn.textContent;
+                            btn.textContent = 'Tersalin ✓';
+                            setTimeout(function() { btn.textContent = original; }, 2000);
+                        "
+                        class="shrink-0 rounded-lg bg-teal-600 dark:bg-teal-500 px-3 py-2 text-sm font-medium text-white hover:bg-teal-700 dark:hover:bg-teal-600 focus:outline-none"
+                    >Salin</button>
                 </div>
             </div>
             @endforeach
