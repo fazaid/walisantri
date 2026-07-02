@@ -47,11 +47,15 @@ class SaaSLifecycleLock
             return $this->lockResponse($request, 'Data pesantren tidak ditemukan.');
         }
 
-        // Halaman billing, invoice, & auth panel selalu boleh diakses (mencegah infinite redirect)
-        if ($request->is('admin/billing-page')
-            || $request->is('admin/billing-page/*')
-            || $request->is('admin/order-invoice-page')
-            || $request->is('admin/order-invoice-page/*')
+        // Halaman billing, invoice, upgrade, & auth panel selalu boleh diakses
+        // (mencegah infinite redirect). Dicek via route name, bukan path string —
+        // BillingPage ada di dalam Cluster PengaturanPesantren (slug "pengaturan"),
+        // jadi path-nya bukan lagi "admin/billing-page" melainkan
+        // "admin/pengaturan/billing-page". Route name tetap stabil walau halaman
+        // dipindah cluster di masa depan.
+        if ($request->routeIs('filament.admin.pengaturan.pages.billing-page')
+            || $request->routeIs('filament.admin.pages.order-invoice-page')
+            || $request->routeIs('filament.admin.pages.upgrade-page')
             || $request->is('admin/login')
             || $request->is('admin/logout')
             || $request->routeIs('filament.admin.auth.*')
