@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Daftar waiting list demo Walisantri.com — platform digitalisasi pesantren Indonesia.">
-    <title>Waiting List Demo — Walisantri.com</title>
+    <meta name="description" content="Daftar demo gratis Walisantri.com — platform yang menghubungkan pesantren dengan wali santri untuk pemantauan perkembangan anak secara real-time.">
+    <title>Demo Gratis — Walisantri.com</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans min-h-screen">
@@ -40,12 +40,12 @@
             {{-- Form --}}
             <div class="text-center mb-10">
                 <div class="inline-block bg-teal-100 text-teal-800 text-xs font-semibold px-3 py-1 rounded-full mb-4 uppercase tracking-wide">
-                    Waiting List Demo
+                    Demo Gratis
                 </div>
                 <h1 class="text-3xl font-bold text-gray-900 mb-4">Minta Demo Eksklusif</h1>
                 <p class="text-gray-500 leading-relaxed">
-                    Daftarkan pesantren Anda dan tim kami akan menghubungi untuk menjadwalkan
-                    sesi demo langsung — gratis, tanpa komitmen.
+                    Daftarkan pesantren Anda dan tim kami akan menghubungi untuk menjadwalkan sesi demo langsung —
+                    lihat bagaimana wali santri bisa memantau anak dan pengurus mengevaluasi santri, gratis tanpa komitmen.
                 </p>
             </div>
 
@@ -154,7 +154,7 @@
                     <button type="submit"
                             class="w-full bg-teal-700 text-white font-semibold rounded-xl hover:bg-teal-800 transition-colors text-sm"
                             style="padding: 0.75rem 1rem;">
-                        Daftar Waiting List Demo →
+                        Daftar Demo Gratis →
                     </button>
 
                     <p class="text-xs text-gray-400 text-center">

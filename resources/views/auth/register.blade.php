@@ -12,7 +12,7 @@
         <div class="text-center mb-8">
             <a href="{{ route('landing') }}" class="text-teal-700 font-bold text-xl">🕌 Walisantri.com</a>
             <h1 class="text-2xl font-bold text-gray-900 mt-4">Daftarkan Pesantren Anda</h1>
-            <p class="text-gray-500 text-sm mt-1">Trial 14 hari gratis</p>
+            <p class="text-gray-500 text-sm mt-1">Trial 30 hari gratis — mulai hubungkan pesantren Anda dengan wali santri hari ini</p>
         </div>
 
         <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
