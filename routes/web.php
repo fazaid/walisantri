@@ -42,7 +42,7 @@ Route::domain($baseDomain)->group(function () {
     Route::post('/register', [RegisterController::class, 'store'])->name('register.submit')->middleware('throttle:register');
 
     Route::get('/demo', [DemoController::class, 'show'])->name('demo');
-    Route::post('/demo', [DemoController::class, 'store'])->name('demo.submit');
+    Route::post('/demo', [DemoController::class, 'store'])->name('demo.submit')->middleware('throttle:demo');
 });
 
 // =============================================================================

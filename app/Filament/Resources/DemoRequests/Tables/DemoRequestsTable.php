@@ -4,6 +4,9 @@ namespace App\Filament\Resources\DemoRequests\Tables;
 
 use App\Models\DemoRequest;
 use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\IconColumn;
@@ -91,6 +94,13 @@ class DemoRequestsTable
                             ->success()
                             ->send();
                     }),
+
+                DeleteAction::make()->label('Hapus'),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                ]),
             ]);
     }
 }
