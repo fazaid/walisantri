@@ -103,6 +103,10 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('register', fn ($request) =>
             Limit::perHour(5)->by($request->ip())
         );
+
+        RateLimiter::for('demo', fn ($request) =>
+            Limit::perHour(5)->by($request->ip())
+        );
     }
 
     // -----------------------------------------------------------------

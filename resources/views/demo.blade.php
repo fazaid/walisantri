@@ -63,6 +63,12 @@
 
                 <form method="POST" action="{{ route('demo.submit') }}" style="display: flex; flex-direction: column; gap: 1.25rem;">
                     @csrf
+                    <input type="hidden" name="form_token" value="{{ $formToken }}">
+                    {{-- Honeypot anti-bot: field ini harus tetap kosong, disembunyikan dari pengguna asli --}}
+                    <div style="position: absolute; left: -9999px;" aria-hidden="true">
+                        <label for="website">Website</label>
+                        <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+                    </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
