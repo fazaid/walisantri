@@ -475,9 +475,9 @@
         </div>
     </section>
 
-    {{-- Highlight 3 kolom --}}
+    {{-- Highlight 4 kolom --}}
     <section class="bg-teal-50 py-16">
-        <div class="max-w-5xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div>
                 <div class="text-4xl mb-4">📢</div>
                 <h3 class="text-xl font-bold text-gray-900 mb-2">Pengumuman Langsung ke Wali</h3>
@@ -497,6 +497,13 @@
                 <h3 class="text-xl font-bold text-gray-900 mb-2">Laporan Komprehensif</h3>
                 <p class="text-gray-600 text-sm leading-relaxed">
                     Laporan akademik, kesehatan, dan ibadah bisa diekspor ke PDF maupun Excel — cocok untuk evaluasi bulanan dan rapat wali santri.
+                </p>
+            </div>
+            <div>
+                <div class="text-4xl mb-4">🌐</div>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Website Profil Pesantren Sendiri</h3>
+                <p class="text-gray-600 text-sm leading-relaxed">
+                    Setiap pesantren otomatis dapat website profil publik di subdomain sendiri, lengkap logo, galeri foto, dan statistik — siap dibagikan ke calon wali santri.
                 </p>
             </div>
         </div>
