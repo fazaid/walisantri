@@ -99,7 +99,7 @@ class PesantrenSettingsPage extends Page implements HasForms
                         TextInput::make('pesantren_slug')
                             ->label('Subdomain')
                             ->required()
-                            ->prefix($baseDomain . '/')
+                            ->suffix('.' . $baseDomain)
                             ->helperText(fn (Get $get): string =>
                                 'URL publik: https://' . ($get('pesantren_slug') ?: '...') . '.' . $baseDomain
                             )
