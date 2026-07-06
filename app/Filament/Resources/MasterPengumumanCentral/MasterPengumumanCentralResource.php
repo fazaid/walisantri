@@ -38,6 +38,31 @@ class MasterPengumumanCentralResource extends Resource
         return auth()->user()?->role === UserRole::SuperAdmin->value;
     }
 
+    public static function canViewAny(): bool
+    {
+        return static::canAccess();
+    }
+
+    public static function canCreate(): bool
+    {
+        return static::canAccess();
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return static::canAccess();
+    }
+
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return static::canAccess();
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return static::canAccess();
+    }
+
     public static function form(Schema $schema): Schema
     {
         return MasterPengumumanCentralForm::configure($schema);

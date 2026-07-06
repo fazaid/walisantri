@@ -51,7 +51,8 @@ class DashboardController extends Controller
         $pengumuman = MasterPengumuman::where('pesantren_id', $wali->pesantren_id)
             ->forWali()->latest()->limit(5)->get();
 
-        $pengumumanCentral = MasterPengumuman::withoutGlobalScope('pesantren')
+        // Broadcast global dari MasterPengumuman (pesantren_id null) — bukan model MasterPengumumanCentral.
+        $pengumumanGlobal = MasterPengumuman::withoutGlobalScope('pesantren')
             ->whereNull('pesantren_id')
             ->forWali()->latest()->limit(3)->get();
 
@@ -71,7 +72,7 @@ class DashboardController extends Controller
             'cards',
             'alertKesehatan',
             'pengumuman',
-            'pengumumanCentral',
+            'pengumumanGlobal',
             'tunggakanSpp',
             'totalInventaris',
             'firstSantriId',
