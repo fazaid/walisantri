@@ -24,9 +24,9 @@ class MasterPengumumanCentralResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMegaphone;
 
-    protected static string|UnitEnum|null $navigationGroup = null;
+    protected static string|UnitEnum|null $navigationGroup = 'Manajemen';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 5;
 
     protected static ?string $recordTitleAttribute = 'judul_maklumat';
     protected static ?string $navigationLabel = 'Pengumuman Central';
