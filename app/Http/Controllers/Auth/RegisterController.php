@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\PlatformSetting;
 use App\Rules\SlugNotReserved;
 use App\Rules\ValidTenantSlug;
 use App\Services\OnboardPesantren;
@@ -14,18 +15,23 @@ class RegisterController extends Controller
 {
     public function showForm()
     {
-        abort_if(! config('app.registration_open', true), 404);
-
         if (Auth::check()) {
-            return redirect('http://' . config('app.domain') . '/admin');
+            return $this->redirectAuthenticated();
         }
 
-        return view('auth.register');
+        return view('auth.register', [
+            'registrationOpen' => PlatformSetting::registrationOpen(),
+        ]);
     }
 
     public function store(Request $request, OnboardPesantren $onboard)
     {
-        abort_if(! config('app.registration_open', true), 404);
+        if (Auth::check()) {
+            return $this->redirectAuthenticated();
+        }
+
+        abort_if(! PlatformSetting::registrationOpen(), 404);
+
         $data = $request->validate([
             'nama_pesantren' => ['required', 'string', 'max:100'],
             'slug'           => ['required', 'string', new ValidTenantSlug, new SlugNotReserved, 'unique:pesantrens,slug'],
@@ -44,6 +50,20 @@ class RegisterController extends Controller
 
         Auth::login($result['admin']);
 
-        return redirect('http://' . config('app.domain') . '/admin');
+        return redirect($this->adminUrl());
+    }
+
+    private function redirectAuthenticated()
+    {
+        if (Auth::user()->role === 'wali_santri') {
+            return redirect()->route('wali.dashboard');
+        }
+
+        return redirect($this->adminUrl());
+    }
+
+    private function adminUrl(): string
+    {
+        return request()->getScheme() . '://' . config('app.domain') . '/admin';
     }
 }

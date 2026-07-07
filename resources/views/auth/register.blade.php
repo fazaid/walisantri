@@ -17,6 +17,21 @@
 
         <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
 
+            @unless($registrationOpen)
+                <div class="text-center py-4">
+                    <div class="text-4xl mb-3">🛠️</div>
+                    <h2 class="font-bold text-gray-900 mb-2">Pendaftaran Mandiri Sedang Nonaktif Sementara</h2>
+                    <p class="text-sm text-gray-500 mb-6">
+                        Untuk saat ini, pendaftaran pesantren baru hanya bisa lewat tim kami.
+                        Isi form demo singkat dan kami akan bantu proses pendaftarannya.
+                    </p>
+                    <a href="{{ route('demo') }}"
+                       class="inline-block bg-teal-700 hover:bg-teal-800 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors">
+                        Isi Form Demo
+                    </a>
+                </div>
+            @else
+
             @if($errors->any())
                 <div class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-5">
                     <ul class="space-y-1">
@@ -79,8 +94,11 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
                     <input type="password" name="password" required minlength="8"
+                           pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}"
+                           title="Minimal 8 karakter, kombinasi huruf besar, huruf kecil, dan angka"
                            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                            placeholder="Minimal 8 karakter">
+                    <p class="text-xs mt-1 text-gray-400">Minimal 8 karakter, kombinasi huruf besar, huruf kecil, dan angka</p>
                 </div>
 
                 <div>
@@ -101,6 +119,7 @@
                 </p>
 
             </form>
+            @endif
         </div>
 
         <p class="text-center text-sm text-gray-500 mt-5">

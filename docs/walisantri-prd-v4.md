@@ -787,27 +787,31 @@ Log operasional 2 tahun · log billing/paket 5 tahun · purge otomatis via Sched
 
 # 11. Scheduled Tasks (Laravel Scheduler)
 
-Didefinisikan via `Schedule` di `AppServiceProvider`. Notifikasi WhatsApp ke wali **tidak** dijadwalkan — selalu manual via Filament.
+Didefinisikan via `Schedule` di `AppServiceProvider`. Notifikasi WhatsApp **secara umum tidak** dijadwalkan — selalu manual via Filament (§12), KECUALI reminder billing H-3/H-1 (`WarnExpiringTenantsWhatsApp`) yang merupakan pengecualian sempit sebagai channel tambahan selain email.
 
 | Job | Jadwal | Keterangan |
 |---|---|---|
 | `CheckExpiredTenants` | Harian 00.01 | Update `status_berlangganan` lewat `expired_at` |
 | `WarnExpiringTenants` | Harian 09.00 | Email peringatan admin 7 & 3 hari sebelum expired |
+| `WarnExpiringTenantsWhatsApp` | Harian 09.05 | WhatsApp peringatan admin 3 & 1 hari sebelum expired (channel tambahan, pengecualian sempit — lihat §12) |
 | `PurgeAuditLogs` | Tanggal 1 | Hapus log sesuai retention |
 | `DatabaseBackup` | Harian 02.00 | `pg_dump -Fc` → gzip → R2 `walisantri-backup/daily/` |
 | `WarmDashboardCache` | Tiap 25 menit | Pre-generate cache dashboard wali (santri aktif) |
 | `PruneStaleCache` | Harian 03.00 | Hapus cache Redis santri non-aktif |
 
-> `CheckExpiredTenants` & `WarnExpiringTenants` hanya query DB central, tidak melewati koneksi tenant — tidak boleh terpengaruh `SaaSLifecycleLock`.
+> `CheckExpiredTenants`, `WarnExpiringTenants` & `WarnExpiringTenantsWhatsApp` hanya query DB central, tidak melewati koneksi tenant — tidak boleh terpengaruh `SaaSLifecycleLock`.
 
 ---
 
 # 12. Notifikasi WhatsApp
 
-On-demand penuh — tidak ada pengiriman terjadwal otomatis. Gateway Fonnte/Waba (`.env WHATSAPP_GATEWAY_*`), via job `KirimNotifikasiWhatsapp` di queue `whatsapp-notif` (Redis). Pengiriman per-santri = dispatch langsung dari aksi Filament; massal per kamar = loop + delay antar job; retry max 3× exponential backoff, gagal permanen → `failed_jobs`.
+On-demand penuh — tidak ada pengiriman terjadwal otomatis, **KECUALI** reminder billing H-3/H-1 sebelum langganan expired (`WarnExpiringTenantsWhatsApp`, §11) yang dijadwalkan sebagai channel tambahan selain email — ini satu-satunya pengecualian, tidak berlaku untuk trigger lain di bawah. Gateway Fonnte (`.env FONNTE_*`), via job generik `KirimNotifikasiWhatsapp` (`App\Services\FonnteWhatsAppService`) di queue `whatsapp-notif` (Redis). Pengiriman per-santri = dispatch langsung dari aksi Filament; massal per kamar = loop + delay antar job; retry max 3× exponential backoff, gagal permanen → `failed_jobs`.
+
+Reminder billing H-3/H-1 punya kill-switch dan template pesan yang bisa diatur di halaman **Pengaturan WhatsApp** Super Admin (`WhatsAppSettingsPage`, grup nav "Langganan"): toggle `reminder_expired_enabled` (tabel `whatsapp_settings`) untuk mematikan pengiriman tanpa deploy ulang, dan textarea template (tabel `whatsapp_message_templates`, key `reminder_expired`) dengan placeholder `{nama_pesantren}`, `{sisa_hari}`, `{tanggal_expired}`, `{link_billing}`.
 
 | Trigger | Aktor | Konten |
 |---|---|---|
+| Reminder billing H-3 & H-1 | System (scheduled, pengecualian §11) | Sisa hari, tanggal expired, link billing |
 | Magic Link per santri / massal per kamar | Admin/Ustadz | Link portal + nama santri |
 | Rapor baru | Admin/Ustadz | Notif rapor + Magic Link |
 | Santri `Rujukan_Luar` | Ustadz | Kondisi santri + Magic Link rekam medis |

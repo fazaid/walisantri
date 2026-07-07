@@ -44,7 +44,7 @@
                     <p class="text-xs text-teal-200">@yield('subtitle', config('app.name'))</p>
                 </div>
             </div>
-            <form method="POST" action="{{ route('wali.logout') }}">
+            <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit" class="text-xs text-teal-200 hover:text-white">Keluar</button>
             </form>

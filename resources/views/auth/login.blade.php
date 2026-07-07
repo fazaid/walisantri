@@ -36,7 +36,9 @@
                 <h1 class="text-white text-xl font-bold">{{ $pesantren->nama_pesantren }}</h1>
                 <p class="text-blue-200 text-sm mt-1">Portal Wali Santri</p>
             @else
-                <h1 class="text-white text-2xl font-bold">Walisantri.com</h1>
+                <h1 class="text-white text-2xl font-bold">
+                    <a href="{{ route('landing') }}">Walisantri.com</a>
+                </h1>
                 <p class="text-teal-200 text-sm mt-1">Masuk ke akun Anda</p>
             @endif
         </div>
