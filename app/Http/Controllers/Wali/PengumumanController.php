@@ -9,10 +9,11 @@ class PengumumanController extends Controller
 {
     public function index()
     {
-        // Pengumuman dari pesantren sendiri untuk wali (hanya target wali/semua)
-        $pengumumanPesantren = MasterPengumuman::where(
-            'pesantren_id', auth()->user()->pesantren_id
-        )
+        // Pengumuman dari pesantren sendiri + broadcast global super admin (hanya target wali/semua)
+        $pengumumanPesantren = MasterPengumuman::where(function ($query) {
+                $query->where('pesantren_id', auth()->user()->pesantren_id)
+                    ->orWhereNull('pesantren_id');
+            })
             ->forWali()
             ->latest()
             ->get();

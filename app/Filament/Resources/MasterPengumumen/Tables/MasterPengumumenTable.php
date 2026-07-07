@@ -49,6 +49,6 @@ class MasterPengumumenTable
             ])
             ->defaultSort('created_at', 'desc')
             ->recordActions([ViewAction::make(), EditAction::make()])
-            ->toolbarActions([BulkActionGroup::make([DeleteBulkAction::make()])]);
+            ->toolbarActions([BulkActionGroup::make([DeleteBulkAction::make()->authorizeIndividualRecords('delete')])]);
     }
 }

@@ -24,7 +24,7 @@ class MasterPengumumanCentralForm
                         ->label('Isi Pengumuman')
                         ->required()
                         ->toolbarButtons([
-                            'bold', 'italic', 'underline',
+                            'bold', 'italic', 'underline', 'link',
                             'bulletList', 'orderedList', 'h2', 'h3',
                         ]),
 

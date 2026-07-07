@@ -119,14 +119,14 @@
     @endif
 
     {{-- Pengumuman --}}
-    @if($pengumuman->isNotEmpty() || $pengumumanCentral->isNotEmpty())
+    @if($pengumuman->isNotEmpty() || $pengumumanGlobal->isNotEmpty())
     <div>
         <div class="flex items-center justify-between mb-2">
             <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Pengumuman</p>
             <a href="{{ route('wali.pengumuman') }}" class="text-xs text-teal-600">Lihat semua →</a>
         </div>
         <div class="space-y-2">
-            @foreach($pengumuman->merge($pengumumanCentral)->sortByDesc('created_at')->take(5) as $item)
+            @foreach($pengumuman->merge($pengumumanGlobal)->sortByDesc('created_at')->take(5) as $item)
             <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
                 <p class="font-medium text-gray-800 text-sm">{{ $item->judul_maklumat }}</p>
                 <p class="text-xs text-gray-500 mt-1 line-clamp-2">{{ Str::limit(strip_tags($item->isi_maklumat), 120) }}</p>

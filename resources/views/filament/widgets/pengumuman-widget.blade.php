@@ -1,6 +1,12 @@
 <x-filament-widgets::widget>
     <x-filament::section>
-        <x-slot name="heading">📢 Pengumuman dari Pusat</x-slot>
+        <x-slot name="heading">📋 Pengumuman Pesantren</x-slot>
+
+        <x-slot name="afterHeader">
+            <a href="{{ $url }}" class="text-xs text-primary-600 dark:text-primary-400 font-medium">
+                Lihat semua &rarr;
+            </a>
+        </x-slot>
 
         <div class="space-y-3">
             @foreach ($pengumuman as $item)
@@ -11,9 +17,9 @@
                     <div class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                         {{ $item['tanggal'] }}
                     </div>
-                    <div class="mt-2 text-sm text-gray-600 dark:text-gray-300 leading-relaxed [&_a]:text-primary-600 [&_a]:underline dark:[&_a]:text-primary-400">
-                        {{ \Filament\Forms\Components\RichEditor\RichContentRenderer::make($item['isi']) }}
-                    </div>
+                    <p class="mt-2 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                        {{ $item['isi'] }}
+                    </p>
                 </div>
             @endforeach
         </div>
