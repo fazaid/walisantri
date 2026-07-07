@@ -5,7 +5,6 @@ namespace App\Filament\Widgets;
 use App\Enums\UserRole;
 use App\Models\MasterPengumumanCentral;
 use Filament\Widgets\Widget;
-use Illuminate\Support\Str;
 
 class PengumumanCentralWidget extends Widget
 {
@@ -38,7 +37,7 @@ class PengumumanCentralWidget extends Widget
             ->map(fn ($item) => [
                 'judul'   => $item->judul_maklumat,
                 'tanggal' => $item->created_at->format('d M Y'),
-                'isi'     => Str::limit(strip_tags($item->isi_maklumat), 100),
+                'isi'     => $item->isi_maklumat,
             ]);
 
         return ['pengumuman' => $pengumuman];
