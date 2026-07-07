@@ -106,14 +106,6 @@ Route::domain($appDomain)->group(function () {
         return Storage::disk('local')->response($path);
     })->middleware('auth')->name('orders.bukti-transfer');
 
-    // --- Logout wali (magic link maupun login biasa) ---
-    Route::post('/wali/logout', function () {
-        Auth::logout();
-        request()->session()->invalidate();
-        request()->session()->regenerateToken();
-        return redirect()->route('login');
-    })->middleware('auth')->name('wali.logout');
-
     // --- Export Excel (admin panel) ---
     Route::middleware(['auth', 'tenant.resolve'])
         ->prefix('admin-export')
