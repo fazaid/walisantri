@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Pesantren;
+use App\Models\PlatformSetting;
 use App\Models\User;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -17,7 +18,7 @@ class RegisterControllerTest extends TestCase
         parent::setUp();
 
         // .env.testing menutup registrasi secara default; buka khusus untuk suite ini.
-        config(['app.registration_open' => true]);
+        PlatformSetting::set('registration_open', true);
     }
 
     private function registerUrl(): string
@@ -30,11 +31,16 @@ class RegisterControllerTest extends TestCase
         return 'http://' . config('app.domain') . '/admin';
     }
 
-    public function test_registrasi_mengembalikan_404_saat_ditutup(): void
+    public function test_form_menampilkan_keterangan_nonaktif_saat_registrasi_ditutup(): void
     {
-        config(['app.registration_open' => false]);
+        $this->withoutVite();
+        PlatformSetting::set('registration_open', false);
 
-        $this->get($this->registerUrl())->assertNotFound();
+        $this->get($this->registerUrl())
+            ->assertOk()
+            ->assertSee('Pendaftaran Mandiri Sedang Nonaktif Sementara')
+            ->assertDontSee('name="nama_pesantren"', false);
+
         $this->post($this->registerUrl())->assertNotFound();
     }
 
@@ -83,6 +89,21 @@ class RegisterControllerTest extends TestCase
 
         $this->assertDatabaseMissing('pesantrens', ['slug' => 'pesantren-susupan']);
         $this->assertAuthenticatedAs($admin);
+    }
+
+    public function test_user_yang_sudah_login_tetap_diarahkan_walau_registrasi_ditutup(): void
+    {
+        $admin = User::factory()->adminPesantren()->create();
+        PlatformSetting::set('registration_open', false);
+
+        $this->withoutMiddleware(ValidateCsrfToken::class)
+            ->actingAs($admin)
+            ->post($this->registerUrl(), [
+                'nama_pesantren' => 'Pesantren Susupan Ditutup',
+            ])
+            ->assertRedirect($this->adminUrl());
+
+        $this->assertDatabaseMissing('pesantrens', ['nama_pesantren' => 'Pesantren Susupan Ditutup']);
     }
 
     public function test_guest_berhasil_mendaftar_dan_langsung_login_sebagai_admin_baru(): void

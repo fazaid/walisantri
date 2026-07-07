@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\PlatformSetting;
 use App\Rules\SlugNotReserved;
 use App\Rules\ValidTenantSlug;
 use App\Services\OnboardPesantren;
@@ -14,22 +15,22 @@ class RegisterController extends Controller
 {
     public function showForm()
     {
-        abort_if(! config('app.registration_open', true), 404);
-
         if (Auth::check()) {
             return $this->redirectAuthenticated();
         }
 
-        return view('auth.register');
+        return view('auth.register', [
+            'registrationOpen' => PlatformSetting::registrationOpen(),
+        ]);
     }
 
     public function store(Request $request, OnboardPesantren $onboard)
     {
-        abort_if(! config('app.registration_open', true), 404);
-
         if (Auth::check()) {
             return $this->redirectAuthenticated();
         }
+
+        abort_if(! PlatformSetting::registrationOpen(), 404);
 
         $data = $request->validate([
             'nama_pesantren' => ['required', 'string', 'max:100'],

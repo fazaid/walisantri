@@ -30,11 +30,12 @@
                    class="text-sm text-gray-600 hover:text-teal-700 font-medium px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap">
                     Masuk
                 </a>
-                <a href="{{ route('demo') }}"
-                   class="text-sm bg-teal-700 text-white font-medium px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-teal-800 transition-colors whitespace-nowrap">
-                    <span class="sm:hidden">Demo Gratis</span>
-                    <span class="hidden sm:inline">Daftar Demo Gratis</span>
-                </a>
+                @if($registrationOpen)
+                    <a href="{{ route('register') }}" id="nav-daftar"
+                       class="text-sm bg-teal-700 text-white font-medium px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-teal-800 transition-colors whitespace-nowrap">
+                        Daftar
+                    </a>
+                @endif
             </div>
         </div>
     </nav>
@@ -63,9 +64,9 @@
                 @endforeach
             </div>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="{{ route('demo') }}"
+                <a href="{{ route('register') }}"
                    class="inline-block bg-teal-700 text-white font-semibold px-8 py-3.5 rounded-xl text-base hover:bg-teal-800 transition-colors shadow-sm">
-                    Daftar Demo Gratis →
+                    Daftar Gratis →
                 </a>
                 <a href="#fitur"
                    class="inline-block bg-white text-teal-700 font-semibold px-8 py-3.5 rounded-xl text-base border border-teal-200 hover:bg-teal-50 transition-colors">
@@ -654,9 +655,9 @@
                 supaya wali santri Anda bisa mulai memantau perkembangan anak sejak hari pertama.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="{{ route('demo') }}"
+                <a href="{{ route('register') }}"
                    class="inline-block bg-teal-600 text-white font-semibold px-8 py-3.5 rounded-xl text-base hover:bg-teal-500 transition-colors">
-                    Daftar Demo Gratis →
+                    Daftar Gratis →
                 </a>
             </div>
         </div>
@@ -671,7 +672,7 @@
             </p>
             <div class="flex gap-6">
                 <a href="#faq" class="text-sm text-gray-500 hover:text-teal-700">FAQ</a>
-                <a href="{{ route('demo') }}" class="text-sm text-gray-500 hover:text-teal-700">Daftar Demo Gratis</a>
+                <a href="{{ route('register') }}" class="text-sm text-gray-500 hover:text-teal-700">Daftar Gratis</a>
                 <a href="{{ route('login') }}" class="text-sm text-gray-500 hover:text-teal-700">Masuk</a>
             </div>
         </div>

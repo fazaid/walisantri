@@ -17,6 +17,21 @@
 
         <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
 
+            @unless($registrationOpen)
+                <div class="text-center py-4">
+                    <div class="text-4xl mb-3">🛠️</div>
+                    <h2 class="font-bold text-gray-900 mb-2">Pendaftaran Mandiri Sedang Nonaktif Sementara</h2>
+                    <p class="text-sm text-gray-500 mb-6">
+                        Untuk saat ini, pendaftaran pesantren baru hanya bisa lewat tim kami.
+                        Isi form demo singkat dan kami akan bantu proses pendaftarannya.
+                    </p>
+                    <a href="{{ route('demo') }}"
+                       class="inline-block bg-teal-700 hover:bg-teal-800 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors">
+                        Isi Form Demo
+                    </a>
+                </div>
+            @else
+
             @if($errors->any())
                 <div class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-5">
                     <ul class="space-y-1">
@@ -104,6 +119,7 @@
                 </p>
 
             </form>
+            @endif
         </div>
 
         <p class="text-center text-sm text-gray-500 mt-5">

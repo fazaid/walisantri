@@ -18,6 +18,7 @@ use App\Http\Controllers\Wali\SppController;
 use App\Http\Controllers\Wali\UangSakuController;
 use App\Http\Controllers\Wali\TahfidzStatsController;
 use App\Models\Order;
+use App\Models\PlatformSetting;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -30,7 +31,9 @@ $appDomain  = config('app.domain', 'app.walisantri.com');
 // =============================================================================
 Route::domain($baseDomain)->group(function () {
     Route::get('/', function () {
-        return view('landing');
+        return view('landing', [
+            'registrationOpen' => PlatformSetting::registrationOpen(),
+        ]);
     })->name('landing');
 
     // Slug check diakses dari halaman register di landing domain
