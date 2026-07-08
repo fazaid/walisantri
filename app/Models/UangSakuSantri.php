@@ -36,8 +36,11 @@ class UangSakuSantri extends Model
 
     public static function getSaldo(int $santriId): int
     {
-        $rows = static::withoutGlobalScope('pesantren')
-            ->where('santri_id', $santriId)
+        // Scope 'pesantren' sengaja TIDAK di-bypass di sini: method ini dipanggil
+        // dengan santriId yang bisa datang dari input user (mis. route parameter),
+        // jadi filter pesantren_id bawaan trait Multitenantable jadi lapisan
+        // pertahanan terakhir kalau caller lupa validasi kepemilikan santri dulu.
+        $rows = static::where('santri_id', $santriId)
             ->selectRaw("jenis, SUM(nominal) as total")
             ->groupBy('jenis')
             ->pluck('total', 'jenis');

@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Enums\OnboardingStep;
 use App\Models\Santri;
 use Illuminate\Support\Facades\Storage;
 
@@ -13,6 +14,8 @@ class SantriObserver
             'nis'           => $santri->nis,
             'nama_lengkap'  => $santri->nama_lengkap,
         ]);
+
+        $santri->pesantren?->completeOnboardingStep(OnboardingStep::Santri);
     }
 
     public function updating(Santri $santri): void
