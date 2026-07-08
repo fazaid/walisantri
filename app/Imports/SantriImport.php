@@ -3,6 +3,7 @@
 namespace App\Imports;
 
 use App\Enums\JenisKelamin;
+use App\Exceptions\SantriQuotaExceededException;
 use App\Models\Kamar;
 use App\Models\Kelas;
 use App\Models\Santri;
@@ -41,8 +42,8 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
                 continue;
             }
 
-            if (Santri::where('pesantren_id', $this->pesantrenId)->where('nis', $nis)->exists()) {
-                $this->errors[] = "Baris {$rowNum}: NIS '{$nis}' sudah terdaftar, dilewati.";
+            if (Santri::withTrashed()->where('pesantren_id', $this->pesantrenId)->where('nis', $nis)->exists()) {
+                $this->errors[] = "Baris {$rowNum}: NIS '{$nis}' sudah pernah terdaftar (termasuk data yang dihapus), dilewati.";
                 $this->skipped++;
                 continue;
             }
@@ -52,24 +53,32 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
             $kelasId      = $this->resolveKelas($row['kelas'] ?? null, $rowNum);
             $kamarId      = $this->resolveKamar($row['kamar'] ?? null, $rowNum);
 
-            Santri::create([
-                'pesantren_id'   => $this->pesantrenId,
-                'nis'            => $nis,
-                'nama_lengkap'   => $namaLengkap,
-                'nama_panggilan' => $this->nullable($row['nama_panggilan'] ?? null),
-                'tanggal_lahir'  => $tanggalLahir,
-                'jenis_kelamin'  => $jenisKelamin,
-                'nama_ayah'      => $this->nullable($row['nama_ayah'] ?? null),
-                'nama_ibu'       => $this->nullable($row['nama_ibu'] ?? null),
-                'alamat_lengkap' => $this->nullable($row['alamat_lengkap'] ?? null),
-                'jumlah_saudara' => is_numeric($row['jumlah_saudara'] ?? null) ? (int) $row['jumlah_saudara'] : null,
-                'cita_cita'      => $this->nullable($row['cita_cita'] ?? null),
-                'kelas_id'       => $kelasId,
-                'kamar_id'       => $kamarId,
-                'status_aktif'   => true,
-            ]);
+            try {
+                Santri::create([
+                    'pesantren_id'   => $this->pesantrenId,
+                    'nis'            => $nis,
+                    'nama_lengkap'   => $namaLengkap,
+                    'nama_panggilan' => $this->nullable($row['nama_panggilan'] ?? null),
+                    'tanggal_lahir'  => $tanggalLahir,
+                    'jenis_kelamin'  => $jenisKelamin,
+                    'nama_ayah'      => $this->nullable($row['nama_ayah'] ?? null),
+                    'nama_ibu'       => $this->nullable($row['nama_ibu'] ?? null),
+                    'alamat_lengkap' => $this->nullable($row['alamat_lengkap'] ?? null),
+                    'jumlah_saudara' => is_numeric($row['jumlah_saudara'] ?? null) ? (int) $row['jumlah_saudara'] : null,
+                    'cita_cita'      => $this->nullable($row['cita_cita'] ?? null),
+                    'kelas_id'       => $kelasId,
+                    'kamar_id'       => $kamarId,
+                    'status_aktif'   => true,
+                ]);
 
-            $this->imported++;
+                $this->imported++;
+            } catch (SantriQuotaExceededException $e) {
+                $this->errors[] = "Baris {$rowNum}: {$e->getMessage()}";
+                $this->skipped++;
+            } catch (\Throwable $e) {
+                $this->errors[] = "Baris {$rowNum}: Gagal menyimpan data ({$e->getMessage()}).";
+                $this->skipped++;
+            }
         }
     }
 
@@ -85,7 +94,7 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
                 return \Carbon\Carbon::instance($date)->format('Y-m-d');
             }
 
-            return \Carbon\Carbon::parse((string) $value)->format('Y-m-d');
+            return \Carbon\Carbon::createFromFormat('d/m/Y', trim((string) $value))->format('Y-m-d');
         } catch (\Exception) {
             $this->errors[] = "Baris {$rowNum}: Format tanggal lahir '{$value}' tidak valid, kolom diabaikan.";
             return null;
