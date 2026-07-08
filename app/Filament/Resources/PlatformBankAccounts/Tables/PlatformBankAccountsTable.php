@@ -18,6 +18,7 @@ class PlatformBankAccountsTable
             ->columns([
                 ImageColumn::make('logo')
                     ->label('Logo')
+                    ->disk('public')
                     ->square(),
                 TextColumn::make('bank')
                     ->label('Bank')
