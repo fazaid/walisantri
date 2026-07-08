@@ -125,7 +125,6 @@ class PesantrenSettingsPage extends Page implements HasForms
                             ->image()
                             ->acceptedFileTypes(['image/png', 'image/jpeg', 'image/svg+xml'])
                             ->maxSize(1024)
-                            ->previewable(false)
                             ->nullable(),
 
                         FileUpload::make('galeri')
@@ -138,7 +137,6 @@ class PesantrenSettingsPage extends Page implements HasForms
                             ->maxSize(2048)
                             ->maxFiles(12)
                             ->reorderable()
-                            ->previewable(false)
                             ->nullable(),
                     ]),
 
