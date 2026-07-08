@@ -31,7 +31,6 @@ class PlatformBankAccountForm
                 ->image()
                 ->acceptedFileTypes(['image/png', 'image/jpeg', 'image/svg+xml'])
                 ->maxSize(512)
-                ->previewable(false)
                 ->nullable(),
             TextInput::make('urutan')
                 ->label('Urutan Tampil')
