@@ -84,7 +84,6 @@ class PrestasiSantriForm
                         ->directory('prestasi')
                         ->acceptedFileTypes(['image/jpeg', 'image/png', 'application/pdf'])
                         ->maxSize(5120)
-                        ->previewable(false)
                         ->nullable(),
                 ]),
         ]);
