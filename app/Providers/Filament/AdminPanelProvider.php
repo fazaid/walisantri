@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\EditProfile;
 use App\Http\Middleware\CheckTenantQuota;
 use App\Http\Middleware\FilamentAuthenticate;
 use App\Http\Middleware\ResolveTenantFromAccount;
@@ -37,6 +38,7 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Teal,
             ])
+            ->profile(EditProfile::class, isSimple: false)
             ->sidebarFullyCollapsibleOnDesktop()
             ->navigationGroups([
                 'Kesantrian',

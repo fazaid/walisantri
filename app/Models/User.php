@@ -6,6 +6,7 @@
 namespace App\Models;
 
 use Filament\Models\Contracts\FilamentUser;
+use Filament\Models\Contracts\HasAvatar;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 
 #[Table('users')]
 #[Fillable([
@@ -22,13 +24,19 @@ use Illuminate\Notifications\Notifiable;
     'name',
     'email',
     'phone_number',
+    'foto_profil',
     'password',
     'role',
 ])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable implements FilamentUser
+class User extends Authenticatable implements FilamentUser, HasAvatar
 {
     use HasFactory, Notifiable;
+
+    public function getFilamentAvatarUrl(): ?string
+    {
+        return $this->foto_profil ? Storage::disk('public')->url($this->foto_profil) : null;
+    }
 
     // Hanya role berikut yang boleh masuk panel Filament
     public function canAccessPanel(Panel $panel): bool
