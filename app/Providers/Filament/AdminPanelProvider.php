@@ -39,6 +39,7 @@ class AdminPanelProvider extends PanelProvider
                 'primary' => Color::Teal,
             ])
             ->profile(EditProfile::class, isSimple: false)
+            ->databaseNotifications()
             ->sidebarFullyCollapsibleOnDesktop()
             ->navigationGroups([
                 'Kesantrian',

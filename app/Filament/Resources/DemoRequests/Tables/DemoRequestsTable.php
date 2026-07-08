@@ -11,6 +11,7 @@ use Filament\Actions\ViewAction;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 
@@ -50,6 +51,15 @@ class DemoRequestsTable
                     ->label('Jml. Santri')
                     ->placeholder('—'),
 
+                IconColumn::make('duplicate_of_id')
+                    ->label('Duplikat?')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-exclamation-triangle')
+                    ->falseIcon('heroicon-o-minus')
+                    ->trueColor('warning')
+                    ->falseColor('gray')
+                    ->getStateUsing(fn (DemoRequest $record): bool => $record->duplicate_of_id !== null),
+
                 IconColumn::make('contacted_at')
                     ->label('Sudah Dihubungi')
                     ->boolean()
@@ -58,6 +68,20 @@ class DemoRequestsTable
                     ->trueColor('success')
                     ->falseColor('warning')
                     ->getStateUsing(fn (DemoRequest $record): bool => $record->contacted_at !== null),
+
+                TextColumn::make('sla')
+                    ->label('SLA')
+                    ->badge()
+                    ->state(fn (DemoRequest $record): string => match (true) {
+                        $record->contacted_at !== null => 'Selesai',
+                        $record->isOverdue() => 'Overdue',
+                        default => $record->businessDaysWaiting().' hr kerja',
+                    })
+                    ->color(fn (DemoRequest $record): string => match (true) {
+                        $record->contacted_at !== null => 'success',
+                        $record->isOverdue() => 'danger',
+                        default => 'gray',
+                    }),
 
                 TextColumn::make('created_at')
                     ->label('Daftar')
@@ -73,6 +97,22 @@ class DemoRequestsTable
                     ->queries(
                         true: fn ($query) => $query->whereNotNull('contacted_at'),
                         false: fn ($query) => $query->whereNull('contacted_at'),
+                    ),
+
+                Filter::make('overdue')
+                    ->label('Overdue (SLA)')
+                    ->query(fn ($query) => $query
+                        ->whereNull('contacted_at')
+                        ->where('created_at', '<=', DemoRequest::slaCutoff())),
+
+                TernaryFilter::make('duplicate')
+                    ->label('Duplikat')
+                    ->placeholder('Semua')
+                    ->trueLabel('Kemungkinan duplikat')
+                    ->falseLabel('Bukan duplikat')
+                    ->queries(
+                        true: fn ($query) => $query->whereNotNull('duplicate_of_id'),
+                        false: fn ($query) => $query->whereNull('duplicate_of_id'),
                     ),
             ])
             ->recordActions([
