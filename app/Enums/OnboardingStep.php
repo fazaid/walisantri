@@ -16,7 +16,7 @@ enum OnboardingStep: string
             self::Profil     => 'Lengkapi profil pesantren (alamat & logo)',
             self::Ustadz     => 'Tambah ustadz pertama',
             self::Santri     => 'Tambah santri pertama',
-            self::MagicLink  => 'Kirim Magic Link ke wali pertama',
+            self::MagicLink  => 'Lihat/salin Magic Link wali pertama',
             self::Pengumuman => 'Buat pengumuman perdana',
         };
     }

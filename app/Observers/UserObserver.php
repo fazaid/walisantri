@@ -30,6 +30,10 @@ class UserObserver
                 ['role' => $user->getOriginal('role')],
                 ['role' => $user->role],
             );
+
+            if ($user->role === UserRole::Ustadz->value) {
+                $user->pesantren?->completeOnboardingStep(OnboardingStep::Ustadz);
+            }
         }
 
         if ($user->wasChanged('password')) {
