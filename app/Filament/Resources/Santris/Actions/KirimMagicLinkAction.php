@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Santris\Actions;
 
+use App\Enums\OnboardingStep;
 use App\Models\Santri;
 use App\Observers\ActivityLogger;
 use Filament\Actions\Action;
@@ -34,6 +35,8 @@ class KirimMagicLinkAction extends Action
                     'wali_id' => $record->wali_santri_id,
                     'viewed_by' => Auth::id(),
                 ]);
+
+                $record->pesantren?->completeOnboardingStep(OnboardingStep::MagicLink);
             });
     }
 

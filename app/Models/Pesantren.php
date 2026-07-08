@@ -4,6 +4,7 @@
 
 namespace App\Models;
 
+use App\Enums\OnboardingStep;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -88,6 +89,37 @@ class Pesantren extends Model
     public function jumlahSantriAktif(): int
     {
         return $this->santri()->where('status_aktif', true)->count();
+    }
+
+    public function completeOnboardingStep(OnboardingStep $step): void
+    {
+        $steps = $this->onboarding_completed_steps ?? [];
+
+        if (in_array($step->value, $steps, true)) {
+            return;
+        }
+
+        $steps[] = $step->value;
+
+        // saveQuietly(): tidak fire event Eloquent -> mencegah PesantrenObserver::updated()
+        // terpanggil rekursif saat method ini dipanggil dari dalam updated() itu sendiri.
+        $this->forceFill(['onboarding_completed_steps' => $steps])->saveQuietly();
+    }
+
+    public function hasCompletedOnboardingStep(OnboardingStep $step): bool
+    {
+        return in_array($step->value, $this->onboarding_completed_steps ?? [], true);
+    }
+
+    public function isOnboardingComplete(): bool
+    {
+        foreach (OnboardingStep::required() as $step) {
+            if (! $this->hasCompletedOnboardingStep($step)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public function getLogoUrlAttribute(): ?string

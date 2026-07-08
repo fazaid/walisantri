@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Enums\OnboardingStep;
 use App\Models\Pesantren;
 use App\Models\SlugRelease;
 use App\Models\TenantDomain;
@@ -51,6 +52,14 @@ class PesantrenObserver
                 ['slug' => $oldSlug],
                 ['slug' => $pesantren->slug],
             );
+        }
+
+        if ($pesantren->wasChanged('profil')) {
+            $profil = $pesantren->profil ?? [];
+
+            if (! empty($profil['alamat']) && ! empty($profil['logo'])) {
+                $pesantren->completeOnboardingStep(OnboardingStep::Profil);
+            }
         }
     }
 
