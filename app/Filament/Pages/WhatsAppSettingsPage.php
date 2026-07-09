@@ -47,6 +47,10 @@ class WhatsAppSettingsPage extends Page implements HasForms
 
     public string $notif_trial_habis_template = '';
 
+    public bool $notif_order_dikonfirmasi_enabled = true;
+
+    public string $notif_order_dikonfirmasi_template = '';
+
     public static function canAccess(): bool
     {
         return auth()->user()?->role === UserRole::SuperAdmin->value;
@@ -59,6 +63,8 @@ class WhatsAppSettingsPage extends Page implements HasForms
             'reminder_expired_template' => WhatsAppMessageTemplate::get('reminder_expired'),
             'notif_trial_habis_enabled' => WhatsAppSetting::get('notif_trial_habis_enabled'),
             'notif_trial_habis_template' => WhatsAppMessageTemplate::get('notif_trial_habis'),
+            'notif_order_dikonfirmasi_enabled' => WhatsAppSetting::get('notif_order_dikonfirmasi_enabled'),
+            'notif_order_dikonfirmasi_template' => WhatsAppMessageTemplate::get('notif_order_dikonfirmasi'),
         ]);
     }
 
@@ -91,6 +97,19 @@ class WhatsAppSettingsPage extends Page implements HasForms
                         ->rows(8)
                         ->helperText('Placeholder yang bisa dipakai: {nama_pesantren}, {tanggal_expired}, {link_billing}.'),
                 ]),
+            Section::make('Notifikasi Order Dikonfirmasi')
+                ->description('Pengecualian sempit ketiga atas kebijakan WhatsApp manual (PRD §12) — notifikasi otomatis saat Super Admin mengonfirmasi order upgrade/perpanjangan, tidak memengaruhi fitur WA lain.')
+                ->schema([
+                    Toggle::make('notif_order_dikonfirmasi_enabled')
+                        ->label('Kirim notifikasi WhatsApp saat order dikonfirmasi Super Admin')
+                        ->helperText('Matikan sebagai kill-switch cepat, misalnya saat gateway Fonnte bermasalah atau kuota habis, tanpa perlu deploy ulang.')
+                        ->default(true),
+                    Textarea::make('notif_order_dikonfirmasi_template')
+                        ->label('Template pesan order dikonfirmasi')
+                        ->required()
+                        ->rows(8)
+                        ->helperText('Placeholder yang bisa dipakai: {nama_pesantren}, {paket}, {durasi_bulan}, {tanggal_expired}, {nomor_order}, {total_dibayar}, {link_billing}.'),
+                ]),
         ]);
     }
 
@@ -119,6 +138,9 @@ class WhatsAppSettingsPage extends Page implements HasForms
 
         WhatsAppSetting::set('notif_trial_habis_enabled', (bool) $state['notif_trial_habis_enabled']);
         WhatsAppMessageTemplate::set('notif_trial_habis', $state['notif_trial_habis_template']);
+
+        WhatsAppSetting::set('notif_order_dikonfirmasi_enabled', (bool) $state['notif_order_dikonfirmasi_enabled']);
+        WhatsAppMessageTemplate::set('notif_order_dikonfirmasi', $state['notif_order_dikonfirmasi_template']);
 
         Notification::make()
             ->title('Pengaturan WhatsApp berhasil disimpan')

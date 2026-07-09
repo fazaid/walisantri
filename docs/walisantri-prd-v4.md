@@ -807,16 +807,19 @@ Didefinisikan via `Schedule` di `AppServiceProvider`. Notifikasi WhatsApp **seca
 
 # 12. Notifikasi WhatsApp
 
-On-demand penuh — tidak ada pengiriman terjadwal otomatis, **KECUALI** dua pengecualian sempit (§11): reminder billing H-3/H-1 sebelum langganan expired (`WarnExpiringTenantsWhatsApp`), dan notifikasi sekali saat status baru saja bertransisi ke expired (dikirim dari `CheckExpiredTenants`) — keduanya channel tambahan selain email, tidak berlaku untuk trigger lain di bawah. Gateway Fonnte (`.env FONNTE_*`), via job generik `KirimNotifikasiWhatsapp` (`App\Services\FonnteWhatsAppService`) di queue `whatsapp-notif` (Redis). Pengiriman per-santri = dispatch langsung dari aksi Filament; massal per kamar = loop + delay antar job; retry max 3× exponential backoff, gagal permanen → `failed_jobs`.
+On-demand penuh — tidak ada pengiriman terjadwal otomatis, **KECUALI** tiga pengecualian sempit: dua terjadwal (§11) — reminder billing H-3/H-1 sebelum langganan expired (`WarnExpiringTenantsWhatsApp`) dan notifikasi sekali saat status baru saja bertransisi ke expired (dikirim dari `CheckExpiredTenants`) — serta satu yang terpicu otomatis oleh aksi Super Admin (bukan job terjadwal): notifikasi saat order upgrade/perpanjangan dikonfirmasi (dikirim dari `UpgradeOrderService::confirmOrder()`). Ketiganya channel tambahan selain email/alur konfirmasi manual, tidak berlaku untuk trigger lain di bawah. Gateway Fonnte (`.env FONNTE_*`), via job generik `KirimNotifikasiWhatsapp` (`App\Services\FonnteWhatsAppService`) di queue `whatsapp-notif` (Redis). Pengiriman per-santri = dispatch langsung dari aksi Filament; massal per kamar = loop + delay antar job; retry max 3× exponential backoff, gagal permanen → `failed_jobs`.
 
 Reminder billing H-3/H-1 punya kill-switch dan template pesan yang bisa diatur di halaman **Pengaturan WhatsApp** Super Admin (`WhatsAppSettingsPage`, grup nav "Langganan"): toggle `reminder_expired_enabled` (tabel `whatsapp_settings`) untuk mematikan pengiriman tanpa deploy ulang, dan textarea template (tabel `whatsapp_message_templates`, key `reminder_expired`) dengan placeholder `{nama_pesantren}`, `{sisa_hari}`, `{tanggal_expired}`, `{link_billing}`.
 
 Notifikasi expired (sekali saat transisi) punya kill-switch & template terpisah di halaman yang sama: toggle `notif_trial_habis_enabled` dan template key `notif_trial_habis` dengan placeholder `{nama_pesantren}`, `{tanggal_expired}`, `{link_billing}` (tanpa `{sisa_hari}` karena sudah expired).
 
+Notifikasi order dikonfirmasi punya kill-switch & template terpisah di halaman yang sama: toggle `notif_order_dikonfirmasi_enabled` dan template key `notif_order_dikonfirmasi` dengan placeholder `{nama_pesantren}`, `{paket}`, `{durasi_bulan}`, `{tanggal_expired}`, `{nomor_order}`, `{total_dibayar}`, `{link_billing}`. Dikirim sekali per konfirmasi order oleh Super Admin, bukan dijadwalkan.
+
 | Trigger | Aktor | Konten |
 |---|---|---|
 | Reminder billing H-3 & H-1 | System (scheduled, pengecualian §11) | Sisa hari, tanggal expired, link billing |
 | Notifikasi langganan baru saja expired | System (scheduled, pengecualian §11) | Tanggal expired, link billing |
+| Konfirmasi order upgrade/perpanjangan | Super Admin (aksi Filament, pengecualian §12) | Paket, durasi, tanggal expired baru, nomor order, total dibayar |
 | Magic Link per santri / massal per kamar | Admin/Ustadz | Link portal + nama santri |
 | Rapor baru | Admin/Ustadz | Notif rapor + Magic Link |
 | Santri `Rujukan_Luar` | Ustadz | Kondisi santri + Magic Link rekam medis |
