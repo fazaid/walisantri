@@ -43,6 +43,10 @@ class WhatsAppSettingsPage extends Page implements HasForms
 
     public string $reminder_expired_template = '';
 
+    public bool $notif_trial_habis_enabled = true;
+
+    public string $notif_trial_habis_template = '';
+
     public static function canAccess(): bool
     {
         return auth()->user()?->role === UserRole::SuperAdmin->value;
@@ -53,6 +57,8 @@ class WhatsAppSettingsPage extends Page implements HasForms
         $this->form->fill([
             'reminder_expired_enabled' => WhatsAppSetting::get('reminder_expired_enabled'),
             'reminder_expired_template' => WhatsAppMessageTemplate::get('reminder_expired'),
+            'notif_trial_habis_enabled' => WhatsAppSetting::get('notif_trial_habis_enabled'),
+            'notif_trial_habis_template' => WhatsAppMessageTemplate::get('notif_trial_habis'),
         ]);
     }
 
@@ -71,6 +77,19 @@ class WhatsAppSettingsPage extends Page implements HasForms
                         ->required()
                         ->rows(8)
                         ->helperText('Placeholder yang bisa dipakai: {nama_pesantren}, {sisa_hari}, {tanggal_expired}, {link_billing}.'),
+                ]),
+            Section::make('Notifikasi Trial/Langganan Habis')
+                ->description('Pengecualian sempit kedua atas kebijakan WhatsApp manual (PRD §12) — notifikasi sekali saat status baru saja berubah ke expired, tidak memengaruhi fitur WA lain.')
+                ->schema([
+                    Toggle::make('notif_trial_habis_enabled')
+                        ->label('Kirim notifikasi WhatsApp saat langganan baru saja expired')
+                        ->helperText('Matikan sebagai kill-switch cepat, misalnya saat gateway Fonnte bermasalah atau kuota habis, tanpa perlu deploy ulang.')
+                        ->default(true),
+                    Textarea::make('notif_trial_habis_template')
+                        ->label('Template pesan notifikasi expired')
+                        ->required()
+                        ->rows(8)
+                        ->helperText('Placeholder yang bisa dipakai: {nama_pesantren}, {tanggal_expired}, {link_billing}.'),
                 ]),
         ]);
     }
@@ -97,6 +116,9 @@ class WhatsAppSettingsPage extends Page implements HasForms
 
         WhatsAppSetting::set('reminder_expired_enabled', (bool) $state['reminder_expired_enabled']);
         WhatsAppMessageTemplate::set('reminder_expired', $state['reminder_expired_template']);
+
+        WhatsAppSetting::set('notif_trial_habis_enabled', (bool) $state['notif_trial_habis_enabled']);
+        WhatsAppMessageTemplate::set('notif_trial_habis', $state['notif_trial_habis_template']);
 
         Notification::make()
             ->title('Pengaturan WhatsApp berhasil disimpan')
