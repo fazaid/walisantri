@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\NilaiAkademiks;
 
 use App\Filament\Clusters\Akademik;
+use App\Filament\Concerns\HasAdminUstadzAccess;
+use App\Filament\Concerns\ScopesQueryToUstadzSantri;
 use App\Filament\Resources\NilaiAkademiks\Pages\CreateNilaiAkademik;
 use App\Filament\Resources\NilaiAkademiks\Pages\EditNilaiAkademik;
 use App\Filament\Resources\NilaiAkademiks\Pages\ListNilaiAkademik;
@@ -15,11 +17,16 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 
 class NilaiAkademikResource extends Resource
 {
+    use HasAdminUstadzAccess;
+    use ScopesQueryToUstadzSantri;
+
     protected static ?string $model = NilaiAkademik::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedPencilSquare;
@@ -29,53 +36,30 @@ class NilaiAkademikResource extends Resource
     protected static ?int $navigationSort = 2;
 
     protected static ?string $recordTitleAttribute = 'id';
+
     protected static ?string $navigationLabel = 'Nilai';
 
-    public static function getRecordTitle(?\Illuminate\Database\Eloquent\Model $record): \Illuminate\Contracts\Support\Htmlable|string|null
+    public static function getRecordTitle(?Model $record): Htmlable|string|null
     {
         if (! $record) {
             return null;
         }
+
         return $record->santri?->nama_lengkap ?? 'Nilai Akademik';
     }
+
     protected static ?string $modelLabel = 'Nilai Akademik';
+
     protected static ?string $pluralModelLabel = 'Nilai Akademik';
 
-    public static function canViewAny(): bool
+    protected static function ustadzScopeColumn(): string
     {
-        return in_array(Auth::user()?->role, ['admin_pesantren', 'ustadz']);
+        return 'mata_pelajaran_id';
     }
 
-    public static function canCreate(): bool
+    protected static function ustadzScopedIds(): Collection
     {
-        return in_array(Auth::user()?->role, ['admin_pesantren', 'ustadz']);
-    }
-
-    public static function canEdit($record): bool
-    {
-        return in_array(Auth::user()?->role, ['admin_pesantren', 'ustadz']);
-    }
-
-    public static function canDelete($record): bool
-    {
-        return Auth::user()?->role === 'admin_pesantren';
-    }
-
-    public static function canDeleteAny(): bool
-    {
-        return Auth::user()?->role === 'admin_pesantren';
-    }
-
-    public static function getEloquentQuery(): Builder
-    {
-        $query = parent::getEloquentQuery();
-
-        if (Auth::user()?->role === 'ustadz') {
-            $mapelIds = MataPelajaran::where('ustadz_id', Auth::id())->pluck('id');
-            $query->whereIn('mata_pelajaran_id', $mapelIds);
-        }
-
-        return $query;
+        return MataPelajaran::where('ustadz_id', Auth::id())->pluck('id');
     }
 
     public static function form(Schema $schema): Schema
@@ -96,9 +80,9 @@ class NilaiAkademikResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListNilaiAkademik::route('/'),
+            'index' => ListNilaiAkademik::route('/'),
             'create' => CreateNilaiAkademik::route('/create'),
-            'edit'   => EditNilaiAkademik::route('/{record}/edit'),
+            'edit' => EditNilaiAkademik::route('/{record}/edit'),
         ];
     }
 }

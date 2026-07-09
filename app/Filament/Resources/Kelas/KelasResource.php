@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Kelas;
 
 use App\Filament\Clusters\Santri;
+use App\Filament\Concerns\HasAdminOnlyAccess;
 use App\Filament\Resources\Kelas\Pages\CreateKelas;
 use App\Filament\Resources\Kelas\Pages\EditKelas;
 use App\Filament\Resources\Kelas\Pages\ListKelas;
@@ -14,10 +15,11 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Auth;
 
 class KelasResource extends Resource
 {
+    use HasAdminOnlyAccess;
+
     protected static ?string $model = Kelas::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAcademicCap;
@@ -27,34 +29,12 @@ class KelasResource extends Resource
     protected static ?int $navigationSort = 2;
 
     protected static ?string $recordTitleAttribute = 'nama_kelas';
+
     protected static ?string $navigationLabel = 'Kelas';
+
     protected static ?string $modelLabel = 'Kelas';
+
     protected static ?string $pluralModelLabel = 'Data Kelas';
-
-    public static function canViewAny(): bool
-    {
-        return Auth::user()?->role === 'admin_pesantren';
-    }
-
-    public static function canCreate(): bool
-    {
-        return Auth::user()?->role === 'admin_pesantren';
-    }
-
-    public static function canEdit($record): bool
-    {
-        return Auth::user()?->role === 'admin_pesantren';
-    }
-
-    public static function canDelete($record): bool
-    {
-        return Auth::user()?->role === 'admin_pesantren';
-    }
-
-    public static function canDeleteAny(): bool
-    {
-        return Auth::user()?->role === 'admin_pesantren';
-    }
 
     public static function form(Schema $schema): Schema
     {
@@ -74,9 +54,9 @@ class KelasResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListKelas::route('/'),
+            'index' => ListKelas::route('/'),
             'create' => CreateKelas::route('/create'),
-            'edit'   => EditKelas::route('/{record}/edit'),
+            'edit' => EditKelas::route('/{record}/edit'),
         ];
     }
 }

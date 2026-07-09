@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Kamars;
 
 use App\Filament\Clusters\Santri;
+use App\Filament\Concerns\HasAdminOnlyAccess;
 use App\Filament\Resources\Kamars\Pages\CreateKamar;
 use App\Filament\Resources\Kamars\Pages\EditKamar;
 use App\Filament\Resources\Kamars\Pages\ListKamars;
@@ -14,10 +15,11 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Auth;
 
 class KamarResource extends Resource
 {
+    use HasAdminOnlyAccess;
+
     protected static ?string $model = Kamar::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedHome;
@@ -27,34 +29,12 @@ class KamarResource extends Resource
     protected static ?int $navigationSort = 3;
 
     protected static ?string $recordTitleAttribute = 'nama_kamar';
+
     protected static ?string $navigationLabel = 'Kamar';
+
     protected static ?string $modelLabel = 'Kamar';
+
     protected static ?string $pluralModelLabel = 'Data Kamar';
-
-    public static function canViewAny(): bool
-    {
-        return Auth::user()?->role === 'admin_pesantren';
-    }
-
-    public static function canCreate(): bool
-    {
-        return Auth::user()?->role === 'admin_pesantren';
-    }
-
-    public static function canEdit($record): bool
-    {
-        return Auth::user()?->role === 'admin_pesantren';
-    }
-
-    public static function canDelete($record): bool
-    {
-        return Auth::user()?->role === 'admin_pesantren';
-    }
-
-    public static function canDeleteAny(): bool
-    {
-        return Auth::user()?->role === 'admin_pesantren';
-    }
 
     public static function form(Schema $schema): Schema
     {
@@ -74,9 +54,9 @@ class KamarResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListKamars::route('/'),
+            'index' => ListKamars::route('/'),
             'create' => CreateKamar::route('/create'),
-            'edit'   => EditKamar::route('/{record}/edit'),
+            'edit' => EditKamar::route('/{record}/edit'),
         ];
     }
 }

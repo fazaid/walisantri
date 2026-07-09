@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\MataPelajarans;
 
 use App\Filament\Clusters\Akademik;
+use App\Filament\Concerns\HasAdminOnlyAccess;
 use App\Filament\Resources\MataPelajarans\Pages\CreateMataPelajaran;
 use App\Filament\Resources\MataPelajarans\Pages\EditMataPelajaran;
 use App\Filament\Resources\MataPelajarans\Pages\ListMataPelajaran;
@@ -14,10 +15,11 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Auth;
 
 class MataPelajaranResource extends Resource
 {
+    use HasAdminOnlyAccess;
+
     protected static ?string $model = MataPelajaran::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
@@ -27,34 +29,12 @@ class MataPelajaranResource extends Resource
     protected static ?int $navigationSort = 1;
 
     protected static ?string $recordTitleAttribute = 'nama_mapel';
+
     protected static ?string $navigationLabel = 'Pelajaran';
+
     protected static ?string $modelLabel = 'Mata Pelajaran';
+
     protected static ?string $pluralModelLabel = 'Mata Pelajaran';
-
-    public static function canViewAny(): bool
-    {
-        return Auth::user()?->role === 'admin_pesantren';
-    }
-
-    public static function canCreate(): bool
-    {
-        return Auth::user()?->role === 'admin_pesantren';
-    }
-
-    public static function canEdit($record): bool
-    {
-        return Auth::user()?->role === 'admin_pesantren';
-    }
-
-    public static function canDelete($record): bool
-    {
-        return Auth::user()?->role === 'admin_pesantren';
-    }
-
-    public static function canDeleteAny(): bool
-    {
-        return Auth::user()?->role === 'admin_pesantren';
-    }
 
     public static function form(Schema $schema): Schema
     {
@@ -74,9 +54,9 @@ class MataPelajaranResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListMataPelajaran::route('/'),
+            'index' => ListMataPelajaran::route('/'),
             'create' => CreateMataPelajaran::route('/create'),
-            'edit'   => EditMataPelajaran::route('/{record}/edit'),
+            'edit' => EditMataPelajaran::route('/{record}/edit'),
         ];
     }
 }

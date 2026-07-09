@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\EkskulMasters;
 
 use App\Filament\Clusters\Akademik;
+use App\Filament\Concerns\HasAdminOnlyAccess;
 use App\Filament\Resources\EkskulMasters\Pages\CreateEkskulMaster;
 use App\Filament\Resources\EkskulMasters\Pages\EditEkskulMaster;
 use App\Filament\Resources\EkskulMasters\Pages\ListEkskulMasters;
@@ -14,10 +15,11 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Auth;
 
 class EkskulMasterResource extends Resource
 {
+    use HasAdminOnlyAccess;
+
     protected static ?string $model = EkskulMaster::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTrophy;
@@ -27,34 +29,12 @@ class EkskulMasterResource extends Resource
     protected static ?int $navigationSort = 3;
 
     protected static ?string $recordTitleAttribute = 'nama';
+
     protected static ?string $navigationLabel = 'Ekskul';
+
     protected static ?string $modelLabel = 'Ekskul';
+
     protected static ?string $pluralModelLabel = 'Master Ekskul';
-
-    public static function canViewAny(): bool
-    {
-        return Auth::user()?->role === 'admin_pesantren';
-    }
-
-    public static function canCreate(): bool
-    {
-        return Auth::user()?->role === 'admin_pesantren';
-    }
-
-    public static function canEdit($record): bool
-    {
-        return Auth::user()?->role === 'admin_pesantren';
-    }
-
-    public static function canDelete($record): bool
-    {
-        return Auth::user()?->role === 'admin_pesantren';
-    }
-
-    public static function canDeleteAny(): bool
-    {
-        return Auth::user()?->role === 'admin_pesantren';
-    }
 
     public static function form(Schema $schema): Schema
     {
@@ -74,9 +54,9 @@ class EkskulMasterResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListEkskulMasters::route('/'),
+            'index' => ListEkskulMasters::route('/'),
             'create' => CreateEkskulMaster::route('/create'),
-            'edit'   => EditEkskulMaster::route('/{record}/edit'),
+            'edit' => EditEkskulMaster::route('/{record}/edit'),
         ];
     }
 }
