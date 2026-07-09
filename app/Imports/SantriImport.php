@@ -10,6 +10,7 @@ use App\Models\Kelas;
 use App\Models\Pesantren;
 use App\Models\Santri;
 use App\Models\User;
+use App\Services\FonnteWhatsAppService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -31,6 +32,8 @@ class SantriImport implements SkipsEmptyRows, ToCollection, WithHeadingRow
     private array $kamarCache = [];
 
     private array $waliCache = [];
+
+    private array $waliPhoneCache = [];
 
     public function __construct(
         private int $pesantrenId
@@ -90,10 +93,22 @@ class SantriImport implements SkipsEmptyRows, ToCollection, WithHeadingRow
             }
 
             $waliEmail = $this->extractValidWaliEmail($row);
-            if ($waliEmail !== null && ! array_key_exists($waliEmail, $waliSeen)) {
-                $waliSeen[$waliEmail] = true;
-                if ($this->classifyWaliEmail($waliEmail)['status'] === 'not_found') {
-                    $summary['wali_baru']++;
+            $waliNoHp = $this->nullable($row['wali_no_hp'] ?? null);
+
+            if ($waliEmail !== null) {
+                if (! array_key_exists($waliEmail, $waliSeen)) {
+                    $waliSeen[$waliEmail] = true;
+                    if ($this->classifyWaliEmail($waliEmail)['status'] === 'not_found') {
+                        $summary['wali_baru']++;
+                    }
+                }
+            } elseif ($waliNoHp !== null) {
+                $normalized = $this->normalizePhone($waliNoHp);
+                if ($normalized !== null && ! array_key_exists($normalized, $waliSeen)) {
+                    $waliSeen[$normalized] = true;
+                    if ($this->classifyWaliPhone($normalized)['status'] === 'not_found') {
+                        $summary['wali_baru']++;
+                    }
                 }
             }
 
@@ -365,7 +380,11 @@ class SantriImport implements SkipsEmptyRows, ToCollection, WithHeadingRow
         }
 
         if ($emailRaw === null) {
-            $this->errors[] = "Baris {$rowNum}: Data wali diisi tapi wali_email kosong, wali tidak ditautkan (santri tetap dibuat).";
+            if ($noHp !== null) {
+                return $this->resolveWaliByPhone($noHp, $nama, $rowNum);
+            }
+
+            $this->errors[] = "Baris {$rowNum}: Data wali diisi tapi wali_email dan wali_no_hp kosong, wali tidak ditautkan (santri tetap dibuat).";
 
             return null;
         }
@@ -416,6 +435,86 @@ class SantriImport implements SkipsEmptyRows, ToCollection, WithHeadingRow
 
             return $this->waliCache[$cacheKey] = null;
         }
+    }
+
+    /**
+     * Klasifikasi nomor WA wali secara read-only — dipakai bersama oleh
+     * resolveWaliByPhone() (commit sungguhan) dan analyze() (preview). Lookup
+     * di-scope ke pesantren_id (beda dari email yang global) karena nomor HP
+     * tidak unik secara global di tabel users.
+     *
+     * @return array{status: 'not_found'|'reusable'|'conflict_role', user_id?: int}
+     */
+    private function classifyWaliPhone(string $normalized): array
+    {
+        $user = User::where('pesantren_id', $this->pesantrenId)
+            ->where('phone_number', $normalized)
+            ->first();
+
+        if (! $user) {
+            return ['status' => 'not_found'];
+        }
+
+        if ($user->role !== UserRole::WaliSantri->value) {
+            return ['status' => 'conflict_role'];
+        }
+
+        return ['status' => 'reusable', 'user_id' => $user->id];
+    }
+
+    /**
+     * Fallback saat wali_email kosong tapi wali_no_hp diisi — admin pesantren
+     * sering cuma punya nomor WA wali, bukan email. Magic link portal wali
+     * (VerifyMagicToken) tidak butuh email sama sekali, cuma butuh
+     * santri.wali_santri_id menunjuk ke User yang valid.
+     */
+    private function resolveWaliByPhone(string $noHpRaw, ?string $nama, int $rowNum): ?int
+    {
+        $normalized = $this->normalizePhone($noHpRaw);
+
+        if ($normalized === null) {
+            $this->errors[] = "Baris {$rowNum}: Format wali_no_hp '{$noHpRaw}' tidak valid, wali tidak ditautkan (santri tetap dibuat).";
+
+            return null;
+        }
+
+        if (array_key_exists($normalized, $this->waliPhoneCache)) {
+            return $this->waliPhoneCache[$normalized];
+        }
+
+        $classification = $this->classifyWaliPhone($normalized);
+
+        if ($classification['status'] === 'reusable') {
+            return $this->waliPhoneCache[$normalized] = $classification['user_id'];
+        }
+
+        if ($classification['status'] === 'conflict_role') {
+            $this->errors[] = "Baris {$rowNum}: No HP wali '{$noHpRaw}' sudah terdaftar dengan peran lain (bukan Wali Santri), wali tidak ditautkan (santri tetap dibuat).";
+
+            return $this->waliPhoneCache[$normalized] = null;
+        }
+
+        try {
+            $user = User::create([
+                'pesantren_id' => $this->pesantrenId,
+                'name' => $nama ?? $noHpRaw,
+                'email' => null,
+                'phone_number' => $normalized,
+                'password' => Str::password(12),
+                'role' => UserRole::WaliSantri->value,
+            ]);
+
+            return $this->waliPhoneCache[$normalized] = $user->id;
+        } catch (\Throwable $e) {
+            $this->errors[] = "Baris {$rowNum}: Gagal membuat akun wali baru untuk no HP '{$noHpRaw}' ({$e->getMessage()}).";
+
+            return $this->waliPhoneCache[$normalized] = null;
+        }
+    }
+
+    private function normalizePhone(string $phone): ?string
+    {
+        return (new FonnteWhatsAppService)->normalizePhoneNumber($phone);
     }
 
     private function nullable(mixed $value): ?string

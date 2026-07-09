@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Models\Pesantren;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 
 class UserForm
@@ -22,9 +23,13 @@ class UserForm
                 TextInput::make('email')
                     ->label('Email')
                     ->email()
-                    ->required()
+                    ->required(fn (Get $get) => $get('role') !== UserRole::WaliSantri->value)
                     ->unique(ignoreRecord: true)
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->dehydrateStateUsing(fn (?string $state) => filled($state) ? $state : null)
+                    ->helperText(fn (Get $get) => $get('role') === UserRole::WaliSantri->value
+                        ? 'Boleh dikosongkan kalau wali cuma punya nomor WhatsApp — magic link portal wali tetap bisa dipakai tanpa email.'
+                        : null),
 
                 TextInput::make('phone_number')
                     ->label('No. Telepon')
@@ -39,11 +44,13 @@ class UserForm
                         if (auth()->user()?->role === UserRole::AdminPesantren->value) {
                             unset($options[UserRole::SuperAdmin->value]);
                         }
+
                         return $options;
                     })
                     ->default(fn (): string => UserRole::tryFrom((string) request()->query('role'))?->value
                         ?? UserRole::WaliSantri->value)
                     ->required()
+                    ->live()
                     ->native(false),
 
                 Select::make('pesantren_id')

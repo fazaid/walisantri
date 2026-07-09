@@ -10,6 +10,7 @@ use App\Models\Santri;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
+use PhpOffice\PhpSpreadsheet\Shared\Date;
 use Tests\TestCase;
 
 class SantriImportTest extends TestCase
@@ -24,7 +25,7 @@ class SantriImportTest extends TestCase
     public function test_import_baris_valid_membuat_santri_baru(): void
     {
         $pesantren = $this->makePesantren();
-        $import    = new SantriImport($pesantren->id);
+        $import = new SantriImport($pesantren->id);
 
         $import->collection(new Collection([
             ['nis' => '2024001', 'nama_lengkap' => 'Ahmad Fauzi'],
@@ -43,7 +44,7 @@ class SantriImportTest extends TestCase
     public function test_import_baris_tanpa_nis_atau_nama_dilewati(): void
     {
         $pesantren = $this->makePesantren();
-        $import    = new SantriImport($pesantren->id);
+        $import = new SantriImport($pesantren->id);
 
         $import->collection(new Collection([
             ['nis' => '', 'nama_lengkap' => 'Tanpa NIS'],
@@ -74,7 +75,7 @@ class SantriImportTest extends TestCase
     public function test_import_nis_bekas_santri_yang_dihapus_dilewati(): void
     {
         $pesantren = $this->makePesantren();
-        $lama      = Santri::factory()->create(['pesantren_id' => $pesantren->id, 'nis' => '2024004']);
+        $lama = Santri::factory()->create(['pesantren_id' => $pesantren->id, 'nis' => '2024004']);
         $lama->delete();
 
         $import = new SantriImport($pesantren->id);
@@ -105,7 +106,7 @@ class SantriImportTest extends TestCase
     public function test_import_parse_tanggal_lahir_format_dd_mm_yyyy_dengan_benar(): void
     {
         $pesantren = $this->makePesantren();
-        $import    = new SantriImport($pesantren->id);
+        $import = new SantriImport($pesantren->id);
 
         $import->collection(new Collection([
             // Hari & bulan sama-sama <= 12 — kasus yang dulu tertukar jadi M/D/Y.
@@ -124,7 +125,7 @@ class SantriImportTest extends TestCase
     public function test_import_tanggal_lahir_format_tidak_valid_kolom_diabaikan(): void
     {
         $pesantren = $this->makePesantren();
-        $import    = new SantriImport($pesantren->id);
+        $import = new SantriImport($pesantren->id);
 
         $import->collection(new Collection([
             ['nis' => '2024008', 'nama_lengkap' => 'Tanggal Rusak', 'tanggal_lahir' => 'bukan-tanggal'],
@@ -141,9 +142,9 @@ class SantriImportTest extends TestCase
     public function test_import_tanggal_lahir_dari_serial_excel_numerik(): void
     {
         $pesantren = $this->makePesantren();
-        $import    = new SantriImport($pesantren->id);
+        $import = new SantriImport($pesantren->id);
 
-        $serial = \PhpOffice\PhpSpreadsheet\Shared\Date::dateTimeToExcel(new \DateTime('2011-07-20'));
+        $serial = Date::dateTimeToExcel(new \DateTime('2011-07-20'));
 
         $import->collection(new Collection([
             ['nis' => '2024009', 'nama_lengkap' => 'Dari Serial Excel', 'tanggal_lahir' => $serial],
@@ -156,8 +157,8 @@ class SantriImportTest extends TestCase
     public function test_import_resolve_kelas_dan_kamar_berdasarkan_nama(): void
     {
         $pesantren = $this->makePesantren();
-        $kelas     = Kelas::factory()->create(['pesantren_id' => $pesantren->id, 'nama_kelas' => 'Tahfidz 1']);
-        $kamar     = Kamar::create(['pesantren_id' => $pesantren->id, 'nama_kamar' => 'Kamar A', 'kapasitas' => 10]);
+        $kelas = Kelas::factory()->create(['pesantren_id' => $pesantren->id, 'nama_kelas' => 'Tahfidz 1']);
+        $kamar = Kamar::create(['pesantren_id' => $pesantren->id, 'nama_kamar' => 'Kamar A', 'kapasitas' => 10]);
 
         $import = new SantriImport($pesantren->id);
         $import->collection(new Collection([
@@ -173,8 +174,8 @@ class SantriImportTest extends TestCase
     public function test_import_resolve_kelas_dan_kamar_tidak_case_sensitive(): void
     {
         $pesantren = $this->makePesantren();
-        $kelas     = Kelas::factory()->create(['pesantren_id' => $pesantren->id, 'nama_kelas' => 'Tahfidz 1']);
-        $kamar     = Kamar::create(['pesantren_id' => $pesantren->id, 'nama_kamar' => 'Kamar Mawar', 'kapasitas' => 10]);
+        $kelas = Kelas::factory()->create(['pesantren_id' => $pesantren->id, 'nama_kelas' => 'Tahfidz 1']);
+        $kamar = Kamar::create(['pesantren_id' => $pesantren->id, 'nama_kamar' => 'Kamar Mawar', 'kapasitas' => 10]);
 
         $import = new SantriImport($pesantren->id);
         $import->collection(new Collection([
@@ -210,7 +211,7 @@ class SantriImportTest extends TestCase
     public function test_import_resolve_jenis_kelamin_berbagai_format_teks(): void
     {
         $pesantren = $this->makePesantren();
-        $import    = new SantriImport($pesantren->id);
+        $import = new SantriImport($pesantren->id);
 
         $import->collection(new Collection([
             ['nis' => '2024012', 'nama_lengkap' => 'A', 'jenis_kelamin' => 'L'],
@@ -229,7 +230,7 @@ class SantriImportTest extends TestCase
     public function test_import_jenis_kelamin_tidak_dikenali_menghasilkan_warning(): void
     {
         $pesantren = $this->makePesantren();
-        $import    = new SantriImport($pesantren->id);
+        $import = new SantriImport($pesantren->id);
 
         $import->collection(new Collection([
             ['nis' => '2024016', 'nama_lengkap' => 'Gender Aneh', 'jenis_kelamin' => 'tidak diketahui'],
@@ -244,7 +245,7 @@ class SantriImportTest extends TestCase
     public function test_import_resolve_status_aktif_berbagai_format_teks(): void
     {
         $pesantren = $this->makePesantren();
-        $import    = new SantriImport($pesantren->id);
+        $import = new SantriImport($pesantren->id);
 
         $import->collection(new Collection([
             ['nis' => '2024022', 'nama_lengkap' => 'Aktif Eksplisit', 'status' => 'Aktif'],
@@ -263,7 +264,7 @@ class SantriImportTest extends TestCase
     public function test_import_status_tidak_dikenali_dianggap_aktif_dengan_warning(): void
     {
         $pesantren = $this->makePesantren();
-        $import    = new SantriImport($pesantren->id);
+        $import = new SantriImport($pesantren->id);
 
         $import->collection(new Collection([
             ['nis' => '2024025', 'nama_lengkap' => 'Status Aneh', 'status' => 'entahlah'],
@@ -320,7 +321,7 @@ class SantriImportTest extends TestCase
         $lama = Santri::factory()->create(['pesantren_id' => $pesantren->id, 'nis' => '2024030']);
         $lama->delete();
 
-        $import    = new SantriImport($pesantren->id);
+        $import = new SantriImport($pesantren->id);
         $ringkasan = $import->analyze(new Collection([
             ['nis' => '2024027', 'nama_lengkap' => 'Akan Sukses 1'],
             ['nis' => '2024030', 'nama_lengkap' => 'Pakai NIS Bekas'],
@@ -330,12 +331,12 @@ class SantriImportTest extends TestCase
         ]));
 
         $this->assertSame([
-            'total'             => 5,
-            'akan_diimpor'      => 2,
-            'duplikat'          => 1,
+            'total' => 5,
+            'akan_diimpor' => 2,
+            'duplikat' => 1,
             'data_wajib_kosong' => 1,
-            'melebihi_kuota'    => 1,
-            'wali_baru'         => 0,
+            'melebihi_kuota' => 1,
+            'wali_baru' => 0,
         ], $ringkasan);
 
         // analyze() tidak boleh menulis apa pun ke database.
@@ -382,7 +383,7 @@ class SantriImportTest extends TestCase
     public function test_import_wali_baru_dibuat_dan_ditautkan_saat_email_baru(): void
     {
         $pesantren = $this->makePesantren();
-        $import    = new SantriImport($pesantren->id);
+        $import = new SantriImport($pesantren->id);
 
         $import->collection(new Collection([
             ['nis' => '3001', 'nama_lengkap' => 'Anak A', 'wali_nama' => 'Bapak Anu', 'wali_email' => 'bapak.anu@example.com', 'wali_no_hp' => '081211112222'],
@@ -405,7 +406,7 @@ class SantriImportTest extends TestCase
     public function test_import_wali_kosong_semua_kolom_tidak_diproses(): void
     {
         $pesantren = $this->makePesantren();
-        $import    = new SantriImport($pesantren->id);
+        $import = new SantriImport($pesantren->id);
 
         $import->collection(new Collection([
             ['nis' => '3002', 'nama_lengkap' => 'Tanpa Wali'],
@@ -415,10 +416,10 @@ class SantriImportTest extends TestCase
         $this->assertNull(Santri::where('nis', '3002')->first()->wali_santri_id);
     }
 
-    public function test_import_wali_email_kosong_tapi_kolom_wali_lain_diisi_menghasilkan_warning(): void
+    public function test_import_wali_email_dan_no_hp_kosong_tapi_kolom_wali_lain_diisi_menghasilkan_warning(): void
     {
         $pesantren = $this->makePesantren();
-        $import    = new SantriImport($pesantren->id);
+        $import = new SantriImport($pesantren->id);
 
         $import->collection(new Collection([
             ['nis' => '3003', 'nama_lengkap' => 'Wali Tanpa Email', 'wali_nama' => 'Ibu Fulan'],
@@ -427,13 +428,74 @@ class SantriImportTest extends TestCase
         $this->assertSame(1, $import->imported);
         $this->assertNull(Santri::where('nis', '3003')->first()->wali_santri_id);
         $this->assertCount(1, $import->errors);
-        $this->assertStringContainsString('wali_email kosong', $import->errors[0]);
+        $this->assertStringContainsString('wali_email dan wali_no_hp kosong', $import->errors[0]);
+    }
+
+    public function test_import_wali_baru_dibuat_dan_ditautkan_saat_hanya_no_hp_diisi(): void
+    {
+        $pesantren = $this->makePesantren();
+        $import = new SantriImport($pesantren->id);
+
+        $import->collection(new Collection([
+            ['nis' => '3030', 'nama_lengkap' => 'Anak WA', 'wali_nama' => 'Bapak WA', 'wali_no_hp' => '081211112223'],
+        ]));
+
+        $this->assertSame(1, $import->imported);
+        $this->assertSame([], $import->errors);
+
+        $santri = Santri::where('nis', '3030')->first();
+        $this->assertNotNull($santri->wali_santri_id);
+
+        $wali = User::find($santri->wali_santri_id);
+        $this->assertSame('Bapak WA', $wali->name);
+        $this->assertNull($wali->email);
+        $this->assertSame('6281211112223', $wali->phone_number);
+        $this->assertSame('wali_santri', $wali->role);
+        $this->assertSame($pesantren->id, $wali->pesantren_id);
+    }
+
+    public function test_import_wali_no_hp_format_beda_dianggap_sama_untuk_kakak_adik(): void
+    {
+        $pesantren = $this->makePesantren();
+        $import = new SantriImport($pesantren->id);
+
+        $import->collection(new Collection([
+            ['nis' => '3031', 'nama_lengkap' => 'Kakak WA', 'wali_no_hp' => '081234567890'],
+            ['nis' => '3032', 'nama_lengkap' => 'Adik WA', 'wali_no_hp' => '6281234567890'],
+        ]));
+
+        $this->assertSame([], $import->errors);
+
+        $kakak = Santri::where('nis', '3031')->first();
+        $adik = Santri::where('nis', '3032')->first();
+
+        $this->assertNotNull($kakak->wali_santri_id);
+        $this->assertSame($kakak->wali_santri_id, $adik->wali_santri_id);
+    }
+
+    public function test_import_wali_no_hp_conflict_role_lain_di_pesantren_sama(): void
+    {
+        $pesantren = $this->makePesantren();
+        $ustadz = User::factory()->ustadz()->create([
+            'pesantren_id' => $pesantren->id,
+            'phone_number' => '6281299998888',
+        ]);
+
+        $import = new SantriImport($pesantren->id);
+        $import->collection(new Collection([
+            ['nis' => '3033', 'nama_lengkap' => 'Conflict Role WA', 'wali_no_hp' => '081299998888'],
+        ]));
+
+        $this->assertNull(Santri::where('nis', '3033')->first()->wali_santri_id);
+        $this->assertCount(1, $import->errors);
+        $this->assertStringContainsString('peran lain', $import->errors[0]);
+        $this->assertSame('ustadz', $ustadz->fresh()->role);
     }
 
     public function test_import_wali_email_format_tidak_valid_menghasilkan_warning(): void
     {
         $pesantren = $this->makePesantren();
-        $import    = new SantriImport($pesantren->id);
+        $import = new SantriImport($pesantren->id);
 
         $import->collection(new Collection([
             ['nis' => '3004', 'nama_lengkap' => 'Email Salah', 'wali_email' => 'bukan-email'],
@@ -448,7 +510,7 @@ class SantriImportTest extends TestCase
     public function test_import_wali_dua_baris_email_sama_ditautkan_ke_user_yang_sama(): void
     {
         $pesantren = $this->makePesantren();
-        $import    = new SantriImport($pesantren->id);
+        $import = new SantriImport($pesantren->id);
 
         $import->collection(new Collection([
             ['nis' => '3005', 'nama_lengkap' => 'Kakak', 'wali_nama' => 'Bapak Kel', 'wali_email' => 'satu-keluarga@example.com'],
@@ -456,7 +518,7 @@ class SantriImportTest extends TestCase
         ]));
 
         $kakak = Santri::where('nis', '3005')->first();
-        $adik  = Santri::where('nis', '3006')->first();
+        $adik = Santri::where('nis', '3006')->first();
 
         $this->assertNotNull($kakak->wali_santri_id);
         $this->assertSame($kakak->wali_santri_id, $adik->wali_santri_id);
@@ -466,7 +528,7 @@ class SantriImportTest extends TestCase
     public function test_import_wali_email_case_insensitive_dianggap_sama(): void
     {
         $pesantren = $this->makePesantren();
-        $import    = new SantriImport($pesantren->id);
+        $import = new SantriImport($pesantren->id);
 
         $import->collection(new Collection([
             ['nis' => '3007', 'nama_lengkap' => 'A', 'wali_email' => 'Case@Example.com'],
@@ -483,10 +545,10 @@ class SantriImportTest extends TestCase
     public function test_import_wali_email_reuse_existing_wali_di_pesantren_sama(): void
     {
         $pesantren = $this->makePesantren();
-        $existing  = User::factory()->waliSantri()->create([
+        $existing = User::factory()->waliSantri()->create([
             'pesantren_id' => $pesantren->id,
-            'email'        => 'sudah-ada@example.com',
-            'name'         => 'Wali Lama',
+            'email' => 'sudah-ada@example.com',
+            'name' => 'Wali Lama',
         ]);
 
         $import = new SantriImport($pesantren->id);
@@ -505,9 +567,9 @@ class SantriImportTest extends TestCase
     public function test_import_wali_email_conflict_role_lain_di_pesantren_sama(): void
     {
         $pesantren = $this->makePesantren();
-        $ustadz    = User::factory()->ustadz()->create([
+        $ustadz = User::factory()->ustadz()->create([
             'pesantren_id' => $pesantren->id,
-            'email'        => 'ustadz@example.com',
+            'email' => 'ustadz@example.com',
         ]);
 
         $import = new SantriImport($pesantren->id);
@@ -525,9 +587,9 @@ class SantriImportTest extends TestCase
     {
         $pesantrenA = $this->makePesantren();
         $pesantrenB = $this->makePesantren();
-        $waliB      = User::factory()->waliSantri()->create([
+        $waliB = User::factory()->waliSantri()->create([
             'pesantren_id' => $pesantrenB->id,
-            'email'        => 'lintas-tenant@example.com',
+            'email' => 'lintas-tenant@example.com',
         ]);
 
         $import = new SantriImport($pesantrenA->id);
@@ -544,21 +606,21 @@ class SantriImportTest extends TestCase
     public function test_import_wali_nama_kosong_fallback_ke_email(): void
     {
         $pesantren = $this->makePesantren();
-        $import    = new SantriImport($pesantren->id);
+        $import = new SantriImport($pesantren->id);
 
         $import->collection(new Collection([
             ['nis' => '3012', 'nama_lengkap' => 'Tanpa Nama Wali', 'wali_email' => 'noname@example.com'],
         ]));
 
         $santri = Santri::where('nis', '3012')->first();
-        $wali   = User::find($santri->wali_santri_id);
+        $wali = User::find($santri->wali_santri_id);
         $this->assertSame('noname@example.com', $wali->name);
     }
 
     public function test_import_wali_password_diacak_dan_di_hash(): void
     {
         $pesantren = $this->makePesantren();
-        $import    = new SantriImport($pesantren->id);
+        $import = new SantriImport($pesantren->id);
 
         $import->collection(new Collection([
             ['nis' => '3013', 'nama_lengkap' => 'A', 'wali_email' => 'pw1@example.com'],
@@ -575,9 +637,9 @@ class SantriImportTest extends TestCase
     public function test_analyze_menghitung_wali_baru(): void
     {
         $pesantren = $this->makePesantren();
-        $existing  = User::factory()->waliSantri()->create([
+        $existing = User::factory()->waliSantri()->create([
             'pesantren_id' => $pesantren->id,
-            'email'        => 'existing@example.com',
+            'email' => 'existing@example.com',
         ]);
 
         $userCountSebelum = User::count();
