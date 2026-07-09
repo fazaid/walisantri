@@ -96,11 +96,12 @@ class MasterPengumumanResource extends Resource
         $user = Auth::user();
 
         if ($user?->role === UserRole::SuperAdmin->value) {
-            return parent::getEloquentQuery()->withoutGlobalScopes();
+            return parent::getEloquentQuery()->withoutGlobalScopes()->with('pesantren');
         }
 
         return parent::getEloquentQuery()
             ->withoutGlobalScopes()
+            ->with('pesantren')
             ->where(function (Builder $query) use ($user) {
                 $query->where('pesantren_id', $user->pesantren_id)
                     ->orWhereNull('pesantren_id');
