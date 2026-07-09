@@ -46,6 +46,7 @@ class BillingSettingsPage extends Page implements HasForms
     public int $kuota_maju_base           = 0;
     public int $bonus_bulan_enam          = 0;
     public int $bonus_bulan_tahunan       = 0;
+    public int $trial_days                = 0;
 
     public static function canAccess(): bool
     {
@@ -103,6 +104,16 @@ class BillingSettingsPage extends Page implements HasForms
                     TextInput::make('kuota_maju_base')
                         ->label('Maju (dasar)')->numeric()->minValue(1)->required()
                         ->suffix('santri'),
+                ]),
+
+            Section::make('Masa Trial')
+                ->columns(2)
+                ->schema([
+                    TextInput::make('trial_days')
+                        ->label('Masa Trial Rintisan')
+                        ->numeric()->minValue(1)->required()
+                        ->suffix('hari')
+                        ->helperText('Lama akses trial gratis saat pesantren baru mendaftar mandiri lewat /register.'),
                 ]),
 
             Section::make('Diskon Durasi Berlangganan')

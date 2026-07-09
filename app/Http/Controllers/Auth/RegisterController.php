@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\BillingSetting;
 use App\Models\PlatformSetting;
 use App\Rules\SlugNotReserved;
 use App\Rules\ValidTenantSlug;
@@ -21,6 +22,7 @@ class RegisterController extends Controller
 
         return view('auth.register', [
             'registrationOpen' => PlatformSetting::registrationOpen(),
+            'trialDays'         => BillingSetting::get('trial_days', 14),
         ]);
     }
 

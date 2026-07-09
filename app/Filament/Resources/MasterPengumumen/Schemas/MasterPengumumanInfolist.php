@@ -18,6 +18,11 @@ class MasterPengumumanInfolist
             ->components([
                 Section::make('Pengumuman')->schema([
                     TextEntry::make('judul_maklumat')->label('Judul'),
+                    TextEntry::make('pesantren.nama_pesantren')
+                        ->label('Pesantren')
+                        ->badge()
+                        ->color(fn ($record): string => $record->pesantren_id === null ? 'gray' : 'info')
+                        ->formatStateUsing(fn ($state, $record): string => $record->pesantren_id === null ? 'Global (Semua Pesantren)' : $state),
                     TextEntry::make('target_audience')
                         ->label('Kepada')
                         ->badge()

@@ -3,12 +3,15 @@
 namespace App\Imports;
 
 use App\Enums\JenisKelamin;
+use App\Enums\UserRole;
 use App\Exceptions\SantriQuotaExceededException;
 use App\Models\Kamar;
 use App\Models\Kelas;
 use App\Models\Pesantren;
 use App\Models\Santri;
+use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
@@ -25,6 +28,8 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
 
     private array $kamarCache = [];
 
+    private array $waliCache = [];
+
     public function __construct(
         private int $pesantrenId
     ) {}
@@ -34,7 +39,7 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
      * konfirmasi import. Meniru aturan skip yang sama seperti collection() (data
      * wajib kosong, NIS duplikat termasuk soft-deleted, kuota santri aktif).
      *
-     * @return array{total: int, akan_diimpor: int, duplikat: int, data_wajib_kosong: int, melebihi_kuota: int}
+     * @return array{total: int, akan_diimpor: int, duplikat: int, data_wajib_kosong: int, melebihi_kuota: int, wali_baru: int}
      */
     public function analyze(Collection $rows): array
     {
@@ -44,11 +49,13 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
             'duplikat'          => 0,
             'data_wajib_kosong' => 0,
             'melebihi_kuota'    => 0,
+            'wali_baru'         => 0,
         ];
 
         $pesantren         = Pesantren::find($this->pesantrenId);
         $sisaKuota         = $pesantren ? max(0, $pesantren->max_santri_kuota - $pesantren->jumlahSantriAktif()) : PHP_INT_MAX;
         $akanMenambahAktif = 0;
+        $waliSeen          = [];
 
         foreach ($rows as $row) {
             $summary['total']++;
@@ -72,6 +79,14 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
                     continue;
                 }
                 $akanMenambahAktif++;
+            }
+
+            $waliEmail = $this->extractValidWaliEmail($row);
+            if ($waliEmail !== null && ! array_key_exists($waliEmail, $waliSeen)) {
+                $waliSeen[$waliEmail] = true;
+                if ($this->classifyWaliEmail($waliEmail)['status'] === 'not_found') {
+                    $summary['wali_baru']++;
+                }
             }
 
             $summary['akan_diimpor']++;
@@ -105,6 +120,7 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
             $kelasId      = $this->resolveKelas($row['kelas'] ?? null, $rowNum);
             $kamarId      = $this->resolveKamar($row['kamar'] ?? null, $rowNum);
             $statusAktif  = $this->resolveStatusAktif($row['status'] ?? null, $rowNum);
+            $waliSantriId = $this->resolveWali($row, $rowNum);
 
             try {
                 Santri::create([
@@ -122,6 +138,7 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
                     'kelas_id'       => $kelasId,
                     'kamar_id'       => $kamarId,
                     'status_aktif'   => $statusAktif,
+                    'wali_santri_id' => $waliSantriId,
                 ]);
 
                 $this->imported++;
@@ -247,6 +264,107 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
         }
 
         return $this->kamarCache[$cacheKey];
+    }
+
+    private function isValidEmailFormat(string $email): bool
+    {
+        return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
+    }
+
+    private function extractValidWaliEmail(array $row): ?string
+    {
+        $email = $this->nullable($row['wali_email'] ?? null);
+
+        if ($email === null || ! $this->isValidEmailFormat($email)) {
+            return null;
+        }
+
+        return mb_strtolower($email);
+    }
+
+    /**
+     * Klasifikasi email wali secara read-only — dipakai bersama oleh resolveWali()
+     * (commit sungguhan) dan analyze() (preview). Lookup GLOBAL tanpa scope
+     * pesantren_id karena email unik secara global di tabel users.
+     *
+     * @return array{status: 'not_found'|'reusable'|'conflict_pesantren'|'conflict_role', user_id?: int}
+     */
+    private function classifyWaliEmail(string $emailLower): array
+    {
+        $user = User::whereRaw('LOWER(email) = ?', [$emailLower])->first();
+
+        if (! $user) {
+            return ['status' => 'not_found'];
+        }
+
+        if ((int) $user->pesantren_id !== $this->pesantrenId) {
+            return ['status' => 'conflict_pesantren'];
+        }
+
+        if ($user->role !== UserRole::WaliSantri->value) {
+            return ['status' => 'conflict_role'];
+        }
+
+        return ['status' => 'reusable', 'user_id' => $user->id];
+    }
+
+    private function resolveWali(array $row, int $rowNum): ?int
+    {
+        $nama     = $this->nullable($row['wali_nama'] ?? null);
+        $noHp     = $this->nullable($row['wali_no_hp'] ?? null);
+        $emailRaw = $this->nullable($row['wali_email'] ?? null);
+
+        if ($nama === null && $emailRaw === null && $noHp === null) {
+            return null;
+        }
+
+        if ($emailRaw === null) {
+            $this->errors[] = "Baris {$rowNum}: Data wali diisi tapi wali_email kosong, wali tidak ditautkan (santri tetap dibuat).";
+            return null;
+        }
+
+        if (! $this->isValidEmailFormat($emailRaw)) {
+            $this->errors[] = "Baris {$rowNum}: Format wali_email '{$emailRaw}' tidak valid, wali tidak ditautkan (santri tetap dibuat).";
+            return null;
+        }
+
+        $cacheKey = mb_strtolower($emailRaw);
+
+        if (array_key_exists($cacheKey, $this->waliCache)) {
+            return $this->waliCache[$cacheKey];
+        }
+
+        $classification = $this->classifyWaliEmail($cacheKey);
+
+        if ($classification['status'] === 'reusable') {
+            return $this->waliCache[$cacheKey] = $classification['user_id'];
+        }
+
+        if ($classification['status'] === 'conflict_pesantren') {
+            $this->errors[] = "Baris {$rowNum}: Email wali '{$emailRaw}' sudah terdaftar di pesantren lain, wali tidak ditautkan (santri tetap dibuat).";
+            return $this->waliCache[$cacheKey] = null;
+        }
+
+        if ($classification['status'] === 'conflict_role') {
+            $this->errors[] = "Baris {$rowNum}: Email wali '{$emailRaw}' sudah terdaftar dengan peran lain (bukan Wali Santri), wali tidak ditautkan (santri tetap dibuat).";
+            return $this->waliCache[$cacheKey] = null;
+        }
+
+        try {
+            $user = User::create([
+                'pesantren_id' => $this->pesantrenId,
+                'name'         => $nama ?? $emailRaw,
+                'email'        => $emailRaw,
+                'phone_number' => $noHp,
+                'password'     => Str::password(12),
+                'role'         => UserRole::WaliSantri->value,
+            ]);
+
+            return $this->waliCache[$cacheKey] = $user->id;
+        } catch (\Throwable $e) {
+            $this->errors[] = "Baris {$rowNum}: Gagal membuat akun wali baru untuk '{$emailRaw}' ({$e->getMessage()}).";
+            return $this->waliCache[$cacheKey] = null;
+        }
     }
 
     private function nullable(mixed $value): ?string

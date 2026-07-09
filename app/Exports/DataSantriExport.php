@@ -38,8 +38,9 @@ class DataSantriExport implements FromCollection, WithHeadings, WithMapping, Wit
             'Kelas',
             'Kamar',
             'Ustadz Pembimbing',
-            'Wali Santri',
-            'No HP Wali',
+            'Wali Nama',
+            'Wali Email',
+            'Wali No Hp',
             'Status',
         ];
     }
@@ -61,6 +62,7 @@ class DataSantriExport implements FromCollection, WithHeadings, WithMapping, Wit
             $santri->kamar?->nama_kamar,
             $santri->pembimbing?->name,
             $santri->wali?->name,
+            $santri->wali?->email,
             $santri->wali?->phone_number,
             $santri->status_aktif ? 'Aktif' : 'Non-Aktif',
         ];
