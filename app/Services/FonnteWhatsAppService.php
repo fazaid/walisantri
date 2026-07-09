@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\WhatsAppGatewaySetting;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -28,8 +29,8 @@ class FonnteWhatsAppService
         }
 
         $response = Http::withHeaders([
-                'Authorization' => config('services.fonnte.token'),
-            ])
+            'Authorization' => WhatsAppGatewaySetting::get('fonnte_token') ?: config('services.fonnte.token'),
+        ])
             ->asForm()
             ->timeout(10)
             ->post(config('services.fonnte.url'), [

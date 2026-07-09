@@ -3,11 +3,14 @@
 namespace App\Filament\Pages;
 
 use App\Enums\UserRole;
+use App\Models\WhatsAppGatewaySetting;
 use App\Models\WhatsAppMessageTemplate;
 use App\Models\WhatsAppSetting;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
@@ -51,6 +54,10 @@ class WhatsAppSettingsPage extends Page implements HasForms
 
     public string $notif_order_dikonfirmasi_template = '';
 
+    public ?string $fonnte_token = null;
+
+    public ?string $fonnte_token_last4 = null;
+
     public static function canAccess(): bool
     {
         return auth()->user()?->role === UserRole::SuperAdmin->value;
@@ -58,6 +65,8 @@ class WhatsAppSettingsPage extends Page implements HasForms
 
     public function mount(): void
     {
+        $this->refreshFonnteTokenIndicator();
+
         $this->form->fill([
             'reminder_expired_enabled' => WhatsAppSetting::get('reminder_expired_enabled'),
             'reminder_expired_template' => WhatsAppMessageTemplate::get('reminder_expired'),
@@ -66,6 +75,17 @@ class WhatsAppSettingsPage extends Page implements HasForms
             'notif_order_dikonfirmasi_enabled' => WhatsAppSetting::get('notif_order_dikonfirmasi_enabled'),
             'notif_order_dikonfirmasi_template' => WhatsAppMessageTemplate::get('notif_order_dikonfirmasi'),
         ]);
+    }
+
+    // Token TIDAK PERNAH di-prefill ke field form — Livewire menyerialisasi public
+    // property ke wire:snapshot di HTML, jadi nilai asli akan bocor ke DOM meski
+    // tampil masked secara visual. Hanya 4 karakter terakhir yang aman ditampilkan.
+    private function refreshFonnteTokenIndicator(): void
+    {
+        $this->fonnte_token = null;
+
+        $token = WhatsAppGatewaySetting::get('fonnte_token');
+        $this->fonnte_token_last4 = $token ? substr($token, -4) : null;
     }
 
     public function form(Schema $schema): Schema
@@ -110,6 +130,21 @@ class WhatsAppSettingsPage extends Page implements HasForms
                         ->rows(8)
                         ->helperText('Placeholder yang bisa dipakai: {nama_pesantren}, {paket}, {durasi_bulan}, {tanggal_expired}, {nomor_order}, {total_dibayar}, {link_billing}.'),
                 ]),
+            Section::make('Koneksi Gateway Fonnte')
+                ->description('Token API akun Fonnte yang dipakai untuk mengirim SEMUA notifikasi WhatsApp platform. Mengganti token di sini langsung berlaku tanpa redeploy/edit .env server.')
+                ->schema([
+                    Placeholder::make('fonnte_token_status')
+                        ->label('Token saat ini')
+                        ->content(fn () => $this->fonnte_token_last4
+                            ? "Tersimpan di database, berakhiran ...{$this->fonnte_token_last4}"
+                            : 'Belum diatur di database — memakai FONNTE_TOKEN dari .env server.'),
+                    TextInput::make('fonnte_token')
+                        ->label('Token Fonnte baru')
+                        ->password()
+                        ->revealable()
+                        ->dehydrated(fn (?string $state): bool => filled($state))
+                        ->helperText('Kosongkan jika tidak ingin mengubah token yang sudah tersimpan. Diisi hanya saat ingin mengganti/rotasi token.'),
+                ]),
         ]);
     }
 
@@ -141,6 +176,12 @@ class WhatsAppSettingsPage extends Page implements HasForms
 
         WhatsAppSetting::set('notif_order_dikonfirmasi_enabled', (bool) $state['notif_order_dikonfirmasi_enabled']);
         WhatsAppMessageTemplate::set('notif_order_dikonfirmasi', $state['notif_order_dikonfirmasi_template']);
+
+        if (isset($state['fonnte_token'])) {
+            WhatsAppGatewaySetting::set('fonnte_token', $state['fonnte_token']);
+        }
+
+        $this->refreshFonnteTokenIndicator();
 
         Notification::make()
             ->title('Pengaturan WhatsApp berhasil disimpan')
