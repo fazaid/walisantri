@@ -6,6 +6,7 @@ use App\Enums\JenisKelamin;
 use App\Exceptions\SantriQuotaExceededException;
 use App\Models\Kamar;
 use App\Models\Kelas;
+use App\Models\Pesantren;
 use App\Models\Santri;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
@@ -27,6 +28,57 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
     public function __construct(
         private int $pesantrenId
     ) {}
+
+    /**
+     * Analisa file tanpa menyimpan apa pun — dipakai untuk preview sebelum admin
+     * konfirmasi import. Meniru aturan skip yang sama seperti collection() (data
+     * wajib kosong, NIS duplikat termasuk soft-deleted, kuota santri aktif).
+     *
+     * @return array{total: int, akan_diimpor: int, duplikat: int, data_wajib_kosong: int, melebihi_kuota: int}
+     */
+    public function analyze(Collection $rows): array
+    {
+        $summary = [
+            'total'             => 0,
+            'akan_diimpor'      => 0,
+            'duplikat'          => 0,
+            'data_wajib_kosong' => 0,
+            'melebihi_kuota'    => 0,
+        ];
+
+        $pesantren         = Pesantren::find($this->pesantrenId);
+        $sisaKuota         = $pesantren ? max(0, $pesantren->max_santri_kuota - $pesantren->jumlahSantriAktif()) : PHP_INT_MAX;
+        $akanMenambahAktif = 0;
+
+        foreach ($rows as $row) {
+            $summary['total']++;
+
+            $nis         = trim((string) ($row['nis'] ?? ''));
+            $namaLengkap = trim((string) ($row['nama_lengkap'] ?? ''));
+
+            if ($nis === '' || $namaLengkap === '') {
+                $summary['data_wajib_kosong']++;
+                continue;
+            }
+
+            if (Santri::withTrashed()->where('pesantren_id', $this->pesantrenId)->where('nis', $nis)->exists()) {
+                $summary['duplikat']++;
+                continue;
+            }
+
+            if (! $this->isStatusNonAktif($row['status'] ?? null)) {
+                if ($akanMenambahAktif >= $sisaKuota) {
+                    $summary['melebihi_kuota']++;
+                    continue;
+                }
+                $akanMenambahAktif++;
+            }
+
+            $summary['akan_diimpor']++;
+        }
+
+        return $summary;
+    }
 
     public function collection(Collection $rows): void
     {
@@ -138,12 +190,19 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
             return true;
         }
 
-        if (in_array($normalized, ['nonaktif', 'tidakaktif', 'inactive', 'tidak', 'no', '0'], true)) {
+        if ($this->isStatusNonAktif($raw)) {
             return false;
         }
 
         $this->errors[] = "Baris {$rowNum}: Status '{$raw}' tidak dikenali, dianggap Aktif.";
         return true;
+    }
+
+    private function isStatusNonAktif(mixed $value): bool
+    {
+        $normalized = strtolower(str_replace([' ', '-', '_'], '', trim((string) ($value ?? ''))));
+
+        return in_array($normalized, ['nonaktif', 'tidakaktif', 'inactive', 'tidak', 'no', '0'], true);
     }
 
     private function resolveKelas(mixed $value, int $rowNum): ?int

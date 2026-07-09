@@ -310,4 +310,70 @@ class SantriImportTest extends TestCase
         $this->assertNotNull(Santri::where('nis', '2024018')->first());
         $this->assertNull(Santri::where('nis', '2024019')->first());
     }
+
+    public function test_analyze_menghitung_ringkasan_tanpa_menyimpan_apa_pun(): void
+    {
+        $pesantren = $this->makePesantren(kuota: 3);
+        Santri::factory()->create(['pesantren_id' => $pesantren->id, 'status_aktif' => true]);
+
+        $lama = Santri::factory()->create(['pesantren_id' => $pesantren->id, 'nis' => '2024030']);
+        $lama->delete();
+
+        $import    = new SantriImport($pesantren->id);
+        $ringkasan = $import->analyze(new Collection([
+            ['nis' => '2024027', 'nama_lengkap' => 'Akan Sukses 1'],
+            ['nis' => '2024030', 'nama_lengkap' => 'Pakai NIS Bekas'],
+            ['nis' => '', 'nama_lengkap' => 'Tanpa NIS'],
+            ['nis' => '2024028', 'nama_lengkap' => 'Akan Sukses 2'],
+            ['nis' => '2024029', 'nama_lengkap' => 'Kelebihan Kuota'],
+        ]));
+
+        $this->assertSame([
+            'total'             => 5,
+            'akan_diimpor'      => 2,
+            'duplikat'          => 1,
+            'data_wajib_kosong' => 1,
+            'melebihi_kuota'    => 1,
+        ], $ringkasan);
+
+        // analyze() tidak boleh menulis apa pun ke database.
+        $this->assertSame(1, Santri::where('pesantren_id', $pesantren->id)->count());
+        $this->assertSame(0, $import->imported);
+    }
+
+    public function test_analyze_santri_non_aktif_tidak_dihitung_ke_kuota(): void
+    {
+        $pesantren = $this->makePesantren(kuota: 1);
+        Santri::factory()->create(['pesantren_id' => $pesantren->id, 'status_aktif' => true]);
+
+        $ringkasan = (new SantriImport($pesantren->id))->analyze(new Collection([
+            ['nis' => '2024031', 'nama_lengkap' => 'Alumni 1', 'status' => 'Non-Aktif'],
+            ['nis' => '2024032', 'nama_lengkap' => 'Alumni 2', 'status' => 'Non-Aktif'],
+        ]));
+
+        $this->assertSame(2, $ringkasan['akan_diimpor']);
+        $this->assertSame(0, $ringkasan['melebihi_kuota']);
+    }
+
+    public function test_analyze_hasil_konsisten_dengan_hasil_import_sungguhan(): void
+    {
+        $pesantren = $this->makePesantren(kuota: 2);
+
+        $rows = new Collection([
+            ['nis' => '2024033', 'nama_lengkap' => 'A'],
+            ['nis' => '2024034', 'nama_lengkap' => 'B'],
+            ['nis' => '2024035', 'nama_lengkap' => 'C'],
+        ]);
+
+        $ringkasan = (new SantriImport($pesantren->id))->analyze($rows);
+
+        $real = new SantriImport($pesantren->id);
+        $real->collection($rows);
+
+        $this->assertSame($ringkasan['akan_diimpor'], $real->imported);
+        $this->assertSame(
+            $ringkasan['duplikat'] + $ringkasan['data_wajib_kosong'] + $ringkasan['melebihi_kuota'],
+            $real->skipped
+        );
+    }
 }
