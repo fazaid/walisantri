@@ -37,6 +37,18 @@ class DemoRequestResource extends Resource
         return auth()->user()?->role === UserRole::SuperAdmin->value;
     }
 
+    public static function getNavigationBadge(): ?string
+    {
+        return (string) DemoRequest::whereNull('contacted_at')->count();
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return DemoRequest::whereNull('contacted_at')
+            ->where('created_at', '<=', DemoRequest::slaCutoff())
+            ->exists() ? 'danger' : 'warning';
+    }
+
     public static function infolist(Schema $schema): Schema
     {
         return DemoRequestInfolist::configure($schema);

@@ -41,7 +41,8 @@ class UserForm
                         }
                         return $options;
                     })
-                    ->default(UserRole::WaliSantri->value)
+                    ->default(fn (): string => UserRole::tryFrom((string) request()->query('role'))?->value
+                        ?? UserRole::WaliSantri->value)
                     ->required()
                     ->native(false),
 

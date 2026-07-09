@@ -3,11 +3,29 @@
 namespace App\Observers;
 
 use App\Enums\OnboardingStep;
+use App\Exceptions\SantriQuotaExceededException;
 use App\Models\Santri;
 use Illuminate\Support\Facades\Storage;
 
 class SantriObserver
 {
+    public function creating(Santri $santri): void
+    {
+        if ($santri->status_aktif === false) {
+            return;
+        }
+
+        $pesantren = $santri->pesantren;
+
+        if (! $pesantren) {
+            return;
+        }
+
+        if ($pesantren->isQuotaFull()) {
+            throw new SantriQuotaExceededException($pesantren);
+        }
+    }
+
     public function created(Santri $santri): void
     {
         ActivityLogger::log('santri.created', $santri, null, [

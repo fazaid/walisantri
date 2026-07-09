@@ -30,6 +30,10 @@ class KirimMagicLinkAction extends Action
             ->modalSubmitAction(false)
             ->modalCancelActionLabel('Tutup')
             ->visible(fn () => in_array(Auth::user()?->role, ['admin_pesantren', 'ustadz']))
+            ->disabled(fn (Santri $record): bool => $record->wali_santri_id === null)
+            ->tooltip(fn (Santri $record): ?string => $record->wali_santri_id === null
+                ? 'Santri ini belum terhubung ke akun wali. Hubungkan dulu lewat menu Edit → bagian Relasi, baru link portal wali bisa dibuat.'
+                : null)
             ->mountUsing(function (Santri $record): void {
                 ActivityLogger::log('magic_link.viewed', $record, null, [
                     'wali_id' => $record->wali_santri_id,
