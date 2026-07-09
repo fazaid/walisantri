@@ -52,6 +52,7 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
             $jenisKelamin = $this->resolveJenisKelamin($row['jenis_kelamin'] ?? null, $rowNum);
             $kelasId      = $this->resolveKelas($row['kelas'] ?? null, $rowNum);
             $kamarId      = $this->resolveKamar($row['kamar'] ?? null, $rowNum);
+            $statusAktif  = $this->resolveStatusAktif($row['status'] ?? null, $rowNum);
 
             try {
                 Santri::create([
@@ -68,7 +69,7 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
                     'cita_cita'      => $this->nullable($row['cita_cita'] ?? null),
                     'kelas_id'       => $kelasId,
                     'kamar_id'       => $kamarId,
-                    'status_aktif'   => true,
+                    'status_aktif'   => $statusAktif,
                 ]);
 
                 $this->imported++;
@@ -121,6 +122,28 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
 
         $this->errors[] = "Baris {$rowNum}: Jenis kelamin '{$raw}' tidak dikenali, kolom diabaikan.";
         return null;
+    }
+
+    private function resolveStatusAktif(mixed $value, int $rowNum): bool
+    {
+        $raw = trim((string) ($value ?? ''));
+
+        if ($raw === '') {
+            return true;
+        }
+
+        $normalized = strtolower(str_replace([' ', '-', '_'], '', $raw));
+
+        if (in_array($normalized, ['aktif', 'active', 'ya', 'yes', '1'], true)) {
+            return true;
+        }
+
+        if (in_array($normalized, ['nonaktif', 'tidakaktif', 'inactive', 'tidak', 'no', '0'], true)) {
+            return false;
+        }
+
+        $this->errors[] = "Baris {$rowNum}: Status '{$raw}' tidak dikenali, dianggap Aktif.";
+        return true;
     }
 
     private function resolveKelas(mixed $value, int $rowNum): ?int

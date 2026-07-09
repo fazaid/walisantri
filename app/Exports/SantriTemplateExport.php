@@ -26,6 +26,7 @@ class SantriTemplateExport implements FromCollection, WithHeadings, WithTitle, S
                 'Dokter',
                 'Kelas 7A',
                 'Kamar Mawar',
+                'Aktif',
             ],
         ]);
     }
@@ -45,6 +46,7 @@ class SantriTemplateExport implements FromCollection, WithHeadings, WithTitle, S
             'cita_cita',
             'kelas',
             'kamar',
+            'status',
         ];
     }
 

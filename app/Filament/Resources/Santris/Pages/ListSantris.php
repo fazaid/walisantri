@@ -35,8 +35,9 @@ class ListSantris extends ListRecords
                         ->content(new HtmlString(
                             '<ul class="text-sm list-disc list-inside space-y-1 text-gray-600 dark:text-gray-400">' .
                             '<li><strong>Kolom wajib:</strong> <code>nis</code>, <code>nama_lengkap</code></li>' .
-                            '<li><strong>Kolom opsional:</strong> nama_panggilan, tanggal_lahir <em>(DD/MM/YYYY)</em>, nama_ayah, nama_ibu, alamat_lengkap, jumlah_saudara, cita_cita</li>' .
+                            '<li><strong>Kolom opsional:</strong> nama_panggilan, tanggal_lahir <em>(DD/MM/YYYY)</em>, nama_ayah, nama_ibu, alamat_lengkap, jumlah_saudara, cita_cita, status</li>' .
                             '<li>Kolom <code>kelas</code> dan <code>kamar</code> harus sesuai nama yang sudah terdaftar di sistem.</li>' .
+                            '<li>Kolom <code>status</code> diisi "Aktif" atau "Non-Aktif" — kosong dianggap Aktif.</li>' .
                             '<li>Baris dengan NIS yang sudah terdaftar akan dilewati.</li>' .
                             '</ul>'
                         )),

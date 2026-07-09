@@ -240,6 +240,56 @@ class SantriImportTest extends TestCase
         $this->assertCount(1, $import->errors);
     }
 
+    public function test_import_resolve_status_aktif_berbagai_format_teks(): void
+    {
+        $pesantren = $this->makePesantren();
+        $import    = new SantriImport($pesantren->id);
+
+        $import->collection(new Collection([
+            ['nis' => '2024022', 'nama_lengkap' => 'Aktif Eksplisit', 'status' => 'Aktif'],
+            ['nis' => '2024023', 'nama_lengkap' => 'Non Aktif', 'status' => 'Non-Aktif'],
+            ['nis' => '2024024', 'nama_lengkap' => 'Kolom Kosong'],
+        ]));
+
+        $this->assertSame(3, $import->imported);
+        $this->assertSame([], $import->errors);
+
+        $this->assertTrue((bool) Santri::where('nis', '2024022')->first()->status_aktif);
+        $this->assertFalse((bool) Santri::where('nis', '2024023')->first()->status_aktif);
+        $this->assertTrue((bool) Santri::where('nis', '2024024')->first()->status_aktif);
+    }
+
+    public function test_import_status_tidak_dikenali_dianggap_aktif_dengan_warning(): void
+    {
+        $pesantren = $this->makePesantren();
+        $import    = new SantriImport($pesantren->id);
+
+        $import->collection(new Collection([
+            ['nis' => '2024025', 'nama_lengkap' => 'Status Aneh', 'status' => 'entahlah'],
+        ]));
+
+        $santri = Santri::where('nis', '2024025')->first();
+        $this->assertSame(1, $import->imported);
+        $this->assertTrue((bool) $santri->status_aktif);
+        $this->assertCount(1, $import->errors);
+        $this->assertStringContainsString('dianggap Aktif', $import->errors[0]);
+    }
+
+    public function test_import_santri_non_aktif_tidak_kena_batas_kuota(): void
+    {
+        $pesantren = $this->makePesantren(kuota: 1);
+        Santri::factory()->create(['pesantren_id' => $pesantren->id, 'status_aktif' => true]);
+
+        $import = new SantriImport($pesantren->id);
+        $import->collection(new Collection([
+            ['nis' => '2024026', 'nama_lengkap' => 'Alumni', 'status' => 'Non-Aktif'],
+        ]));
+
+        $this->assertSame(1, $import->imported);
+        $this->assertSame([], $import->errors);
+        $this->assertFalse((bool) Santri::where('nis', '2024026')->first()->status_aktif);
+    }
+
     public function test_import_berhenti_menambah_setelah_kuota_penuh_tapi_baris_sebelumnya_tetap_tersimpan(): void
     {
         $pesantren = $this->makePesantren(kuota: 2);
