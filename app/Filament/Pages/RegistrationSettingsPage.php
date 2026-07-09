@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Enums\UserRole;
+use App\Models\BillingSetting;
 use App\Models\PlatformSetting;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -55,7 +56,7 @@ class RegistrationSettingsPage extends Page implements HasForms
     {
         return $schema->components([
             Section::make('Pendaftaran Mandiri')
-                ->description('Mengatur akses ke halaman /register, tempat pesantren baru mendaftar sendiri dan langsung mendapat trial 30 hari.')
+                ->description('Mengatur akses ke halaman /register, tempat pesantren baru mendaftar sendiri dan langsung mendapat trial ' . BillingSetting::get('trial_days', 14) . ' hari.')
                 ->schema([
                     Toggle::make('registration_open')
                         ->label('Buka halaman pendaftaran mandiri (/register)')

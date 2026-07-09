@@ -164,7 +164,7 @@ Headline: "Pilih Paket Sesuai Kebutuhan Pesantren Anda"
 - "Tumbuh — Rp299.000/bulan" (beri badge emas "Paling Populer")
 - "Berkembang — Rp350.000/bulan"
 - "Maju — Rp750.000/bulan"
-Tambahkan teks kecil di bawah: "Coba gratis 30 hari, tanpa kartu kredit".
+Tambahkan teks kecil di bawah: "Coba gratis 14 hari, tanpa kartu kredit".
 Layout: 4 kartu vertikal sejajar, kartu "Tumbuh" sedikit lebih menonjol/tinggi.
 ```
 
@@ -184,7 +184,7 @@ untuk nama & foto).
 ```
 [Style Guide] + Slide penutup/CTA.
 Headline besar: "Saatnya Pesantren Anda Go Digital"
-Sub-teks: "Coba Walisantri gratis 30 hari — wali santri Anda mulai terhubung sejak hari pertama"
+Sub-teks: "Coba Walisantri gratis 14 hari — wali santri Anda mulai terhubung sejak hari pertama"
 Tombol besar bergaya (visual, bukan interaktif) bertuliskan "Mulai Sekarang" dengan warna
 emas menonjol di atas latar hijau teal gelap.
 Area kontak di bawah untuk logo, nomor WhatsApp, dan website (placeholder teks).

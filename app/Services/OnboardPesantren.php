@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ActivityLog;
+use App\Models\BillingSetting;
 use App\Models\Pesantren;
 use App\Models\TenantDomain;
 use App\Models\User;
@@ -16,7 +17,7 @@ class OnboardPesantren
      * 1. Buat baris pesantrens
      * 2. Buat baris tenant_domains (subdomain otomatis)
      * 3. Buat user pertama role admin_pesantren
-     * 4. Aktifkan trial 30 hari
+     * 4. Aktifkan trial (durasi dari BillingSetting::trial_days)
      * 5. Catat audit log
      */
     public function execute(
@@ -36,7 +37,7 @@ class OnboardPesantren
                 'paket_langganan'     => 'rintisan',
                 'max_santri_kuota'    => \App\Models\BillingSetting::get('kuota_rintisan', 100),
                 'status_berlangganan' => 'trial',
-                'expired_at'          => now()->addDays(30),
+                'expired_at'          => now()->addDays(BillingSetting::get('trial_days', 14)),
                 'santri_count_cache' => 0,
                 'onboarding_completed_steps' => [],
             ]);
