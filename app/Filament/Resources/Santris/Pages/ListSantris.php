@@ -40,6 +40,8 @@ class ListSantris extends ListRecords
                             '<li>Kolom <code>kelas</code> dan <code>kamar</code> harus sesuai nama yang sudah terdaftar di sistem.</li>' .
                             '<li>Kolom <code>status</code> diisi "Aktif" atau "Non-Aktif" — kosong dianggap Aktif.</li>' .
                             '<li>Baris dengan NIS yang sudah terdaftar akan dilewati.</li>' .
+                            '<li><strong>Kolom opsional wali:</strong> wali_nama, wali_email, wali_no_hp — isi <code>wali_email</code> untuk membuat/menautkan akun wali. Kalau <code>wali_email</code> kosong tapi kolom wali lain diisi, wali tidak akan ditautkan (santri tetap dibuat).</li>' .
+                            '<li>Beberapa baris dengan <code>wali_email</code> yang sama akan ditautkan ke satu akun wali yang sama (untuk kakak-adik).</li>' .
                             '</ul>'
                         )),
                     FormActions::make([
@@ -91,6 +93,9 @@ class ListSantris extends ListRecords
                             }
                             if ($ringkasan['melebihi_kuota'] > 0) {
                                 $items[] = '<span class="text-danger-600 dark:text-danger-400">Melebihi sisa kuota paket, akan dilewati: <strong>' . $ringkasan['melebihi_kuota'] . '</strong></span>';
+                            }
+                            if ($ringkasan['wali_baru'] > 0) {
+                                $items[] = '<span class="text-info-600 dark:text-info-400">Akun wali baru akan dibuat: <strong>' . $ringkasan['wali_baru'] . '</strong></span>';
                             }
 
                             return new HtmlString(

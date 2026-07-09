@@ -27,6 +27,9 @@ class SantriTemplateExport implements FromCollection, WithHeadings, WithTitle, S
                 'Kelas 7A',
                 'Kamar Mawar',
                 'Aktif',
+                'Siti Aminah',
+                'siti.aminah@example.com',
+                '081234567890',
             ],
         ]);
     }
@@ -47,6 +50,9 @@ class SantriTemplateExport implements FromCollection, WithHeadings, WithTitle, S
             'kelas',
             'kamar',
             'status',
+            'wali_nama',
+            'wali_email',
+            'wali_no_hp',
         ];
     }
 

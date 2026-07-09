@@ -7,6 +7,7 @@ use App\Models\Kamar;
 use App\Models\Kelas;
 use App\Models\Pesantren;
 use App\Models\Santri;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
 use Tests\TestCase;
@@ -334,6 +335,7 @@ class SantriImportTest extends TestCase
             'duplikat'          => 1,
             'data_wajib_kosong' => 1,
             'melebihi_kuota'    => 1,
+            'wali_baru'         => 0,
         ], $ringkasan);
 
         // analyze() tidak boleh menulis apa pun ke database.
@@ -375,5 +377,239 @@ class SantriImportTest extends TestCase
             $ringkasan['duplikat'] + $ringkasan['data_wajib_kosong'] + $ringkasan['melebihi_kuota'],
             $real->skipped
         );
+    }
+
+    public function test_import_wali_baru_dibuat_dan_ditautkan_saat_email_baru(): void
+    {
+        $pesantren = $this->makePesantren();
+        $import    = new SantriImport($pesantren->id);
+
+        $import->collection(new Collection([
+            ['nis' => '3001', 'nama_lengkap' => 'Anak A', 'wali_nama' => 'Bapak Anu', 'wali_email' => 'bapak.anu@example.com', 'wali_no_hp' => '081211112222'],
+        ]));
+
+        $this->assertSame(1, $import->imported);
+        $this->assertSame([], $import->errors);
+
+        $santri = Santri::where('nis', '3001')->first();
+        $this->assertNotNull($santri->wali_santri_id);
+
+        $wali = User::find($santri->wali_santri_id);
+        $this->assertSame('Bapak Anu', $wali->name);
+        $this->assertSame('bapak.anu@example.com', $wali->email);
+        $this->assertSame('081211112222', $wali->phone_number);
+        $this->assertSame('wali_santri', $wali->role);
+        $this->assertSame($pesantren->id, $wali->pesantren_id);
+    }
+
+    public function test_import_wali_kosong_semua_kolom_tidak_diproses(): void
+    {
+        $pesantren = $this->makePesantren();
+        $import    = new SantriImport($pesantren->id);
+
+        $import->collection(new Collection([
+            ['nis' => '3002', 'nama_lengkap' => 'Tanpa Wali'],
+        ]));
+
+        $this->assertSame([], $import->errors);
+        $this->assertNull(Santri::where('nis', '3002')->first()->wali_santri_id);
+    }
+
+    public function test_import_wali_email_kosong_tapi_kolom_wali_lain_diisi_menghasilkan_warning(): void
+    {
+        $pesantren = $this->makePesantren();
+        $import    = new SantriImport($pesantren->id);
+
+        $import->collection(new Collection([
+            ['nis' => '3003', 'nama_lengkap' => 'Wali Tanpa Email', 'wali_nama' => 'Ibu Fulan'],
+        ]));
+
+        $this->assertSame(1, $import->imported);
+        $this->assertNull(Santri::where('nis', '3003')->first()->wali_santri_id);
+        $this->assertCount(1, $import->errors);
+        $this->assertStringContainsString('wali_email kosong', $import->errors[0]);
+    }
+
+    public function test_import_wali_email_format_tidak_valid_menghasilkan_warning(): void
+    {
+        $pesantren = $this->makePesantren();
+        $import    = new SantriImport($pesantren->id);
+
+        $import->collection(new Collection([
+            ['nis' => '3004', 'nama_lengkap' => 'Email Salah', 'wali_email' => 'bukan-email'],
+        ]));
+
+        $this->assertSame(1, $import->imported);
+        $this->assertNull(Santri::where('nis', '3004')->first()->wali_santri_id);
+        $this->assertCount(1, $import->errors);
+        $this->assertStringContainsString('tidak valid', $import->errors[0]);
+    }
+
+    public function test_import_wali_dua_baris_email_sama_ditautkan_ke_user_yang_sama(): void
+    {
+        $pesantren = $this->makePesantren();
+        $import    = new SantriImport($pesantren->id);
+
+        $import->collection(new Collection([
+            ['nis' => '3005', 'nama_lengkap' => 'Kakak', 'wali_nama' => 'Bapak Kel', 'wali_email' => 'satu-keluarga@example.com'],
+            ['nis' => '3006', 'nama_lengkap' => 'Adik', 'wali_email' => 'satu-keluarga@example.com'],
+        ]));
+
+        $kakak = Santri::where('nis', '3005')->first();
+        $adik  = Santri::where('nis', '3006')->first();
+
+        $this->assertNotNull($kakak->wali_santri_id);
+        $this->assertSame($kakak->wali_santri_id, $adik->wali_santri_id);
+        $this->assertSame(1, User::where('email', 'satu-keluarga@example.com')->count());
+    }
+
+    public function test_import_wali_email_case_insensitive_dianggap_sama(): void
+    {
+        $pesantren = $this->makePesantren();
+        $import    = new SantriImport($pesantren->id);
+
+        $import->collection(new Collection([
+            ['nis' => '3007', 'nama_lengkap' => 'A', 'wali_email' => 'Case@Example.com'],
+            ['nis' => '3008', 'nama_lengkap' => 'B', 'wali_email' => 'case@example.com'],
+        ]));
+
+        $a = Santri::where('nis', '3007')->first();
+        $b = Santri::where('nis', '3008')->first();
+
+        $this->assertSame($a->wali_santri_id, $b->wali_santri_id);
+        $this->assertSame(1, User::whereRaw('LOWER(email) = ?', ['case@example.com'])->count());
+    }
+
+    public function test_import_wali_email_reuse_existing_wali_di_pesantren_sama(): void
+    {
+        $pesantren = $this->makePesantren();
+        $existing  = User::factory()->waliSantri()->create([
+            'pesantren_id' => $pesantren->id,
+            'email'        => 'sudah-ada@example.com',
+            'name'         => 'Wali Lama',
+        ]);
+
+        $import = new SantriImport($pesantren->id);
+        $import->collection(new Collection([
+            ['nis' => '3009', 'nama_lengkap' => 'Reuse', 'wali_nama' => 'Nama Beda', 'wali_email' => 'sudah-ada@example.com'],
+        ]));
+
+        $santri = Santri::where('nis', '3009')->first();
+        $this->assertSame($existing->id, $santri->wali_santri_id);
+        $this->assertSame(1, User::where('email', 'sudah-ada@example.com')->count());
+
+        // Tidak overwrite nama wali yang sudah ada (link-only).
+        $this->assertSame('Wali Lama', $existing->fresh()->name);
+    }
+
+    public function test_import_wali_email_conflict_role_lain_di_pesantren_sama(): void
+    {
+        $pesantren = $this->makePesantren();
+        $ustadz    = User::factory()->ustadz()->create([
+            'pesantren_id' => $pesantren->id,
+            'email'        => 'ustadz@example.com',
+        ]);
+
+        $import = new SantriImport($pesantren->id);
+        $import->collection(new Collection([
+            ['nis' => '3010', 'nama_lengkap' => 'Conflict Role', 'wali_email' => 'ustadz@example.com'],
+        ]));
+
+        $this->assertNull(Santri::where('nis', '3010')->first()->wali_santri_id);
+        $this->assertCount(1, $import->errors);
+        $this->assertStringContainsString('peran lain', $import->errors[0]);
+        $this->assertSame('ustadz', $ustadz->fresh()->role);
+    }
+
+    public function test_import_wali_email_conflict_pesantren_lain(): void
+    {
+        $pesantrenA = $this->makePesantren();
+        $pesantrenB = $this->makePesantren();
+        $waliB      = User::factory()->waliSantri()->create([
+            'pesantren_id' => $pesantrenB->id,
+            'email'        => 'lintas-tenant@example.com',
+        ]);
+
+        $import = new SantriImport($pesantrenA->id);
+        $import->collection(new Collection([
+            ['nis' => '3011', 'nama_lengkap' => 'Conflict Tenant', 'wali_email' => 'lintas-tenant@example.com'],
+        ]));
+
+        $this->assertNull(Santri::where('nis', '3011')->first()->wali_santri_id);
+        $this->assertCount(1, $import->errors);
+        $this->assertStringContainsString('pesantren lain', $import->errors[0]);
+        $this->assertSame($pesantrenB->id, $waliB->fresh()->pesantren_id);
+    }
+
+    public function test_import_wali_nama_kosong_fallback_ke_email(): void
+    {
+        $pesantren = $this->makePesantren();
+        $import    = new SantriImport($pesantren->id);
+
+        $import->collection(new Collection([
+            ['nis' => '3012', 'nama_lengkap' => 'Tanpa Nama Wali', 'wali_email' => 'noname@example.com'],
+        ]));
+
+        $santri = Santri::where('nis', '3012')->first();
+        $wali   = User::find($santri->wali_santri_id);
+        $this->assertSame('noname@example.com', $wali->name);
+    }
+
+    public function test_import_wali_password_diacak_dan_di_hash(): void
+    {
+        $pesantren = $this->makePesantren();
+        $import    = new SantriImport($pesantren->id);
+
+        $import->collection(new Collection([
+            ['nis' => '3013', 'nama_lengkap' => 'A', 'wali_email' => 'pw1@example.com'],
+            ['nis' => '3014', 'nama_lengkap' => 'B', 'wali_email' => 'pw2@example.com'],
+        ]));
+
+        $wali1 = User::where('email', 'pw1@example.com')->first();
+        $wali2 = User::where('email', 'pw2@example.com')->first();
+
+        $this->assertTrue(str_starts_with($wali1->password, '$2y$') || str_starts_with($wali1->password, '$argon2'));
+        $this->assertNotSame($wali1->password, $wali2->password);
+    }
+
+    public function test_analyze_menghitung_wali_baru(): void
+    {
+        $pesantren = $this->makePesantren();
+        $existing  = User::factory()->waliSantri()->create([
+            'pesantren_id' => $pesantren->id,
+            'email'        => 'existing@example.com',
+        ]);
+
+        $userCountSebelum = User::count();
+
+        $ringkasan = (new SantriImport($pesantren->id))->analyze(new Collection([
+            ['nis' => '3016', 'nama_lengkap' => 'Wali Baru 1', 'wali_email' => 'baru1@example.com'],
+            ['nis' => '3017', 'nama_lengkap' => 'Wali Baru 1 Lagi', 'wali_email' => 'baru1@example.com'],
+            ['nis' => '3018', 'nama_lengkap' => 'Wali Existing', 'wali_email' => 'existing@example.com'],
+            ['nis' => '3019', 'nama_lengkap' => 'Tanpa Wali'],
+        ]));
+
+        $this->assertSame(1, $ringkasan['wali_baru']);
+        $this->assertSame($userCountSebelum, User::count());
+    }
+
+    public function test_analyze_wali_baru_konsisten_dengan_hasil_import_sungguhan(): void
+    {
+        $pesantren = $this->makePesantren();
+
+        $rows = new Collection([
+            ['nis' => '3020', 'nama_lengkap' => 'A', 'wali_email' => 'keluarga1@example.com'],
+            ['nis' => '3021', 'nama_lengkap' => 'B', 'wali_email' => 'keluarga1@example.com'],
+            ['nis' => '3022', 'nama_lengkap' => 'C', 'wali_email' => 'keluarga2@example.com'],
+        ]);
+
+        $ringkasan = (new SantriImport($pesantren->id))->analyze($rows);
+
+        $real = new SantriImport($pesantren->id);
+        $real->collection($rows);
+
+        $waliBaruSungguhan = User::where('pesantren_id', $pesantren->id)->where('role', 'wali_santri')->count();
+
+        $this->assertSame($ringkasan['wali_baru'], $waliBaruSungguhan);
     }
 }
