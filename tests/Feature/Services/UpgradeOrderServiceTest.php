@@ -4,6 +4,7 @@ namespace Tests\Feature\Services;
 
 use App\Enums\StatusOrder;
 use App\Jobs\KirimNotifikasiWhatsapp;
+use App\Models\Kupon;
 use App\Models\Order;
 use App\Models\Pesantren;
 use App\Models\User;
@@ -149,5 +150,111 @@ class UpgradeOrderServiceTest extends TestCase
         app(UpgradeOrderService::class)->confirmOrder($order, $this->makeConfirmer());
 
         Queue::assertNotPushed(KirimNotifikasiWhatsapp::class);
+    }
+
+    private function makeKupon(array $override = []): Kupon
+    {
+        return Kupon::create(array_merge([
+            'kode' => 'TESTKUPON',
+            'tipe_diskon' => 'nominal',
+            'nilai_diskon' => 10000,
+            'min_durasi_bulan' => null,
+            'max_penggunaan' => null,
+            'jumlah_dipakai' => 0,
+            'berlaku_hingga' => null,
+            'is_aktif' => true,
+        ], $override));
+    }
+
+    public function test_kupon_valid_menambah_jumlah_dipakai_dan_diskon(): void
+    {
+        $pesantren = $this->makePesantren();
+        $kupon = $this->makeKupon();
+
+        $result = app(UpgradeOrderService::class)->createOrder(
+            pesantren: $pesantren,
+            paketTarget: 'rintisan',
+            durasibulan: 1,
+            maxSantriKuota: 100,
+            kodeKupon: 'testkupon',
+        );
+
+        $kupon->refresh();
+
+        $this->assertSame(1, $kupon->jumlah_dipakai);
+        $this->assertSame($kupon->id, $result['order']->kupon_id);
+        $this->assertSame(10000, $result['order']->diskon_nominal);
+    }
+
+    public function test_kupon_nonaktif_tidak_menambah_jumlah_dipakai(): void
+    {
+        $pesantren = $this->makePesantren();
+        $kupon = $this->makeKupon(['is_aktif' => false]);
+
+        $result = app(UpgradeOrderService::class)->createOrder(
+            pesantren: $pesantren,
+            paketTarget: 'rintisan',
+            durasibulan: 1,
+            maxSantriKuota: 100,
+            kodeKupon: 'testkupon',
+        );
+
+        $kupon->refresh();
+
+        $this->assertSame(0, $kupon->jumlah_dipakai);
+        $this->assertNull($result['order']->kupon_id);
+        $this->assertSame(0, $result['order']->diskon_nominal);
+    }
+
+    public function test_kupon_kadaluwarsa_tidak_menambah_jumlah_dipakai(): void
+    {
+        $pesantren = $this->makePesantren();
+        $kupon = $this->makeKupon(['berlaku_hingga' => now()->subDay()]);
+
+        app(UpgradeOrderService::class)->createOrder(
+            pesantren: $pesantren,
+            paketTarget: 'rintisan',
+            durasibulan: 1,
+            maxSantriKuota: 100,
+            kodeKupon: 'testkupon',
+        );
+
+        $kupon->refresh();
+
+        $this->assertSame(0, $kupon->jumlah_dipakai);
+    }
+
+    public function test_kupon_yang_sudah_mencapai_max_penggunaan_tidak_bertambah_lagi(): void
+    {
+        $pesantren = $this->makePesantren();
+        $kupon = $this->makeKupon(['max_penggunaan' => 1, 'jumlah_dipakai' => 1]);
+
+        app(UpgradeOrderService::class)->createOrder(
+            pesantren: $pesantren,
+            paketTarget: 'rintisan',
+            durasibulan: 1,
+            maxSantriKuota: 100,
+            kodeKupon: 'testkupon',
+        );
+
+        $kupon->refresh();
+
+        $this->assertSame(1, $kupon->jumlah_dipakai);
+    }
+
+    public function test_kode_kupon_tidak_ditemukan_tidak_error(): void
+    {
+        $pesantren = $this->makePesantren();
+
+        $result = app(UpgradeOrderService::class)->createOrder(
+            pesantren: $pesantren,
+            paketTarget: 'rintisan',
+            durasibulan: 1,
+            maxSantriKuota: 100,
+            kodeKupon: 'TIDAKADA',
+        );
+
+        $this->assertNull($result['order']->kupon_id);
+        $this->assertSame(0, $result['order']->diskon_nominal);
     }
 }
