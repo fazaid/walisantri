@@ -2,12 +2,17 @@
 
 namespace Tests\Unit\Services;
 
+use App\Models\WhatsAppGatewaySetting;
 use App\Services\FonnteWhatsAppService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class FonnteWhatsAppServiceTest extends TestCase
 {
+    use RefreshDatabase;
+
     private FonnteWhatsAppService $svc;
 
     protected function setUp(): void
@@ -20,7 +25,7 @@ class FonnteWhatsAppServiceTest extends TestCase
             'services.fonnte.default_country_code' => '62',
         ]);
 
-        $this->svc = new FonnteWhatsAppService();
+        $this->svc = new FonnteWhatsAppService;
     }
 
     public function test_normalisasi_leading_nol_menjadi_62(): void
@@ -52,6 +57,19 @@ class FonnteWhatsAppServiceTest extends TestCase
         );
     }
 
+    public function test_pakai_token_dari_database_jika_ada_mengalahkan_env(): void
+    {
+        WhatsAppGatewaySetting::set('fonnte_token', 'token-dari-db');
+
+        Http::fake([
+            'api.fonnte.com/*' => Http::response(['status' => true, 'detail' => 'success! message in queue'], 200),
+        ]);
+
+        $this->svc->send('081234567890', 'Test pesan');
+
+        Http::assertSent(fn ($request) => $request->hasHeader('Authorization', 'token-dari-db'));
+    }
+
     public function test_send_gagal_status_false_melempar_exception(): void
     {
         Http::fake([
@@ -69,7 +87,7 @@ class FonnteWhatsAppServiceTest extends TestCase
             'api.fonnte.com/*' => Http::response('Internal Server Error', 500),
         ]);
 
-        $this->expectException(\Illuminate\Http\Client\RequestException::class);
+        $this->expectException(RequestException::class);
 
         $this->svc->send('081234567890', 'Test pesan');
     }
