@@ -169,6 +169,27 @@ class SantriImportTest extends TestCase
         $this->assertSame([], $import->errors);
     }
 
+    public function test_import_resolve_kelas_dan_kamar_tidak_case_sensitive(): void
+    {
+        $pesantren = $this->makePesantren();
+        $kelas     = Kelas::factory()->create(['pesantren_id' => $pesantren->id, 'nama_kelas' => 'Tahfidz 1']);
+        $kamar     = Kamar::create(['pesantren_id' => $pesantren->id, 'nama_kamar' => 'Kamar Mawar', 'kapasitas' => 10]);
+
+        $import = new SantriImport($pesantren->id);
+        $import->collection(new Collection([
+            ['nis' => '2024020', 'nama_lengkap' => 'Huruf Kecil', 'kelas' => 'tahfidz 1', 'kamar' => 'kamar mawar'],
+            ['nis' => '2024021', 'nama_lengkap' => 'Huruf Besar', 'kelas' => 'TAHFIDZ 1', 'kamar' => 'KAMAR MAWAR'],
+        ]));
+
+        $this->assertSame(2, $import->imported);
+        $this->assertSame([], $import->errors);
+
+        $this->assertSame($kelas->id, Santri::where('nis', '2024020')->first()->kelas_id);
+        $this->assertSame($kamar->id, Santri::where('nis', '2024020')->first()->kamar_id);
+        $this->assertSame($kelas->id, Santri::where('nis', '2024021')->first()->kelas_id);
+        $this->assertSame($kamar->id, Santri::where('nis', '2024021')->first()->kamar_id);
+    }
+
     public function test_import_kelas_atau_kamar_tidak_ditemukan_menghasilkan_warning(): void
     {
         $pesantren = $this->makePesantren();

@@ -129,19 +129,20 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
             return null;
         }
 
-        $nama = trim((string) $value);
+        $nama     = trim((string) $value);
+        $cacheKey = mb_strtolower($nama);
 
-        if (! array_key_exists($nama, $this->kelasCache)) {
-            $this->kelasCache[$nama] = Kelas::where('pesantren_id', $this->pesantrenId)
-                ->where('nama_kelas', $nama)
+        if (! array_key_exists($cacheKey, $this->kelasCache)) {
+            $this->kelasCache[$cacheKey] = Kelas::where('pesantren_id', $this->pesantrenId)
+                ->whereRaw('LOWER(nama_kelas) = ?', [$cacheKey])
                 ->value('id');
         }
 
-        if (! $this->kelasCache[$nama]) {
+        if (! $this->kelasCache[$cacheKey]) {
             $this->errors[] = "Baris {$rowNum}: Kelas '{$nama}' tidak ditemukan, kolom diabaikan.";
         }
 
-        return $this->kelasCache[$nama];
+        return $this->kelasCache[$cacheKey];
     }
 
     private function resolveKamar(mixed $value, int $rowNum): ?int
@@ -150,19 +151,20 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
             return null;
         }
 
-        $nama = trim((string) $value);
+        $nama     = trim((string) $value);
+        $cacheKey = mb_strtolower($nama);
 
-        if (! array_key_exists($nama, $this->kamarCache)) {
-            $this->kamarCache[$nama] = Kamar::where('pesantren_id', $this->pesantrenId)
-                ->where('nama_kamar', $nama)
+        if (! array_key_exists($cacheKey, $this->kamarCache)) {
+            $this->kamarCache[$cacheKey] = Kamar::where('pesantren_id', $this->pesantrenId)
+                ->whereRaw('LOWER(nama_kamar) = ?', [$cacheKey])
                 ->value('id');
         }
 
-        if (! $this->kamarCache[$nama]) {
+        if (! $this->kamarCache[$cacheKey]) {
             $this->errors[] = "Baris {$rowNum}: Kamar '{$nama}' tidak ditemukan, kolom diabaikan.";
         }
 
-        return $this->kamarCache[$nama];
+        return $this->kamarCache[$cacheKey];
     }
 
     private function nullable(mixed $value): ?string
