@@ -6,11 +6,12 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToPesantren;
+use App\Models\Concerns\BelongsToSantri;
 use App\Traits\Multitenantable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Table('kesantrian_inventaris')]
 #[Fillable([
@@ -24,22 +25,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class KesantrianInventaris extends Model
 {
-    use Multitenantable;
+    use BelongsToPesantren, BelongsToSantri, Multitenantable;
 
     protected function casts(): array
     {
         return [
             'tanggal_sidak_terakhir' => 'date',
         ];
-    }
-
-    public function santri(): BelongsTo
-    {
-        return $this->belongsTo(Santri::class);
-    }
-
-    public function pesantren(): BelongsTo
-    {
-        return $this->belongsTo(Pesantren::class);
     }
 }

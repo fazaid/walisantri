@@ -11,7 +11,7 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithTitle;
 
-class RekamMedisExport implements FromCollection, WithHeadings, WithMapping, WithTitle, ShouldAutoSize
+class RekamMedisExport implements FromCollection, ShouldAutoSize, WithHeadings, WithMapping, WithTitle
 {
     public function __construct(
         private int $pesantrenId,
@@ -26,10 +26,7 @@ class RekamMedisExport implements FromCollection, WithHeadings, WithMapping, Wit
             ->where('pesantren_id', $this->pesantrenId)
             ->when($this->dari, fn ($q) => $q->whereDate('tanggal_periksa', '>=', $this->dari))
             ->when($this->sampai, fn ($q) => $q->whereDate('tanggal_periksa', '<=', $this->sampai))
-            ->when($this->ustadzId, function ($query) {
-                $santriIds = Santri::where('pembimbing_ustadz_id', $this->ustadzId)->pluck('id');
-                $query->whereIn('santri_id', $santriIds);
-            })
+            ->when($this->ustadzId, fn ($q) => $q->whereIn('santri_id', Santri::idsPembimbing($this->ustadzId)))
             ->orderBy('tanggal_periksa', 'desc')
             ->orderBy('santri_id')
             ->get();

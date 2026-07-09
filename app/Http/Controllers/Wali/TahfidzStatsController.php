@@ -3,17 +3,19 @@
 namespace App\Http\Controllers\Wali;
 
 use App\Http\Controllers\Controller;
-use App\Models\Santri;
+use App\Http\Controllers\Wali\Concerns\ResolvesSantriMilikWali;
 use App\Models\TahfidzProgress;
 use App\Services\TahfidzJuzCalculator;
+use App\Services\TrendBulanan;
 use Illuminate\Support\Facades\DB;
 
 class TahfidzStatsController extends Controller
 {
+    use ResolvesSantriMilikWali;
+
     public function show(int $santriId)
     {
-        $wali   = auth()->user();
-        $santri = $wali->anakSantri()->with(['kelas', 'kamar'])->findOrFail($santriId);
+        $santri = $this->santriMilikWali($santriId);
 
         // Setoran per bulan (12 bulan terakhir) — semua tipe
         $setoranPerBulan = TahfidzProgress::where('santri_id', $santri->id)
@@ -31,24 +33,22 @@ class TahfidzStatsController extends Controller
 
         // Isi bulan yang kosong agar grafik 12 bulan penuh
         $bulanLabels = [];
-        $dataSabaq   = [];
-        $dataSabqi   = [];
-        $dataManzil  = [];
+        $dataSabaq = [];
+        $dataSabqi = [];
+        $dataManzil = [];
 
-        for ($i = 11; $i >= 0; $i--) {
-            $key   = now()->subMonths($i)->format('Y-m');
-            $label = now()->subMonths($i)->translatedFormat('M Y');
-            $row   = $setoranPerBulan->firstWhere('bulan', $key);
+        foreach (TrendBulanan::duaBelasBulanTerakhir() as $bulan) {
+            $row = $setoranPerBulan->firstWhere('bulan', $bulan['key']);
 
-            $bulanLabels[] = $label;
-            $dataSabaq[]   = $row?->sabaq  ?? 0;
-            $dataSabqi[]   = $row?->sabqi  ?? 0;
-            $dataManzil[]  = $row?->manzil ?? 0;
+            $bulanLabels[] = $bulan['label'];
+            $dataSabaq[] = $row?->sabaq ?? 0;
+            $dataSabqi[] = $row?->sabqi ?? 0;
+            $dataManzil[] = $row?->manzil ?? 0;
         }
 
         // Total keseluruhan
-        $totalSabaq  = TahfidzProgress::where('santri_id', $santri->id)->where('tipe_setoran', 'Sabaq')->count();
-        $totalSabqi  = TahfidzProgress::where('santri_id', $santri->id)->where('tipe_setoran', 'Sabqi')->count();
+        $totalSabaq = TahfidzProgress::where('santri_id', $santri->id)->where('tipe_setoran', 'Sabaq')->count();
+        $totalSabqi = TahfidzProgress::where('santri_id', $santri->id)->where('tipe_setoran', 'Sabqi')->count();
         $totalManzil = TahfidzProgress::where('santri_id', $santri->id)->where('tipe_setoran', 'Manzil')->count();
 
         $juz = TahfidzJuzCalculator::calculate($santri->id);

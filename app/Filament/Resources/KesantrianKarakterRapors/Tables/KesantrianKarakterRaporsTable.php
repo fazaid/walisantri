@@ -6,7 +6,8 @@
 
 namespace App\Filament\Resources\KesantrianKarakterRapors\Tables;
 
-use App\Models\Santri;
+use App\Filament\Support\SantriOptions;
+use App\Services\TahunAjaranOptions;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -33,19 +34,9 @@ class KesantrianKarakterRaporsTable
             ->defaultSort('tanggal_input', 'desc')
             ->filters([
                 SelectFilter::make('periode')->label('Periode')
-                    ->options([
-                        'Bulanan'         => 'Bulanan',
-                        'Semester_Ganjil' => 'Semester Ganjil',
-                        'Semester_Genap'  => 'Semester Genap',
-                    ]),
+                    ->options(TahunAjaranOptions::periodeOptions()),
                 SelectFilter::make('santri_id')->label('Santri')
-                    ->options(function () {
-                        $query = Santri::where('status_aktif', true);
-                        if (auth()->user()?->role === 'ustadz') {
-                            $query->where('pembimbing_ustadz_id', auth()->id());
-                        }
-                        return $query->orderBy('nama_lengkap')->pluck('nama_lengkap', 'id');
-                    })
+                    ->options(fn () => SantriOptions::aktifUntukPengguna())
                     ->searchable(),
             ])
             ->recordActions([ViewAction::make(), EditAction::make()])

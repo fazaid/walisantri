@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToPesantren;
 use App\Traits\Multitenantable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Table('master_pengumuman')]
 #[Fillable([
@@ -18,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class MasterPengumuman extends Model
 {
-    use Multitenantable;
+    use BelongsToPesantren, Multitenantable;
 
     protected function casts(): array
     {
@@ -37,10 +37,5 @@ class MasterPengumuman extends Model
     public function scopeForWali(Builder $query): Builder
     {
         return $query->whereIn('target_audience', ['wali', 'semua']);
-    }
-
-    public function pesantren(): BelongsTo
-    {
-        return $this->belongsTo(Pesantren::class);
     }
 }

@@ -3,21 +3,19 @@
 namespace App\Observers;
 
 use App\Models\PlatformBankAccount;
-use Illuminate\Support\Facades\Storage;
+use App\Observers\Concerns\ReplacesUploadedFile;
 
 class PlatformBankAccountObserver
 {
+    use ReplacesUploadedFile;
+
     public function updating(PlatformBankAccount $bankAccount): void
     {
-        if ($bankAccount->isDirty('logo') && $bankAccount->getOriginal('logo')) {
-            Storage::disk('public')->delete($bankAccount->getOriginal('logo'));
-        }
+        $this->deleteOldFileIfReplaced($bankAccount, 'logo');
     }
 
     public function deleted(PlatformBankAccount $bankAccount): void
     {
-        if ($bankAccount->logo) {
-            Storage::disk('public')->delete($bankAccount->logo);
-        }
+        $this->deleteFile($bankAccount, 'logo');
     }
 }

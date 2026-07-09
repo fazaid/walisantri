@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToPesantren;
+use App\Models\Concerns\BelongsToSantri;
 use App\Traits\Multitenantable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -13,22 +15,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable(['pesantren_id', 'santri_id', 'ekskul_id', 'level', 'tanggal_mulai', 'aktif'])]
 class SantriEkskul extends Model
 {
-    use HasFactory, Multitenantable;
+    use BelongsToPesantren, BelongsToSantri, HasFactory, Multitenantable;
 
     protected $casts = [
         'tanggal_mulai' => 'date',
-        'aktif'         => 'boolean',
+        'aktif' => 'boolean',
     ];
-
-    public function pesantren(): BelongsTo
-    {
-        return $this->belongsTo(Pesantren::class);
-    }
-
-    public function santri(): BelongsTo
-    {
-        return $this->belongsTo(Santri::class);
-    }
 
     public function ekskulMaster(): BelongsTo
     {
@@ -38,10 +30,10 @@ class SantriEkskul extends Model
     public function labelLevel(): string
     {
         return match ($this->level) {
-            'pemula'   => 'Pemula',
+            'pemula' => 'Pemula',
             'menengah' => 'Menengah',
-            'mahir'    => 'Mahir',
-            default    => ucfirst($this->level),
+            'mahir' => 'Mahir',
+            default => ucfirst($this->level),
         };
     }
 }

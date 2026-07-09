@@ -3,8 +3,8 @@
 namespace App\Filament\Resources\PrestasiSantris\Schemas;
 
 use App\Enums\TingkatPrestasi;
+use App\Filament\Support\SantriOptions;
 use App\Models\PrestasiSantri;
-use App\Models\Santri;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
@@ -23,13 +23,7 @@ class PrestasiSantriForm
                 ->schema([
                     Select::make('santri_id')
                         ->label('Santri')
-                        ->options(function () {
-                            $query = Santri::where('status_aktif', true);
-                            if (auth()->user()?->role === 'ustadz') {
-                                $query->where('pembimbing_ustadz_id', auth()->id());
-                            }
-                            return $query->pluck('nama_lengkap', 'id');
-                        })
+                        ->options(fn () => SantriOptions::aktifUntukPengguna())
                         ->searchable()
                         ->required(),
 

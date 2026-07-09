@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\TahfidzUjian\Tables;
 
+use App\Services\TahunAjaranOptions;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -24,9 +25,9 @@ class TahfidzUjianTable
                 TextColumn::make('status_kelulusan')->label('Status')
                     ->badge()
                     ->color(fn (?string $state): string => match ($state) {
-                        'Lulus'     => 'success',
+                        'Lulus' => 'success',
                         'Mengulang' => 'danger',
-                        default     => 'gray',
+                        default => 'gray',
                     }),
                 TextColumn::make('tahun_ajaran')->label('Tahun Ajaran')->sortable(),
                 TextColumn::make('periode')->label('Periode')
@@ -42,11 +43,7 @@ class TahfidzUjianTable
             ->defaultSort('tanggal_ujian', 'desc')
             ->filters([
                 SelectFilter::make('periode')->label('Periode')
-                    ->options([
-                        'Bulanan'         => 'Bulanan',
-                        'Semester_Ganjil' => 'Semester Ganjil',
-                        'Semester_Genap'  => 'Semester Genap',
-                    ]),
+                    ->options(TahunAjaranOptions::periodeOptions()),
                 SelectFilter::make('status_kelulusan')->label('Status')
                     ->options(['Lulus' => 'Lulus', 'Mengulang' => 'Mengulang']),
             ])

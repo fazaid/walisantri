@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources\KesantrianKarakterRapors\Schemas;
 
-use App\Models\Santri;
+use App\Filament\Support\SantriOptions;
 use App\Services\TahunAjaranOptions;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
@@ -26,13 +26,7 @@ class KesantrianKarakterRaporForm
             ->components([
                 Section::make('Identitas')->columns(2)->schema([
                     Select::make('santri_id')->label('Santri')
-                        ->options(function () {
-                            $query = Santri::where('status_aktif', true);
-                            if (auth()->user()?->role === 'ustadz') {
-                                $query->where('pembimbing_ustadz_id', auth()->id());
-                            }
-                            return $query->pluck('nama_lengkap', 'id');
-                        })
+                        ->options(fn () => SantriOptions::aktifUntukPengguna())
                         ->searchable()->required(),
 
                     Select::make('tahun_ajaran')
@@ -44,11 +38,7 @@ class KesantrianKarakterRaporForm
                         ->afterStateUpdated(fn (callable $set) => $set('bulan', null)),
 
                     Select::make('periode')->label('Periode')
-                        ->options([
-                            'Bulanan'         => 'Bulanan',
-                            'Semester_Ganjil' => 'Semester Ganjil',
-                            'Semester_Genap'  => 'Semester Genap',
-                        ])
+                        ->options(TahunAjaranOptions::periodeOptions())
                         ->default(TahunAjaranOptions::currentPeriode())
                         ->required()
                         ->live()
@@ -56,26 +46,7 @@ class KesantrianKarakterRaporForm
 
                     Select::make('bulan')
                         ->label('Bulan')
-                        ->options(function (Get $get) {
-                            $tahunAjaran = $get('tahun_ajaran') ?: TahunAjaranOptions::current();
-                            [$startYear, $endYear] = array_map('intval', explode('/', $tahunAjaran));
-
-                            $nama = [
-                                1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
-                                5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
-                                9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
-                            ];
-
-                            $options = [];
-                            for ($m = 7; $m <= 12; $m++) {
-                                $options["{$m}-{$startYear}"] = $nama[$m] . ' ' . $startYear;
-                            }
-                            for ($m = 1; $m <= 6; $m++) {
-                                $options["{$m}-{$endYear}"] = $nama[$m] . ' ' . $endYear;
-                            }
-
-                            return $options;
-                        })
+                        ->options(fn (Get $get) => TahunAjaranOptions::bulanOptions($get('tahun_ajaran') ?: TahunAjaranOptions::current()))
                         ->visible(fn (Get $get) => $get('periode') === 'Bulanan')
                         ->required(fn (Get $get) => $get('periode') === 'Bulanan')
                         ->native(false),

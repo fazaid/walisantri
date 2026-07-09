@@ -22,7 +22,7 @@ trait ScopesQueryToUstadzSantri
 
     protected static function ustadzScopedIds(): Collection
     {
-        return Santri::where('pembimbing_ustadz_id', Auth::id())->pluck('id');
+        return Santri::idsPembimbing(Auth::id());
     }
 
     public static function getEloquentQuery(): Builder

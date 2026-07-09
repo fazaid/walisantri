@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\KesantrianKesehatans\Tables;
 
+use App\Filament\Support\SantriOptions;
 use Carbon\Carbon;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -32,36 +33,36 @@ class KesantrianKesehatansTable
                     ->label('Jenis')
                     ->badge()
                     ->color(fn (?string $state): string => match ($state) {
-                        'rutin'   => 'success',
-                        default   => 'danger',
+                        'rutin' => 'success',
+                        default => 'danger',
                     })
                     ->formatStateUsing(fn (?string $state): string => match ($state) {
-                        'rutin'   => 'Rutin',
-                        default   => 'Keluhan',
+                        'rutin' => 'Rutin',
+                        default => 'Keluhan',
                     }),
                 TextColumn::make('kategori_keluhan')
                     ->label('Keluhan')
                     ->badge()
                     ->placeholder('—')
                     ->color(fn (?string $state): string => match ($state) {
-                        'Demam'       => 'danger',
+                        'Demam' => 'danger',
                         'Batuk_Pilek' => 'warning',
                         'Sakit_Perut' => 'warning',
-                        'Pusing'      => 'info',
+                        'Pusing' => 'info',
                         'Kulit_Gatal' => 'info',
-                        'Luka_Fisik'  => 'danger',
-                        default       => 'gray',
+                        'Luka_Fisik' => 'danger',
+                        default => 'gray',
                     }),
                 TextColumn::make('status_pemulihan')
                     ->label('Status')
                     ->badge()
                     ->placeholder('—')
                     ->color(fn (?string $state): string => match ($state) {
-                        'Sembuh'          => 'success',
-                        'Rawat_Mandiri'   => 'info',
+                        'Sembuh' => 'success',
+                        'Rawat_Mandiri' => 'info',
                         'Istirahat_Total' => 'warning',
-                        'Rujukan_Luar'    => 'danger',
-                        default           => 'gray',
+                        'Rujukan_Luar' => 'danger',
+                        default => 'gray',
                     }),
                 TextColumn::make('tanggal_sembuh')
                     ->label('Sembuh')
@@ -86,36 +87,30 @@ class KesantrianKesehatansTable
                     ->label('Jenis Rekam')
                     ->options([
                         'keluhan' => 'Keluhan Sakit',
-                        'rutin'   => 'Pemeriksaan Rutin',
+                        'rutin' => 'Pemeriksaan Rutin',
                     ]),
                 SelectFilter::make('kategori_keluhan')
                     ->label('Kategori Keluhan')
                     ->options([
-                        'Demam'       => 'Demam',
+                        'Demam' => 'Demam',
                         'Batuk_Pilek' => 'Batuk / Pilek',
                         'Sakit_Perut' => 'Sakit Perut',
-                        'Pusing'      => 'Pusing',
+                        'Pusing' => 'Pusing',
                         'Kulit_Gatal' => 'Kulit Gatal',
-                        'Luka_Fisik'  => 'Luka Fisik',
-                        'Lainnya'     => 'Lainnya',
+                        'Luka_Fisik' => 'Luka Fisik',
+                        'Lainnya' => 'Lainnya',
                     ]),
                 SelectFilter::make('status_pemulihan')
                     ->label('Status Pemulihan')
                     ->options([
-                        'Rawat_Mandiri'   => 'Rawat Mandiri',
+                        'Rawat_Mandiri' => 'Rawat Mandiri',
                         'Istirahat_Total' => 'Istirahat Total',
-                        'Rujukan_Luar'    => 'Rujukan Luar',
-                        'Sembuh'          => 'Sembuh',
+                        'Rujukan_Luar' => 'Rujukan Luar',
+                        'Sembuh' => 'Sembuh',
                     ]),
                 SelectFilter::make('santri_id')
                     ->label('Santri')
-                    ->options(function () {
-                        $query = \App\Models\Santri::where('status_aktif', true);
-                        if (auth()->user()?->role === 'ustadz') {
-                            $query->where('pembimbing_ustadz_id', auth()->id());
-                        }
-                        return $query->orderBy('nama_lengkap')->pluck('nama_lengkap', 'id');
-                    })
+                    ->options(fn () => SantriOptions::aktifUntukPengguna())
                     ->searchable(),
                 Filter::make('tanggal_range')
                     ->label('Rentang Tanggal')
@@ -130,11 +125,12 @@ class KesantrianKesehatansTable
                     ->indicateUsing(function (array $data) {
                         $indicators = [];
                         if ($data['dari']) {
-                            $indicators[] = 'Dari: ' . Carbon::parse($data['dari'])->format('d M Y');
+                            $indicators[] = 'Dari: '.Carbon::parse($data['dari'])->format('d M Y');
                         }
                         if ($data['sampai']) {
-                            $indicators[] = 'Sampai: ' . Carbon::parse($data['sampai'])->format('d M Y');
+                            $indicators[] = 'Sampai: '.Carbon::parse($data['sampai'])->format('d M Y');
                         }
+
                         return $indicators;
                     }),
             ])

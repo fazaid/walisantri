@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\TahfidzProgress\Schemas;
 
 use App\Data\QuranSurah;
-use App\Models\Santri;
+use App\Filament\Support\SantriOptions;
 use App\Models\User;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
@@ -22,13 +22,7 @@ class TahfidzProgressForm
                 ->schema([
                     Select::make('santri_id')
                         ->label('Santri')
-                        ->options(function () {
-                            $query = Santri::where('status_aktif', true);
-                            if (auth()->user()?->role === 'ustadz') {
-                                $query->where('pembimbing_ustadz_id', auth()->id());
-                            }
-                            return $query->pluck('nama_lengkap', 'id');
-                        })
+                        ->options(fn () => SantriOptions::aktifUntukPengguna())
                         ->searchable()
                         ->required(),
                     Select::make('ustadz_id')
@@ -48,8 +42,8 @@ class TahfidzProgressForm
                     Select::make('tipe_setoran')
                         ->label('Tipe Setoran')
                         ->options([
-                            'Sabaq'  => 'Sabaq (Hafalan Baru)',
-                            'Sabqi'  => 'Sabqi (Hafalan Kemarin)',
+                            'Sabaq' => 'Sabaq (Hafalan Baru)',
+                            'Sabqi' => 'Sabqi (Hafalan Kemarin)',
                             'Manzil' => 'Manzil (Hafalan Lama)',
                         ])
                         ->required(),
@@ -87,10 +81,10 @@ class TahfidzProgressForm
                     Select::make('nilai_kelancaran')
                         ->label('Nilai Kelancaran')
                         ->options([
-                            'Mumtaz'        => 'Mumtaz (Sangat Baik)',
+                            'Mumtaz' => 'Mumtaz (Sangat Baik)',
                             'Jayyid Jiddan' => 'Jayyid Jiddan (Baik Sekali)',
-                            'Jayyid'        => 'Jayyid (Baik)',
-                            'Maqbul'        => 'Maqbul (Cukup)',
+                            'Jayyid' => 'Jayyid (Baik)',
+                            'Maqbul' => 'Maqbul (Cukup)',
                         ])
                         ->required(),
                     Textarea::make('catatan_evaluasi')

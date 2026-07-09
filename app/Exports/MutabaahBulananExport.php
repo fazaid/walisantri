@@ -13,7 +13,7 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithTitle;
 
-class MutabaahBulananExport implements FromCollection, WithHeadings, WithMapping, WithTitle, ShouldAutoSize
+class MutabaahBulananExport implements FromCollection, ShouldAutoSize, WithHeadings, WithMapping, WithTitle
 {
     private Collection $amalMaster;
 
@@ -32,10 +32,7 @@ class MutabaahBulananExport implements FromCollection, WithHeadings, WithMapping
             ->where('pesantren_id', $this->pesantrenId)
             ->whereMonth('tanggal', $this->bulan)
             ->whereYear('tanggal', $this->tahun)
-            ->when($this->ustadzId, function ($query) {
-                $santriIds = Santri::where('pembimbing_ustadz_id', $this->ustadzId)->pluck('id');
-                $query->whereIn('santri_id', $santriIds);
-            })
+            ->when($this->ustadzId, fn ($q) => $q->whereIn('santri_id', Santri::idsPembimbing($this->ustadzId)))
             ->orderBy('tanggal')
             ->orderBy('santri_id')
             ->get();
@@ -75,6 +72,6 @@ class MutabaahBulananExport implements FromCollection, WithHeadings, WithMapping
 
     public function title(): string
     {
-        return 'Mutabaah ' . Carbon::create($this->tahun, $this->bulan)->translatedFormat('F Y');
+        return 'Mutabaah '.Carbon::create($this->tahun, $this->bulan)->translatedFormat('F Y');
     }
 }

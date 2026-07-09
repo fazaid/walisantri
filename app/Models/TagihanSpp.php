@@ -3,14 +3,16 @@
 namespace App\Models;
 
 use App\Enums\StatusTagihanSpp;
+use App\Models\Concerns\BelongsToPesantren;
+use App\Models\Concerns\BelongsToSantri;
 use App\Traits\Multitenantable;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Storage;
 
 class TagihanSpp extends Model
 {
-    use Multitenantable;
+    use BelongsToPesantren, BelongsToSantri, Multitenantable;
 
     protected $table = 'tagihan_spp';
 
@@ -28,11 +30,11 @@ class TagihanSpp extends Model
     ];
 
     protected $casts = [
-        'bulan'                => 'integer',
-        'tahun'                => 'integer',
-        'nominal'              => 'integer',
-        'jatuh_tempo'          => 'date',
-        'status'               => StatusTagihanSpp::class,
+        'bulan' => 'integer',
+        'tahun' => 'integer',
+        'nominal' => 'integer',
+        'jatuh_tempo' => 'date',
+        'status' => StatusTagihanSpp::class,
         'dikonfirmasi_wali_at' => 'datetime',
     ];
 
@@ -44,12 +46,12 @@ class TagihanSpp extends Model
 
     public function getLabelPeriodeAttribute(): string
     {
-        return (self::$namaBulan[$this->bulan] ?? $this->bulan) . ' ' . $this->tahun;
+        return (self::$namaBulan[$this->bulan] ?? $this->bulan).' '.$this->tahun;
     }
 
     public function getNominalRpAttribute(): string
     {
-        return 'Rp ' . number_format($this->nominal, 0, ',', '.');
+        return 'Rp '.number_format($this->nominal, 0, ',', '.');
     }
 
     public function isLunas(): bool
@@ -65,18 +67,8 @@ class TagihanSpp extends Model
     public function getBuktiTransferUrlAttribute(): ?string
     {
         return $this->bukti_transfer
-            ? \Illuminate\Support\Facades\Storage::disk('public')->url($this->bukti_transfer)
+            ? Storage::disk('public')->url($this->bukti_transfer)
             : null;
-    }
-
-    public function santri(): BelongsTo
-    {
-        return $this->belongsTo(Santri::class);
-    }
-
-    public function pesantren(): BelongsTo
-    {
-        return $this->belongsTo(Pesantren::class);
     }
 
     public function pembayaran(): HasOne

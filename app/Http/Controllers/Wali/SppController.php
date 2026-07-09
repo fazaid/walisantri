@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Wali;
 
 use App\Enums\StatusTagihanSpp;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Wali\Concerns\ResolvesSantriMilikWali;
 use App\Models\TagihanSpp;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class SppController extends Controller
 {
+    use ResolvesSantriMilikWali;
+
     public function index()
     {
         $wali = auth()->user();
@@ -33,8 +36,7 @@ class SppController extends Controller
     public function konfirmasi(Request $request, TagihanSpp $tagihan)
     {
         // Pastikan tagihan ini milik santri wali yang login
-        $waliSantriIds = auth()->user()->anakSantri()->pluck('id');
-        abort_unless($waliSantriIds->contains($tagihan->santri_id), 403);
+        $this->pastikanSantriMilikWali($tagihan->santri_id);
         abort_unless(
             in_array($tagihan->status, [StatusTagihanSpp::BelumBayar, StatusTagihanSpp::MenungguKonfirmasi]),
             422, 'Status tagihan tidak valid.'
@@ -44,8 +46,8 @@ class SppController extends Controller
             'bukti_transfer' => ['required', 'image', 'max:5120'], // maks 5 MB
         ], [
             'bukti_transfer.required' => 'Bukti transfer wajib diunggah.',
-            'bukti_transfer.image'    => 'File harus berupa gambar (JPG, PNG, dll).',
-            'bukti_transfer.max'      => 'Ukuran file maksimal 5 MB.',
+            'bukti_transfer.image' => 'File harus berupa gambar (JPG, PNG, dll).',
+            'bukti_transfer.max' => 'Ukuran file maksimal 5 MB.',
         ]);
 
         if ($tagihan->bukti_transfer) {
@@ -55,9 +57,9 @@ class SppController extends Controller
         $path = $request->file('bukti_transfer')->store('bukti-spp', 'public');
 
         $tagihan->update([
-            'bukti_transfer'       => $path,
+            'bukti_transfer' => $path,
             'dikonfirmasi_wali_at' => now(),
-            'status'               => StatusTagihanSpp::MenungguKonfirmasi,
+            'status' => StatusTagihanSpp::MenungguKonfirmasi,
         ]);
 
         return back()->with('sukses_tagihan', $tagihan->id);

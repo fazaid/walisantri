@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToPesantren;
+use App\Models\Concerns\BelongsToSantri;
 use App\Traits\Multitenantable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -27,7 +29,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class TahfidzUjian extends Model
 {
-    use Multitenantable;
+    use BelongsToPesantren, BelongsToSantri, Multitenantable;
 
     protected function casts(): array
     {
@@ -41,18 +43,8 @@ class TahfidzUjian extends Model
         return $this->santri?->nama_lengkap ?? '—';
     }
 
-    public function santri(): BelongsTo
-    {
-        return $this->belongsTo(Santri::class);
-    }
-
     public function penguji(): BelongsTo
     {
         return $this->belongsTo(User::class, 'penguji_id');
-    }
-
-    public function pesantren(): BelongsTo
-    {
-        return $this->belongsTo(Pesantren::class);
     }
 }

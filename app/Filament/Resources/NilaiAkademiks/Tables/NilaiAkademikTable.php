@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\NilaiAkademiks\Tables;
 
+use App\Services\TahunAjaranOptions;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -30,10 +31,10 @@ class NilaiAkademikTable
                     ->label('Periode')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'Bulanan'         => 'info',
+                        'Bulanan' => 'info',
                         'Semester_Ganjil' => 'warning',
-                        'Semester_Genap'  => 'success',
-                        default           => 'gray',
+                        'Semester_Genap' => 'success',
+                        default => 'gray',
                     }),
                 TextColumn::make('bulan')
                     ->label('Bulan')
@@ -46,7 +47,7 @@ class NilaiAkademikTable
                         $state >= 85 => 'success',
                         $state >= 70 => 'info',
                         $state >= 60 => 'warning',
-                        default      => 'danger',
+                        default => 'danger',
                     })
                     ->sortable(),
                 TextColumn::make('created_at')
@@ -59,11 +60,7 @@ class NilaiAkademikTable
             ->filters([
                 SelectFilter::make('periode')
                     ->label('Periode')
-                    ->options([
-                        'Bulanan'         => 'Bulanan',
-                        'Semester_Ganjil' => 'Semester Ganjil',
-                        'Semester_Genap'  => 'Semester Genap',
-                    ]),
+                    ->options(TahunAjaranOptions::periodeOptions()),
                 SelectFilter::make('mataPelajaran')
                     ->label('Mata Pelajaran')
                     ->relationship('mataPelajaran', 'nama_mapel')
