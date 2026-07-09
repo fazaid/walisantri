@@ -33,7 +33,7 @@ class UstadzProgressHafalanChart extends ChartWidget
 
     protected function getData(): array
     {
-        $ustadzId    = Auth::id();
+        $ustadzId = Auth::id();
         $pesantrenId = Auth::user()?->pesantren_id;
 
         $santriList = Santri::where('pembimbing_ustadz_id', $ustadzId)
@@ -52,33 +52,34 @@ class UstadzProgressHafalanChart extends ChartWidget
             ->groupBy('santri_id')
             ->pluck('total_setoran', 'santri_id');
 
-        $labels      = [];
+        $juzBySantri = TahfidzJuzCalculator::calculateMany($santriList->pluck('id')->all());
+
+        $labels = [];
         $dataSetoran = [];
-        $dataJuz     = [];
+        $dataJuz = [];
 
         foreach ($santriList as $santri) {
-            $progress      = TahfidzJuzCalculator::calculate($santri->id);
-            $nama          = $santri->nama_panggilan ?: explode(' ', $santri->nama_lengkap)[0];
-            $labels[]      = $nama;
+            $nama = $santri->nama_panggilan ?: explode(' ', $santri->nama_lengkap)[0];
+            $labels[] = $nama;
             $dataSetoran[] = (int) ($rows[$santri->id] ?? 0);
-            $dataJuz[]     = $progress['juz_hafal'];
+            $dataJuz[] = $juzBySantri[$santri->id]['juz_hafal'];
         }
 
         return [
             'datasets' => [
                 [
-                    'label'           => 'Total Setoran',
-                    'data'            => $dataSetoran,
+                    'label' => 'Total Setoran',
+                    'data' => $dataSetoran,
                     'backgroundColor' => '#3b82f6',
-                    'borderRadius'    => 6,
-                    'yAxisID'         => 'y',
+                    'borderRadius' => 6,
+                    'yAxisID' => 'y',
                 ],
                 [
-                    'label'           => 'Estimasi Hafalan',
-                    'data'            => $dataJuz,
+                    'label' => 'Estimasi Hafalan',
+                    'data' => $dataJuz,
                     'backgroundColor' => '#10b981',
-                    'borderRadius'    => 6,
-                    'yAxisID'         => 'y2',
+                    'borderRadius' => 6,
+                    'yAxisID' => 'y2',
                 ],
             ],
             'labels' => $labels,

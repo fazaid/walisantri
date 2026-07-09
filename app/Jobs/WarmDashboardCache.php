@@ -11,6 +11,11 @@ class WarmDashboardCache implements ShouldQueue
 {
     use Queueable;
 
+    public int $timeout = 300;
+
+    // Operasi cache put idempoten — aman di-retry sekali kalau gagal transient.
+    public int $tries = 2;
+
     public function handle(): void
     {
         // Pre-generate cache dashboard untuk santri aktif (§4.5)

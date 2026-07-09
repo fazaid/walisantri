@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Wali;
 
-use App\Http\Controllers\Controller;
 use App\Enums\StatusTagihanSpp;
+use App\Http\Controllers\Controller;
 use App\Models\KesantrianInventaris;
 use App\Models\MasterPengumuman;
 use App\Models\TagihanSpp;
@@ -22,19 +22,20 @@ class DashboardController extends Controller
 
         $santri = null;
         $detail = null;
-        $cards  = collect();
+        $cards = collect();
 
         if ($anakList->count() === 1) {
             $santri = $anakList->first();
             $detail = SantriDetailPresenter::detail($santri);
             $statusKesehatanList = collect([[
-                'santri'          => $santri,
+                'santri' => $santri,
                 'statusKesehatan' => $detail['statusKesehatanTerkini'],
             ]]);
         } else {
+            $summaries = SantriDetailPresenter::cardSummaryMany($anakList);
             $cards = $anakList->map(fn ($s) => array_merge(
                 ['santri' => $s],
-                SantriDetailPresenter::cardSummary($s)
+                $summaries->get($s->id)
             ));
             $statusKesehatanList = $cards;
         }
@@ -43,8 +44,8 @@ class DashboardController extends Controller
         $alertKesehatan = $statusKesehatanList
             ->filter(fn ($c) => in_array($c['statusKesehatan']['status_pemulihan'] ?? null, ['Istirahat_Total', 'Rujukan_Luar']))
             ->map(fn ($c) => [
-                'nama'            => $c['santri']->nama_lengkap,
-                'status'          => $c['statusKesehatan']['status_pemulihan'],
+                'nama' => $c['santri']->nama_lengkap,
+                'status' => $c['statusKesehatan']['status_pemulihan'],
                 'tanggal_periksa' => $c['statusKesehatan']['tanggal_periksa'],
             ]);
 
@@ -63,7 +64,7 @@ class DashboardController extends Controller
             ->count();
 
         $totalInventaris = KesantrianInventaris::whereIn('santri_id', $santriIds)->count();
-        $firstSantriId   = $anakList->first()?->id;
+        $firstSantriId = $anakList->first()?->id;
 
         return view('wali.dashboard', compact(
             'wali',

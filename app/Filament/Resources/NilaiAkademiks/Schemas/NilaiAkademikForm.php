@@ -31,7 +31,7 @@ class NilaiAkademikForm
 
                             return $query->get()
                                 ->mapWithKeys(fn (MataPelajaran $mapel) => [
-                                    $mapel->id => $mapel->nama_mapel . ' — ' . $mapel->kelas?->nama_kelas,
+                                    $mapel->id => $mapel->nama_mapel.' — '.$mapel->kelas?->nama_kelas,
                                 ]);
                         })
                         ->searchable()
@@ -64,37 +64,14 @@ class NilaiAkademikForm
                         ->required(),
                     Select::make('periode')
                         ->label('Periode')
-                        ->options([
-                            'Bulanan'         => 'Bulanan',
-                            'Semester_Ganjil' => 'Semester Ganjil',
-                            'Semester_Genap'  => 'Semester Genap',
-                        ])
+                        ->options(TahunAjaranOptions::periodeOptions())
                         ->default(TahunAjaranOptions::currentPeriode())
                         ->live()
                         ->afterStateUpdated(fn (callable $set) => $set('bulan', null))
                         ->required(),
                     Select::make('bulan')
                         ->label('Bulan')
-                        ->options(function (callable $get) {
-                            $tahunAjaran = $get('tahun_ajaran');
-                            if (! $tahunAjaran) return [];
-
-                            [$startYear, $endYear] = array_map('intval', explode('/', $tahunAjaran));
-                            $nama = [
-                                1=>'Januari', 2=>'Februari', 3=>'Maret',    4=>'April',
-                                5=>'Mei',     6=>'Juni',     7=>'Juli',      8=>'Agustus',
-                                9=>'September',10=>'Oktober',11=>'November',12=>'Desember',
-                            ];
-
-                            $options = [];
-                            for ($m = 7; $m <= 12; $m++) {
-                                $options["{$m}-{$startYear}"] = $nama[$m] . ' ' . $startYear;
-                            }
-                            for ($m = 1; $m <= 6; $m++) {
-                                $options["{$m}-{$endYear}"] = $nama[$m] . ' ' . $endYear;
-                            }
-                            return $options;
-                        })
+                        ->options(fn (callable $get) => TahunAjaranOptions::bulanOptions($get('tahun_ajaran')))
                         ->visible(fn (callable $get) => $get('periode') === 'Bulanan')
                         ->required(fn (callable $get) => $get('periode') === 'Bulanan')
                         ->columnSpanFull(),

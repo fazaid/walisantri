@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers\Wali;
 
-use App\Enums\JenisUangSaku;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Wali\Concerns\ResolvesSantriMilikWali;
 use App\Models\Santri;
 use App\Models\UangSakuSantri;
 
 class UangSakuController extends Controller
 {
+    use ResolvesSantriMilikWali;
+
     public function index()
     {
         $wali = auth()->user();
@@ -24,8 +26,7 @@ class UangSakuController extends Controller
 
     public function show(Santri $santri)
     {
-        $waliSantriIds = auth()->user()->anakSantri()->pluck('id');
-        abort_unless($waliSantriIds->contains($santri->id), 403);
+        $this->pastikanSantriMilikWali($santri->id);
 
         $transaksi = UangSakuSantri::withoutGlobalScope('pesantren')
             ->where('santri_id', $santri->id)

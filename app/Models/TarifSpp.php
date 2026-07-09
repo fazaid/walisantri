@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToPesantren;
 use App\Traits\Multitenantable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TarifSpp extends Model
 {
-    use Multitenantable;
+    use BelongsToPesantren, Multitenantable;
 
     protected $table = 'tarif_spp';
 
@@ -26,10 +27,5 @@ class TarifSpp extends Model
     public function kelas(): BelongsTo
     {
         return $this->belongsTo(Kelas::class);
-    }
-
-    public function pesantren(): BelongsTo
-    {
-        return $this->belongsTo(Pesantren::class);
     }
 }

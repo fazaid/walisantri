@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\KesantrianKesehatans;
 
 use App\Filament\Clusters\Kesantrian;
+use App\Filament\Concerns\HasAdminUstadzAccess;
+use App\Filament\Concerns\ScopesRouteBindingToUstadzSantri;
 use App\Filament\Resources\KesantrianKesehatans\Pages\CreateKesantrianKesehatan;
 use App\Filament\Resources\KesantrianKesehatans\Pages\EditKesantrianKesehatan;
 use App\Filament\Resources\KesantrianKesehatans\Pages\ListKesantrianKesehatans;
@@ -11,76 +13,45 @@ use App\Filament\Resources\KesantrianKesehatans\Schemas\KesantrianKesehatanForm;
 use App\Filament\Resources\KesantrianKesehatans\Schemas\KesantrianKesehatanInfolist;
 use App\Filament\Resources\KesantrianKesehatans\Tables\KesantrianKesehatansTable;
 use App\Models\KesantrianKesehatan;
+use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use App\Models\Santri;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Auth;
-use BackedEnum;
+use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Database\Eloquent\Model;
 
 class KesantrianKesehatanResource extends Resource
 {
+    use HasAdminUstadzAccess;
+    use ScopesRouteBindingToUstadzSantri;
+
     protected static ?string $model = KesantrianKesehatan::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedHeart;
 
     protected static ?string $recordTitleAttribute = 'kategori_keluhan';
+
     protected static ?string $navigationLabel = 'Kesehatan';
 
-    public static function getRecordTitle(?\Illuminate\Database\Eloquent\Model $record): \Illuminate\Contracts\Support\Htmlable|string|null
+    public static function getRecordTitle(?Model $record): Htmlable|string|null
     {
         if (! $record) {
             return null;
         }
+
         return $record->santri?->nama_lengkap ?? 'Rekam Medis';
     }
+
     protected static ?string $modelLabel = 'Rekam Medis';
+
     protected static ?string $pluralModelLabel = 'Rekam Medis';
 
     protected static ?string $cluster = Kesantrian::class;
+
     protected static ?int $navigationSort = 2;
+
     protected static ?string $slug = 'kesehatan';
-
-
-    public static function canViewAny(): bool
-    {
-        return in_array(Auth::user()?->role, [
-            'admin_pesantren',
-            'ustadz',
-        ]);
-    }
-
-    public static function canCreate(): bool
-    {
-        return in_array(Auth::user()?->role, ['admin_pesantren', 'ustadz']);
-    }
-
-    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
-    {
-        return in_array(Auth::user()?->role, ['admin_pesantren', 'ustadz']);
-    }
-
-    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
-    {
-        return Auth::user()?->role === 'admin_pesantren';
-    }
-
-    public static function canDeleteAny(): bool
-    {
-        return Auth::user()?->role === 'admin_pesantren';
-    }
-
-    public static function getEloquentQuery(): Builder
-    {
-        $query = parent::getEloquentQuery();
-        if (Auth::user()?->role === 'ustadz') {
-            $santriIds = Santri::where('pembimbing_ustadz_id', Auth::id())->pluck('id');
-            $query->whereIn('santri_id', $santriIds);
-        }
-        return $query;
-    }
 
     public static function form(Schema $schema): Schema
     {
@@ -112,17 +83,5 @@ class KesantrianKesehatanResource extends Resource
             'view' => ViewKesantrianKesehatan::route('/{record}'),
             'edit' => EditKesantrianKesehatan::route('/{record}/edit'),
         ];
-    }
-
-    public static function getRecordRouteBindingEloquentQuery(): Builder
-    {
-        $query = parent::getRecordRouteBindingEloquentQuery();
-
-        if (Auth::user()?->role === 'ustadz') {
-            $santriIds = Santri::where('pembimbing_ustadz_id', Auth::id())->pluck('id');
-            $query->whereIn('santri_id', $santriIds);
-        }
-
-        return $query;
     }
 }

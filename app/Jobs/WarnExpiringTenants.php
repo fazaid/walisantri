@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Mail\ExpiringTenantWarning;
 use App\Models\Pesantren;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -14,11 +15,17 @@ class WarnExpiringTenants implements ShouldQueue
     // Kirim peringatan pada H-7 dan H-3 sebelum expired (§11)
     private const WARN_DAYS = [7, 3];
 
+    public int $timeout = 300;
+
+    // Job ini mengirim email — jangan auto-retry supaya tidak berisiko kirim
+    // notifikasi dobel ke admin pesantren.
+    public int $tries = 1;
+
     public function handle(): void
     {
         foreach (self::WARN_DAYS as $days) {
             $from = now()->addDays($days)->startOfDay();
-            $to   = now()->addDays($days)->endOfDay();
+            $to = now()->addDays($days)->endOfDay();
 
             Pesantren::whereIn('status_berlangganan', ['trial', 'active'])
                 ->whereBetween('expired_at', [$from, $to])
@@ -30,7 +37,7 @@ class WarnExpiringTenants implements ShouldQueue
 
                     if ($admin) {
                         Mail::to($admin->email)->queue(
-                            new \App\Mail\ExpiringTenantWarning($pesantren, $days)
+                            new ExpiringTenantWarning($pesantren, $days)
                         );
                     }
                 });

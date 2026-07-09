@@ -3,15 +3,18 @@
 namespace App\Http\Controllers\Wali;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Wali\Concerns\ResolvesSantriMilikWali;
 use App\Models\KesantrianKesehatan;
+use App\Services\TrendBulanan;
 use Illuminate\Support\Facades\DB;
 
 class KesehatanStatsController extends Controller
 {
+    use ResolvesSantriMilikWali;
+
     public function show(int $santriId)
     {
-        $wali   = auth()->user();
-        $santri = $wali->anakSantri()->with(['kelas', 'kamar'])->findOrFail($santriId);
+        $santri = $this->santriMilikWali($santriId);
 
         // Pemeriksaan per bulan (12 bulan terakhir)
         $periksaPerBulan = KesantrianKesehatan::where('santri_id', $santri->id)
@@ -21,12 +24,11 @@ class KesehatanStatsController extends Controller
             ->orderBy('bulan')
             ->pluck('total', 'bulan');
 
-        $bulanLabels   = [];
+        $bulanLabels = [];
         $dataPemeriksaan = [];
-        for ($i = 11; $i >= 0; $i--) {
-            $key             = now()->subMonths($i)->format('Y-m');
-            $bulanLabels[]   = now()->subMonths($i)->translatedFormat('M Y');
-            $dataPemeriksaan[] = $periksaPerBulan[$key] ?? 0;
+        foreach (TrendBulanan::duaBelasBulanTerakhir() as $bulan) {
+            $bulanLabels[] = $bulan['label'];
+            $dataPemeriksaan[] = $periksaPerBulan[$bulan['key']] ?? 0;
         }
 
         // Distribusi kategori keluhan
@@ -54,7 +56,7 @@ class KesehatanStatsController extends Controller
 
         // Total & status terkini
         $totalPemeriksaan = KesantrianKesehatan::where('santri_id', $santri->id)->count();
-        $statusTerkini    = KesantrianKesehatan::where('santri_id', $santri->id)
+        $statusTerkini = KesantrianKesehatan::where('santri_id', $santri->id)
             ->orderByDesc('tanggal_periksa')->first();
 
         // Riwayat 10 terbaru

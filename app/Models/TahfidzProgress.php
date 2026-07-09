@@ -5,9 +5,11 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToPesantren;
+use App\Models\Concerns\BelongsToSantri;
 use App\Traits\Multitenantable;
-use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -26,13 +28,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class TahfidzProgress extends Model
 {
-    use Multitenantable;
+    use BelongsToPesantren, BelongsToSantri, Multitenantable;
 
     protected function casts(): array
     {
         return [
-            'tanggal'         => 'date',
-            'halaman_mulai'   => 'integer',
+            'tanggal' => 'date',
+            'halaman_mulai' => 'integer',
             'halaman_selesai' => 'integer',
         ];
     }
@@ -42,18 +44,8 @@ class TahfidzProgress extends Model
         return $this->santri?->nama_lengkap ?? '—';
     }
 
-    public function santri(): BelongsTo
-    {
-        return $this->belongsTo(Santri::class);
-    }
-
     public function ustadz(): BelongsTo
     {
         return $this->belongsTo(User::class, 'ustadz_id');
-    }
-
-    public function pesantren(): BelongsTo
-    {
-        return $this->belongsTo(Pesantren::class);
     }
 }

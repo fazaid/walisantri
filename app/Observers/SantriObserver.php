@@ -5,10 +5,12 @@ namespace App\Observers;
 use App\Enums\OnboardingStep;
 use App\Exceptions\SantriQuotaExceededException;
 use App\Models\Santri;
-use Illuminate\Support\Facades\Storage;
+use App\Observers\Concerns\ReplacesUploadedFile;
 
 class SantriObserver
 {
+    use ReplacesUploadedFile;
+
     public function creating(Santri $santri): void
     {
         if ($santri->status_aktif === false) {
@@ -29,8 +31,8 @@ class SantriObserver
     public function created(Santri $santri): void
     {
         ActivityLogger::log('santri.created', $santri, null, [
-            'nis'           => $santri->nis,
-            'nama_lengkap'  => $santri->nama_lengkap,
+            'nis' => $santri->nis,
+            'nama_lengkap' => $santri->nama_lengkap,
         ]);
 
         $santri->pesantren?->completeOnboardingStep(OnboardingStep::Santri);
@@ -38,27 +40,21 @@ class SantriObserver
 
     public function updating(Santri $santri): void
     {
-        if ($santri->isDirty('foto_profil') && $santri->getOriginal('foto_profil')) {
-            Storage::disk('public')->delete($santri->getOriginal('foto_profil'));
-        }
+        $this->deleteOldFileIfReplaced($santri, 'foto_profil');
     }
 
     public function deleted(Santri $santri): void
     {
-        if ($santri->foto_profil) {
-            Storage::disk('public')->delete($santri->foto_profil);
-        }
+        $this->deleteFile($santri, 'foto_profil');
 
         ActivityLogger::log('santri.deleted', $santri, [
-            'nis'          => $santri->nis,
+            'nis' => $santri->nis,
             'nama_lengkap' => $santri->nama_lengkap,
         ]);
     }
 
     public function forceDeleted(Santri $santri): void
     {
-        if ($santri->foto_profil) {
-            Storage::disk('public')->delete($santri->foto_profil);
-        }
+        $this->deleteFile($santri, 'foto_profil');
     }
 }

@@ -3,39 +3,41 @@
 namespace App\Http\Controllers\Wali;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Wali\Concerns\ResolvesSantriMilikWali;
 use App\Models\KesantrianMutabaah;
 use App\Services\MutabaahScoreCalculator;
+use App\Services\TrendBulanan;
 
 class MutabaahStatsController extends Controller
 {
+    use ResolvesSantriMilikWali;
+
     public function show(int $santriId)
     {
-        $wali   = auth()->user();
-        $santri = $wali->anakSantri()->with(['kelas', 'kamar'])->findOrFail($santriId);
+        $santri = $this->santriMilikWali($santriId);
 
         $semua = KesantrianMutabaah::where('santri_id', $santri->id)
             ->orderBy('tanggal')
             ->get();
 
-        $totalHari      = $semua->count();
-        $rataRata       = MutabaahScoreCalculator::persentaseRataRata($semua);
-        $breakdownAmal  = MutabaahScoreCalculator::breakdown($semua, $santri->pesantren_id);
+        $totalHari = $semua->count();
+        $rataRata = MutabaahScoreCalculator::persentaseRataRata($semua);
+        $breakdownAmal = MutabaahScoreCalculator::breakdown($semua, $santri->pesantren_id);
         $amalMasterList = MutabaahScoreCalculator::masterAktif($santri->pesantren_id);
 
         // Trend rata-rata skor per bulan (12 bulan terakhir)
-        $awalTren   = now()->subMonths(11)->startOfMonth();
+        $awalTren = now()->subMonths(11)->startOfMonth();
         $trendGroup = $semua->filter(fn (KesantrianMutabaah $m) => $m->tanggal->greaterThanOrEqualTo($awalTren))
             ->groupBy(fn (KesantrianMutabaah $m) => $m->tanggal->format('Y-m'));
 
-        $bulanLabels   = [];
-        $dataAvgPct    = [];
+        $bulanLabels = [];
+        $dataAvgPct = [];
         $dataTotalHari = [];
-        for ($i = 11; $i >= 0; $i--) {
-            $key   = now()->subMonths($i)->format('Y-m');
-            $group = $trendGroup->get($key, collect());
+        foreach (TrendBulanan::duaBelasBulanTerakhir() as $bulan) {
+            $group = $trendGroup->get($bulan['key'], collect());
 
-            $bulanLabels[]   = now()->subMonths($i)->translatedFormat('M Y');
-            $dataAvgPct[]    = MutabaahScoreCalculator::persentaseRataRata($group);
+            $bulanLabels[] = $bulan['label'];
+            $dataAvgPct[] = MutabaahScoreCalculator::persentaseRataRata($group);
             $dataTotalHari[] = $group->count();
         }
 

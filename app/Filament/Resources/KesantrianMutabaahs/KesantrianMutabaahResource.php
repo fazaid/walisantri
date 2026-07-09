@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\KesantrianMutabaahs;
 
 use App\Filament\Clusters\Mutabaah;
+use App\Filament\Concerns\HasAdminUstadzAccess;
+use App\Filament\Concerns\ScopesRouteBindingToUstadzSantri;
 use App\Filament\Resources\KesantrianMutabaahs\Pages\CreateKesantrianMutabaah;
 use App\Filament\Resources\KesantrianMutabaahs\Pages\EditKesantrianMutabaah;
 use App\Filament\Resources\KesantrianMutabaahs\Pages\ListKesantrianMutabaahs;
@@ -11,76 +13,45 @@ use App\Filament\Resources\KesantrianMutabaahs\Schemas\KesantrianMutabaahForm;
 use App\Filament\Resources\KesantrianMutabaahs\Schemas\KesantrianMutabaahInfolist;
 use App\Filament\Resources\KesantrianMutabaahs\Tables\KesantrianMutabaahsTable;
 use App\Models\KesantrianMutabaah;
+use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use App\Models\Santri;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Auth;
-use BackedEnum;
+use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Database\Eloquent\Model;
 
 class KesantrianMutabaahResource extends Resource
 {
+    use HasAdminUstadzAccess;
+    use ScopesRouteBindingToUstadzSantri;
+
     protected static ?string $model = KesantrianMutabaah::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
 
     protected static ?string $recordTitleAttribute = 'tanggal';
+
     protected static ?string $navigationLabel = 'Mutabaah';
 
-    public static function getRecordTitle(?\Illuminate\Database\Eloquent\Model $record): \Illuminate\Contracts\Support\Htmlable|string|null
+    public static function getRecordTitle(?Model $record): Htmlable|string|null
     {
         if (! $record) {
             return null;
         }
+
         return $record->santri?->nama_lengkap ?? 'Mutabaah';
     }
+
     protected static ?string $modelLabel = 'Mutabaah';
+
     protected static ?string $pluralModelLabel = 'Data Mutabaah';
 
     protected static ?string $cluster = Mutabaah::class;
+
     protected static ?int $navigationSort = 1;
+
     protected static ?string $slug = 'mutabaah';
-
-
-    public static function canViewAny(): bool
-    {
-        return in_array(Auth::user()?->role, [
-            'admin_pesantren',
-            'ustadz',
-        ]);
-    }
-
-    public static function canCreate(): bool
-    {
-        return in_array(Auth::user()?->role, ['admin_pesantren', 'ustadz']);
-    }
-
-    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
-    {
-        return in_array(Auth::user()?->role, ['admin_pesantren', 'ustadz']);
-    }
-
-    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
-    {
-        return Auth::user()?->role === 'admin_pesantren';
-    }
-
-    public static function canDeleteAny(): bool
-    {
-        return Auth::user()?->role === 'admin_pesantren';
-    }
-
-    public static function getEloquentQuery(): Builder
-    {
-        $query = parent::getEloquentQuery();
-        if (Auth::user()?->role === 'ustadz') {
-            $santriIds = Santri::where('pembimbing_ustadz_id', Auth::id())->pluck('id');
-            $query->whereIn('santri_id', $santriIds);
-        }
-        return $query;
-    }
 
     public static function form(Schema $schema): Schema
     {
@@ -112,17 +83,5 @@ class KesantrianMutabaahResource extends Resource
             'view' => ViewKesantrianMutabaah::route('/{record}'),
             'edit' => EditKesantrianMutabaah::route('/{record}/edit'),
         ];
-    }
-
-    public static function getRecordRouteBindingEloquentQuery(): Builder
-    {
-        $query = parent::getRecordRouteBindingEloquentQuery();
-
-        if (Auth::user()?->role === 'ustadz') {
-            $santriIds = Santri::where('pembimbing_ustadz_id', Auth::id())->pluck('id');
-            $query->whereIn('santri_id', $santriIds);
-        }
-
-        return $query;
     }
 }

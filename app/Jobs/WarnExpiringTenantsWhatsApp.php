@@ -17,6 +17,12 @@ class WarnExpiringTenantsWhatsApp implements ShouldQueue
     // rapor, dsb) tetap manual dan TIDAK terpengaruh oleh perubahan ini.
     private const WARN_DAYS = [3, 1];
 
+    public int $timeout = 300;
+
+    // Job ini mengirim WA — jangan auto-retry supaya tidak berisiko kirim
+    // notifikasi dobel ke admin pesantren.
+    public int $tries = 1;
+
     public function handle(): void
     {
         // Kill-switch dari halaman Pengaturan WhatsApp Super Admin.

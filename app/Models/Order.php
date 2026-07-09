@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\PaketLangganan;
 use App\Enums\StatusOrder;
+use App\Models\Concerns\BelongsToPesantren;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Model;
@@ -33,19 +34,16 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 ])]
 class Order extends Model
 {
+    use BelongsToPesantren;
+
     protected function casts(): array
     {
         return [
-            'paket_target'  => PaketLangganan::class,
-            'status'        => StatusOrder::class,
-            'confirmed_at'  => 'datetime',
+            'paket_target' => PaketLangganan::class,
+            'status' => StatusOrder::class,
+            'confirmed_at' => 'datetime',
             'expired_at_baru' => 'datetime',
         ];
-    }
-
-    public function pesantren(): BelongsTo
-    {
-        return $this->belongsTo(Pesantren::class);
     }
 
     public function kupon(): BelongsTo
@@ -75,6 +73,6 @@ class Order extends Model
 
     public function getFormattedHargaAttribute(): string
     {
-        return 'Rp ' . number_format($this->harga_total, 0, ',', '.');
+        return 'Rp '.number_format($this->harga_total, 0, ',', '.');
     }
 }

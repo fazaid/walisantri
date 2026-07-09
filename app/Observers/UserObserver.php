@@ -5,10 +5,12 @@ namespace App\Observers;
 use App\Enums\OnboardingStep;
 use App\Enums\UserRole;
 use App\Models\User;
-use Illuminate\Support\Facades\Storage;
+use App\Observers\Concerns\ReplacesUploadedFile;
 
 class UserObserver
 {
+    use ReplacesUploadedFile;
+
     public function created(User $user): void
     {
         if ($user->role === UserRole::Ustadz->value) {
@@ -18,9 +20,7 @@ class UserObserver
 
     public function updating(User $user): void
     {
-        if ($user->isDirty('foto_profil') && $user->getOriginal('foto_profil')) {
-            Storage::disk('public')->delete($user->getOriginal('foto_profil'));
-        }
+        $this->deleteOldFileIfReplaced($user, 'foto_profil');
     }
 
     public function updated(User $user): void

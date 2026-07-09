@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources\KesantrianMutabaahs\Schemas;
 
+use App\Filament\Support\SantriOptions;
 use App\Models\KesantrianAmalMaster;
-use App\Models\Santri;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -23,13 +23,7 @@ class KesantrianMutabaahForm
                     ->schema([
                         Select::make('santri_id')
                             ->label('Santri')
-                            ->options(function () {
-                                $query = Santri::where('status_aktif', true);
-                                if (auth()->user()?->role === 'ustadz') {
-                                    $query->where('pembimbing_ustadz_id', auth()->id());
-                                }
-                                return $query->pluck('nama_lengkap', 'id');
-                            })
+                            ->options(fn () => SantriOptions::aktifUntukPengguna())
                             ->searchable()->required(),
                         DatePicker::make('tanggal')
                             ->label('Tanggal')
@@ -37,10 +31,10 @@ class KesantrianMutabaahForm
                         Select::make('status_udzur')
                             ->label('Status Udzur')
                             ->options([
-                                'Tidak'        => 'Tidak',
-                                'Sakit'        => 'Sakit',
-                                'Haid'         => 'Haid',
-                                'Izin_Pulang'  => 'Izin Pulang',
+                                'Tidak' => 'Tidak',
+                                'Sakit' => 'Sakit',
+                                'Haid' => 'Haid',
+                                'Izin_Pulang' => 'Izin Pulang',
                                 'Tugas_Pondok' => 'Tugas Pondok',
                             ])->default('Tidak')->required(),
                     ]),

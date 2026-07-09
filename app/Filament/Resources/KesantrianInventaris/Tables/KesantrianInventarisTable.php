@@ -6,6 +6,7 @@
 
 namespace App\Filament\Resources\KesantrianInventaris\Tables;
 
+use App\Filament\Support\SantriOptions;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -27,24 +28,18 @@ class KesantrianInventarisTable
                     ->formatStateUsing(fn ($state) => str_replace('_', ' ', $state))
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'Baik'        => 'success',
+                        'Baik' => 'success',
                         'Layak_Rusak' => 'warning',
-                        'Hilang'      => 'danger',
+                        'Hilang' => 'danger',
                     }),
                 TextColumn::make('tanggal_sidak_terakhir')->label('Sidak Terakhir')
                     ->date('d M Y')->placeholder('-'),
             ])
             ->filters([
                 SelectFilter::make('kondisi_barang')->label('Kondisi')
-                    ->options(['Baik'=>'Baik','Layak_Rusak'=>'Layak Rusak','Hilang'=>'Hilang']),
+                    ->options(['Baik' => 'Baik', 'Layak_Rusak' => 'Layak Rusak', 'Hilang' => 'Hilang']),
                 SelectFilter::make('santri_id')->label('Santri')
-                    ->options(function () {
-                        $query = \App\Models\Santri::where('status_aktif', true);
-                        if (auth()->user()?->role === 'ustadz') {
-                            $query->where('pembimbing_ustadz_id', auth()->id());
-                        }
-                        return $query->orderBy('nama_lengkap')->pluck('nama_lengkap', 'id');
-                    })
+                    ->options(fn () => SantriOptions::aktifUntukPengguna())
                     ->searchable(),
             ])
             ->recordActions([ViewAction::make(), EditAction::make()])

@@ -5,14 +5,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToPesantren;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasAvatar;
 use Filament\Panel;
-use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -31,7 +31,7 @@ use Illuminate\Support\Facades\Storage;
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser, HasAvatar
 {
-    use HasFactory, Notifiable;
+    use BelongsToPesantren, HasFactory, Notifiable;
 
     public function getFilamentAvatarUrl(): ?string
     {
@@ -55,23 +55,33 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
     {
         return [
             'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
+            'password' => 'hashed',
         ];
     }
 
     // --- Role helpers ---
 
-    public function isSuperAdmin(): bool    { return $this->role === 'super_admin'; }
-    public function isAdminPesantren(): bool { return $this->role === 'admin_pesantren'; }
-    public function isUstadz(): bool        { return $this->role === 'ustadz'; }
-    public function isWaliSantri(): bool    { return $this->role === 'wali_santri'; }
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'super_admin';
+    }
+
+    public function isAdminPesantren(): bool
+    {
+        return $this->role === 'admin_pesantren';
+    }
+
+    public function isUstadz(): bool
+    {
+        return $this->role === 'ustadz';
+    }
+
+    public function isWaliSantri(): bool
+    {
+        return $this->role === 'wali_santri';
+    }
 
     // --- Relations ---
-
-    public function pesantren(): BelongsTo
-    {
-        return $this->belongsTo(Pesantren::class);
-    }
 
     // Santri yang diasuh (sebagai wali)
     public function anakSantri(): HasMany

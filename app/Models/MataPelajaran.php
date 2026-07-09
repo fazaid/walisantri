@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToPesantren;
 use App\Traits\Multitenantable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -14,12 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable(['pesantren_id', 'kelas_id', 'ustadz_id', 'nama_mapel'])]
 class MataPelajaran extends Model
 {
-    use HasFactory, Multitenantable;
-
-    public function pesantren(): BelongsTo
-    {
-        return $this->belongsTo(Pesantren::class);
-    }
+    use BelongsToPesantren, HasFactory, Multitenantable;
 
     public function kelas(): BelongsTo
     {

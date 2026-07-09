@@ -15,6 +15,12 @@ class CheckExpiredTenants implements ShouldQueue
     // Grace period sebelum suspend (harus sama dengan SaaSLifecycleLock::WALI_GRACE_DAYS)
     private const GRACE_DAYS = 7;
 
+    public int $timeout = 300;
+
+    // Job ini mengirim notifikasi WA saat expired — jangan auto-retry supaya
+    // tidak berisiko kirim notifikasi dobel ke admin pesantren.
+    public int $tries = 1;
+
     public function handle(): void
     {
         // 1. trial/active → expired saat expired_at terlewat

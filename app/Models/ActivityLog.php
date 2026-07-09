@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToPesantren;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Table('activity_logs')]
 class ActivityLog extends Model
 {
+    use BelongsToPesantren;
+
     public $timestamps = false;
 
     protected $fillable = [
@@ -31,11 +34,6 @@ class ActivityLog extends Model
             'new_values' => 'array',
             'created_at' => 'datetime',
         ];
-    }
-
-    public function pesantren(): BelongsTo
-    {
-        return $this->belongsTo(Pesantren::class);
     }
 
     public function user(): BelongsTo

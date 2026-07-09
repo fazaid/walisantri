@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToPesantren;
 use App\Traits\Multitenantable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Table('kesantrian_amal_master')]
 #[Fillable([
@@ -23,20 +23,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class KesantrianAmalMaster extends Model
 {
-    use Multitenantable;
+    use BelongsToPesantren, Multitenantable;
 
     protected function casts(): array
     {
         return [
             'nilai_maks' => 'integer',
-            'bobot'      => 'integer',
-            'urutan'     => 'integer',
-            'aktif'      => 'boolean',
+            'bobot' => 'integer',
+            'urutan' => 'integer',
+            'aktif' => 'boolean',
         ];
-    }
-
-    public function pesantren(): BelongsTo
-    {
-        return $this->belongsTo(Pesantren::class);
     }
 }

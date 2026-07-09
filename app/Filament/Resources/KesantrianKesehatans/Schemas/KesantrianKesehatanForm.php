@@ -2,15 +2,15 @@
 
 namespace App\Filament\Resources\KesantrianKesehatans\Schemas;
 
+use App\Filament\Support\SantriOptions;
 use App\Models\KesantrianKesehatan;
-use App\Models\Santri;
 use Filament\Forms\Components\DatePicker;
-use Filament\Schemas\Components\Utilities\Get;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
 
@@ -25,13 +25,7 @@ class KesantrianKesehatanForm
                     ->schema([
                         Select::make('santri_id')
                             ->label('Santri')
-                            ->options(function () {
-                                $query = Santri::where('status_aktif', true);
-                                if (auth()->user()?->role === 'ustadz') {
-                                    $query->where('pembimbing_ustadz_id', auth()->id());
-                                }
-                                return $query->pluck('nama_lengkap', 'id');
-                            })
+                            ->options(fn () => SantriOptions::aktifUntukPengguna())
                             ->searchable()
                             ->required(),
                         DatePicker::make('tanggal_periksa')
@@ -74,15 +68,15 @@ class KesantrianKesehatanForm
                             ->label('Jenis Rekam')
                             ->options([
                                 'keluhan' => 'Keluhan Sakit',
-                                'rutin'   => 'Pemeriksaan Rutin',
+                                'rutin' => 'Pemeriksaan Rutin',
                             ])
                             ->icons([
                                 'keluhan' => 'heroicon-o-heart',
-                                'rutin'   => 'heroicon-o-clipboard-document-check',
+                                'rutin' => 'heroicon-o-clipboard-document-check',
                             ])
                             ->colors([
                                 'keluhan' => 'danger',
-                                'rutin'   => 'success',
+                                'rutin' => 'success',
                             ])
                             ->default('keluhan')
                             ->inline()
@@ -98,13 +92,13 @@ class KesantrianKesehatanForm
                         Select::make('kategori_keluhan')
                             ->label('Kategori Keluhan')
                             ->options([
-                                'Demam'       => 'Demam',
+                                'Demam' => 'Demam',
                                 'Batuk_Pilek' => 'Batuk / Pilek',
                                 'Sakit_Perut' => 'Sakit Perut',
-                                'Pusing'      => 'Pusing',
+                                'Pusing' => 'Pusing',
                                 'Kulit_Gatal' => 'Kulit Gatal',
-                                'Luka_Fisik'  => 'Luka Fisik',
-                                'Lainnya'     => 'Lainnya',
+                                'Luka_Fisik' => 'Luka Fisik',
+                                'Lainnya' => 'Lainnya',
                             ])
                             ->required(fn (Get $get) => $get('jenis_rekam') !== 'rutin'),
                         Textarea::make('detail_keluhan_teks')
@@ -118,10 +112,10 @@ class KesantrianKesehatanForm
                         Select::make('status_pemulihan')
                             ->label('Status Pemulihan')
                             ->options([
-                                'Rawat_Mandiri'   => 'Rawat Mandiri',
+                                'Rawat_Mandiri' => 'Rawat Mandiri',
                                 'Istirahat_Total' => 'Istirahat Total',
-                                'Rujukan_Luar'    => 'Rujukan Luar',
-                                'Sembuh'          => 'Sembuh',
+                                'Rujukan_Luar' => 'Rujukan Luar',
+                                'Sembuh' => 'Sembuh',
                             ])
                             ->required(fn (Get $get) => $get('jenis_rekam') !== 'rutin')
                             ->live(),

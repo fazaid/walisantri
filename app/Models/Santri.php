@@ -5,6 +5,7 @@
 namespace App\Models;
 
 use App\Enums\JenisKelamin;
+use App\Models\Concerns\BelongsToPesantren;
 use App\Traits\Multitenantable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 
 #[Table('santri')]
@@ -41,7 +43,7 @@ use Illuminate\Support\Facades\Storage;
 #[Hidden(['pesantren_id'])]
 class Santri extends Model
 {
-    use HasFactory, Multitenantable, HasUuids, SoftDeletes;
+    use BelongsToPesantren, HasFactory, HasUuids, Multitenantable, SoftDeletes;
 
     // Batasi HasUuids hanya pada kolom 'uuid', bukan 'id'
     public function uniqueIds(): array
@@ -52,8 +54,8 @@ class Santri extends Model
     protected function casts(): array
     {
         return [
-            'tanggal_lahir'  => 'date',
-            'jenis_kelamin'  => JenisKelamin::class,
+            'tanggal_lahir' => 'date',
+            'jenis_kelamin' => JenisKelamin::class,
         ];
     }
 
@@ -64,12 +66,12 @@ class Santri extends Model
             : null;
     }
 
-    // --- Relations ---
-
-    public function pesantren(): BelongsTo
+    public static function idsPembimbing(int $ustadzId): Collection
     {
-        return $this->belongsTo(Pesantren::class);
+        return static::where('pembimbing_ustadz_id', $ustadzId)->pluck('id');
     }
+
+    // --- Relations ---
 
     public function wali(): BelongsTo
     {

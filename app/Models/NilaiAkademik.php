@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToPesantren;
+use App\Models\Concerns\BelongsToSantri;
 use App\Traits\Multitenantable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -22,23 +24,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class NilaiAkademik extends Model
 {
-    use HasFactory, Multitenantable;
+    use BelongsToPesantren, BelongsToSantri, HasFactory, Multitenantable;
 
     protected function casts(): array
     {
         return [
             'nilai' => 'integer',
         ];
-    }
-
-    public function pesantren(): BelongsTo
-    {
-        return $this->belongsTo(Pesantren::class);
-    }
-
-    public function santri(): BelongsTo
-    {
-        return $this->belongsTo(Santri::class);
     }
 
     public function mataPelajaran(): BelongsTo

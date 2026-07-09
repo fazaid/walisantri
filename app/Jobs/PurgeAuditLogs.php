@@ -12,13 +12,19 @@ class PurgeAuditLogs implements ShouldQueue
 
     // Retention §10.3: operasional 2 tahun, billing/paket 5 tahun
     private const OPERATIONAL_YEARS = 2;
-    private const BILLING_YEARS     = 5;
+
+    private const BILLING_YEARS = 5;
 
     private const BILLING_EVENTS = [
         'pesantren.paket_changed',
         'pesantren.activated',
         'pesantren.suspended',
     ];
+
+    public int $timeout = 300;
+
+    // Operasi delete idempoten — aman di-retry sekali kalau gagal transient.
+    public int $tries = 2;
 
     public function handle(): void
     {

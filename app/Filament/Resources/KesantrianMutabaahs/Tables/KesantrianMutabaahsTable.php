@@ -6,8 +6,8 @@
 
 namespace App\Filament\Resources\KesantrianMutabaahs\Tables;
 
+use App\Filament\Support\SantriOptions;
 use App\Models\KesantrianMutabaah;
-use App\Models\Santri;
 use App\Services\MutabaahScoreCalculator;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -38,29 +38,23 @@ class KesantrianMutabaahsTable
                     ->formatStateUsing(fn ($state) => str_replace('_', ' ', $state))
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'Tidak'        => 'success',
-                        'Sakit'        => 'danger',
-                        default        => 'warning',
+                        'Tidak' => 'success',
+                        'Sakit' => 'danger',
+                        default => 'warning',
                     }),
             ])
             ->defaultSort('tanggal', 'desc')
             ->filters([
                 SelectFilter::make('status_udzur')->label('Status Udzur')
                     ->options([
-                        'Tidak'        => 'Tidak',
-                        'Sakit'        => 'Sakit',
-                        'Haid'         => 'Haid',
-                        'Izin_Pulang'  => 'Izin Pulang',
+                        'Tidak' => 'Tidak',
+                        'Sakit' => 'Sakit',
+                        'Haid' => 'Haid',
+                        'Izin_Pulang' => 'Izin Pulang',
                         'Tugas_Pondok' => 'Tugas Pondok',
                     ]),
                 SelectFilter::make('santri_id')->label('Santri')
-                    ->options(function () {
-                        $query = Santri::where('status_aktif', true);
-                        if (auth()->user()?->role === 'ustadz') {
-                            $query->where('pembimbing_ustadz_id', auth()->id());
-                        }
-                        return $query->orderBy('nama_lengkap')->pluck('nama_lengkap', 'id');
-                    })
+                    ->options(fn () => SantriOptions::aktifUntukPengguna())
                     ->searchable(),
             ])
             ->recordActions([ViewAction::make(), EditAction::make()])
