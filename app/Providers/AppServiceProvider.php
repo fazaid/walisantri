@@ -19,7 +19,6 @@ use App\Observers\SantriObserver;
 use App\Observers\UserObserver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
@@ -36,7 +35,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->registerModuleGates();
-        $this->registerQueueRouting();
         $this->registerRateLimiters();
         $this->registerObservers();
     }
@@ -115,36 +113,4 @@ class AppServiceProvider extends ServiceProvider
         );
     }
 
-    // -----------------------------------------------------------------
-    // Queue Routing terpusat (Laravel 13 — PRD §4.5)
-    // -----------------------------------------------------------------
-    private function registerQueueRouting(): void
-    {
-        // Cek apakah class job sudah ada sebelum route didaftarkan
-        // (mencegah error saat job belum dibuat di fase ini)
-
-        if (class_exists(\App\Jobs\KirimNotifikasiWhatsapp::class)) {
-            Queue::route(
-                \App\Jobs\KirimNotifikasiWhatsapp::class,
-                connection: 'redis',
-                queue: 'whatsapp-notif'
-            );
-        }
-
-        if (class_exists(\App\Jobs\ProsesImporSantri::class)) {
-            Queue::route(
-                \App\Jobs\ProsesImporSantri::class,
-                connection: 'redis',
-                queue: 'bulk-import'
-            );
-        }
-
-        if (class_exists(\App\Jobs\KalkulasiRaporTahfidz::class)) {
-            Queue::route(
-                \App\Jobs\KalkulasiRaporTahfidz::class,
-                connection: 'redis',
-                queue: 'rapor-calc'
-            );
-        }
-    }
 }
