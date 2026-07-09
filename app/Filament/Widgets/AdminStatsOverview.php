@@ -8,9 +8,11 @@ use App\Models\KesantrianMutabaah;
 use App\Models\Santri;
 use App\Models\User;
 use App\Services\MutabaahScoreCalculator;
+use Carbon\Carbon;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class AdminStatsOverview extends StatsOverviewWidget
 {
@@ -24,45 +26,45 @@ class AdminStatsOverview extends StatsOverviewWidget
     protected function getStats(): array
     {
         $pesantrenId = Auth::user()?->pesantren_id;
-        $today       = now()->toDateString();
+        $today = now()->toDateString();
         $startOfWeek = now()->startOfWeek()->toDateString();
-        $endOfWeek   = now()->endOfWeek()->toDateString();
+        $endOfWeek = now()->endOfWeek()->toDateString();
 
         // Data billing
-        $pesantren    = Auth::user()?->pesantren;
-        $expiredAt    = $pesantren?->expired_at
-            ? \Carbon\Carbon::parse($pesantren->expired_at)
+        $pesantren = Auth::user()?->pesantren;
+        $expiredAt = $pesantren?->expired_at
+            ? Carbon::parse($pesantren->expired_at)
             : null;
-        $sisaHari     = $expiredAt
+        $sisaHari = $expiredAt
             ? (int) now()->diffInDays($expiredAt, false)
             : null;
-        $statusLabel  = match($pesantren?->status_berlangganan) {
-            'active'    => 'Aktif',
-            'trial'     => 'Trial',
-            'expired'   => 'Kadaluwarsa',
+        $statusLabel = match ($pesantren?->status_berlangganan) {
+            'active' => 'Aktif',
+            'trial' => 'Trial',
+            'expired' => 'Kadaluwarsa',
             'suspended' => 'Ditangguhkan',
-            default     => '-',
+            default => '-',
         };
-        $billingColor = match($pesantren?->status_berlangganan) {
-            'active'    => 'success',
-            'trial'     => 'info',
-            'expired'   => 'danger',
+        $billingColor = match ($pesantren?->status_berlangganan) {
+            'active' => 'success',
+            'trial' => 'info',
+            'expired' => 'danger',
             'suspended' => 'warning',
-            default     => 'gray',
+            default => 'gray',
         };
 
         // Total santri aktif vs kuota
         $totalSantri = Santri::where('pesantren_id', $pesantrenId)
             ->where('status_aktif', true)
             ->count();
-        $kuota       = $pesantren?->max_santri_kuota ?? 0;
+        $kuota = $pesantren?->max_santri_kuota ?? 0;
         $persenKuota = $kuota > 0 ? round(($totalSantri / $kuota) * 100) : 0;
 
         // Total ustadz & wali
         $totalUstadz = User::where('pesantren_id', $pesantrenId)
             ->where('role', 'ustadz')
             ->count();
-        $totalWali   = User::where('pesantren_id', $pesantrenId)
+        $totalWali = User::where('pesantren_id', $pesantrenId)
             ->where('role', 'wali_santri')
             ->count();
 
@@ -72,20 +74,28 @@ class AdminStatsOverview extends StatsOverviewWidget
             ->whereIn('status_pemulihan', ['Istirahat_Total', 'Rujukan_Luar'])
             ->count();
 
-        // Persentase amalan minggu ini (rata-rata seluruh santri)
-        $santriIds = Santri::where('pesantren_id', $pesantrenId)
-            ->where('status_aktif', true)
-            ->pluck('id');
+        // Persentase amalan minggu ini (rata-rata seluruh santri) — di-cache 15
+        // menit karena komputasinya (agregasi item amal dinamis per pesantren)
+        // cukup berat untuk dihitung ulang di setiap load dashboard.
+        $persenAmalan = Cache::remember(
+            "admin_stats:persen_amalan:{$pesantrenId}:{$startOfWeek}",
+            now()->addMinutes(15),
+            function () use ($pesantrenId, $startOfWeek, $endOfWeek) {
+                $santriIds = Santri::where('pesantren_id', $pesantrenId)
+                    ->where('status_aktif', true)
+                    ->pluck('id');
 
-        $mutabaahList  = KesantrianMutabaah::whereIn('santri_id', $santriIds)
-            ->whereBetween('tanggal', [$startOfWeek, $endOfWeek])
-            ->get();
+                $mutabaahList = KesantrianMutabaah::whereIn('santri_id', $santriIds)
+                    ->whereBetween('tanggal', [$startOfWeek, $endOfWeek])
+                    ->get();
 
-        $persenAmalan = MutabaahScoreCalculator::persentaseRataRata($mutabaahList);
+                return MutabaahScoreCalculator::persentaseRataRata($mutabaahList);
+            }
+        );
 
         return [
-            Stat::make('Santri Aktif', $totalSantri . ' / ' . $kuota)
-                ->description($persenKuota . '% dari kuota paket')
+            Stat::make('Santri Aktif', $totalSantri.' / '.$kuota)
+                ->description($persenKuota.'% dari kuota paket')
                 ->descriptionIcon('heroicon-m-users')
                 ->color($persenKuota >= 90 ? 'danger' : 'success'),
 
@@ -104,7 +114,7 @@ class AdminStatsOverview extends StatsOverviewWidget
                 ->descriptionIcon('heroicon-m-heart')
                 ->color($santriSakit > 0 ? 'danger' : 'success'),
 
-            Stat::make('Amalan Minggu Ini', $persenAmalan . '%')
+            Stat::make('Amalan Minggu Ini', $persenAmalan.'%')
                 ->description('Rata-rata seluruh santri')
                 ->descriptionIcon('heroicon-m-check-circle')
                 ->color($persenAmalan >= 75 ? 'success' : ($persenAmalan >= 50 ? 'warning' : 'danger')),
@@ -113,9 +123,9 @@ class AdminStatsOverview extends StatsOverviewWidget
                 ->description(
                     $sisaHari !== null
                         ? ($sisaHari > 0
-                            ? 'Berakhir ' . $expiredAt->translatedFormat('d M Y')
+                            ? 'Berakhir '.$expiredAt->translatedFormat('d M Y')
                             : ($sisaHari === 0 ? 'Berakhir hari ini' : 'Telah berakhir'))
-                        : 'Paket: ' . ucfirst($pesantren?->paket_langganan ?? '-')
+                        : 'Paket: '.ucfirst($pesantren?->paket_langganan ?? '-')
                 )
                 ->descriptionIcon('heroicon-m-credit-card')
                 ->url(BillingPage::getUrl())

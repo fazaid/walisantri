@@ -3,23 +3,22 @@
 namespace App\Exports;
 
 use App\Models\Santri;
-use Illuminate\Support\Collection;
-use Maatwebsite\Excel\Concerns\FromCollection;
+use Illuminate\Database\Eloquent\Builder;
+use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithTitle;
 
-class DataSantriExport implements FromCollection, WithHeadings, WithMapping, WithTitle, ShouldAutoSize
+class DataSantriExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMapping, WithTitle
 {
     public function __construct(private int $pesantrenId) {}
 
-    public function collection(): Collection
+    public function query(): Builder
     {
         return Santri::with(['kelas', 'kamar', 'wali', 'pembimbing'])
             ->where('pesantren_id', $this->pesantrenId)
-            ->orderBy('nama_lengkap')
-            ->get();
+            ->orderBy('nama_lengkap');
     }
 
     public function headings(): array

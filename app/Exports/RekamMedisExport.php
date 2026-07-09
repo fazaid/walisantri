@@ -4,14 +4,14 @@ namespace App\Exports;
 
 use App\Models\KesantrianKesehatan;
 use App\Models\Santri;
-use Illuminate\Support\Collection;
-use Maatwebsite\Excel\Concerns\FromCollection;
+use Illuminate\Database\Eloquent\Builder;
+use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithTitle;
 
-class RekamMedisExport implements FromCollection, ShouldAutoSize, WithHeadings, WithMapping, WithTitle
+class RekamMedisExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMapping, WithTitle
 {
     public function __construct(
         private int $pesantrenId,
@@ -20,7 +20,7 @@ class RekamMedisExport implements FromCollection, ShouldAutoSize, WithHeadings, 
         private ?int $ustadzId = null,
     ) {}
 
-    public function collection(): Collection
+    public function query(): Builder
     {
         return KesantrianKesehatan::with('santri')
             ->where('pesantren_id', $this->pesantrenId)
@@ -28,8 +28,7 @@ class RekamMedisExport implements FromCollection, ShouldAutoSize, WithHeadings, 
             ->when($this->sampai, fn ($q) => $q->whereDate('tanggal_periksa', '<=', $this->sampai))
             ->when($this->ustadzId, fn ($q) => $q->whereIn('santri_id', Santri::idsPembimbing($this->ustadzId)))
             ->orderBy('tanggal_periksa', 'desc')
-            ->orderBy('santri_id')
-            ->get();
+            ->orderBy('santri_id');
     }
 
     public function headings(): array

@@ -11,6 +11,11 @@ class PruneStaleCache implements ShouldQueue
 {
     use Queueable;
 
+    public int $timeout = 300;
+
+    // Operasi cache forget idempoten — aman di-retry sekali kalau gagal transient.
+    public int $tries = 2;
+
     public function handle(): void
     {
         // Hapus cache dashboard santri yang sudah non-aktif (§11)

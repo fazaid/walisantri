@@ -14,12 +14,30 @@ class TahfidzJuzCalculator
      */
     public static function calculate(int $santriId): array
     {
-        $ranges = TahfidzProgress::where('santri_id', $santriId)
-            ->whereNotNull('halaman_mulai')
-            ->select('halaman_mulai', 'halaman_selesai')
-            ->get();
+        return self::calculateMany([$santriId])[$santriId];
+    }
 
-        return ['juz_hafal' => self::juzFromRanges($ranges)];
+    /**
+     * Versi batch untuk banyak santri sekaligus — satu query untuk semua,
+     * menghindari N+1 saat dipanggil dalam loop (mis. widget/dashboard).
+     *
+     * @param  array<int>  $santriIds
+     * @return array<int, array{juz_hafal: float}>
+     */
+    public static function calculateMany(array $santriIds): array
+    {
+        $rangesBySantri = TahfidzProgress::whereIn('santri_id', $santriIds)
+            ->whereNotNull('halaman_mulai')
+            ->select('santri_id', 'halaman_mulai', 'halaman_selesai')
+            ->get()
+            ->groupBy('santri_id');
+
+        $result = [];
+        foreach ($santriIds as $santriId) {
+            $result[$santriId] = ['juz_hafal' => self::juzFromRanges($rangesBySantri->get($santriId, collect()))];
+        }
+
+        return $result;
     }
 
     /**

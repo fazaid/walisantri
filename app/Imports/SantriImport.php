@@ -10,13 +10,15 @@ use App\Models\Kelas;
 use App\Models\Pesantren;
 use App\Models\Santri;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use PhpOffice\PhpSpreadsheet\Shared\Date;
 
-class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
+class SantriImport implements SkipsEmptyRows, ToCollection, WithHeadingRow
 {
     public int $imported = 0;
 
@@ -44,38 +46,44 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
     public function analyze(Collection $rows): array
     {
         $summary = [
-            'total'             => 0,
-            'akan_diimpor'      => 0,
-            'duplikat'          => 0,
+            'total' => 0,
+            'akan_diimpor' => 0,
+            'duplikat' => 0,
             'data_wajib_kosong' => 0,
-            'melebihi_kuota'    => 0,
-            'wali_baru'         => 0,
+            'melebihi_kuota' => 0,
+            'wali_baru' => 0,
         ];
 
-        $pesantren         = Pesantren::find($this->pesantrenId);
-        $sisaKuota         = $pesantren ? max(0, $pesantren->max_santri_kuota - $pesantren->jumlahSantriAktif()) : PHP_INT_MAX;
+        $pesantren = Pesantren::find($this->pesantrenId);
+        $sisaKuota = $pesantren ? max(0, $pesantren->max_santri_kuota - $pesantren->jumlahSantriAktif()) : PHP_INT_MAX;
         $akanMenambahAktif = 0;
-        $waliSeen          = [];
+        $waliSeen = [];
+        $existingNis = $this->existingNisSet($rows);
+        $seenInBatch = [];
 
         foreach ($rows as $row) {
             $summary['total']++;
 
-            $nis         = trim((string) ($row['nis'] ?? ''));
+            $nis = trim((string) ($row['nis'] ?? ''));
             $namaLengkap = trim((string) ($row['nama_lengkap'] ?? ''));
 
             if ($nis === '' || $namaLengkap === '') {
                 $summary['data_wajib_kosong']++;
+
                 continue;
             }
 
-            if (Santri::withTrashed()->where('pesantren_id', $this->pesantrenId)->where('nis', $nis)->exists()) {
+            if (isset($existingNis[$nis]) || isset($seenInBatch[$nis])) {
                 $summary['duplikat']++;
+
                 continue;
             }
+            $seenInBatch[$nis] = true;
 
             if (! $this->isStatusNonAktif($row['status'] ?? null)) {
                 if ($akanMenambahAktif >= $sisaKuota) {
                     $summary['melebihi_kuota']++;
+
                     continue;
                 }
                 $akanMenambahAktif++;
@@ -97,47 +105,53 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
 
     public function collection(Collection $rows): void
     {
+        $existingNis = $this->existingNisSet($rows);
+        $seenInBatch = [];
+
         foreach ($rows as $index => $row) {
             $rowNum = $index + 2;
 
-            $nis         = trim((string) ($row['nis'] ?? ''));
+            $nis = trim((string) ($row['nis'] ?? ''));
             $namaLengkap = trim((string) ($row['nama_lengkap'] ?? ''));
 
             if ($nis === '' || $namaLengkap === '') {
                 $this->errors[] = "Baris {$rowNum}: NIS dan Nama Lengkap wajib diisi.";
                 $this->skipped++;
+
                 continue;
             }
 
-            if (Santri::withTrashed()->where('pesantren_id', $this->pesantrenId)->where('nis', $nis)->exists()) {
+            if (isset($existingNis[$nis]) || isset($seenInBatch[$nis])) {
                 $this->errors[] = "Baris {$rowNum}: NIS '{$nis}' sudah pernah terdaftar (termasuk data yang dihapus), dilewati.";
                 $this->skipped++;
+
                 continue;
             }
+            $seenInBatch[$nis] = true;
 
             $tanggalLahir = $this->parseTanggal($row['tanggal_lahir'] ?? null, $rowNum);
             $jenisKelamin = $this->resolveJenisKelamin($row['jenis_kelamin'] ?? null, $rowNum);
-            $kelasId      = $this->resolveKelas($row['kelas'] ?? null, $rowNum);
-            $kamarId      = $this->resolveKamar($row['kamar'] ?? null, $rowNum);
-            $statusAktif  = $this->resolveStatusAktif($row['status'] ?? null, $rowNum);
+            $kelasId = $this->resolveKelas($row['kelas'] ?? null, $rowNum);
+            $kamarId = $this->resolveKamar($row['kamar'] ?? null, $rowNum);
+            $statusAktif = $this->resolveStatusAktif($row['status'] ?? null, $rowNum);
             $waliSantriId = $this->resolveWali($row, $rowNum);
 
             try {
                 Santri::create([
-                    'pesantren_id'   => $this->pesantrenId,
-                    'nis'            => $nis,
-                    'nama_lengkap'   => $namaLengkap,
+                    'pesantren_id' => $this->pesantrenId,
+                    'nis' => $nis,
+                    'nama_lengkap' => $namaLengkap,
                     'nama_panggilan' => $this->nullable($row['nama_panggilan'] ?? null),
-                    'tanggal_lahir'  => $tanggalLahir,
-                    'jenis_kelamin'  => $jenisKelamin,
-                    'nama_ayah'      => $this->nullable($row['nama_ayah'] ?? null),
-                    'nama_ibu'       => $this->nullable($row['nama_ibu'] ?? null),
+                    'tanggal_lahir' => $tanggalLahir,
+                    'jenis_kelamin' => $jenisKelamin,
+                    'nama_ayah' => $this->nullable($row['nama_ayah'] ?? null),
+                    'nama_ibu' => $this->nullable($row['nama_ibu'] ?? null),
                     'alamat_lengkap' => $this->nullable($row['alamat_lengkap'] ?? null),
                     'jumlah_saudara' => is_numeric($row['jumlah_saudara'] ?? null) ? (int) $row['jumlah_saudara'] : null,
-                    'cita_cita'      => $this->nullable($row['cita_cita'] ?? null),
-                    'kelas_id'       => $kelasId,
-                    'kamar_id'       => $kamarId,
-                    'status_aktif'   => $statusAktif,
+                    'cita_cita' => $this->nullable($row['cita_cita'] ?? null),
+                    'kelas_id' => $kelasId,
+                    'kamar_id' => $kamarId,
+                    'status_aktif' => $statusAktif,
                     'wali_santri_id' => $waliSantriId,
                 ]);
 
@@ -152,6 +166,34 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
         }
     }
 
+    /**
+     * Snapshot NIS yang sudah terdaftar (termasuk soft-deleted) untuk seluruh NIS
+     * yang muncul di file — satu query, bukan satu query per baris.
+     *
+     * @return array<string, true>
+     */
+    private function existingNisSet(Collection $rows): array
+    {
+        $nisList = $rows
+            ->map(fn ($row) => trim((string) ($row['nis'] ?? '')))
+            ->filter(fn ($nis) => $nis !== '')
+            ->unique()
+            ->values()
+            ->all();
+
+        if (empty($nisList)) {
+            return [];
+        }
+
+        return Santri::withTrashed()
+            ->where('pesantren_id', $this->pesantrenId)
+            ->whereIn('nis', $nisList)
+            ->pluck('nis')
+            ->flip()
+            ->map(fn () => true)
+            ->all();
+    }
+
     private function parseTanggal(mixed $value, int $rowNum): ?string
     {
         if ($value === null || trim((string) $value) === '') {
@@ -160,13 +202,15 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
 
         try {
             if (is_numeric($value)) {
-                $date = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject((float) $value);
-                return \Carbon\Carbon::instance($date)->format('Y-m-d');
+                $date = Date::excelToDateTimeObject((float) $value);
+
+                return Carbon::instance($date)->format('Y-m-d');
             }
 
-            return \Carbon\Carbon::createFromFormat('d/m/Y', trim((string) $value))->format('Y-m-d');
+            return Carbon::createFromFormat('d/m/Y', trim((string) $value))->format('Y-m-d');
         } catch (\Exception) {
             $this->errors[] = "Baris {$rowNum}: Format tanggal lahir '{$value}' tidak valid, kolom diabaikan.";
+
             return null;
         }
     }
@@ -190,6 +234,7 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
         }
 
         $this->errors[] = "Baris {$rowNum}: Jenis kelamin '{$raw}' tidak dikenali, kolom diabaikan.";
+
         return null;
     }
 
@@ -212,6 +257,7 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
         }
 
         $this->errors[] = "Baris {$rowNum}: Status '{$raw}' tidak dikenali, dianggap Aktif.";
+
         return true;
     }
 
@@ -228,7 +274,7 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
             return null;
         }
 
-        $nama     = trim((string) $value);
+        $nama = trim((string) $value);
         $cacheKey = mb_strtolower($nama);
 
         if (! array_key_exists($cacheKey, $this->kelasCache)) {
@@ -250,7 +296,7 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
             return null;
         }
 
-        $nama     = trim((string) $value);
+        $nama = trim((string) $value);
         $cacheKey = mb_strtolower($nama);
 
         if (! array_key_exists($cacheKey, $this->kamarCache)) {
@@ -310,8 +356,8 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
 
     private function resolveWali(array $row, int $rowNum): ?int
     {
-        $nama     = $this->nullable($row['wali_nama'] ?? null);
-        $noHp     = $this->nullable($row['wali_no_hp'] ?? null);
+        $nama = $this->nullable($row['wali_nama'] ?? null);
+        $noHp = $this->nullable($row['wali_no_hp'] ?? null);
         $emailRaw = $this->nullable($row['wali_email'] ?? null);
 
         if ($nama === null && $emailRaw === null && $noHp === null) {
@@ -320,11 +366,13 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
 
         if ($emailRaw === null) {
             $this->errors[] = "Baris {$rowNum}: Data wali diisi tapi wali_email kosong, wali tidak ditautkan (santri tetap dibuat).";
+
             return null;
         }
 
         if (! $this->isValidEmailFormat($emailRaw)) {
             $this->errors[] = "Baris {$rowNum}: Format wali_email '{$emailRaw}' tidak valid, wali tidak ditautkan (santri tetap dibuat).";
+
             return null;
         }
 
@@ -342,27 +390,30 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
 
         if ($classification['status'] === 'conflict_pesantren') {
             $this->errors[] = "Baris {$rowNum}: Email wali '{$emailRaw}' sudah terdaftar di pesantren lain, wali tidak ditautkan (santri tetap dibuat).";
+
             return $this->waliCache[$cacheKey] = null;
         }
 
         if ($classification['status'] === 'conflict_role') {
             $this->errors[] = "Baris {$rowNum}: Email wali '{$emailRaw}' sudah terdaftar dengan peran lain (bukan Wali Santri), wali tidak ditautkan (santri tetap dibuat).";
+
             return $this->waliCache[$cacheKey] = null;
         }
 
         try {
             $user = User::create([
                 'pesantren_id' => $this->pesantrenId,
-                'name'         => $nama ?? $emailRaw,
-                'email'        => $emailRaw,
+                'name' => $nama ?? $emailRaw,
+                'email' => $emailRaw,
                 'phone_number' => $noHp,
-                'password'     => Str::password(12),
-                'role'         => UserRole::WaliSantri->value,
+                'password' => Str::password(12),
+                'role' => UserRole::WaliSantri->value,
             ]);
 
             return $this->waliCache[$cacheKey] = $user->id;
         } catch (\Throwable $e) {
             $this->errors[] = "Baris {$rowNum}: Gagal membuat akun wali baru untuk '{$emailRaw}' ({$e->getMessage()}).";
+
             return $this->waliCache[$cacheKey] = null;
         }
     }
@@ -370,6 +421,7 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
     private function nullable(mixed $value): ?string
     {
         $str = trim((string) ($value ?? ''));
+
         return $str !== '' ? $str : null;
     }
 }
