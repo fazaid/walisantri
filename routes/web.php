@@ -26,11 +26,24 @@ use Illuminate\Support\Facades\Storage;
 $baseDomain = config('app.base_domain', 'walisantri.com');
 $appDomain  = config('app.domain', 'app.walisantri.com');
 
+// Lingkungan dengan satu hostname saja (mis. staging: base_domain == app_domain)
+// tidak bisa mendaftarkan '/' dua kali pada domain yang sama — itu bikin route
+// kedua menimpa yang pertama di lookup Laravel (nama 'landing' jadi hilang, semua
+// view yang panggil route('landing') 500). Gabungkan logikanya jadi satu route.
+$sameDomain = $baseDomain === $appDomain;
+
 // =============================================================================
 // LANDING — walisantri.com / walisantri.test (§1.6)
 // =============================================================================
-Route::domain($baseDomain)->group(function () {
-    Route::get('/', function () {
+Route::domain($baseDomain)->group(function () use ($sameDomain) {
+    Route::get('/', function () use ($sameDomain) {
+        if ($sameDomain && auth()->check()) {
+            return match (auth()->user()->role) {
+                'wali_santri' => redirect()->route('wali.dashboard'),
+                default       => redirect('/admin'),
+            };
+        }
+
         return view('landing', [
             'registrationOpen' => PlatformSetting::registrationOpen(),
         ]);
@@ -52,18 +65,22 @@ Route::domain($baseDomain)->group(function () {
 // APP — app.walisantri.com / walisantri.test (login + portal wali + admin)
 // Filament panel admin sudah di-handle AdminPanelProvider (domain=APP_DOMAIN)
 // =============================================================================
-Route::domain($appDomain)->group(function () {
+Route::domain($appDomain)->group(function () use ($sameDomain) {
 
     // --- Root redirect ---
-    Route::get('/', function () {
-        if (! auth()->check()) {
-            return redirect()->route('login');
-        }
-        return match (auth()->user()->role) {
-            'wali_santri' => redirect()->route('wali.dashboard'),
-            default       => redirect('/admin'),
-        };
-    });
+    // Saat base_domain == app_domain (satu hostname, mis. staging), '/' sudah
+    // ditangani grup LANDING di atas — jangan didaftarkan lagi di sini.
+    if (! $sameDomain) {
+        Route::get('/', function () {
+            if (! auth()->check()) {
+                return redirect()->route('login');
+            }
+            return match (auth()->user()->role) {
+                'wali_santri' => redirect()->route('wali.dashboard'),
+                default       => redirect('/admin'),
+            };
+        });
+    }
 
     // --- Auth login terpusat (§1.3, ?tenant=slug branding) ---
     Route::get('/login', [WaliLoginController::class, 'showLoginForm'])->name('login');
