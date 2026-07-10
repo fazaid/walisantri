@@ -114,7 +114,7 @@ class CheckExpiredTenantsTest extends TestCase
 
         (new CheckExpiredTenants)->handle();
 
-        Queue::assertPushed(KirimNotifikasiWhatsapp::class, fn ($job) => $job->message === "Halo {$pesantren->nama_pesantren}, expired {$pesantren->expired_at->format('d F Y')}, bayar di ".url('/admin/billing-page').'.'
+        Queue::assertPushed(KirimNotifikasiWhatsapp::class, fn ($job) => $job->message === "Halo {$pesantren->nama_pesantren}, expired {$pesantren->expired_at->locale('id')->translatedFormat('d F Y')}, bayar di ".url('/admin/billing-page').'.'
         );
     }
 

@@ -132,7 +132,7 @@ class WarnExpiringTenantsWhatsAppTest extends TestCase
         (new WarnExpiringTenantsWhatsApp())->handle();
 
         Queue::assertPushed(KirimNotifikasiWhatsapp::class, fn ($job) => str_contains($job->message, $pesantren->nama_pesantren)
-            && str_contains($job->message, $pesantren->expired_at->format('d F Y'))
+            && str_contains($job->message, $pesantren->expired_at->locale('id')->translatedFormat('d F Y'))
             && str_contains($job->message, url('/admin/billing-page'))
         );
     }
@@ -151,7 +151,7 @@ class WarnExpiringTenantsWhatsAppTest extends TestCase
 
         (new WarnExpiringTenantsWhatsApp())->handle();
 
-        Queue::assertPushed(KirimNotifikasiWhatsapp::class, fn ($job) => $job->message === "Halo {$pesantren->nama_pesantren}, sisa 3 hari, expired {$pesantren->expired_at->format('d F Y')}, bayar di ".url('/admin/billing-page').'.'
+        Queue::assertPushed(KirimNotifikasiWhatsapp::class, fn ($job) => $job->message === "Halo {$pesantren->nama_pesantren}, sisa 3 hari, expired {$pesantren->expired_at->locale('id')->translatedFormat('d F Y')}, bayar di ".url('/admin/billing-page').'.'
         );
     }
 }
