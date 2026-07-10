@@ -9,6 +9,7 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
 class PesantrensTable
@@ -52,7 +53,15 @@ class PesantrensTable
                     ->placeholder('-'),
             ])
             ->filters([
-                //
+                SelectFilter::make('paket_langganan')
+                    ->label('Paket')
+                    ->options(PaketLangganan::options())
+                    ->multiple(),
+
+                SelectFilter::make('status_berlangganan')
+                    ->label('Status')
+                    ->options(StatusBerlangganan::options())
+                    ->multiple(),
             ])
             ->recordActions([
                 ViewAction::make(),
