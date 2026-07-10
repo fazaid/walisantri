@@ -6,6 +6,7 @@ use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\PlatformBankAccount;
 use App\Services\UpgradeOrderService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Collection;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -204,5 +205,29 @@ class OrderInvoicePage extends Page implements HasForms
     public function formatRupiah(int $nilai): string
     {
         return 'Rp ' . number_format($nilai, 0, ',', '.');
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('unduhInvoicePdf')
+                ->label('Unduh Invoice PDF')
+                ->icon(Heroicon::OutlinedArrowDownTray)
+                ->color('gray')
+                ->action(function () {
+                    $pdf = Pdf::loadView('filament.pdf.invoice', [
+                        'order' => $this->order,
+                        'invoice' => $this->invoice,
+                        'pesantren' => $this->order->pesantren,
+                        'bankAccounts' => $this->getBankAccounts(),
+                    ])->setPaper('A4', 'portrait');
+
+                    return response()->streamDownload(
+                        fn () => print ($pdf->output()),
+                        "Invoice-{$this->invoice->nomor_invoice}.pdf",
+                        ['Content-Type' => 'application/pdf'],
+                    );
+                }),
+        ];
     }
 }
