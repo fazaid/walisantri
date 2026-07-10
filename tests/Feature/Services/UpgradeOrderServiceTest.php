@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\WhatsAppMessageTemplate;
 use App\Models\WhatsAppSetting;
 use App\Services\UpgradeOrderService;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -89,6 +90,27 @@ class UpgradeOrderServiceTest extends TestCase
         Queue::assertPushed(KirimNotifikasiWhatsapp::class, fn ($job) => $job->phoneNumber === '081234567890'
             && str_contains($job->message, $pesantren->nama_pesantren)
         );
+    }
+
+    /**
+     * Regresi: addMonths() biasa meluber ke bulan berikutnya kalau anchor-nya
+     * tanggal 29-31 dan bulan target lebih pendek (mis. 31 Jan + 1 bulan = 3
+     * Maret, bukan 28 Feb). Karena expired_at baru jadi anchor renewal
+     * berikutnya juga, drift ini bisa terus terbawa di setiap perpanjangan.
+     */
+    public function test_perpanjangan_dari_akhir_bulan_tidak_meluber_ke_bulan_berikutnya(): void
+    {
+        Queue::fake();
+
+        $pesantren = $this->makePesantren([
+            'expired_at' => Carbon::parse('2027-01-31'),
+        ]);
+        $this->makeAdmin($pesantren);
+        $order = $this->makeOrder($pesantren, ['durasi_total_bulan' => 1]);
+
+        app(UpgradeOrderService::class)->confirmOrder($order, $this->makeConfirmer());
+
+        $this->assertSame('2027-02-28', $pesantren->fresh()->expired_at->format('Y-m-d'));
     }
 
     public function test_tidak_kirim_jika_admin_tanpa_phone_number(): void

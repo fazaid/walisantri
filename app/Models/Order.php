@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\PaketLangganan;
 use App\Enums\StatusOrder;
 use App\Models\Concerns\BelongsToPesantren;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Model;
@@ -74,5 +75,31 @@ class Order extends Model
     public function getFormattedHargaAttribute(): string
     {
         return 'Rp '.number_format($this->harga_total, 0, ',', '.');
+    }
+
+    /**
+     * Tanggal mulai periode langganan yang dicakup order ini. Tidak pernah
+     * disimpan langsung — diturunkan dari expired_at_baru (kalau order sudah
+     * dikonfirmasi) atau diproyeksikan dari expired_at pesantren saat ini,
+     * mirror persis logika di UpgradeOrderService::confirmOrder().
+     */
+    public function periodeMulai(): Carbon
+    {
+        if ($this->expired_at_baru) {
+            return $this->expired_at_baru->copy()->subMonthsNoOverflow($this->durasi_total_bulan);
+        }
+
+        $pesantren = $this->pesantren;
+
+        return ($pesantren?->expired_at && $pesantren->expired_at->isFuture())
+            ? $pesantren->expired_at->copy()
+            : now();
+    }
+
+    public function periodeSelesai(): Carbon
+    {
+        return $this->expired_at_baru
+            ? $this->expired_at_baru->copy()
+            : $this->periodeMulai()->copy()->addMonthsNoOverflow($this->durasi_total_bulan);
     }
 }
