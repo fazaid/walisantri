@@ -61,7 +61,7 @@ class WarnExpiringTenantsWhatsApp implements ShouldQueue
         return strtr($template, [
             '{nama_pesantren}' => $pesantren->nama_pesantren,
             '{sisa_hari}' => (string) $daysLeft,
-            '{tanggal_expired}' => $pesantren->expired_at->format('d F Y'),
+            '{tanggal_expired}' => $pesantren->expired_at->locale('id')->translatedFormat('d F Y'),
             '{link_billing}' => url('/admin/billing-page'),
         ]);
     }
