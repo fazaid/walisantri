@@ -26,7 +26,7 @@ class KuponsTable
                 TextColumn::make('tipe_diskon')
                     ->label('Tipe')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => TipeDiskon::from($state)->label()),
+                    ->formatStateUsing(fn (TipeDiskon $state) => $state->label()),
 
                 TextColumn::make('nilai_diskon')
                     ->label('Nilai')

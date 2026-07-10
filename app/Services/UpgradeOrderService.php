@@ -41,23 +41,26 @@ class UpgradeOrderService
         $totalBulan = $durasi->totalBulan();   // total aktif = durasi yang dipilih (12)
         $hargaTotalSebelumDiskon = $hargaPerBulan * $bulanBayar;
 
-        $diskonNominal = 0;
-        $kupon = null;
-
-        if ($kodeKupon) {
-            $kupon = Kupon::where('kode', strtoupper($kodeKupon))->first();
-            if ($kupon && $kupon->isValid($durasibulan)) {
-                $diskonNominal = $kupon->hitungDiskon($hargaTotalSebelumDiskon);
-            }
-        }
-
-        $hargaTotal = max(0, $hargaTotalSebelumDiskon - $diskonNominal);
-
         return DB::transaction(function () use (
             $pesantren, $paketTarget, $durasibulan, $maxSantriKuota,
-            $hargaPerBulan, $effectiveKuota, $hargaTotalSebelumDiskon, $diskonNominal,
-            $hargaTotal, $bonusBulan, $totalBulan, $kodeKupon, $kupon
+            $hargaPerBulan, $effectiveKuota, $hargaTotalSebelumDiskon,
+            $bonusBulan, $totalBulan, $kodeKupon
         ) {
+            $kupon = null;
+            $diskonNominal = 0;
+
+            if ($kodeKupon) {
+                $kupon = Kupon::where('kode', strtoupper($kodeKupon))->lockForUpdate()->first();
+
+                if ($kupon && $kupon->isValid($durasibulan)) {
+                    $diskonNominal = $kupon->hitungDiskon($hargaTotalSebelumDiskon);
+                } else {
+                    $kupon = null;
+                }
+            }
+
+            $hargaTotal = max(0, $hargaTotalSebelumDiskon - $diskonNominal);
+
             $nomorOrder = $this->generateNomor(
                 config('billing.nomor_order_prefix', 'WS'),
                 'orders'
@@ -262,7 +265,7 @@ class UpgradeOrderService
     {
         $tanggal = now()->format('Ymd');
         $count = DB::table($table)
-            ->whereRaw('created_at::date = ?', [today()->toDateString()])
+            ->whereDate('created_at', today())
             ->count();
 
         return $prefix.'-'.$tanggal.'-'.str_pad($count + 1, 4, '0', STR_PAD_LEFT);

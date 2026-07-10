@@ -101,7 +101,21 @@ class UpgradePage extends Page implements HasForms
                 ->schema([
                     Select::make('paket_target')
                         ->label('Paket Tujuan')
-                        ->options(PaketLangganan::options())
+                        ->options(function () {
+                            $calculator = app(BillingCalculatorService::class);
+
+                            return collect(PaketLangganan::cases())
+                                ->mapWithKeys(function (PaketLangganan $paket) use ($calculator) {
+                                    $kuota          = $calculator->hitungUntukTarget($paket->value, 0)['kuota_maksimal'];
+                                    $kuotaFormatted = number_format($kuota, 0, ',', '.');
+                                    $keterangan     = $paket === PaketLangganan::Maju
+                                        ? "mulai dari {$kuotaFormatted} santri"
+                                        : "maksimal {$kuotaFormatted} santri";
+
+                                    return [$paket->value => "{$paket->label()} - {$keterangan}"];
+                                })
+                                ->all();
+                        })
                         ->required()
                         ->native(false)
                         ->live()
@@ -172,7 +186,16 @@ class UpgradePage extends Page implements HasForms
                         ->afterStateUpdated(function (?string $state) {
                             $this->kode_kupon = strtoupper(trim($state ?? ''));
                             $this->terapkanKupon();
-                        }),
+                        })
+                        ->suffixAction(
+                            Action::make('terapkanKupon')
+                                ->label('Terapkan')
+                                ->icon(Heroicon::OutlinedCheck)
+                                ->action(function () {
+                                    $this->kode_kupon = strtoupper(trim($this->kode_kupon));
+                                    $this->terapkanKupon();
+                                })
+                        ),
                 ]),
         ]);
     }
