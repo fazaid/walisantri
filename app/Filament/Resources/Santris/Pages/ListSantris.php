@@ -13,6 +13,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Schemas\Components\Actions as FormActions;
 use Filament\Schemas\Components\Utilities\Get;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 use Maatwebsite\Excel\Facades\Excel;
@@ -76,7 +77,14 @@ class ListSantris extends ListRecords
                                 $pesantrenId = auth()->user()->pesantren_id;
                                 $rows = Excel::toCollection(new SantriImport($pesantrenId), $path, 'local')->first() ?? collect();
                                 $ringkasan = (new SantriImport($pesantrenId))->analyze($rows);
-                            } catch (\Throwable) {
+                            } catch (\Throwable $e) {
+                                Log::warning('Preview import santri gagal membaca file.', [
+                                    'pesantren_id' => auth()->user()->pesantren_id ?? null,
+                                    'path' => $path,
+                                    'exception' => $e::class,
+                                    'message' => $e->getMessage(),
+                                ]);
+
                                 return new HtmlString(
                                     '<p class="text-sm text-danger-600 dark:text-danger-400">File tidak bisa dibaca untuk pratinjau. Pastikan format .xlsx sesuai template.</p>'
                                 );
@@ -113,6 +121,13 @@ class ListSantris extends ListRecords
                     try {
                         Excel::import($import, $data['file'], 'local');
                     } catch (\Throwable $e) {
+                        Log::warning('Import santri gagal memproses file.', [
+                            'pesantren_id' => $pesantrenId,
+                            'path' => $data['file'] ?? null,
+                            'exception' => $e::class,
+                            'message' => $e->getMessage(),
+                        ]);
+
                         Notification::make()
                             ->title('File Tidak Valid')
                             ->body('Gagal memproses file. Pastikan format .xlsx dan menggunakan template yang benar.')
