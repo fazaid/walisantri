@@ -35,6 +35,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->domain(config('app.domain', 'app.walisantri.com'))
+            ->favicon(asset('favicon.svg'))
             ->colors([
                 'primary' => Color::Teal,
             ])

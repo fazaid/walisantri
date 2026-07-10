@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Walisantri.com menghubungkan wali santri dengan pesantren — pantau ibadah, hafalan Al-Quran, nilai, kesehatan, dan SPP anak langsung dari HP, lengkap dengan alat evaluasi untuk pengurus & ustadz.">
     <title>Walisantri.com — Pesantren Transparan, Wali Santri Tenang</title>
+    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         details summary::-webkit-details-marker { display: none; }

@@ -332,7 +332,7 @@ class SantriImport implements SkipsEmptyRows, ToCollection, WithHeadingRow
         return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
     }
 
-    private function extractValidWaliEmail(array $row): ?string
+    private function extractValidWaliEmail(array|Collection $row): ?string
     {
         $email = $this->nullable($row['wali_email'] ?? null);
 
@@ -369,7 +369,7 @@ class SantriImport implements SkipsEmptyRows, ToCollection, WithHeadingRow
         return ['status' => 'reusable', 'user_id' => $user->id];
     }
 
-    private function resolveWali(array $row, int $rowNum): ?int
+    private function resolveWali(array|Collection $row, int $rowNum): ?int
     {
         $nama = $this->nullable($row['wali_nama'] ?? null);
         $noHp = $this->nullable($row['wali_no_hp'] ?? null);

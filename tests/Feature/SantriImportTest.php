@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Exports\SantriTemplateExport;
 use App\Imports\SantriImport;
 use App\Models\Kamar;
 use App\Models\Kelas;
@@ -10,6 +11,8 @@ use App\Models\Santri;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
 use Tests\TestCase;
 
@@ -673,5 +676,45 @@ class SantriImportTest extends TestCase
         $waliBaruSungguhan = User::where('pesantren_id', $pesantren->id)->where('role', 'wali_santri')->count();
 
         $this->assertSame($ringkasan['wali_baru'], $waliBaruSungguhan);
+    }
+
+    /**
+     * Regresi: semua test lain di file ini panggil collection() langsung dengan
+     * baris berupa array PHP biasa (new Collection([['nis' => ...], ...])) — ini
+     * TIDAK merepresentasikan bentuk data asli dari Excel::toCollection()/
+     * Excel::import() dengan WithHeadingRow, yang mengembalikan tiap baris
+     * sebagai Illuminate\Support\Collection (Collection-of-Collections), bukan
+     * Collection-of-array. Method yang type-hint parameternya `array $row`
+     * (resolveWali, extractValidWaliEmail) lolos type-check di test-test lain
+     * tapi TypeError kalau dipanggil lewat pipeline Excel sungguhan. Test ini
+     * sengaja lewat Excel::store()/Excel::toCollection()/Excel::import() supaya
+     * bug sekelas ini tidak lolos lagi.
+     */
+    public function test_import_lewat_pipeline_excel_sungguhan_tidak_error(): void
+    {
+        $pesantren = $this->makePesantren();
+
+        Excel::store(new SantriTemplateExport, 'test-pipeline.xlsx', 'local');
+
+        $import = new SantriImport($pesantren->id);
+        $rows = Excel::toCollection($import, 'test-pipeline.xlsx', 'local')->first();
+
+        // Preview (analyze()) lewat baris asli hasil Excel::toCollection().
+        $ringkasan = $import->analyze($rows);
+        $this->assertSame(1, $ringkasan['akan_diimpor']);
+
+        // Import sungguhan lewat Excel::import(), bukan panggil collection() langsung.
+        $realImport = new SantriImport($pesantren->id);
+        Excel::import($realImport, 'test-pipeline.xlsx', 'local');
+
+        $this->assertSame(1, $realImport->imported);
+        $this->assertSame(0, $realImport->skipped);
+
+        $santri = Santri::where('pesantren_id', $pesantren->id)->where('nis', '2024001')->first();
+        $this->assertNotNull($santri);
+        $this->assertSame('Ahmad Fauzan', $santri->nama_lengkap);
+        $this->assertNotNull($santri->wali_santri_id);
+
+        Storage::disk('local')->delete('test-pipeline.xlsx');
     }
 }
