@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Daftar demo gratis Walisantri.com — platform yang menghubungkan pesantren dengan wali santri untuk pemantauan perkembangan anak secara real-time.">
     <title>Demo Gratis — Walisantri.com</title>
+    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans min-h-screen">
