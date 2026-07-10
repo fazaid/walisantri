@@ -141,7 +141,10 @@ class UpgradeOrderService
                 ? $pesantren->expired_at
                 : Carbon::now();
 
-            $expiredAtBaru = $baseDate->copy()->addMonths($order->durasi_total_bulan);
+            // NoOverflow supaya anchor tanggal 29-31 di-clamp ke akhir bulan target
+            // (mis. 31 Jan + 1 bulan -> 28 Feb), bukan meluber ke bulan berikutnya
+            // (addMonths() biasa akan jadi 3 Maret).
+            $expiredAtBaru = $baseDate->copy()->addMonthsNoOverflow($order->durasi_total_bulan);
 
             $pesantren->update([
                 'paket_langganan' => $order->paket_target->value,

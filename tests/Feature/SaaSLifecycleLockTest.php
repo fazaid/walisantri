@@ -105,6 +105,29 @@ class SaaSLifecycleLockTest extends TestCase
             ->assertStatus(403);
     }
 
+    /**
+     * Regresi: sebelum fix, diffInDays() tanpa $absolute=true di Carbon 3
+     * mengembalikan nilai negatif untuk expired_at di masa lalu — bikin kondisi
+     * "$daysSinceExpired > WALI_GRACE_DAYS" tidak pernah true, jadi wali santri
+     * TIDAK PERNAH terkunci walau sudah lewat 7 hari masa tenggang. Semua test
+     * "grace period" lain di file ini cuma pakai subDays(3) (masih dalam window
+     * 7 hari) sehingga tidak pernah menyentuh baris ini dengan cara yang
+     * membedakan hasil benar vs salah.
+     */
+    public function test_wali_santri_terkunci_setelah_lewat_grace_period_7_hari(): void
+    {
+        // Expired 10 hari lalu → sudah lewat grace period 7 hari.
+        $pesantren = $this->makePesantren([
+            'status_berlangganan' => 'expired',
+            'expired_at'          => now()->subDays(10),
+        ]);
+        $wali = $this->makeUser($pesantren, 'wali_santri');
+
+        $this->actingAs($wali)
+            ->getJson('/test-saas')
+            ->assertStatus(423);
+    }
+
     // ─── Billing whitelist (route asli Filament, bukan /test-saas) ────────────
 
     public function test_admin_expired_bisa_akses_halaman_billing_asli(): void

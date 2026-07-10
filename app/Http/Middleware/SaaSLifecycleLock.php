@@ -87,7 +87,10 @@ class SaaSLifecycleLock
 
             // Wali santri: grace period 7 hari, read-only
             if ($user->isWaliSantri()) {
-                $daysSinceExpired = now()->diffInDays($pesantren->expired_at);
+                // Absolute diperlukan eksplisit — Carbon 3 mengubah default diffInDays()
+                // jadi signed (beda dari Carbon 2), expired_at selalu di masa lalu di sini
+                // jadi tanpa $absolute=true hasilnya negatif dan grace period tidak pernah habis.
+                $daysSinceExpired = now()->diffInDays($pesantren->expired_at, true);
 
                 if ($daysSinceExpired > self::WALI_GRACE_DAYS) {
                     return $this->lockResponse($request,
