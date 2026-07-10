@@ -71,7 +71,7 @@ class CheckExpiredTenants implements ShouldQueue
 
         return strtr($template, [
             '{nama_pesantren}' => $pesantren->nama_pesantren,
-            '{tanggal_expired}' => $pesantren->expired_at->format('d F Y'),
+            '{tanggal_expired}' => $pesantren->expired_at->locale('id')->translatedFormat('d F Y'),
             '{link_billing}' => url('/admin/billing-page'),
         ]);
     }

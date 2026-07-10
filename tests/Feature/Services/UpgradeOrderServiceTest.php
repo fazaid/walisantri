@@ -158,7 +158,7 @@ class UpgradeOrderServiceTest extends TestCase
 
         $order->refresh();
 
-        Queue::assertPushed(KirimNotifikasiWhatsapp::class, fn ($job) => $job->message === "Halo {$pesantren->nama_pesantren}, paket Berkembang aktif s.d. {$order->expired_at_baru->format('d F Y')}, nomor {$order->nomor_order}."
+        Queue::assertPushed(KirimNotifikasiWhatsapp::class, fn ($job) => $job->message === "Halo {$pesantren->nama_pesantren}, paket Berkembang aktif s.d. {$order->expired_at_baru->locale('id')->translatedFormat('d F Y')}, nomor {$order->nomor_order}."
         );
     }
 

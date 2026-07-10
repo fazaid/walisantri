@@ -221,7 +221,7 @@ class UpgradeOrderService
             '{nama_pesantren}' => $pesantren->nama_pesantren,
             '{paket}' => $order->paket_target->label(),
             '{durasi_bulan}' => (string) $order->durasi_total_bulan,
-            '{tanggal_expired}' => $expiredAtBaru->format('d F Y'),
+            '{tanggal_expired}' => $expiredAtBaru->locale('id')->translatedFormat('d F Y'),
             '{nomor_order}' => $order->nomor_order,
             '{total_dibayar}' => $order->formatted_harga,
             '{link_billing}' => url('/admin/billing-page'),
