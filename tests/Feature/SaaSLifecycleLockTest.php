@@ -79,10 +79,11 @@ class SaaSLifecycleLockTest extends TestCase
         $pesantren = $this->makePesantren(['status_berlangganan' => 'suspended']);
         $ustadz    = $this->makeUser($pesantren, 'ustadz');
 
-        // Ustadz diperlakukan sama seperti admin_pesantren → redirectBilling → JSON 402
+        // Ustadz bukan admin_pesantren → tidak boleh diarahkan ke BillingPage
+        // (BillingPage::canAccess() menolaknya) → lockResponse 403, bukan redirect/402.
         $this->actingAs($ustadz)
             ->getJson('/test-saas')
-            ->assertStatus(402);
+            ->assertStatus(403);
     }
 
     // ─── Grace period (expired < 7 days) ───────────────────────────────────────
@@ -139,21 +140,74 @@ class SaaSLifecycleLockTest extends TestCase
             ->assertStatus(423);
     }
 
-    // ─── Ustadz diarahkan ke billing (bukan 403 mentah) ────────────────────────
+    // ─── Ustadz TIDAK boleh diarahkan ke BillingPage ───────────────────────────
 
-    public function test_ustadz_expired_diarahkan_ke_billing(): void
+    public function test_ustadz_expired_dapat_pesan_bukan_redirect_ke_billing(): void
     {
+        // Regresi: sebelum fix, ustadz di-redirect ke BillingPage::getUrl(),
+        // tapi BillingPage::canAccess() cuma izinkan admin_pesantren — jadi
+        // ustadz mendarat di halaman itu lalu langsung kena 403 dari Filament
+        // sendiri saat halaman di-mount (abort_unless di CanAuthorizeAccess),
+        // dan karena 403 itu abort() polos tanpa navigasi, ustadz macet tanpa
+        // jalan keluar. Sekarang ustadz dapat pesan informatif langsung dari
+        // SaaSLifecycleLock, bukan diarahkan ke halaman yang mereka tidak boleh buka.
         $pesantren = $this->makePesantren([
             'status_berlangganan' => 'expired',
             'expired_at'          => now()->subDays(3),
         ]);
         $ustadz = $this->makeUser($pesantren, 'ustadz');
 
-        // Sama seperti admin_pesantren: request browser biasa (non-JSON) di-redirect
-        // ke BillingPage, bukan dikunci dengan status error mentah.
-        $this->actingAs($ustadz)
+        $response = $this->actingAs($ustadz)->get('/test-saas');
+
+        $response->assertStatus(403);
+        $response->assertSee('Langganan pesantren telah berakhir. Hubungi admin pesantren Anda untuk memperpanjang.');
+    }
+
+    public function test_admin_expired_tetap_diarahkan_ke_billing(): void
+    {
+        $pesantren = $this->makePesantren([
+            'status_berlangganan' => 'expired',
+            'expired_at'          => now()->subDays(3),
+        ]);
+        $admin = $this->makeUser($pesantren, 'admin_pesantren');
+
+        // Admin_pesantren tidak berubah — tetap di-redirect ke BillingPage
+        // karena dia satu-satunya role yang boleh membukanya.
+        $this->actingAs($admin)
             ->get('/test-saas')
             ->assertRedirect(BillingPage::getUrl());
+    }
+
+    // ─── Halaman terkunci selalu punya tombol Logout ───────────────────────────
+
+    public function test_halaman_terkunci_punya_tombol_logout_untuk_ustadz(): void
+    {
+        // Regresi untuk keluhan staging: ustadz yang terkunci tidak bisa logout
+        // karena halaman error 403/423 bawaan tidak punya navigasi sama sekali.
+        $pesantren = $this->makePesantren([
+            'status_berlangganan' => 'expired',
+            'expired_at'          => now()->subDays(3),
+        ]);
+        $ustadz = $this->makeUser($pesantren, 'ustadz');
+
+        $this->actingAs($ustadz)
+            ->get('/test-saas')
+            ->assertSee('Logout')
+            ->assertSee(route('filament.admin.auth.logout'), false);
+    }
+
+    public function test_halaman_terkunci_punya_tombol_logout_untuk_wali_santri(): void
+    {
+        $pesantren = $this->makePesantren([
+            'status_berlangganan' => 'expired',
+            'expired_at'          => now()->subDays(10),
+        ]);
+        $wali = $this->makeUser($pesantren, 'wali_santri');
+
+        $this->actingAs($wali)
+            ->get('/test-saas')
+            ->assertSee('Logout')
+            ->assertSee(route('logout'), false);
     }
 
     // ─── Response non-JSON (browser biasa) untuk wali santri terkunci ──────────
