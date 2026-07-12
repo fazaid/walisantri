@@ -74,6 +74,17 @@ class SaaSLifecycleLockTest extends TestCase
             ->assertStatus(423);
     }
 
+    public function test_akses_diblokir_saat_status_suspended_untuk_ustadz(): void
+    {
+        $pesantren = $this->makePesantren(['status_berlangganan' => 'suspended']);
+        $ustadz    = $this->makeUser($pesantren, 'ustadz');
+
+        // Ustadz diperlakukan sama seperti admin_pesantren → redirectBilling → JSON 402
+        $this->actingAs($ustadz)
+            ->getJson('/test-saas')
+            ->assertStatus(402);
+    }
+
     // ─── Grace period (expired < 7 days) ───────────────────────────────────────
 
     public function test_wali_santri_mendapat_grace_period_7_hari_saat_expired(): void
@@ -126,6 +137,45 @@ class SaaSLifecycleLockTest extends TestCase
         $this->actingAs($wali)
             ->getJson('/test-saas')
             ->assertStatus(423);
+    }
+
+    // ─── Ustadz diarahkan ke billing (bukan 403 mentah) ────────────────────────
+
+    public function test_ustadz_expired_diarahkan_ke_billing(): void
+    {
+        $pesantren = $this->makePesantren([
+            'status_berlangganan' => 'expired',
+            'expired_at'          => now()->subDays(3),
+        ]);
+        $ustadz = $this->makeUser($pesantren, 'ustadz');
+
+        // Sama seperti admin_pesantren: request browser biasa (non-JSON) di-redirect
+        // ke BillingPage, bukan dikunci dengan status error mentah.
+        $this->actingAs($ustadz)
+            ->get('/test-saas')
+            ->assertRedirect(BillingPage::getUrl());
+    }
+
+    // ─── Response non-JSON (browser biasa) untuk wali santri terkunci ──────────
+
+    public function test_wali_santri_terkunci_melihat_pesan_bukan_halaman_kosong(): void
+    {
+        // Sebelum resources/views/errors/423.blade.php dibuat, abort(423, $message)
+        // untuk request non-JSON jatuh ke convertExceptionToResponse() tanpa view
+        // khusus (Laravel core hanya sediakan 401/402/403/404/419/429/500/503),
+        // sehingga wali santri melihat halaman kosong/generik alih-alih pesan
+        // "Masa tenggang akses wali santri telah berakhir." yang sudah ditulis
+        // di SaaSLifecycleLock::lockResponse().
+        $pesantren = $this->makePesantren([
+            'status_berlangganan' => 'expired',
+            'expired_at'          => now()->subDays(10),
+        ]);
+        $wali = $this->makeUser($pesantren, 'wali_santri');
+
+        $this->actingAs($wali)
+            ->get('/test-saas')
+            ->assertStatus(423)
+            ->assertSee('Masa tenggang akses wali santri telah berakhir.');
     }
 
     // ─── Billing whitelist (route asli Filament, bukan /test-saas) ────────────
