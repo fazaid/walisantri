@@ -33,7 +33,7 @@ class VerifyMagicToken
 
         // Jika sudah login sebagai admin/ustadz/super_admin, jangan timpa sesi mereka
         if (Auth::check() && Auth::user()->role !== 'wali_santri') {
-            return redirect("/admin/santris/{$santri->id}");
+            return redirect(route('filament.admin.santri.resources.santris.view', $santri));
         }
 
         // Login sebagai wali santri — read-only session

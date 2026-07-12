@@ -132,6 +132,14 @@ Route::domain($appDomain)->group(function () use ($sameDomain) {
             Route::get('mutabaah', [ExportController::class, 'mutabaah'])->name('mutabaah');
             Route::get('rekam-medis', [ExportController::class, 'rekamMedis'])->name('rekam-medis');
         });
+
+    // --- Preview portal wali dari admin panel (tanpa Auth::login, sesi admin tetap utuh) ---
+    Route::middleware(['auth', 'tenant.resolve'])
+        ->prefix('admin-preview')
+        ->name('admin.preview.')
+        ->group(function () {
+            Route::get('/wali/{santri}', [ReportController::class, 'previewAsAdmin'])->name('wali');
+        });
 });
 
 // =============================================================================
