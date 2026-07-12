@@ -41,6 +41,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->profile(EditProfile::class, isSimple: false)
             ->databaseNotifications()
+            ->databaseNotificationsPolling('5m')
             ->sidebarFullyCollapsibleOnDesktop()
             ->navigationGroups([
                 'Kesantrian',
@@ -80,6 +81,10 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::BODY_END,
                 fn (): string => view('filament.admin.bottom-nav')->render(),
+            )
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn (): string => view('filament.admin.session-expired-handler')->render(),
             )
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
