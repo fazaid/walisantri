@@ -8,6 +8,7 @@ use App\Enums\JenisKelamin;
 use App\Filament\Resources\Santris\Actions\KirimMagicLinkAction;
 use App\Filament\Resources\Santris\Actions\PindahKamarBulkAction;
 use App\Filament\Resources\Santris\Actions\PindahKelasBulkAction;
+use App\Filament\Resources\Santris\Actions\PreviewSebagaiWaliAction;
 use App\Filament\Resources\Santris\Actions\RegenerasiUuidAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -85,6 +86,7 @@ class SantrisTable
             ->recordActions([
                 ViewAction::make(),
                 KirimMagicLinkAction::make(),
+                PreviewSebagaiWaliAction::make(),
                 RegenerasiUuidAction::make(),
                 EditAction::make(),
             ])

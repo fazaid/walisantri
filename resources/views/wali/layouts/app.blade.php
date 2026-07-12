@@ -29,6 +29,13 @@
     </div>
     @endif
 
+    {{-- Preview mode banner (admin/ustadz melihat tampilan wali) --}}
+    @if($previewMode ?? false)
+    <div class="bg-indigo-600 text-white text-center text-sm py-2 px-4">
+        👁 Mode Preview — tampilan ini seperti yang dilihat wali santri
+    </div>
+    @endif
+
     {{-- Header --}}
     <header class="bg-teal-700 text-white sticky top-0 z-10 shadow-md">
         <div class="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
@@ -45,10 +52,12 @@
                     <p class="text-xs text-teal-200">@yield('subtitle', config('app.name'))</p>
                 </div>
             </div>
+            @unless($previewMode ?? false)
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit" class="text-xs text-teal-200 hover:text-white">Keluar</button>
             </form>
+            @endunless
         </div>
     </header>
 
@@ -57,7 +66,7 @@
     </main>
 
     {{-- ─── Bottom Navigation Bar ─────────────────────────────────────────── --}}
-    @unless(session('magic_link_session'))
+    @unless(session('magic_link_session') || ($previewMode ?? false))
     @php
         $isBerandaActive    = request()->routeIs('wali.dashboard') || request()->routeIs('wali.santri.show');
         $isPengumumanActive = request()->routeIs('wali.pengumuman');

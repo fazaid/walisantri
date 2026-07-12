@@ -6,7 +6,9 @@ namespace App\Http\Controllers\Wali;
 
 use App\Http\Controllers\Controller;
 use App\Models\Santri;
+use App\Observers\ActivityLogger;
 use App\Services\SantriDetailPresenter;
+use Illuminate\Support\Facades\Auth;
 
 class ReportController extends Controller
 {
@@ -34,6 +36,24 @@ class ReportController extends Controller
             ->findOrFail($santriId);
 
         return view('wali.santri.show', $this->buildPayload($santri));
+    }
+
+    // Preview admin/ustadz — render tampilan wali tanpa Auth::login (sesi admin tetap utuh)
+    public function previewAsAdmin(Santri $santri)
+    {
+        abort_unless(
+            in_array(Auth::user()?->role, ['admin_pesantren', 'ustadz', 'super_admin']),
+            403
+        );
+
+        $santri->load(['pembimbing', 'pesantren', 'kelas', 'kamar']);
+
+        ActivityLogger::log('wali_preview.viewed', $santri, null, ['viewed_by' => Auth::id()]);
+
+        return view('wali.santri.show', array_merge(
+            $this->buildPayload($santri),
+            ['previewMode' => true]
+        ));
     }
 
     private function buildPayload(Santri $santri): array

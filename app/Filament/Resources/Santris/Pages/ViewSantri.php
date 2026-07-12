@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Santris\Pages;
 
 use App\Filament\Resources\Santris\Actions\KirimMagicLinkAction;
+use App\Filament\Resources\Santris\Actions\PreviewSebagaiWaliAction;
 use App\Filament\Resources\Santris\Actions\RegenerasiUuidAction;
 use App\Filament\Resources\Santris\SantriResource;
 use Filament\Actions\EditAction;
@@ -16,6 +17,7 @@ class ViewSantri extends ViewRecord
     {
         return [
             KirimMagicLinkAction::make(),
+            PreviewSebagaiWaliAction::make(),
             RegenerasiUuidAction::make(),
             EditAction::make(),
         ];
