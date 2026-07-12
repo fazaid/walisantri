@@ -127,6 +127,16 @@ class SaaSLifecycleLock
 
     private function redirectBilling(Request $request, $pesantren): Response
     {
+        // Hanya admin_pesantren yang boleh membuka BillingPage (lihat
+        // BillingPage::canAccess()). Role lain (mis. ustadz) yang diarahkan
+        // ke sana akan langsung kena 403 dari Filament sendiri saat halaman
+        // di-mount — jadi jangan redirect, kasih pesan informatif di sini.
+        if (auth()->user()->role !== 'admin_pesantren') {
+            return $this->lockResponse($request,
+                'Langganan pesantren telah berakhir. Hubungi admin pesantren Anda untuk memperpanjang.'
+            );
+        }
+
         if ($request->expectsJson()) {
             return response()->json([
                 'message' => 'Langganan pesantren telah berakhir. Silakan perbarui pembayaran.',
