@@ -59,6 +59,15 @@ Route::domain($baseDomain)->group(function () use ($sameDomain) {
 
     Route::get('/demo', [DemoController::class, 'show'])->name('demo');
     Route::post('/demo', [DemoController::class, 'store'])->name('demo.submit')->middleware('throttle:demo');
+
+    // Panduan juga tersedia di domain utama (tanpa "app.") — dilewati saat
+    // $sameDomain karena rute 'panduan' di grup APP di bawah sudah menjajaki
+    // domain yang sama; mendaftarkan path yang sama dua kali di domain
+    // identik membuat definisi kedua menimpa yang pertama (lihat catatan
+    // $sameDomain untuk rute '/' di atas).
+    if (! $sameDomain) {
+        Route::view('/panduan', 'panduan');
+    }
 });
 
 // =============================================================================
@@ -86,6 +95,9 @@ Route::domain($appDomain)->group(function () use ($sameDomain) {
     Route::get('/login', [WaliLoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [WaliLoginController::class, 'login'])->name('wali.login.submit');
     Route::post('/logout', [WaliLoginController::class, 'logout'])->middleware('auth')->name('logout');
+
+    // --- Panduan penggunaan untuk Admin Pesantren & Ustadz — statis, tanpa login ---
+    Route::view('/panduan', 'panduan')->name('panduan');
 
     // --- Portal Wali Santri (§1.6) ---
     Route::middleware(['auth', 'tenant.resolve', 'saas.lifecycle'])

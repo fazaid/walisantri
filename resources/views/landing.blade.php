@@ -25,6 +25,7 @@
                 <a href="#cara-kerja" class="text-sm text-gray-500 hover:text-teal-700 font-medium">Cara Kerja</a>
                 <a href="#faq" class="text-sm text-gray-500 hover:text-teal-700 font-medium">FAQ</a>
                 <a href="{{ route('demo') }}" class="text-sm text-gray-500 hover:text-teal-700 font-medium">Demo</a>
+                <a href="/panduan" class="text-sm text-gray-500 hover:text-teal-700 font-medium">Panduan</a>
             </div>
             <div class="flex items-center gap-2 shrink-0">
                 <a href="{{ route('login') }}"
