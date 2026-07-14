@@ -139,6 +139,7 @@
       }
 
       .nav-toggle{ display:none; }
+      .sidebar-close{ display:none; }
       @media (max-width: 900px){
         .sidebar{
           position:fixed;
@@ -175,7 +176,7 @@
         .nav-toggle label span{
           width:18px; height:2px; background:var(--ink); display:block; border-radius:1px;
         }
-        #nav-toggle{ position:absolute; opacity:0; pointer-events:none; }
+        #nav-toggle{ position:fixed; top:0; left:0; width:1px; height:1px; opacity:0; pointer-events:none; }
         .scrim{
           display:none;
           position:fixed; inset:0; background:rgba(10,14,12,0.45); z-index:35;
@@ -200,7 +201,6 @@
           cursor:pointer;
         }
       }
-      .sidebar-close{ display:none; }
 
       /* ---------- Content ---------- */
       .content{ padding: 48px clamp(20px, 4vw, 64px) 96px; min-width:0; }
@@ -280,13 +280,16 @@
       ol.steps{ list-style:none; padding-left:0; counter-reset:step; display:flex; flex-direction:column; gap:10px; margin:16px 0; }
       ol.steps li{
         counter-increment:step;
-        display:grid;
-        grid-template-columns:28px 1fr;
-        gap:12px;
+        position:relative;
+        padding-left:40px;
+        min-height:28px;
         margin:0;
       }
       ol.steps li::before{
         content:counter(step);
+        position:absolute;
+        left:0;
+        top:0;
         font-family:var(--font-mono);
         font-size:0.78rem;
         color:var(--accent-ink);
@@ -328,8 +331,10 @@
       .access-note{ color:var(--ink-soft); }
 
       .menu{
+        display:inline-block;
         font-family:var(--font-mono);
         font-size:0.86rem;
+        line-height:1.5;
         background:var(--bg-elevated);
         border:1px solid var(--border);
         padding:2px 8px;
@@ -425,8 +430,10 @@
       }
 
       code{
+        display:inline-block;
         font-family:var(--font-mono);
         font-size:0.88em;
+        line-height:1.4;
         background:var(--bg-elevated);
         padding:1px 5px;
         border-radius:4px;
@@ -921,5 +928,13 @@
     </footer>
   </main>
 </div>
+
+<script>
+  document.querySelectorAll('.toc a').forEach(function (link) {
+    link.addEventListener('click', function () {
+      document.getElementById('nav-toggle').checked = false;
+    });
+  });
+</script>
 </body>
 </html>
