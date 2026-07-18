@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Daftar demo gratis Walisantri.com — platform yang menghubungkan pesantren dengan wali santri untuk pemantauan perkembangan anak secara real-time.">
     <title>Demo Gratis — Walisantri.com</title>
-    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ \App\Models\PlatformBrandingSetting::faviconUrl() }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans min-h-screen">
@@ -13,7 +13,10 @@
     {{-- Nav --}}
     <nav class="bg-white border-b border-gray-100">
         <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-            <a href="{{ route('landing') }}" class="text-teal-700 font-bold text-xl tracking-tight">🕌 Walisantri.com</a>
+            <a href="{{ route('landing') }}" class="flex items-center gap-2 text-teal-700 font-bold text-xl tracking-tight">
+                <img src="{{ \App\Models\PlatformBrandingSetting::logoUrl() }}" alt="Walisantri.com" class="h-8 w-auto">
+                Walisantri.com
+            </a>
             <a href="{{ route('landing') }}" class="text-sm text-gray-500 hover:text-teal-700">← Kembali ke Beranda</a>
         </div>
     </nav>

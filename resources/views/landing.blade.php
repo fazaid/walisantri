@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Walisantri.com menghubungkan wali santri dengan pesantren — pantau ibadah, hafalan Al-Quran, nilai, kesehatan, dan SPP anak langsung dari HP, lengkap dengan alat evaluasi untuk pengurus & ustadz.">
     <title>Walisantri.com — Pesantren Transparan, Wali Santri Tenang</title>
-    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ \App\Models\PlatformBrandingSetting::faviconUrl() }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         details summary::-webkit-details-marker { display: none; }
@@ -19,12 +19,16 @@
     {{-- Nav --}}
     <nav class="bg-white border-b border-gray-100 sticky top-0 z-50">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2">
-            <span class="text-teal-700 font-bold text-base sm:text-xl tracking-tight shrink-0">🕌 Walisantri.com</span>
+            <span class="flex items-center gap-2 text-teal-700 font-bold text-base sm:text-xl tracking-tight shrink-0">
+                <img src="{{ \App\Models\PlatformBrandingSetting::logoUrl() }}" alt="Walisantri.com" class="h-8 sm:h-9 w-auto">
+                Walisantri.com
+            </span>
             <div class="hidden md:flex items-center gap-6">
                 <a href="#fitur" class="text-sm text-gray-500 hover:text-teal-700 font-medium">Fitur</a>
                 <a href="#cara-kerja" class="text-sm text-gray-500 hover:text-teal-700 font-medium">Cara Kerja</a>
                 <a href="#faq" class="text-sm text-gray-500 hover:text-teal-700 font-medium">FAQ</a>
                 <a href="{{ route('demo') }}" class="text-sm text-gray-500 hover:text-teal-700 font-medium">Demo</a>
+                <a href="/panduan" class="text-sm text-gray-500 hover:text-teal-700 font-medium">Panduan</a>
             </div>
             <div class="flex items-center gap-2 shrink-0">
                 <a href="{{ route('login') }}"
@@ -667,7 +671,10 @@
     {{-- Footer --}}
     <footer class="border-t border-gray-100 py-10">
         <div class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
-            <span class="text-teal-700 font-bold text-lg">🕌 Walisantri.com</span>
+            <span class="flex items-center gap-2 text-teal-700 font-bold text-lg">
+                <img src="{{ \App\Models\PlatformBrandingSetting::logoUrl() }}" alt="Walisantri.com" class="h-7 w-auto">
+                Walisantri.com
+            </span>
             <p class="text-sm text-gray-400 text-center">
                 Menghubungkan Pesantren & Wali Santri di Seluruh Indonesia
             </p>

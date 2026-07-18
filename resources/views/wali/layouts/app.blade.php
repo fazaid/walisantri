@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Walisantri">
     <link rel="manifest" href="/manifest.json">
-    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ \App\Models\PlatformBrandingSetting::faviconUrl() }}">
 
     <title>@yield('title', 'Portal Wali Santri') — {{ config('app.name') }}</title>
 
