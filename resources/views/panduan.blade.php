@@ -6,7 +6,7 @@
     <meta name="description" content="Panduan penggunaan Walisantri untuk Admin Pesantren dan Ustadz — cara pakai tiap menu, langkah demi langkah.">
     <meta name="robots" content="noindex">
     <title>Panduan Penggunaan — Walisantri</title>
-    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ \App\Models\PlatformBrandingSetting::faviconUrl() }}">
     <style>
       :root{
         --bg:#F1F0E8;

@@ -28,6 +28,7 @@
             border-bottom: 2px solid #0f766e;
         }
         .letterhead .brand { display: table-cell; vertical-align: top; width: 55%; }
+        .letterhead .brand-logo { height: 32px; margin-bottom: 4px; }
         .letterhead .brand-name { font-size: 20px; font-weight: bold; color: #0f766e; }
         .letterhead .brand-tagline { font-size: 9px; color: #6b7280; margin-top: 2px; }
         .letterhead .doc-info { display: table-cell; vertical-align: top; width: 45%; text-align: right; }
@@ -130,7 +131,8 @@
 
 <div class="letterhead">
     <div class="brand">
-        <div class="brand-name">🕌 Walisantri.com</div>
+        <img src="{{ \App\Models\PlatformBrandingSetting::logoPath() }}" alt="Walisantri.com" class="brand-logo">
+        <div class="brand-name">Walisantri.com</div>
         <div class="brand-tagline">Platform Manajemen Pesantren Terpadu</div>
     </div>
     <div class="doc-info">

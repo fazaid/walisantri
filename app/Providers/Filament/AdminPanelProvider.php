@@ -7,6 +7,7 @@ use App\Http\Middleware\CheckTenantQuota;
 use App\Http\Middleware\FilamentAuthenticate;
 use App\Http\Middleware\ResolveTenantFromAccount;
 use App\Http\Middleware\SaaSLifecycleLock;
+use App\Models\PlatformBrandingSetting;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -35,7 +36,9 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->domain(config('app.domain', 'app.walisantri.com'))
-            ->favicon(asset('favicon.svg'))
+            ->favicon(fn () => PlatformBrandingSetting::faviconUrl())
+            ->brandLogo(fn () => PlatformBrandingSetting::logoUrl())
+            ->brandLogoHeight('2rem')
             ->colors([
                 'primary' => Color::Teal,
             ])

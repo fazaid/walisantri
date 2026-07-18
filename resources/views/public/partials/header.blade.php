@@ -6,7 +6,9 @@
                  alt="Logo {{ $pesantren->nama_pesantren }}"
                  class="w-16 h-16 rounded-xl object-cover shadow-md">
         @else
-            <div class="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center text-3xl">🕌</div>
+            <div class="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center">
+                <img src="{{ \App\Models\PlatformBrandingSetting::logoUrl() }}" alt="Walisantri.com" class="w-10 h-10 object-contain">
+            </div>
         @endif
         <div>
             <h1 class="text-2xl font-bold">{{ $pesantren->nama_pesantren }}</h1>

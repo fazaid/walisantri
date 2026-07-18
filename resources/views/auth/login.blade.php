@@ -13,7 +13,7 @@
             Masuk · Walisantri.com
         @endif
     </title>
-    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ \App\Models\PlatformBrandingSetting::faviconUrl() }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen flex items-center justify-center px-4
@@ -29,7 +29,7 @@
                      class="w-16 h-16 rounded-2xl object-cover mx-auto mb-3 shadow-lg">
             @else
                 <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
-                    <span class="text-3xl">🕌</span>
+                    <img src="{{ \App\Models\PlatformBrandingSetting::logoUrl() }}" alt="Walisantri.com" class="w-10 h-10 object-contain">
                 </div>
             @endif
 
