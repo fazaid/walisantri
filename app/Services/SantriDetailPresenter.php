@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\KesantrianInventaris;
 use App\Models\KesantrianKesehatan;
 use App\Models\KesantrianMutabaah;
 use App\Models\PrestasiSantri;
@@ -69,6 +70,8 @@ class SantriDetailPresenter
             ->orderBy('tanggal_mulai', 'asc')
             ->get();
 
+        $totalInventaris = KesantrianInventaris::where('santri_id', $santri->id)->count();
+
         return compact(
             'tahfidzRecent',
             'kesehatanRecent',
@@ -79,6 +82,7 @@ class SantriDetailPresenter
             'raporTahfidzTerakhir',
             'prestasi',
             'ekskul',
+            'totalInventaris',
         );
     }
 

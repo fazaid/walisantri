@@ -30,7 +30,10 @@ class MagicLinkReadOnlyTest extends TestCase
         $santri = $this->santriDenganWali();
 
         $this->get("/report/{$santri->uuid}")
-            ->assertOk();
+            ->assertOk()
+            // Halaman report harus menautkan ke inventaris — satu-satunya pintu
+            // masuk pemegang magic link ke halaman inventaris yang di-whitelist.
+            ->assertSee(route('wali.santri.inventaris', $santri->id));
     }
 
     public function test_sesi_magic_link_tidak_bisa_buka_dashboard_wali(): void

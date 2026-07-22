@@ -99,8 +99,9 @@
     </a>
     @endif
 
-    {{-- Inventaris --}}
-    @if($firstSantriId)
+    {{-- Inventaris (agregat lintas anak) — untuk wali >1 anak. Wali 1 anak sudah
+         mendapat kartu inventaris per-santri dari partial santri-detail di atas. --}}
+    @if(! $santri && $firstSantriId)
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 px-4 py-3">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
