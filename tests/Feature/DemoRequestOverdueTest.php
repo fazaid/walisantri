@@ -6,6 +6,7 @@ use App\Models\DemoRequest;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon as SupportCarbon;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class DemoRequestOverdueTest extends TestCase
@@ -15,6 +16,10 @@ class DemoRequestOverdueTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Tes ini fokus ke logika SLA, bukan notifikasi. DemoRequestObserver::created()
+        // men-dispatch WA (queue sync di testing → kirim sungguhan), jadi di-fake.
+        Queue::fake();
 
         // Bekukan waktu ke hari kerja (Rabu) supaya slaCutoff() deterministik.
         $this->travelTo(SupportCarbon::parse('2026-07-22 10:00:00'));
@@ -29,10 +34,10 @@ class DemoRequestOverdueTest extends TestCase
     {
         $record = new DemoRequest([
             'nama_pesantren' => 'Pesantren Uji',
-            'nama_kontak'    => 'PIC Uji',
-            'email'          => 'uji@example.com',
-            'no_hp'          => '08123456789',
-            'contacted_at'   => $contactedAt,
+            'nama_kontak' => 'PIC Uji',
+            'email' => 'uji@example.com',
+            'no_hp' => '08123456789',
+            'contacted_at' => $contactedAt,
         ]);
         $record->created_at = $createdAt;
         $record->save();
@@ -82,10 +87,10 @@ class DemoRequestOverdueTest extends TestCase
     {
         $cutoff = DemoRequest::slaCutoff();
 
-        $overdue    = $this->demoRequestAt($cutoff->copy()->subSecond());
+        $overdue = $this->demoRequestAt($cutoff->copy()->subSecond());
         $onBoundary = $this->demoRequestAt($cutoff->copy());
-        $fresh      = $this->demoRequestAt($cutoff->copy()->addSecond());
-        $contacted  = $this->demoRequestAt($cutoff->copy()->subWeek(), contactedAt: now());
+        $fresh = $this->demoRequestAt($cutoff->copy()->addSecond());
+        $contacted = $this->demoRequestAt($cutoff->copy()->subWeek(), contactedAt: now());
 
         $overdueIds = DemoRequest::query()->overdue()->pluck('id');
 
