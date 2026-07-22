@@ -99,6 +99,26 @@
     </a>
     @endif
 
+    {{-- Uang Saku (agregat lintas anak) — login-only, seperti SPP. Sengaja TIDAK
+         disurutkan ke magic link/preview karena data finansial & link bisa disebar. --}}
+    @if($firstSantriId)
+    <a href="{{ route('wali.uang-saku') }}"
+       class="block bg-white rounded-2xl shadow-sm border border-gray-100 px-4 py-3 hover:border-teal-200 transition-colors">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-xl">💰</span>
+                <div>
+                    <p class="text-sm font-semibold text-gray-800">Uang Saku</p>
+                    <p class="text-xs {{ $totalSaldoUangSaku >= 0 ? 'text-gray-400' : 'text-red-500' }}">
+                        Saldo Rp {{ number_format($totalSaldoUangSaku, 0, ',', '.') }}
+                    </p>
+                </div>
+            </div>
+            <span class="text-xs font-medium text-teal-600">Detail →</span>
+        </div>
+    </a>
+    @endif
+
     {{-- Inventaris (agregat lintas anak) — untuk wali >1 anak. Wali 1 anak sudah
          mendapat kartu inventaris per-santri dari partial santri-detail di atas. --}}
     @if(! $santri && $firstSantriId)
