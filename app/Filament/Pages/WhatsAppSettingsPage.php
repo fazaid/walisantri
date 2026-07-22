@@ -54,6 +54,10 @@ class WhatsAppSettingsPage extends Page implements HasForms
 
     public string $notif_order_dikonfirmasi_template = '';
 
+    public bool $notif_demo_terima_kasih_enabled = true;
+
+    public string $notif_demo_terima_kasih_template = '';
+
     public ?string $fonnte_token = null;
 
     public ?string $fonnte_token_last4 = null;
@@ -74,6 +78,8 @@ class WhatsAppSettingsPage extends Page implements HasForms
             'notif_trial_habis_template' => WhatsAppMessageTemplate::get('notif_trial_habis'),
             'notif_order_dikonfirmasi_enabled' => WhatsAppSetting::get('notif_order_dikonfirmasi_enabled'),
             'notif_order_dikonfirmasi_template' => WhatsAppMessageTemplate::get('notif_order_dikonfirmasi'),
+            'notif_demo_terima_kasih_enabled' => WhatsAppSetting::get('notif_demo_terima_kasih_enabled'),
+            'notif_demo_terima_kasih_template' => WhatsAppMessageTemplate::get('notif_demo_terima_kasih'),
         ]);
     }
 
@@ -130,6 +136,19 @@ class WhatsAppSettingsPage extends Page implements HasForms
                         ->rows(8)
                         ->helperText('Placeholder yang bisa dipakai: {nama_pesantren}, {paket}, {durasi_bulan}, {tanggal_expired}, {nomor_order}, {total_dibayar}, {link_billing}.'),
                 ]),
+            Section::make('Notifikasi Terima Kasih Demo')
+                ->description('Pengecualian sempit keempat atas kebijakan WhatsApp manual (PRD §12) — ucapan terima kasih + link grup support otomatis saat calon pelanggan mengisi form demo, tidak memengaruhi fitur WA lain.')
+                ->schema([
+                    Toggle::make('notif_demo_terima_kasih_enabled')
+                        ->label('Kirim ucapan terima kasih WhatsApp saat form demo disubmit')
+                        ->helperText('Matikan sebagai kill-switch cepat, misalnya saat gateway Fonnte bermasalah atau kuota habis, tanpa perlu deploy ulang.')
+                        ->default(true),
+                    Textarea::make('notif_demo_terima_kasih_template')
+                        ->label('Template pesan terima kasih demo')
+                        ->required()
+                        ->rows(8)
+                        ->helperText('Placeholder yang bisa dipakai: {nama_kontak}, {nama_pesantren}. Link grup WhatsApp support diketik langsung di dalam template ini.'),
+                ]),
             Section::make('Koneksi Gateway Fonnte')
                 ->description('Token API akun Fonnte yang dipakai untuk mengirim SEMUA notifikasi WhatsApp platform. Mengganti token di sini langsung berlaku tanpa redeploy/edit .env server.')
                 ->schema([
@@ -176,6 +195,9 @@ class WhatsAppSettingsPage extends Page implements HasForms
 
         WhatsAppSetting::set('notif_order_dikonfirmasi_enabled', (bool) $state['notif_order_dikonfirmasi_enabled']);
         WhatsAppMessageTemplate::set('notif_order_dikonfirmasi', $state['notif_order_dikonfirmasi_template']);
+
+        WhatsAppSetting::set('notif_demo_terima_kasih_enabled', (bool) $state['notif_demo_terima_kasih_enabled']);
+        WhatsAppMessageTemplate::set('notif_demo_terima_kasih', $state['notif_demo_terima_kasih_template']);
 
         if (isset($state['fonnte_token'])) {
             WhatsAppGatewaySetting::set('fonnte_token', $state['fonnte_token']);

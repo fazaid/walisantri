@@ -44,9 +44,7 @@ class DemoRequestResource extends Resource
 
     public static function getNavigationBadgeColor(): ?string
     {
-        return DemoRequest::whereNull('contacted_at')
-            ->where('created_at', '<=', DemoRequest::slaCutoff())
-            ->exists() ? 'danger' : 'warning';
+        return DemoRequest::query()->overdue()->exists() ? 'danger' : 'warning';
     }
 
     public static function infolist(Schema $schema): Schema

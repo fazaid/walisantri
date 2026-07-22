@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -37,8 +38,21 @@ class DemoRequest extends Model
 
     public function isOverdue(): bool
     {
+        // Satu sumber kebenaran dengan scopeOverdue(): sudah melewati batas SLA
+        // (strict — tepat SLA_BUSINESS_DAYS hari kerja masih dianggap on-time,
+        // sesuai janji "1–2 hari kerja" di form demo).
         return $this->contacted_at === null
-            && $this->businessDaysWaiting() > self::SLA_BUSINESS_DAYS;
+            && $this->created_at < self::slaCutoff();
+    }
+
+    /**
+     * Antrean yang belum dihubungi & sudah melewati batas SLA.
+     * Dipakai badge navigasi, filter tabel, dan isOverdue() agar konsisten.
+     */
+    public function scopeOverdue(Builder $query): Builder
+    {
+        return $query->whereNull('contacted_at')
+            ->where('created_at', '<', self::slaCutoff());
     }
 
     public static function slaCutoff(int $businessDays = self::SLA_BUSINESS_DAYS): Carbon
