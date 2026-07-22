@@ -137,10 +137,12 @@
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
             <h2 class="font-semibold text-gray-800">📖 Setoran Tahfidz</h2>
+            @unless($previewMode ?? false)
             <a href="{{ route('wali.santri.tahfidz', $santri->id) }}"
                class="text-xs text-teal-600 font-medium hover:text-teal-800">
                 Statistik →
             </a>
+            @endunless
         </div>
 
         @forelse($tahfidzRecent as $progress)
@@ -184,10 +186,12 @@
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
             <h2 class="font-semibold text-gray-800">🏥 Riwayat Kesehatan</h2>
+            @unless($previewMode ?? false)
             <a href="{{ route('wali.santri.kesehatan', $santri->id) }}"
                class="text-xs text-teal-600 font-medium hover:text-teal-800">
                 Statistik →
             </a>
+            @endunless
         </div>
 
         @forelse($kesehatanRecent as $kesehatan)
@@ -223,7 +227,9 @@
                 <h2 class="font-semibold text-gray-800">✨ Mutabaah Harian</h2>
                 <p class="text-xs text-gray-400 mt-0.5">7 hari terakhir</p>
             </div>
+            @unless($previewMode ?? false)
             <a href="{{ route('wali.santri.mutabaah', $santri->id) }}" class="text-xs text-teal-600 font-medium hover:text-teal-800">Detail →</a>
+            @endunless
         </div>
 
         @php
@@ -283,6 +289,24 @@
         <div class="px-4 py-5 text-center text-sm text-gray-400">Belum ada data mutabaah.</div>
         @endif
     </div>
+
+    {{-- Inventaris --}}
+    @php $inventarisPreview = $previewMode ?? false; @endphp
+    <a @unless($inventarisPreview) href="{{ route('wali.santri.inventaris', $santri->id) }}" @endunless
+       class="block bg-white rounded-2xl shadow-sm border border-gray-100 px-4 py-3 @unless($inventarisPreview) hover:border-teal-200 transition-colors @endunless">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-xl">📦</span>
+                <div>
+                    <p class="text-sm font-semibold text-gray-800">Inventaris Santri</p>
+                    <p class="text-xs text-gray-400">{{ $totalInventaris }} barang tercatat</p>
+                </div>
+            </div>
+            @unless($inventarisPreview)
+            <span class="text-xs font-medium text-teal-600">Detail →</span>
+            @endunless
+        </div>
+    </a>
 
     {{-- Ekstrakurikuler --}}
     @if($ekskul->isNotEmpty())
@@ -351,6 +375,25 @@
                         @if($item->penyelenggara) · {{ $item->penyelenggara }}@endif
                     </p>
                 </div>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
+
+    {{-- Pengumuman — hanya untuk sesi magic link & preview, yang tak punya akses
+         dashboard/nav. Sesi login normal sudah melihat pengumuman di dashboard,
+         jadi tidak dirender di sini agar tak duplikat. Read-only, tanpa "Lihat
+         semua" karena route agregat wali.pengumuman diblok untuk kedua mode ini. --}}
+    @if((session('magic_link_session') || ($previewMode ?? false)) && $pengumumanReport->isNotEmpty())
+    <div>
+        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Pengumuman</p>
+        <div class="space-y-2">
+            @foreach($pengumumanReport as $item)
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                <p class="font-medium text-gray-800 text-sm">{{ $item->judul_maklumat }}</p>
+                <p class="text-xs text-gray-500 mt-1 line-clamp-2">{{ Str::limit(strip_tags($item->isi_maklumat), 120) }}</p>
+                <p class="text-xs text-gray-400 mt-2">{{ $item->created_at->diffForHumans() }}</p>
             </div>
             @endforeach
         </div>

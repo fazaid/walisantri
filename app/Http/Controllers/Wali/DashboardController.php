@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\KesantrianInventaris;
 use App\Models\MasterPengumuman;
 use App\Models\TagihanSpp;
+use App\Models\UangSakuSantri;
 use App\Services\SantriDetailPresenter;
 
 class DashboardController extends Controller
@@ -66,6 +67,9 @@ class DashboardController extends Controller
         $totalInventaris = KesantrianInventaris::whereIn('santri_id', $santriIds)->count();
         $firstSantriId = $anakList->first()?->id;
 
+        // Saldo uang saku agregat lintas anak (setoran − pengambilan).
+        $totalSaldoUangSaku = $anakList->sum(fn ($s) => UangSakuSantri::getSaldo($s->id));
+
         return view('wali.dashboard', compact(
             'wali',
             'santri',
@@ -76,6 +80,7 @@ class DashboardController extends Controller
             'pengumumanGlobal',
             'tunggakanSpp',
             'totalInventaris',
+            'totalSaldoUangSaku',
             'firstSantriId',
         ));
     }

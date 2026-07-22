@@ -100,7 +100,7 @@ Route::domain($appDomain)->group(function () use ($sameDomain) {
     Route::view('/panduan', 'panduan')->name('panduan');
 
     // --- Portal Wali Santri (§1.6) ---
-    Route::middleware(['auth', 'tenant.resolve', 'saas.lifecycle'])
+    Route::middleware(['auth', 'magic.block', 'tenant.resolve', 'saas.lifecycle'])
         ->prefix('wali')
         ->name('wali.')
         ->group(function () {

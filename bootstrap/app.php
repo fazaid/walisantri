@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.quota'   => \App\Http\Middleware\CheckTenantQuota::class,
             'saas.lifecycle' => \App\Http\Middleware\SaaSLifecycleLock::class,
             'magic.token'    => \App\Http\Middleware\VerifyMagicToken::class,
+            'magic.block'    => \App\Http\Middleware\BlockMagicLinkSession::class,
             'public.tenant'  => \App\Http\Middleware\PublicTenantResolver::class,
             'tenant.resolve' => \App\Http\Middleware\ResolveTenantFromAccount::class,
         ]);
