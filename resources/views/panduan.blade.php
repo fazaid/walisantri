@@ -420,15 +420,6 @@
         color:var(--ink-faint);
       }
 
-      footer.doc-footer{
-        max-width:70ch;
-        margin-top:60px;
-        padding-top:20px;
-        border-top:1px solid var(--border);
-        color:var(--ink-faint);
-        font-size:0.82rem;
-      }
-
       code{
         display:inline-block;
         font-family:var(--font-mono);
@@ -440,9 +431,95 @@
         border:1px solid var(--border);
       }
       strong{ color:var(--ink); }
+
+      /* ---------- Header & footer situs (navigasi) ---------- */
+      .site-header{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:16px;
+        padding:14px clamp(20px, 4vw, 64px);
+        background:var(--bg-elevated);
+        border-bottom:1px solid var(--border);
+      }
+      .site-header .brand,
+      .site-footer .brand{
+        display:inline-flex;
+        align-items:center;
+        gap:10px;
+        font-family:var(--font-display);
+        font-weight:700;
+        color:var(--accent-ink);
+        text-decoration:none;
+      }
+      .site-header .brand{ font-size:1.1rem; }
+      .site-header .brand img{ height:32px; width:auto; display:block; }
+      .site-header nav{
+        display:flex;
+        align-items:center;
+        gap:6px;
+        flex-wrap:wrap;
+        justify-content:flex-end;
+      }
+      .site-header nav a{
+        text-decoration:none;
+        color:var(--ink-soft);
+        font-size:0.9rem;
+        font-weight:500;
+        padding:7px 12px;
+        border-radius:7px;
+      }
+      .site-header nav a:hover{ background:var(--accent-soft); color:var(--accent-ink); }
+      .site-header nav a.cta{ background:var(--accent); color:#fff; }
+      .site-header nav a.cta:hover{ background:var(--accent-ink); color:#fff; }
+
+      .site-footer{
+        border-top:1px solid var(--border);
+        background:var(--bg-elevated);
+        padding:28px clamp(20px, 4vw, 64px);
+        display:flex;
+        flex-direction:column;
+        gap:14px;
+        align-items:center;
+        text-align:center;
+      }
+      .site-footer .footer-top{
+        width:100%;
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:16px;
+        flex-wrap:wrap;
+      }
+      .site-footer .brand img{ height:28px; width:auto; display:block; }
+      .site-footer nav{ display:flex; gap:18px; flex-wrap:wrap; }
+      .site-footer nav a{ color:var(--ink-soft); text-decoration:none; font-size:0.9rem; }
+      .site-footer nav a:hover{ color:var(--accent-ink); }
+      .site-footer .note{ color:var(--ink-faint); font-size:0.82rem; margin:0; }
+      .site-footer .copyright{ color:var(--ink-faint); font-size:0.78rem; }
+
+      @media (max-width: 600px){
+        .site-header{ padding:12px 16px; }
+        .site-header .brand{ font-size:1rem; }
+        .site-header .brand img{ height:28px; }
+        .site-header nav a{ padding:6px 9px; font-size:0.85rem; }
+        .site-footer .footer-top{ flex-direction:column; text-align:center; }
+      }
     </style>
 </head>
 <body>
+
+<header class="site-header">
+  <a class="brand" href="{{ url('/') }}">
+    <img src="{{ \App\Models\PlatformBrandingSetting::logoUrl() }}" alt="Walisantri.com">
+    Walisantri.com
+  </a>
+  <nav aria-label="Navigasi situs">
+    <a href="{{ url('/') }}">Beranda</a>
+    <a href="{{ route('demo') }}">Demo</a>
+    <a class="cta" href="{{ route('login') }}">Masuk</a>
+  </nav>
+</header>
 
 <label for="nav-toggle" class="scrim" aria-label="Tutup daftar isi"></label>
 <div class="nav-toggle">
@@ -923,11 +1000,24 @@
       <a class="backlink" href="#pendahuluan">↑ Kembali ke Pendahuluan</a>
     </section>
 
-    <footer class="doc-footer">
-      Panduan internal Walisantri untuk Admin Pesantren &amp; Ustadz.
-    </footer>
   </main>
 </div>
+
+<footer class="site-footer">
+  <div class="footer-top">
+    <a class="brand" href="{{ url('/') }}">
+      <img src="{{ \App\Models\PlatformBrandingSetting::logoUrl() }}" alt="Walisantri.com">
+      Walisantri.com
+    </a>
+    <nav aria-label="Navigasi situs">
+      <a href="{{ url('/') }}">Beranda</a>
+      <a href="{{ route('demo') }}">Demo</a>
+      <a href="{{ route('login') }}">Masuk</a>
+    </nav>
+  </div>
+  <p class="note">Panduan penggunaan Walisantri untuk Admin Pesantren &amp; Ustadz.</p>
+  <p class="copyright">© {{ date('Y') }} Walisantri.com · Hak Cipta Dilindungi</p>
+</footer>
 
 <script>
   document.querySelectorAll('.toc a').forEach(function (link) {
