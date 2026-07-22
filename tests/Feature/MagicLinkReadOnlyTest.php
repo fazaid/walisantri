@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\MasterPengumuman;
 use App\Models\Pesantren;
 use App\Models\Santri;
 use App\Models\TagihanSpp;
@@ -34,6 +35,24 @@ class MagicLinkReadOnlyTest extends TestCase
             // Halaman report harus menautkan ke inventaris — satu-satunya pintu
             // masuk pemegang magic link ke halaman inventaris yang di-whitelist.
             ->assertSee(route('wali.santri.inventaris', $santri->id));
+    }
+
+    public function test_magic_link_melihat_pengumuman_di_halaman_report(): void
+    {
+        $santri = $this->santriDenganWali();
+
+        // Pengumuman disurutkan ke report karena sesi magic link tak punya
+        // akses dashboard/nav tempat pengumuman biasanya muncul.
+        MasterPengumuman::create([
+            'pesantren_id'    => $santri->pesantren_id,
+            'judul_maklumat'  => 'Libur Idul Adha PENGUMUMAN_MAGIC',
+            'isi_maklumat'    => 'Kegiatan diliburkan.',
+            'target_audience' => 'wali',
+        ]);
+
+        $this->get("/report/{$santri->uuid}")
+            ->assertOk()
+            ->assertSee('Libur Idul Adha PENGUMUMAN_MAGIC');
     }
 
     public function test_sesi_magic_link_tidak_bisa_buka_dashboard_wali(): void

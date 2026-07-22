@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\MasterPengumuman;
 use App\Models\Pesantren;
 use App\Models\Santri;
 use App\Models\User;
@@ -57,5 +58,41 @@ class WaliReportPreviewTest extends TestCase
             ->assertSee(route('wali.santri.kesehatan', $santri->id))
             ->assertSee(route('wali.santri.mutabaah', $santri->id))
             ->assertSee(route('wali.santri.inventaris', $santri->id));
+    }
+
+    public function test_preview_admin_melihat_pengumuman(): void
+    {
+        [$santri, $admin] = $this->santriDanAdmin();
+
+        MasterPengumuman::create([
+            'pesantren_id'    => $santri->pesantren_id,
+            'judul_maklumat'  => 'Rapat Wali PENGUMUMAN_PREVIEW',
+            'isi_maklumat'    => 'Mohon hadir.',
+            'target_audience' => 'semua',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.preview.wali', $santri))
+            ->assertOk()
+            ->assertSee('Rapat Wali PENGUMUMAN_PREVIEW');
+    }
+
+    public function test_wali_login_report_tidak_menduplikasi_pengumuman(): void
+    {
+        [$santri, ] = $this->santriDanAdmin();
+
+        // Sesi login normal sudah melihat pengumuman di dashboard; halaman report
+        // tidak boleh mengulanginya (kartu di partial hanya untuk magic/preview).
+        MasterPengumuman::create([
+            'pesantren_id'    => $santri->pesantren_id,
+            'judul_maklumat'  => 'Rapat Wali PENGUMUMAN_DUP',
+            'isi_maklumat'    => 'Mohon hadir.',
+            'target_audience' => 'semua',
+        ]);
+
+        $this->actingAs($santri->wali)
+            ->get(route('wali.santri.show', $santri->id))
+            ->assertOk()
+            ->assertDontSee('Rapat Wali PENGUMUMAN_DUP');
     }
 }

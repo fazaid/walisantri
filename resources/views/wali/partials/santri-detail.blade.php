@@ -381,4 +381,23 @@
     </div>
     @endif
 
+    {{-- Pengumuman — hanya untuk sesi magic link & preview, yang tak punya akses
+         dashboard/nav. Sesi login normal sudah melihat pengumuman di dashboard,
+         jadi tidak dirender di sini agar tak duplikat. Read-only, tanpa "Lihat
+         semua" karena route agregat wali.pengumuman diblok untuk kedua mode ini. --}}
+    @if((session('magic_link_session') || ($previewMode ?? false)) && $pengumumanReport->isNotEmpty())
+    <div>
+        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Pengumuman</p>
+        <div class="space-y-2">
+            @foreach($pengumumanReport as $item)
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                <p class="font-medium text-gray-800 text-sm">{{ $item->judul_maklumat }}</p>
+                <p class="text-xs text-gray-500 mt-1 line-clamp-2">{{ Str::limit(strip_tags($item->isi_maklumat), 120) }}</p>
+                <p class="text-xs text-gray-400 mt-2">{{ $item->created_at->diffForHumans() }}</p>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
+
 </div>

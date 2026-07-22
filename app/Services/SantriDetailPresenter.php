@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\KesantrianInventaris;
 use App\Models\KesantrianKesehatan;
 use App\Models\KesantrianMutabaah;
+use App\Models\MasterPengumuman;
 use App\Models\PrestasiSantri;
 use App\Models\Santri;
 use App\Models\SantriEkskul;
@@ -72,6 +73,23 @@ class SantriDetailPresenter
 
         $totalInventaris = KesantrianInventaris::where('santri_id', $santri->id)->count();
 
+        // Pengumuman untuk halaman report — disurutkan ke sesi magic link & preview
+        // yang tak punya akses dashboard/nav. Di-scope eksplisit ke pesantren santri
+        // (bukan konteks tenant) agar deterministik: route magic link tak memakai
+        // tenant.resolve, jadi global scope 'pesantren' bisa tak terisi.
+        $pengumumanPesantren = MasterPengumuman::withoutGlobalScope('pesantren')
+            ->where('pesantren_id', $santri->pesantren_id)
+            ->forWali()->latest()->limit(5)->get();
+
+        $pengumumanGlobal = MasterPengumuman::withoutGlobalScope('pesantren')
+            ->whereNull('pesantren_id')
+            ->forWali()->latest()->limit(3)->get();
+
+        $pengumumanReport = $pengumumanPesantren->merge($pengumumanGlobal)
+            ->sortByDesc('created_at')
+            ->take(5)
+            ->values();
+
         return compact(
             'tahfidzRecent',
             'kesehatanRecent',
@@ -83,6 +101,7 @@ class SantriDetailPresenter
             'prestasi',
             'ekskul',
             'totalInventaris',
+            'pengumumanReport',
         );
     }
 
