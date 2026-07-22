@@ -101,9 +101,7 @@ class DemoRequestsTable
 
                 Filter::make('overdue')
                     ->label('Overdue (SLA)')
-                    ->query(fn ($query) => $query
-                        ->whereNull('contacted_at')
-                        ->where('created_at', '<=', DemoRequest::slaCutoff())),
+                    ->query(fn ($query) => $query->overdue()),
 
                 TernaryFilter::make('duplicate')
                     ->label('Duplikat')
