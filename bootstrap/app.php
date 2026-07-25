@@ -74,4 +74,35 @@ return Application::configure(basePath: dirname(__DIR__))
 
             return null;
         });
+
+        // Jaring pengaman: ubah pelanggaran constraint database (QueryException)
+        // menjadi pesan berbahasa Indonesia yang bisa dipahami user, alih-alih
+        // error 500 / "Server Error" mentah. Ini menutup alur NON-Livewire
+        // (controller Wali, registrasi, dsb). Form Filament sudah punya validasi
+        // inline sendiri, jadi request Livewire dibiarkan ke mekanismenya.
+        $exceptions->renderable(function (\Illuminate\Database\QueryException $e, $request) {
+            $sqlState = (string) $e->getCode();
+
+            $message = match ($sqlState) {
+                '23505' => 'Data yang sama sudah ada. Periksa kembali — kemungkinan data ini sudah pernah diinput.',
+                '23503' => 'Data ini masih terkait dengan data lain, atau data acuan yang dipilih tidak ditemukan.',
+                '23502' => 'Ada isian wajib yang masih kosong. Lengkapi semua kolom bertanda wajib.',
+                '23514' => 'Ada pilihan yang tidak valid pada salah satu isian. Periksa kembali pilihan Anda.',
+                default => 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi, atau hubungi admin bila berulang.',
+            };
+
+            \Illuminate\Support\Facades\Log::warning('db_constraint_violation', [
+                'sqlstate' => $sqlState,
+                'path'     => $request->path(),
+                'user_id'  => auth()->id(),
+                'message'  => $e->getMessage(),
+            ]);
+
+            // Livewire/Filament & permintaan JSON ditangani mekanismenya sendiri.
+            if ($request->hasHeader('X-Livewire') || $request->expectsJson()) {
+                return null;
+            }
+
+            return back()->withInput()->withErrors(['db' => $message]);
+        });
     })->create();
