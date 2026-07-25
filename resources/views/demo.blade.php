@@ -7,8 +7,10 @@
     <title>Demo Gratis — Walisantri.com</title>
     <link rel="icon" type="image/svg+xml" href="{{ \App\Models\PlatformBrandingSetting::faviconUrl() }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('partials.analytics-head')
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans min-h-screen">
+@include('partials.analytics-body')
 
     {{-- Nav --}}
     <nav class="bg-white border-b border-gray-100">

@@ -6,8 +6,10 @@
     <title>Daftar Pesantren · Walisantri.com</title>
     <link rel="icon" type="image/svg+xml" href="{{ \App\Models\PlatformBrandingSetting::faviconUrl() }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('partials.analytics-head')
 </head>
 <body class="bg-gray-50 min-h-screen py-12 px-4">
+@include('partials.analytics-body')
 
     <div class="max-w-lg mx-auto">
         <div class="text-center mb-8">

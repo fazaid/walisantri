@@ -17,9 +17,11 @@
     <title>@yield('title', 'Portal Wali Santri') — {{ config('app.name') }}</title>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('partials.analytics-head')
     @stack('head')
 </head>
 <body class="bg-gray-50 min-h-screen">
+@include('partials.analytics-body')
 
     {{-- Grace period banner --}}
     @if(request()->attributes->get('grace_period_warning'))
