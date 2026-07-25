@@ -80,6 +80,7 @@ jobs:
             composer install --no-dev --optimize-autoloader --no-interaction
             npm ci
             npm run build
+            bash scripts/backup.sh --db-only --no-offsite --tag pre-deploy || echo "WARN: dump pra-deploy gagal/tidak ada, lanjut deploy"
             php artisan migrate --force
             php artisan config:cache
             php artisan route:cache
@@ -107,6 +108,7 @@ jobs:
             composer install --no-dev --optimize-autoloader --no-interaction
             npm ci
             npm run build
+            bash scripts/backup.sh --db-only --no-offsite --tag pre-deploy || echo "WARN: dump pra-deploy gagal/tidak ada, lanjut deploy"
             php artisan migrate --force
             php artisan config:cache
             php artisan route:cache
