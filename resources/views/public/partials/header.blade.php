@@ -20,7 +20,7 @@
 
     {{-- Nav --}}
     <div class="border-t border-teal-600">
-        <div class="max-w-3xl mx-auto px-6 flex gap-6 text-sm py-3">
+        <div class="max-w-3xl mx-auto px-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm py-3">
             <a href="{{ url('/') }}" class="{{ request()->is('/') ? 'text-white font-medium' : 'text-teal-200 hover:text-white' }}">Beranda</a>
             <a href="{{ url('/kegiatan') }}" class="{{ request()->is('kegiatan') ? 'text-white font-medium' : 'text-teal-200 hover:text-white' }}">Kegiatan Pesantren</a>
             <a href="{{ url('/artikel') }}" class="{{ request()->is('artikel') ? 'text-white font-medium' : 'text-teal-200 hover:text-white' }}">Artikel</a>
