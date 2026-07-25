@@ -43,17 +43,17 @@
         @endif
 
         {{-- Statistik Ringkas --}}
-        <section class="grid grid-cols-3 gap-3">
+        <section class="grid grid-cols-3 gap-2 sm:gap-3">
             <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
-                <p class="text-2xl font-bold text-teal-700">{{ $pesantren->jumlahSantriAktif() }}</p>
+                <p class="text-xl sm:text-2xl font-bold text-teal-700">{{ $pesantren->jumlahSantriAktif() }}</p>
                 <p class="text-xs text-gray-500 mt-1">Santri Aktif</p>
             </div>
             <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
-                <p class="text-2xl font-bold text-teal-700">{{ $pesantren->profil['tahun_berdiri'] ?? '–' }}</p>
+                <p class="text-xl sm:text-2xl font-bold text-teal-700">{{ $pesantren->profil['tahun_berdiri'] ?? '–' }}</p>
                 <p class="text-xs text-gray-500 mt-1">Tahun Berdiri</p>
             </div>
             <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
-                <p class="text-2xl font-bold text-teal-700">{{ $pesantren->profil['akreditasi'] ?? '–' }}</p>
+                <p class="text-xl sm:text-2xl font-bold text-teal-700">{{ $pesantren->profil['akreditasi'] ?? '–' }}</p>
                 <p class="text-xs text-gray-500 mt-1">Akreditasi</p>
             </div>
         </section>

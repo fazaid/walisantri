@@ -85,6 +85,7 @@
                 @if($nilaiList->isEmpty())
                     <p class="p-6 text-center text-sm text-gray-400">Belum ada nilai akademik pada periode ini.</p>
                 @else
+                    <div class="overflow-x-auto">
                     <table class="w-full text-sm">
                         <thead class="bg-gray-50 dark:bg-gray-800 text-xs text-gray-500 dark:text-gray-400 uppercase">
                             <tr>
@@ -103,6 +104,7 @@
                             @endforeach
                         </tbody>
                     </table>
+                    </div>
                 @endif
             </div>
             {{-- Ekskul Aktif --}}
@@ -114,6 +116,7 @@
                 @if($ekskulList->isEmpty())
                     <p class="p-6 text-center text-sm text-gray-400">Belum ada ekskul yang diikuti.</p>
                 @else
+                    <div class="overflow-x-auto">
                     <table class="w-full text-sm">
                         <thead class="bg-gray-50 dark:bg-gray-800 text-xs text-gray-500 dark:text-gray-400 uppercase">
                             <tr>
@@ -132,6 +135,7 @@
                             @endforeach
                         </tbody>
                     </table>
+                    </div>
                 @endif
             </div>
         @endif

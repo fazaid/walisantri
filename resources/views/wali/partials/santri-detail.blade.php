@@ -256,7 +256,7 @@
                 </div>
                 @endforeach
             </div>
-            <div class="flex items-center gap-3 mt-2.5">
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2.5">
                 <span class="flex items-center gap-1 text-[10px] text-gray-400"><span class="w-2.5 h-2.5 rounded bg-green-400 inline-block"></span>≥80%</span>
                 <span class="flex items-center gap-1 text-[10px] text-gray-400"><span class="w-2.5 h-2.5 rounded bg-yellow-400 inline-block"></span>50–79%</span>
                 <span class="flex items-center gap-1 text-[10px] text-gray-400"><span class="w-2.5 h-2.5 rounded bg-red-300 inline-block"></span>&lt;50%</span>
