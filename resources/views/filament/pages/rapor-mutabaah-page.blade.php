@@ -95,6 +95,7 @@
                 <div class="px-5 py-3 border-b border-gray-100 dark:border-gray-700">
                     <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">📋 Ringkasan Amalan Harian</p>
                 </div>
+                <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead class="bg-gray-50 dark:bg-gray-800 text-xs text-gray-500 dark:text-gray-400 uppercase">
                         <tr>
@@ -130,6 +131,7 @@
                         @endforeach
                     </tbody>
                 </table>
+                </div>
             </div>
 
             {{-- Rincian Udzur --}}
