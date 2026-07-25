@@ -1,11 +1,32 @@
 <x-filament-panels::page>
 
-<div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem; align-items: start;">
+<style>
+    .upgrade-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+        gap: 1.5rem;
+        align-items: start;
+    }
+    .upgrade-summary {
+        position: sticky;
+        top: 5rem;
+    }
+    /* Mobile: stack kolom & matikan sticky */
+    @media (max-width: 1024px) {
+        .upgrade-layout {
+            grid-template-columns: minmax(0, 1fr);
+        }
+        .upgrade-summary {
+            position: static;
+            top: auto;
+        }
+    }
+</style>
 
-    @php $isWide = true; @endphp
+<div style="display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; align-items: start;">
 
     {{-- Outer wrapper: form (kiri) + ringkasan (kanan) --}}
-    <div style="display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 1.5rem; align-items: start;">
+    <div class="upgrade-layout">
 
         {{-- KIRI: Form pilih paket --}}
         <div>
@@ -13,7 +34,7 @@
         </div>
 
         {{-- KANAN: Ringkasan biaya (sticky) --}}
-        <div style="position: sticky; top: 5rem;">
+        <div class="upgrade-summary">
 
             {{-- Card total biaya --}}
             <div style="background: white; border: 1px solid #e5e7eb; border-radius: 0.75rem; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.07);">
