@@ -88,7 +88,7 @@
 
                         @if($this->diskon_nominal > 0)
                         <div style="display: flex; justify-content: space-between; color: #059669;">
-                            <span>Diskon kupon</span>
+                            <span>Diskon kupon @if($this->diskon_persen)({{ $this->diskon_persen }}%)@endif</span>
                             <span style="font-weight: 500;">− {{ $this->formatRupiah($this->diskon_nominal) }}</span>
                         </div>
                         @endif
