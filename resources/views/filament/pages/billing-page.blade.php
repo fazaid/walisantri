@@ -38,10 +38,34 @@
     $progressBg    = $persen >= 90 ? '#fef2f2' : ($persen >= 70 ? '#fffbeb' : '#f0fdf4');
 @endphp
 
+<style>
+    /* ROW 1: 3 stat card — desktop 3 kolom */
+    .billing-row1 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+    }
+    /* ROW 3: Info + Order — desktop 2 kolom */
+    .billing-row3 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+    /* Tablet: ROW 1 turun ke 2 kolom, ROW 3 ke 1 kolom */
+    @media (max-width: 1024px) {
+        .billing-row1 { grid-template-columns: repeat(2, 1fr); }
+        .billing-row3 { grid-template-columns: minmax(0, 1fr); }
+    }
+    /* HP: semua jadi 1 kolom */
+    @media (max-width: 640px) {
+        .billing-row1 { grid-template-columns: minmax(0, 1fr); }
+    }
+</style>
+
 <div style="display: flex; flex-direction: column; gap: 1.5rem;">
 
     {{-- ROW 1: 3 stat cards --}}
-    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+    <div class="billing-row1">
 
         {{-- Status --}}
         <div style="background: white; border: 1px solid #e5e7eb; border-radius: 0.75rem; padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
@@ -115,7 +139,7 @@
     </div>
 
     {{-- ROW 3: Info + Order (2 kolom) --}}
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+    <div class="billing-row3">
 
         {{-- Informasi Pesantren --}}
         <div style="background: white; border: 1px solid #e5e7eb; border-radius: 0.75rem; padding: 1.5rem;">
