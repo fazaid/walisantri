@@ -203,17 +203,29 @@ class MutabaahHarianPage extends Page implements HasForms
         $data = $this->form->getState();
         $rows = $data['rows'] ?? [];
 
-        foreach ($rows as $row) {
-            KesantrianMutabaah::updateOrCreate(
-                [
-                    'santri_id' => $row['santri_id'],
-                    'tanggal'   => $data['tanggal'],
-                ],
-                [
-                    'amalan'       => $row['amalan'] ?? [],
-                    'status_udzur' => $row['status_udzur'],
-                ]
-            );
+        try {
+            foreach ($rows as $row) {
+                KesantrianMutabaah::updateOrCreate(
+                    [
+                        'santri_id' => $row['santri_id'],
+                        'tanggal'   => $data['tanggal'],
+                    ],
+                    [
+                        'amalan'       => $row['amalan'] ?? [],
+                        'status_udzur' => $row['status_udzur'],
+                    ]
+                );
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('mutabaah_harian_save_failed', ['message' => $e->getMessage()]);
+
+            Notification::make()
+                ->title('Gagal menyimpan mutaba\'ah')
+                ->body('Terjadi kesalahan saat menyimpan data. Silakan coba lagi, atau hubungi admin bila berulang.')
+                ->danger()
+                ->send();
+
+            return;
         }
 
         Notification::make()

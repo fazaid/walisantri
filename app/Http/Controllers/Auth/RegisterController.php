@@ -8,8 +8,10 @@ use App\Models\PlatformSetting;
 use App\Rules\SlugNotReserved;
 use App\Rules\ValidTenantSlug;
 use App\Services\OnboardPesantren;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules\Password;
 
 class RegisterController extends Controller
@@ -42,13 +44,25 @@ class RegisterController extends Controller
             'password'       => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()],
         ]);
 
-        $result = $onboard->execute(
-            namaPesantren: $data['nama_pesantren'],
-            slug:          $data['slug'],
-            adminName:     $data['admin_name'],
-            adminEmail:    $data['email'],
-            adminPassword: $data['password'],
-        );
+        try {
+            $result = $onboard->execute(
+                namaPesantren: $data['nama_pesantren'],
+                slug:          $data['slug'],
+                adminName:     $data['admin_name'],
+                adminEmail:    $data['email'],
+                adminPassword: $data['password'],
+            );
+        } catch (QueryException $e) {
+            Log::warning('register_onboard_failed', [
+                'slug'    => $data['slug'],
+                'email'   => $data['email'],
+                'message' => $e->getMessage(),
+            ]);
+
+            return back()->withInput()->withErrors([
+                'slug' => 'Pendaftaran gagal diproses — kemungkinan subdomain atau email sudah dipakai. Silakan periksa kembali lalu coba lagi.',
+            ]);
+        }
 
         Auth::login($result['admin']);
 
