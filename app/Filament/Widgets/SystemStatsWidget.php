@@ -9,6 +9,10 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class SystemStatsWidget extends StatsOverviewWidget
 {
+    // Matikan polling default CanPoll (5s): dashboard agregat tak perlu refresh live,
+    // dan request polling latar jadi sumber toast error saat wake-from-sleep.
+    protected ?string $pollingInterval = null;
+
     public static function canView(): bool
     {
         return auth()->user()?->role === UserRole::SuperAdmin->value;

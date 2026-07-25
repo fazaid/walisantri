@@ -45,6 +45,12 @@ class AdminPanelProvider extends PanelProvider
             ->profile(EditProfile::class, isSimple: false)
             ->databaseNotifications()
             ->databaseNotificationsPolling('5m')
+            // Matikan handler error notification bawaan Filament. onFailure-nya (kegagalan
+            // jaringan, mis. wake-from-sleep sebelum WiFi pulih) SELALU memunculkan toast
+            // generik tanpa cek status & tanpa bisa dicegah interceptor lain. Kita gantikan
+            // dengan handler sendiri di resources/views/filament/admin/session-expired-handler.blade.php
+            // yang diam untuk kegagalan jaringan tapi tetap memberi tahu error server asli.
+            ->errorNotifications(false)
             ->sidebarFullyCollapsibleOnDesktop()
             ->navigationGroups([
                 'Kesantrian',

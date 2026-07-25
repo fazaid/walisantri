@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\Auth;
 
 class AdminTrendAmalanChart extends ChartWidget
 {
+    // Matikan polling default CanPoll (5s): dashboard agregat tak perlu refresh live,
+    // dan request polling latar jadi sumber toast error saat wake-from-sleep.
+    protected ?string $pollingInterval = null;
+
     protected ?string $heading = 'Tren Amalan 7 Hari Terakhir';
 
     protected static ?int $sort = 5;

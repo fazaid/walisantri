@@ -15,6 +15,10 @@ class AdminKesehatanTrendChart extends ChartWidget
 {
     use HasFiltersSchema;
 
+    // Matikan polling default CanPoll (5s): dashboard agregat tak perlu refresh live,
+    // dan request polling latar jadi sumber toast error saat wake-from-sleep.
+    protected ?string $pollingInterval = null;
+
     protected ?string $heading = 'Tren Insiden Kesehatan';
 
     protected static ?int $sort = 25;

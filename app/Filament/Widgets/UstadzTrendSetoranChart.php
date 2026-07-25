@@ -10,6 +10,10 @@ use Illuminate\Support\Facades\DB;
 
 class UstadzTrendSetoranChart extends ChartWidget
 {
+    // Matikan polling default CanPoll (5s): dashboard agregat tak perlu refresh live,
+    // dan request polling latar jadi sumber toast error saat wake-from-sleep.
+    protected ?string $pollingInterval = null;
+
     protected ?string $heading = 'Tren Setoran 7 Hari Terakhir';
 
     protected ?string $description = 'Jumlah setoran hafalan santri per hari';
