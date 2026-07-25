@@ -30,7 +30,7 @@ Konfigurasi lewat environment (punya default production):
 |-----|---------|------------|
 | `APP_DIR` | `/var/www/walisantri` | Lokasi aplikasi |
 | `BACKUP_DIR` | `/home/fazaweb/backups/walisantri` | Simpanan lokal (dimiliki user, tanpa sudo) |
-| `RCLONE_REMOTE` | *(kosong)* | Remote offsite, mis. `b2crypt:walisantri-backup`. Kosong = offsite dilewati |
+| `RCLONE_REMOTE` | *(kosong)* | Remote offsite, mis. `odcrypt:walisantri-backup`. Kosong = offsite dilewati |
 | `LOCAL_RETENTION_DAYS` | `7` | Retensi lokal |
 | `OFFSITE_RETENTION_DAYS` | `30` | Retensi offsite |
 
@@ -49,31 +49,43 @@ Jalankan sebagai user `fazaweb`.
 sudo apt update && sudo apt install -y rclone   # atau: curl https://rclone.org/install.sh | sudo bash
 ```
 
-### 2. Konfigurasi remote offsite (rekomendasi: Backblaze B2)
+### 2. Konfigurasi remote offsite (OneDrive)
 
-Buat akun Backblaze B2, lalu buat **bucket privat** `walisantri-backup` + Application Key.
+OneDrive punya backend rclone `onedrive`. Karena server headless (tanpa
+browser), OAuth dilakukan di komputer lokal lalu tokennya dipindah.
+
+**a. Buat remote `onedrive` di server:**
 
 ```bash
 rclone config
-#  n) new remote  → nama: b2
-#  Storage: Backblaze B2  → isi account ID & application key
+#  n) new remote  → nama: onedrive
+#  Storage: onedrive (Microsoft OneDrive)
+#  client_id / client_secret: kosongkan (Enter)
+#  Edit advanced config? n
+#  Use auto config? →  N  (server headless, tidak ada browser)
+#  rclone akan menampilkan perintah:  rclone authorize "onedrive"
 ```
 
+**b. Di komputer LOKAL (punya browser) yang sudah ada rclone**, jalankan
+perintah yang ditampilkan tadi, login Microsoft, lalu salin token JSON yang
+muncul dan tempel kembali ke prompt di server. Pilih drive OneDrive pribadi
+(100 GB) saat ditanya.
+
 **Lebih aman (opsional): enkripsi at-rest** — bungkus dengan remote `crypt`
-sehingga artefak (termasuk `.env`) terenkripsi di cloud:
+sehingga artefak (termasuk `.env`) terenkripsi di OneDrive:
 
 ```bash
 rclone config
-#  n) new remote  → nama: b2crypt
+#  n) new remote  → nama: odcrypt
 #  Storage: crypt
-#  remote: b2:walisantri-backup
+#  remote: onedrive:walisantri-backup
 #  (simpan password crypt di tempat aman — TANPA ini, backup tidak bisa dibuka)
 ```
 
-Uji koneksi:
+Uji koneksi (folder `walisantri-backup` dibuat otomatis saat unggah pertama):
 
 ```bash
-export RCLONE_REMOTE="b2crypt:walisantri-backup"   # atau "b2:walisantri-backup" tanpa enkripsi
+export RCLONE_REMOTE="odcrypt:walisantri-backup"   # atau "onedrive:walisantri-backup" tanpa enkripsi
 rclone lsd "${RCLONE_REMOTE%%:*}:"
 ```
 
@@ -81,9 +93,9 @@ rclone lsd "${RCLONE_REMOTE%%:*}:"
 
 ```bash
 cd /var/www/walisantri
-RCLONE_REMOTE="b2crypt:walisantri-backup" bash scripts/backup.sh
+RCLONE_REMOTE="odcrypt:walisantri-backup" bash scripts/backup.sh
 ls -lh /home/fazaweb/backups/walisantri            # cek artefak lokal
-rclone ls b2crypt:walisantri-backup                # cek artefak offsite
+rclone ls odcrypt:walisantri-backup                # cek artefak offsite
 ```
 
 ### 4. Pasang cron harian (02:00)
@@ -92,7 +104,7 @@ rclone ls b2crypt:walisantri-backup                # cek artefak offsite
 
 ```cron
 MAILTO="kantorpusatnpc@gmail.com"
-RCLONE_REMOTE=b2crypt:walisantri-backup
+RCLONE_REMOTE=odcrypt:walisantri-backup
 0 2 * * * /var/www/walisantri/scripts/backup.sh >> /home/fazaweb/backups/walisantri.log 2>&1
 ```
 
@@ -131,7 +143,7 @@ Alur yang dijalankan skrip:
 ### Restore dari offsite (mis. server hilang total)
 
 ```bash
-export RCLONE_REMOTE="b2crypt:walisantri-backup"
+export RCLONE_REMOTE="odcrypt:walisantri-backup"
 bash scripts/restore.sh --from-offsite latest
 ```
 
@@ -152,7 +164,7 @@ tar xzf /home/fazaweb/backups/walisantri/pre-restore-<ts>/files-current.tar.gz -
 ```bash
 # di server staging 116.206.196.37
 cd /var/www/walisantri
-export RCLONE_REMOTE="b2crypt:walisantri-backup"
+export RCLONE_REMOTE="odcrypt:walisantri-backup"
 bash scripts/restore.sh --from-offsite latest
 # lalu buka https://staging.walisantri.com, pastikan login & data tampil normal
 ```
