@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Enums\DurasiLangganan;
 use App\Enums\PaketLangganan;
+use App\Enums\TipeDiskon;
 use App\Models\Kupon;
 use App\Models\Pesantren;
 use App\Services\BillingCalculatorService;
@@ -49,6 +50,7 @@ class UpgradePage extends Page implements HasForms
     public int    $harga_per_bulan             = 0;
     public int    $harga_total_sebelum_diskon  = 0;
     public int    $diskon_nominal              = 0;
+    public ?int   $diskon_persen               = null;
     public int    $bonus_bulan                 = 0;
     public int    $harga_total                 = 0;
     public ?string $kupon_pesan                = null;
@@ -191,6 +193,7 @@ class UpgradePage extends Page implements HasForms
                             Action::make('terapkanKupon')
                                 ->label('Terapkan')
                                 ->icon(Heroicon::OutlinedCheck)
+                                ->button()
                                 ->action(function () {
                                     $this->kode_kupon = strtoupper(trim($this->kode_kupon));
                                     $this->terapkanKupon();
@@ -235,6 +238,7 @@ class UpgradePage extends Page implements HasForms
     {
         if (empty($this->kode_kupon)) {
             $this->diskon_nominal = 0;
+            $this->diskon_persen  = null;
             $this->kupon_pesan    = null;
             $this->kupon_valid    = false;
             $this->harga_total    = $this->harga_total_sebelum_diskon;
@@ -245,6 +249,7 @@ class UpgradePage extends Page implements HasForms
 
         if (! $kupon || ! $kupon->isValid($this->durasi_bulan)) {
             $this->diskon_nominal = 0;
+            $this->diskon_persen  = null;
             $this->kupon_pesan    = 'Kode kupon tidak valid atau sudah kadaluwarsa.';
             $this->kupon_valid    = false;
             $this->harga_total    = $this->harga_total_sebelum_diskon;
@@ -252,6 +257,7 @@ class UpgradePage extends Page implements HasForms
         }
 
         $this->diskon_nominal = $kupon->hitungDiskon($this->harga_total_sebelum_diskon);
+        $this->diskon_persen  = $kupon->tipe_diskon === TipeDiskon::Persentase ? $kupon->nilai_diskon : null;
         $this->harga_total    = max(0, $this->harga_total_sebelum_diskon - $this->diskon_nominal);
         $this->kupon_valid    = true;
         $this->kupon_pesan    = 'Kupon berhasil diterapkan!';
