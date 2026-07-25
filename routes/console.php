@@ -29,10 +29,10 @@ Schedule::job(\App\Jobs\PurgeAuditLogs::class)
     ->monthlyOn(1, '03:30')
     ->withoutOverlapping();
 
-// Harian 02.00 — pg_dump -Fc → gzip → R2 walisantri-backup/daily/ (§6.2)
-Schedule::job(\App\Jobs\DatabaseBackup::class)
-    ->dailyAt('02:00')
-    ->withoutOverlapping();
+// Backup DB harian 02.00 TIDAK lagi dijadwalkan di sini — ditangani oleh
+// cron OS langsung ke scripts/backup.sh (pg_dump + file + offsite rclone).
+// Lihat docs/backup-restore.md. Job Laravel lama dihapus karena menulis ke
+// disk 'r2-backup' yang tidak pernah dikonfigurasi (selalu error diam-diam).
 
 // Tiap 25 menit — Pre-generate cache dashboard wali santri aktif (§4.5)
 Schedule::job(\App\Jobs\WarmDashboardCache::class)
