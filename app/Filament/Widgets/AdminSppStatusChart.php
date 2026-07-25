@@ -11,6 +11,10 @@ use Illuminate\Support\HtmlString;
 
 class AdminSppStatusChart extends ChartWidget
 {
+    // Matikan polling default CanPoll (5s): dashboard agregat tak perlu refresh live,
+    // dan request polling latar jadi sumber toast error saat wake-from-sleep.
+    protected ?string $pollingInterval = null;
+
     protected ?string $heading = 'Status SPP Bulan Ini';
 
     protected static ?int $sort = 11;

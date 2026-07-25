@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\DB;
 
 class UstadzProgressHafalanChart extends ChartWidget
 {
+    // Matikan polling default CanPoll (5s): dashboard agregat tak perlu refresh live,
+    // dan request polling latar jadi sumber toast error saat wake-from-sleep.
+    protected ?string $pollingInterval = null;
+
     protected ?string $heading = 'Progress Hafalan Santri';
 
     protected ?string $description = 'Total setoran & estimasi juz hafalan per santri';

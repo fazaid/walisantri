@@ -16,6 +16,10 @@ use Illuminate\Support\Facades\Cache;
 
 class AdminStatsOverview extends StatsOverviewWidget
 {
+    // Matikan polling default CanPoll (5s): dashboard agregat tak perlu refresh live,
+    // dan request polling latar jadi sumber toast error saat wake-from-sleep.
+    protected ?string $pollingInterval = null;
+
     protected static ?int $sort = 1;
 
     public static function canView(): bool

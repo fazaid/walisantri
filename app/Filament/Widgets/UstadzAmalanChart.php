@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\Auth;
 
 class UstadzAmalanChart extends ChartWidget
 {
+    // Matikan polling default CanPoll (5s): dashboard agregat tak perlu refresh live,
+    // dan request polling latar jadi sumber toast error saat wake-from-sleep.
+    protected ?string $pollingInterval = null;
+
     protected ?string $heading = 'Amalan per Santri — 7 Hari';
 
     protected static ?int $sort = 50;
