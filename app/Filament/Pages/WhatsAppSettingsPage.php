@@ -187,20 +187,32 @@ class WhatsAppSettingsPage extends Page implements HasForms
     {
         $state = $this->form->getState();
 
-        WhatsAppSetting::set('reminder_expired_enabled', (bool) $state['reminder_expired_enabled']);
-        WhatsAppMessageTemplate::set('reminder_expired', $state['reminder_expired_template']);
+        try {
+            WhatsAppSetting::set('reminder_expired_enabled', (bool) $state['reminder_expired_enabled']);
+            WhatsAppMessageTemplate::set('reminder_expired', $state['reminder_expired_template']);
 
-        WhatsAppSetting::set('notif_trial_habis_enabled', (bool) $state['notif_trial_habis_enabled']);
-        WhatsAppMessageTemplate::set('notif_trial_habis', $state['notif_trial_habis_template']);
+            WhatsAppSetting::set('notif_trial_habis_enabled', (bool) $state['notif_trial_habis_enabled']);
+            WhatsAppMessageTemplate::set('notif_trial_habis', $state['notif_trial_habis_template']);
 
-        WhatsAppSetting::set('notif_order_dikonfirmasi_enabled', (bool) $state['notif_order_dikonfirmasi_enabled']);
-        WhatsAppMessageTemplate::set('notif_order_dikonfirmasi', $state['notif_order_dikonfirmasi_template']);
+            WhatsAppSetting::set('notif_order_dikonfirmasi_enabled', (bool) $state['notif_order_dikonfirmasi_enabled']);
+            WhatsAppMessageTemplate::set('notif_order_dikonfirmasi', $state['notif_order_dikonfirmasi_template']);
 
-        WhatsAppSetting::set('notif_demo_terima_kasih_enabled', (bool) $state['notif_demo_terima_kasih_enabled']);
-        WhatsAppMessageTemplate::set('notif_demo_terima_kasih', $state['notif_demo_terima_kasih_template']);
+            WhatsAppSetting::set('notif_demo_terima_kasih_enabled', (bool) $state['notif_demo_terima_kasih_enabled']);
+            WhatsAppMessageTemplate::set('notif_demo_terima_kasih', $state['notif_demo_terima_kasih_template']);
 
-        if (isset($state['fonnte_token'])) {
-            WhatsAppGatewaySetting::set('fonnte_token', $state['fonnte_token']);
+            if (isset($state['fonnte_token'])) {
+                WhatsAppGatewaySetting::set('fonnte_token', $state['fonnte_token']);
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('whatsapp_settings_save_failed', ['message' => $e->getMessage()]);
+
+            Notification::make()
+                ->title('Gagal menyimpan pengaturan')
+                ->body('Terjadi kesalahan saat menyimpan. Silakan coba lagi, atau hubungi admin bila berulang.')
+                ->danger()
+                ->send();
+
+            return;
         }
 
         $this->refreshFonnteTokenIndicator();

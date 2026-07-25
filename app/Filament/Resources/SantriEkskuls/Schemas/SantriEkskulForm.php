@@ -8,7 +8,9 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
+use Illuminate\Validation\Rules\Unique;
 
 class SantriEkskulForm
 {
@@ -37,7 +39,16 @@ class SantriEkskulForm
                                 ->pluck('nama', 'id')
                         )
                         ->searchable()
-                        ->required(),
+                        ->required()
+                        ->unique(
+                            table: 'santri_ekskuls',
+                            ignoreRecord: true,
+                            modifyRuleUsing: fn (Unique $rule, Get $get) => $rule
+                                ->where('santri_id', $get('santri_id')),
+                        )
+                        ->validationMessages([
+                            'unique' => 'Santri ini sudah terdaftar di ekskul tersebut.',
+                        ]),
                     Select::make('level')
                         ->label('Level')
                         ->options([

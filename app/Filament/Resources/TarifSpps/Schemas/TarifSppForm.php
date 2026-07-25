@@ -6,6 +6,7 @@ use App\Models\Kelas;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
+use Illuminate\Validation\Rules\Unique;
 
 class TarifSppForm
 {
@@ -20,7 +21,16 @@ class TarifSppForm
                         ->pluck('nama_kelas', 'id');
                 })
                 ->searchable()
-                ->required(),
+                ->required()
+                ->unique(
+                    table: 'tarif_spp',
+                    ignoreRecord: true,
+                    modifyRuleUsing: fn (Unique $rule) => $rule
+                        ->where('pesantren_id', auth()->user()?->pesantren_id),
+                )
+                ->validationMessages([
+                    'unique' => 'Kelas ini sudah memiliki tarif SPP. Silakan edit tarif yang ada, bukan membuat baru.',
+                ]),
 
             TextInput::make('nominal')
                 ->label('Nominal SPP (Rp)')
