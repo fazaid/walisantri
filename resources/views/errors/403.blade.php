@@ -2,4 +2,4 @@
 
 @section('title', 'Akses Ditolak')
 @section('code', '403')
-@section('message', 'Anda tidak memiliki akses ke halaman ini.')
+@section('message', $exception?->getMessage() ?: 'Anda tidak memiliki akses ke halaman ini.')
