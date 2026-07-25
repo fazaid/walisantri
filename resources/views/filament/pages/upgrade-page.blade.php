@@ -113,11 +113,11 @@
                         </span>
                     </div>
 
-                    {{-- Badge diskon tahunan --}}
+                    {{-- Badge diskon (dinamis mengikuti durasi terpilih) --}}
                     @if($this->bonus_bulan > 0)
                     <div style="margin-top: 0.875rem; padding: 0.5rem 0.75rem; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 0.5rem; font-size: 0.75rem; color: #065f46; display: flex; align-items: center; gap: 0.375rem;">
                         <span>🎉</span>
-                        <span>{{ config('billing.diskon_tahunan.label') }}</span>
+                        <span>Hemat {{ $this->bonus_bulan }} bulan (bayar {{ $this->bulan_bayar }}, dapat {{ $this->durasi_bulan }})</span>
                     </div>
                     @endif
 
