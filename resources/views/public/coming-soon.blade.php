@@ -8,8 +8,10 @@
     <title>{{ $menu }} — {{ $pesantren->nama_pesantren }}</title>
     <link rel="icon" type="image/svg+xml" href="{{ \App\Models\PlatformBrandingSetting::faviconUrl() }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('partials.analytics-head')
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans">
+@include('partials.analytics-body')
 
     @include('public.partials.header', ['pesantren' => $pesantren, 'loginUrl' => $loginUrl])
 

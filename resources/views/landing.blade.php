@@ -7,6 +7,7 @@
     <title>Walisantri.com — Pesantren Transparan, Wali Santri Tenang</title>
     <link rel="icon" type="image/svg+xml" href="{{ \App\Models\PlatformBrandingSetting::faviconUrl() }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('partials.analytics-head')
     <style>
         details summary::-webkit-details-marker { display: none; }
         details summary { list-style: none; }
@@ -15,6 +16,7 @@
     </style>
 </head>
 <body class="bg-white text-gray-800 font-sans">
+@include('partials.analytics-body')
 
     {{-- Nav --}}
     <nav class="bg-white border-b border-gray-100 sticky top-0 z-50">

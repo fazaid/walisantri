@@ -76,6 +76,16 @@ jobs:
           script: |
             set -e
             cd /var/www/walisantri
+
+            # Jaminan: apa pun yang terjadi (sukses atau gagal di tengah), situs
+            # dikembalikan online saat skrip selesai — jangan sampai macet di 503.
+            trap 'php artisan up || true' EXIT
+
+            # Tutup situs sebelum operasi berisiko (pull, swap vendor/asset, migrasi).
+            # Pengunjung dapat halaman 503 "sedang pemeliharaan", bukan error acak.
+            # --retry: header Retry-After; --refresh: browser auto-muat ulang tiap 15 dtk.
+            php artisan down --retry=60 --refresh=15 || true
+
             git pull origin main
             composer install --no-dev --optimize-autoloader --no-interaction
             npm ci
@@ -87,6 +97,9 @@ jobs:
             php artisan view:cache
             php artisan filament:optimize
             php artisan queue:restart
+
+            # Buka kembali situs (trap EXIT juga memanggil ini sebagai cadangan).
+            php artisan up
 
   deploy-staging:
     name: Deploy ke Staging (VPS lama)
@@ -104,6 +117,16 @@ jobs:
           script: |
             set -e
             cd /var/www/walisantri
+
+            # Jaminan: apa pun yang terjadi (sukses atau gagal di tengah), situs
+            # dikembalikan online saat skrip selesai — jangan sampai macet di 503.
+            trap 'php artisan up || true' EXIT
+
+            # Tutup situs sebelum operasi berisiko (pull, swap vendor/asset, migrasi).
+            # Pengunjung dapat halaman 503 "sedang pemeliharaan", bukan error acak.
+            # --retry: header Retry-After; --refresh: browser auto-muat ulang tiap 15 dtk.
+            php artisan down --retry=60 --refresh=15 || true
+
             git pull origin dev
             composer install --no-dev --optimize-autoloader --no-interaction
             npm ci
@@ -115,3 +138,6 @@ jobs:
             php artisan view:cache
             php artisan filament:optimize
             php artisan queue:restart
+
+            # Buka kembali situs (trap EXIT juga memanggil ini sebagai cadangan).
+            php artisan up

@@ -15,9 +15,11 @@
     </title>
     <link rel="icon" type="image/svg+xml" href="{{ \App\Models\PlatformBrandingSetting::faviconUrl() }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('partials.analytics-head')
 </head>
 <body class="min-h-screen flex items-center justify-center px-4
     {{ $pesantren ? 'bg-blue-700' : 'bg-teal-700' }}">
+@include('partials.analytics-body')
 
     <div class="w-full max-w-sm">
 

@@ -95,6 +95,16 @@ class AdminPanelProvider extends PanelProvider
                 PanelsRenderHook::BODY_END,
                 fn (): string => view('filament.admin.session-expired-handler')->render(),
             )
+            // Google Tag Manager / GA4 — dikelola dari Pengaturan Analytics (super admin).
+            // Partial merender kosong bila tracking nonaktif / ID belum diisi.
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn (): string => view('partials.analytics-head')->render(),
+            )
+            ->renderHook(
+                PanelsRenderHook::BODY_START,
+                fn (): string => view('partials.analytics-body')->render(),
+            )
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
                 AccountWidget::class,

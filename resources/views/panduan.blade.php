@@ -506,8 +506,10 @@
         .site-footer .footer-top{ flex-direction:column; text-align:center; }
       }
     </style>
+    @include('partials.analytics-head')
 </head>
 <body>
+@include('partials.analytics-body')
 
 <header class="site-header">
   <a class="brand" href="{{ url('/') }}">
