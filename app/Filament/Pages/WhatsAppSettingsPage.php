@@ -3,9 +3,11 @@
 namespace App\Filament\Pages;
 
 use App\Enums\UserRole;
+use App\Models\PlatformContactSetting;
 use App\Models\WhatsAppGatewaySetting;
 use App\Models\WhatsAppMessageTemplate;
 use App\Models\WhatsAppSetting;
+use App\Services\FonnteWhatsAppService;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Placeholder;
@@ -62,6 +64,10 @@ class WhatsAppSettingsPage extends Page implements HasForms
 
     public ?string $fonnte_token_last4 = null;
 
+    public ?string $cs_whatsapp = null;
+
+    public string $cs_bantuan_template = '';
+
     public static function canAccess(): bool
     {
         return auth()->user()?->role === UserRole::SuperAdmin->value;
@@ -80,6 +86,11 @@ class WhatsAppSettingsPage extends Page implements HasForms
             'notif_order_dikonfirmasi_template' => WhatsAppMessageTemplate::get('notif_order_dikonfirmasi'),
             'notif_demo_terima_kasih_enabled' => WhatsAppSetting::get('notif_demo_terima_kasih_enabled'),
             'notif_demo_terima_kasih_template' => WhatsAppMessageTemplate::get('notif_demo_terima_kasih'),
+            'cs_whatsapp' => PlatformContactSetting::csWhatsapp(),
+            'cs_bantuan_template' => WhatsAppMessageTemplate::get(
+                'cs_invoice_bantuan',
+                OrderInvoicePage::DEFAULT_CS_BANTUAN_TEMPLATE,
+            ),
         ]);
     }
 
@@ -164,6 +175,31 @@ class WhatsAppSettingsPage extends Page implements HasForms
                         ->dehydrated(fn (?string $state): bool => filled($state))
                         ->helperText('Kosongkan jika tidak ingin mengubah token yang sudah tersimpan. Diisi hanya saat ingin mengganti/rotasi token.'),
                 ]),
+            Section::make('Kontak CS')
+                ->description('Nomor WhatsApp yang dihubungi pesantren saat butuh bantuan. Berbeda dari gateway di atas: ini chat manual, tidak mengirim pesan otomatis dan tidak memakai kuota Fonnte.')
+                ->schema([
+                    TextInput::make('cs_whatsapp')
+                        ->label('Nomor WhatsApp CS')
+                        ->placeholder('081399096658')
+                        ->maxLength(20)
+                        ->helperText('Ditampilkan sebagai tombol "Hubungi CS" di halaman invoice pesantren. Boleh ditulis 08xx maupun 62xx — akan disimpan dalam format internasional. Kosongkan untuk menyembunyikan tombol.')
+                        ->rule(static function () {
+                            return static function (string $attribute, mixed $value, \Closure $fail): void {
+                                if (blank($value)) {
+                                    return;
+                                }
+
+                                if (app(FonnteWhatsAppService::class)->normalizePhoneNumber((string) $value) === null) {
+                                    $fail('Nomor WhatsApp tidak valid. Contoh yang benar: 081399096658.');
+                                }
+                            };
+                        }),
+                    Textarea::make('cs_bantuan_template')
+                        ->label('Template pesan awal')
+                        ->required()
+                        ->rows(4)
+                        ->helperText('Teks yang sudah terketik otomatis di kolom chat saat pesantren menekan tombol "Hubungi CS". Placeholder yang bisa dipakai: {nomor_invoice}, {nomor_order}, {nama_pesantren}, {total}, {status_order}.'),
+                ]),
         ]);
     }
 
@@ -203,6 +239,16 @@ class WhatsAppSettingsPage extends Page implements HasForms
             if (isset($state['fonnte_token'])) {
                 WhatsAppGatewaySetting::set('fonnte_token', $state['fonnte_token']);
             }
+
+            // Disimpan ternormalisasi (0813... -> 62813...) supaya konsumen cukup
+            // menempelkannya ke https://wa.me/{nomor} tanpa memproses ulang.
+            PlatformContactSetting::set(
+                'cs_whatsapp',
+                filled($state['cs_whatsapp'])
+                    ? app(FonnteWhatsAppService::class)->normalizePhoneNumber($state['cs_whatsapp'])
+                    : null,
+            );
+            WhatsAppMessageTemplate::set('cs_invoice_bantuan', $state['cs_bantuan_template']);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('whatsapp_settings_save_failed', ['message' => $e->getMessage()]);
 

@@ -5,6 +5,8 @@ namespace App\Filament\Pages;
 use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\PlatformBankAccount;
+use App\Models\PlatformContactSetting;
+use App\Models\WhatsAppMessageTemplate;
 use App\Services\UpgradeOrderService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Collection;
@@ -100,8 +102,45 @@ class OrderInvoicePage extends Page implements HasForms
                             ->color('primary')
                             ->visible(fn () => $this->order->isPendingPayment())
                             ->action('uploadBukti'),
+                        $this->hubungiCsAction(),
                     ])->key('form-actions'),
                 ]),
+        ]);
+    }
+
+    /**
+     * Dipakai dua kali: sejajar tombol "Kirim Bukti Transfer" di footer form
+     * (hanya ada saat pending payment), dan di blade sebagai blok bantuan
+     * mandiri untuk status order lainnya. Aman digandakan karena ini action
+     * url() murni — tidak ada handler Livewire yang bisa bentrok nama.
+     */
+    public function hubungiCsAction(): Action
+    {
+        return Action::make('hubungiCs')
+            ->label('Hubungi CS')
+            ->icon(Heroicon::OutlinedChatBubbleLeftRight)
+            ->color('success')
+            ->outlined()
+            ->visible(fn (): bool => filled(PlatformContactSetting::csWhatsapp()))
+            ->url(fn (): string => 'https://wa.me/' . PlatformContactSetting::csWhatsapp()
+                . '?text=' . rawurlencode($this->pesanBantuanWa()))
+            ->openUrlInNewTab();
+    }
+
+    // Fallback bila baris template belum ada di DB (mis. migrasi seed belum jalan).
+    public const DEFAULT_CS_BANTUAN_TEMPLATE =
+        'Halo, saya butuh bantuan untuk invoice {nomor_invoice} (order {nomor_order}) dari {nama_pesantren}.';
+
+    private function pesanBantuanWa(): string
+    {
+        $template = WhatsAppMessageTemplate::get('cs_invoice_bantuan', self::DEFAULT_CS_BANTUAN_TEMPLATE);
+
+        return strtr($template, [
+            '{nomor_invoice}'  => $this->invoice->nomor_invoice,
+            '{nomor_order}'    => $this->order->nomor_order,
+            '{nama_pesantren}' => $this->order->pesantren->nama_pesantren,
+            '{total}'          => $this->formatRupiah($this->order->harga_total),
+            '{status_order}'   => $this->order->status->label(),
         ]);
     }
 
