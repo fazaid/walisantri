@@ -17,11 +17,11 @@ use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
-use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\Form;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Size;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Auth;
 use UnitEnum;
@@ -206,18 +206,23 @@ class UpgradePage extends Page implements HasForms
     public function content(Schema $schema): Schema
     {
         return $schema->components([
-            Form::make([EmbeddedSchema::make('form')])
-                ->id('form')
-                ->footer([
-                    Actions::make([
-                        Action::make('prosesPembayaran')
-                            ->label('Lakukan Pembayaran')
-                            ->icon(Heroicon::OutlinedCreditCard)
-                            ->color('primary')
-                            ->action('prosesPembayaran'),
-                    ])->key('form-actions'),
-                ]),
+            Form::make([EmbeddedSchema::make('form')])->id('form'),
         ]);
+    }
+
+    /**
+     * Dirender di blade tepat di bawah kartu Ringkasan Biaya, bukan sebagai footer
+     * form — supaya saat kolom di-stack di mobile, tombol tetap ada di bawah ringkasan.
+     */
+    public function prosesPembayaranAction(): Action
+    {
+        return Action::make('prosesPembayaran')
+            ->label('Lakukan Pembayaran')
+            ->icon(Heroicon::OutlinedCreditCard)
+            ->color('primary')
+            ->size(Size::Large)
+            ->extraAttributes(['style' => 'width: 100%; justify-content: center;'])
+            ->action('prosesPembayaran');
     }
 
     public function hitungHarga(): void

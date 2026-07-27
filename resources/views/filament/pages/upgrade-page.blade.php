@@ -130,6 +130,11 @@
                 Setelah klik tombol di bawah, Anda akan mendapat nomor invoice dan instruksi transfer bank.
             </div>
 
+            {{-- Tombol bayar: selalu di bawah ringkasan, termasuk saat kolom di-stack di mobile --}}
+            <div style="margin-top: 0.75rem;">
+                {{ $this->prosesPembayaranAction }}
+            </div>
+
         </div>
         {{-- /KANAN --}}
 
