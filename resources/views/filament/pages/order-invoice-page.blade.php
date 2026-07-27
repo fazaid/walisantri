@@ -7,17 +7,17 @@
         <x-filament::badge :color="$this->order->status->color()" size="lg">
             {{ $this->order->status->label() }}
         </x-filament::badge>
-        <span class="text-sm text-gray-500">{{ $this->invoice->nomor_invoice }}</span>
+        <span class="text-sm text-gray-500 dark:text-gray-400">{{ $this->invoice->nomor_invoice }}</span>
     </div>
 
     @if($this->order->status->value === 'rejected' && $this->order->catatan_admin)
-    <div class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+    <div class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 dark:bg-red-400/10 dark:border-red-400/30 dark:text-red-300">
         <strong>Alasan penolakan:</strong> {{ $this->order->catatan_admin }}
     </div>
     @endif
 
     @if($this->order->status->value === 'confirmed')
-    <div class="rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700">
+    <div class="rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700 dark:bg-emerald-400/10 dark:border-emerald-400/30 dark:text-emerald-300">
         ✅ Pembayaran dikonfirmasi. Paket <strong>{{ ucfirst($this->order->paket_target->value) }}</strong>
         telah aktif hingga <strong>{{ $this->order->expired_at_baru?->translatedFormat('d F Y') ?? '—' }}</strong>.
     </div>
@@ -133,7 +133,7 @@
             @endforeach
         </div>
 
-        <div class="mt-4 rounded-lg bg-amber-50 border border-amber-200 px-3 py-3 text-sm text-amber-700">
+        <div class="mt-4 rounded-lg bg-amber-50 border border-amber-200 px-3 py-3 text-sm text-amber-700 dark:bg-amber-400/10 dark:border-amber-400/30 dark:text-amber-300">
             ⏰ Selesaikan pembayaran dalam
             <strong>{{ config('billing.order_expiry_hours', 24) }} jam</strong>
             sejak order dibuat, lalu upload bukti transfer di bawah.
@@ -156,11 +156,11 @@
         <x-slot name="heading">Bukti Transfer</x-slot>
 
         @if($this->invoice->hasBuktiTransfer())
-        <p class="text-sm text-gray-500 mb-3">
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
             Diunggah pada {{ $this->invoice->bukti_transfer_uploaded_at?->translatedFormat('d F Y, H:i') }}
         </p>
         <x-filament::badge color="success">✅ Bukti transfer telah dikirim</x-filament::badge>
-        <p class="text-sm text-gray-500 mt-3">
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-3">
             Tim kami akan memverifikasi dalam 1×24 jam kerja.
         </p>
         @endif
