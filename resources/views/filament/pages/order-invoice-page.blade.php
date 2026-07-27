@@ -167,6 +167,17 @@
     </x-filament::section>
     @endif
 
+    {{-- Bantuan CS. Saat pending payment tombolnya sudah menempel di samping
+         "Kirim Bukti Transfer", jadi blok ini khusus status order lainnya.
+         isVisible() dicek manual: meng-echo Action langsung merender tombolnya
+         tanpa mengevaluasi ->visible(), beda dengan action di dalam schema. --}}
+    @if(! $this->order->isPendingPayment() && $this->hubungiCsAction->isVisible())
+    <div class="flex flex-wrap items-center gap-3">
+        <span class="text-sm text-gray-500 dark:text-gray-400">Ada kendala dengan pembayaran ini?</span>
+        {{ $this->hubungiCsAction }}
+    </div>
+    @endif
+
 </div>
 
 </x-filament-panels::page>
