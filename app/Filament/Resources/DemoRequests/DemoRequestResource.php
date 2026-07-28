@@ -39,7 +39,10 @@ class DemoRequestResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return (string) DemoRequest::whereNull('contacted_at')->count();
+        $jumlah = DemoRequest::whereNull('contacted_at')->count();
+
+        // null → badge disembunyikan; "0" tetap dirender oleh Filament.
+        return $jumlah > 0 ? (string) $jumlah : null;
     }
 
     public static function getNavigationBadgeColor(): ?string
