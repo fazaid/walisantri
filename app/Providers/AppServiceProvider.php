@@ -17,6 +17,7 @@ use App\Observers\PesantrenObserver;
 use App\Observers\PlatformBankAccountObserver;
 use App\Observers\SantriObserver;
 use App\Observers\UserObserver;
+use Filament\Support\Facades\FilamentTimezone;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
@@ -34,6 +35,11 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Waktu disimpan UTC, tapi ditampilkan WIB — tanpa ini seluruh kolom
+        // & entry datetime Filament jatuh ke config('app.timezone') alias UTC,
+        // sehingga terlihat mundur 7 jam bagi pengguna.
+        FilamentTimezone::set(config('app.display_timezone'));
+
         $this->registerModuleGates();
         $this->registerRateLimiters();
         $this->registerObservers();

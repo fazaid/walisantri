@@ -126,7 +126,7 @@
 
 {{-- ── Footer (fixed) ────────────────────────────────────────────────── --}}
 <div class="footer">
-    Dicetak via Walisantri.com — {{ now()->translatedFormat('d M Y, H:i') }} WIB
+    Dicetak via Walisantri.com — {{ now()->timezone(config('app.display_timezone'))->translatedFormat('d M Y, H:i') }} WIB
 </div>
 
 {{-- ── Header ──────────────────────────────────────────────────────────── --}}

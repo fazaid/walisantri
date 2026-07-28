@@ -72,6 +72,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Display Timezone
+    |--------------------------------------------------------------------------
+    |
+    | Semua waktu DISIMPAN dalam UTC (lihat 'timezone' di atas) supaya kebal
+    | dari pergeseran zona waktu server. Zona di bawah ini khusus untuk
+    | MENAMPILKAN waktu ke pengguna — tabel & infolist Filament, cetakan PDF,
+    | dan jam scheduler — karena seluruh pengguna platform berada di WIB.
+    | Jangan pakai nilai ini saat menulis ke database.
+    |
+    */
+
+    'display_timezone' => env('APP_DISPLAY_TIMEZONE', 'Asia/Jakarta'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
     |

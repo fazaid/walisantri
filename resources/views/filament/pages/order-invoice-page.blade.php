@@ -37,7 +37,7 @@
                     ($this->order->bonus_bulan > 0
                         ? ' + ' . $this->order->bonus_bulan . ' bulan bonus (total ' . $this->order->durasi_total_bulan . ' bulan)'
                         : ''),
-                'Dibuat'         => $this->order->created_at->translatedFormat('d F Y, H:i'),
+                'Dibuat'         => $this->order->created_at->timezone(config('app.display_timezone'))->translatedFormat('d F Y, H:i') . ' WIB',
             ] as $label => $value)
             <div class="flex justify-between items-center py-3">
                 <dt class="text-sm text-gray-500 dark:text-gray-400">{{ $label }}</dt>
@@ -157,7 +157,7 @@
 
         @if($this->invoice->hasBuktiTransfer())
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
-            Diunggah pada {{ $this->invoice->bukti_transfer_uploaded_at?->translatedFormat('d F Y, H:i') }}
+            Diunggah pada {{ $this->invoice->bukti_transfer_uploaded_at?->timezone(config('app.display_timezone'))->translatedFormat('d F Y, H:i') }} WIB
         </p>
         <x-filament::badge color="success">✅ Bukti transfer telah dikirim</x-filament::badge>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-3">

@@ -18,7 +18,7 @@
                     {{ $item->judul_maklumat }}
                 </p>
                 <p class="text-xs text-gray-400 mt-0.5">
-                    {{ $item->created_at->translatedFormat('d M Y') }}
+                    {{ $item->created_at->timezone(config('app.display_timezone'))->translatedFormat('d M Y') }}
                 </p>
             </div>
             <span class="flex-shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full
