@@ -12,7 +12,7 @@ class TrendBulanan
         $bulan = [];
 
         for ($i = 11; $i >= 0; $i--) {
-            $tanggal = now()->subMonths($i);
+            $tanggal = Waktu::sekarang()->subMonths($i);
             $bulan[] = ['key' => $tanggal->format('Y-m'), 'label' => $tanggal->translatedFormat('M Y')];
         }
 

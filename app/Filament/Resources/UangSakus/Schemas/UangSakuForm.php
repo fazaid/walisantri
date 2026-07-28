@@ -4,10 +4,11 @@ namespace App\Filament\Resources\UangSakus\Schemas;
 
 use App\Enums\JenisUangSaku;
 use App\Models\Santri;
+use App\Support\Waktu;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Schema;
 
 class UangSakuForm
@@ -39,7 +40,7 @@ class UangSakuForm
 
             DatePicker::make('tanggal')
                 ->label('Tanggal')
-                ->default(today())
+                ->default(Waktu::hariIni())
                 ->required(),
 
             Textarea::make('keterangan')

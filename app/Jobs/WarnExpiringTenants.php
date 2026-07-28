@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Mail\ExpiringTenantWarning;
 use App\Models\Pesantren;
+use App\Support\Waktu;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Mail;
@@ -24,8 +25,12 @@ class WarnExpiringTenants implements ShouldQueue
     public function handle(): void
     {
         foreach (self::WARN_DAYS as $days) {
-            $from = now()->addDays($days)->startOfDay();
-            $to = now()->addDays($days)->endOfDay();
+            // Batas hari mengikuti kalender WIB lalu dikonversi ke UTC — kalau
+            // dihitung langsung di UTC, jendela H-$days bergeser 7 jam sehingga
+            // pesantren yang expired dini hari WIB masuk bucket hari sebelumnya.
+            $patokan = Waktu::sekarang()->addDays($days);
+            $from = Waktu::awalHari($patokan);
+            $to = Waktu::akhirHari($patokan);
 
             Pesantren::whereIn('status_berlangganan', ['trial', 'active'])
                 ->whereBetween('expired_at', [$from, $to])

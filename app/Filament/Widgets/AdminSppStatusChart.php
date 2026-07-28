@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Filament\Resources\TagihanSpps\TagihanSppResource;
+use App\Support\Waktu;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Auth;
@@ -72,8 +73,8 @@ class AdminSppStatusChart extends ChartWidget
 
         $rows = DB::table('tagihan_spp')
             ->where('pesantren_id', $pesantrenId)
-            ->where('bulan', now()->month)
-            ->where('tahun', now()->year)
+            ->where('bulan', Waktu::sekarang()->month)
+            ->where('tahun', Waktu::sekarang()->year)
             ->select('status', DB::raw('count(*) as total'), DB::raw('sum(nominal) as total_nominal'))
             ->groupBy('status')
             ->get()

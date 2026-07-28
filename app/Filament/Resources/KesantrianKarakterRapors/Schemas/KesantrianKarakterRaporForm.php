@@ -4,6 +4,7 @@ namespace App\Filament\Resources\KesantrianKarakterRapors\Schemas;
 
 use App\Filament\Support\SantriOptions;
 use App\Services\TahunAjaranOptions;
+use App\Support\Waktu;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -53,7 +54,7 @@ class KesantrianKarakterRaporForm
 
                     DatePicker::make('tanggal_input')
                         ->label('Tanggal Input')
-                        ->default(now())
+                        ->default(Waktu::hariIni())
                         ->required(),
                 ]),
 

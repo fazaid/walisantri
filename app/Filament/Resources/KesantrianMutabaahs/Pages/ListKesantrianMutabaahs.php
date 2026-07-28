@@ -3,12 +3,13 @@
 namespace App\Filament\Resources\KesantrianMutabaahs\Pages;
 
 use App\Filament\Resources\KesantrianMutabaahs\KesantrianMutabaahResource;
+use App\Support\Waktu;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
-use Filament\Schemas\Components\Grid;
 use Filament\Forms\Components\Select;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Schemas\Components\Grid;
 
 class ListKesantrianMutabaahs extends ListRecords
 {
@@ -32,16 +33,16 @@ class ListKesantrianMutabaahs extends ListRecords
                                     ->mapWithKeys(fn ($m) => [$m => Carbon::create()->month($m)->translatedFormat('F')])
                                     ->toArray()
                             )
-                            ->default(now()->month)
+                            ->default(Waktu::sekarang()->month)
                             ->required(),
                         Select::make('tahun')
                             ->label('Tahun')
                             ->options(
-                                collect(range(now()->year - 2, now()->year))
+                                collect(range(Waktu::sekarang()->year - 2, Waktu::sekarang()->year))
                                     ->mapWithKeys(fn ($y) => [$y => (string) $y])
                                     ->toArray()
                             )
-                            ->default(now()->year)
+                            ->default(Waktu::sekarang()->year)
                             ->required(),
                     ]),
                 ])

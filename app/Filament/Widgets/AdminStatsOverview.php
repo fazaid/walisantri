@@ -8,6 +8,7 @@ use App\Models\KesantrianMutabaah;
 use App\Models\Santri;
 use App\Models\User;
 use App\Services\MutabaahScoreCalculator;
+use App\Support\Waktu;
 use Carbon\Carbon;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
@@ -30,9 +31,11 @@ class AdminStatsOverview extends StatsOverviewWidget
     protected function getStats(): array
     {
         $pesantrenId = Auth::user()?->pesantren_id;
-        $today = now()->toDateString();
-        $startOfWeek = now()->startOfWeek()->toDateString();
-        $endOfWeek = now()->endOfWeek()->toDateString();
+        // Batas hari & pekan mengikuti kalender WIB; sisa hari langganan di
+        // bawah tetap pakai now() karena itu selisih instan, bukan kalender.
+        $today = Waktu::hariIni();
+        $startOfWeek = Waktu::sekarang()->startOfWeek()->toDateString();
+        $endOfWeek = Waktu::sekarang()->endOfWeek()->toDateString();
 
         // Data billing
         $pesantren = Auth::user()?->pesantren;

@@ -233,7 +233,7 @@
         </div>
 
         @php
-            $days7 = collect(range(6, 0))->map(fn($d) => now()->subDays($d));
+            $days7 = collect(range(6, 0))->map(fn($d) => \App\Support\Waktu::sekarang()->subDays($d));
             $totalDaysData = $mutabaahWeek->count();
         @endphp
 

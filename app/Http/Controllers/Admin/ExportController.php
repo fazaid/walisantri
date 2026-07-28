@@ -6,6 +6,7 @@ use App\Exports\DataSantriExport;
 use App\Exports\MutabaahBulananExport;
 use App\Exports\RekamMedisExport;
 use App\Http\Controllers\Controller;
+use App\Support\Waktu;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
@@ -18,7 +19,7 @@ class ExportController extends Controller
 
         return Excel::download(
             new DataSantriExport(Auth::user()->pesantren_id),
-            'data-santri-' . now()->format('Y-m-d') . '.xlsx',
+            'data-santri-' . Waktu::sekarang()->format('Y-m-d') . '.xlsx',
         );
     }
 
@@ -26,8 +27,8 @@ class ExportController extends Controller
     {
         abort_unless(in_array(Auth::user()?->role, ['admin_pesantren', 'ustadz']), 403);
 
-        $bulan    = $request->integer('bulan', now()->month);
-        $tahun    = $request->integer('tahun', now()->year);
+        $bulan    = $request->integer('bulan', Waktu::sekarang()->month);
+        $tahun    = $request->integer('tahun', Waktu::sekarang()->year);
         $ustadzId = Auth::user()?->role === 'ustadz' ? Auth::id() : null;
 
         return Excel::download(
@@ -49,7 +50,7 @@ class ExportController extends Controller
                 $request->get('sampai'),
                 $ustadzId,
             ),
-            'rekam-medis-' . now()->format('Y-m-d') . '.xlsx',
+            'rekam-medis-' . Waktu::sekarang()->format('Y-m-d') . '.xlsx',
         );
     }
 }

@@ -13,6 +13,7 @@ use App\Models\Pesantren;
 use App\Models\User;
 use App\Models\WhatsAppMessageTemplate;
 use App\Models\WhatsAppSetting;
+use App\Support\Waktu;
 use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
@@ -266,9 +267,12 @@ class UpgradeOrderService
 
     private function generateNomor(string $prefix, string $table): string
     {
-        $tanggal = now()->format('Ymd');
+        // Nomor & urutan harian mengikuti kalender WIB: order jam 00.00–07.00
+        // WIB tidak boleh bernomor tanggal kemarin sekaligus melanjutkan
+        // counter kemarin. created_at tersimpan UTC, jadi rentangnya dikonversi.
+        $tanggal = Waktu::sekarang()->format('Ymd');
         $count = DB::table($table)
-            ->whereDate('created_at', today())
+            ->whereBetween('created_at', [Waktu::awalHari(), Waktu::akhirHari()])
             ->count();
 
         return $prefix.'-'.$tanggal.'-'.str_pad($count + 1, 4, '0', STR_PAD_LEFT);

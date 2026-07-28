@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Santri;
+use App\Support\Waktu;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -51,7 +52,7 @@ class UstadzNilaiSetoranChart extends ChartWidget
         $rows = DB::table('tahfidz_progress')
             ->whereIn('santri_id', $santriIds)
             ->where('pesantren_id', $pesantrenId)
-            ->whereBetween('tanggal', [now()->subDays(6)->toDateString(), now()->toDateString()])
+            ->whereBetween('tanggal', [Waktu::sekarang()->subDays(6)->toDateString(), Waktu::sekarang()->toDateString()])
             ->select('nilai_kelancaran', DB::raw('count(*) as total'))
             ->groupBy('nilai_kelancaran')
             ->pluck('total', 'nilai_kelancaran');

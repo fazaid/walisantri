@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Support\Waktu;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Auth;
@@ -47,7 +48,7 @@ class AdminNilaiSetoranChart extends ChartWidget
 
         $rows = DB::table('tahfidz_progress')
             ->where('pesantren_id', $pesantrenId)
-            ->whereBetween('tanggal', [now()->subDays(6)->toDateString(), now()->toDateString()])
+            ->whereBetween('tanggal', [Waktu::sekarang()->subDays(6)->toDateString(), Waktu::sekarang()->toDateString()])
             ->select('nilai_kelancaran', DB::raw('count(*) as total'))
             ->groupBy('nilai_kelancaran')
             ->pluck('total', 'nilai_kelancaran');

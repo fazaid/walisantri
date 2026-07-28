@@ -8,8 +8,9 @@ use App\Models\TahfidzProgress;
 use App\Models\TahfidzUjian;
 use App\Services\TahfidzJuzCalculator;
 use App\Services\TahunAjaranOptions;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Support\Waktu;
 use BackedEnum;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
@@ -46,7 +47,7 @@ class RaporTahfidzPage extends Page
     {
         $this->tahunAjaran = TahunAjaranOptions::current();
         $this->periode     = TahunAjaranOptions::currentPeriode();
-        $this->bulan       = now()->month . '-' . now()->year;
+        $this->bulan       = Waktu::sekarang()->month . '-' . Waktu::sekarang()->year;
     }
 
     public function getBulanOptions(): array

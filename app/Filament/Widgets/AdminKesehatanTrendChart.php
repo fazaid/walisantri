@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\KesantrianKesehatan;
+use App\Support\Waktu;
 use Filament\Forms\Components\Select;
 use Filament\Schemas\Schema;
 use Filament\Support\RawJs;
@@ -65,9 +66,9 @@ class AdminKesehatanTrendChart extends ChartWidget
     protected function getData(): array
     {
         $days  = (int) ($this->filters['period'] ?? 30);
-        $start = now()->subDays($days - 1)->toDateString();
+        $start = Waktu::sekarang()->subDays($days - 1)->toDateString();
 
-        $rows = KesantrianKesehatan::whereBetween('tanggal_periksa', [$start, now()->toDateString()])
+        $rows = KesantrianKesehatan::whereBetween('tanggal_periksa', [$start, Waktu::sekarang()->toDateString()])
             ->get(['tanggal_periksa'])
             ->groupBy(fn ($r) => $r->tanggal_periksa->toDateString())
             ->map->count();
@@ -76,8 +77,8 @@ class AdminKesehatanTrendChart extends ChartWidget
         $data   = [];
 
         for ($i = $days - 1; $i >= 0; $i--) {
-            $date     = now()->subDays($i)->toDateString();
-            $labels[] = now()->subDays($i)->format('d/m');
+            $date     = Waktu::sekarang()->subDays($i)->toDateString();
+            $labels[] = Waktu::sekarang()->subDays($i)->format('d/m');
             $data[]   = (int) ($rows[$date] ?? 0);
         }
 

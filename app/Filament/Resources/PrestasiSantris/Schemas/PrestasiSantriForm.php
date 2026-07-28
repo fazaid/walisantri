@@ -5,11 +5,12 @@ namespace App\Filament\Resources\PrestasiSantris\Schemas;
 use App\Enums\TingkatPrestasi;
 use App\Filament\Support\SantriOptions;
 use App\Models\PrestasiSantri;
+use App\Support\Waktu;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -29,7 +30,7 @@ class PrestasiSantriForm
 
                     DatePicker::make('tanggal')
                         ->label('Tanggal Prestasi')
-                        ->default(now())
+                        ->default(Waktu::hariIni())
                         ->required(),
 
                     TextInput::make('judul')

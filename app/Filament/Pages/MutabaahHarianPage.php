@@ -6,6 +6,7 @@ use App\Filament\Clusters\Mutabaah;
 use App\Models\KesantrianAmalMaster;
 use App\Models\KesantrianMutabaah;
 use App\Models\Santri;
+use App\Support\Waktu;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
@@ -66,7 +67,9 @@ class MutabaahHarianPage extends Page implements HasForms
 
     public function mount(): void
     {
-        $tanggal = now()->toDateString();
+        // WIB, bukan UTC — input subuh (00.00–07.00 WIB) tidak boleh jatuh ke
+        // tanggal kemarin.
+        $tanggal = Waktu::hariIni();
 
         $this->form->fill([
             'tanggal' => $tanggal,
@@ -134,7 +137,7 @@ class MutabaahHarianPage extends Page implements HasForms
                 DatePicker::make('tanggal')
                     ->label('Tanggal')
                     ->required()
-                    ->maxDate(now())
+                    ->maxDate(Waktu::hariIni())
                     ->native(false)
                     ->live()
                     ->afterStateUpdated(function ($state, callable $set) {

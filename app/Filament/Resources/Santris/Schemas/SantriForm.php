@@ -9,13 +9,14 @@ use App\Models\Kamar;
 use App\Models\Kelas;
 use App\Models\Santri;
 use App\Models\User;
-use Filament\Schemas\Components\Section;
+use App\Support\Waktu;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Validation\Rule;
 
@@ -47,7 +48,7 @@ class SantriForm
                         DatePicker::make('tanggal_lahir')
                             ->label('Tanggal Lahir')
                             ->native(false)
-                            ->maxDate(now()),
+                            ->maxDate(Waktu::hariIni()),
                         Select::make('jenis_kelamin')
                             ->label('Jenis Kelamin')
                             ->options(JenisKelamin::options())

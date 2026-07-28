@@ -6,6 +6,7 @@ use App\Filament\Clusters\Rapor;
 use App\Models\KesantrianAmalMaster;
 use App\Models\KesantrianMutabaah;
 use App\Models\Santri;
+use App\Support\Waktu;
 use BackedEnum;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Actions\Action;
@@ -35,8 +36,8 @@ class RaporMutabaahPage extends Page
 
     public function mount(): void
     {
-        $this->bulan = (int) now()->month;
-        $this->tahun = (string) now()->year;
+        $this->bulan = (int) Waktu::sekarang()->month;
+        $this->tahun = (string) Waktu::sekarang()->year;
     }
 
     public static function canAccess(): bool
@@ -68,7 +69,7 @@ class RaporMutabaahPage extends Page
 
     public function getTahunOptions(): array
     {
-        $tahun = (int) now()->year;
+        $tahun = (int) Waktu::sekarang()->year;
         $options = [];
         for ($y = $tahun; $y >= $tahun - 3; $y--) {
             $options[(string) $y] = (string) $y;

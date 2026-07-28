@@ -5,10 +5,11 @@ namespace App\Filament\Resources\TahfidzProgress\Schemas;
 use App\Data\QuranSurah;
 use App\Filament\Support\SantriOptions;
 use App\Models\User;
+use App\Support\Waktu;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -37,7 +38,7 @@ class TahfidzProgressForm
                         ->required(),
                     DatePicker::make('tanggal')
                         ->label('Tanggal Setoran')
-                        ->default(now())
+                        ->default(Waktu::hariIni())
                         ->required(),
                     Select::make('tipe_setoran')
                         ->label('Tipe Setoran')

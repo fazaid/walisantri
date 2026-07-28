@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\PaketLangganan;
 use App\Enums\StatusOrder;
 use App\Models\Concerns\BelongsToPesantren;
+use App\Support\Waktu;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -120,7 +121,9 @@ class Order extends Model
 
     public static function slaCutoff(int $businessDays = self::SLA_BUSINESS_DAYS): Carbon
     {
-        return now()->subWeekdays($businessDays);
+        // Hari kerja dihitung menurut kalender WIB, hasilnya dikembalikan dalam
+        // UTC supaya aman dibandingkan dengan kolom timestamp.
+        return Waktu::sekarang()->subWeekdays($businessDays)->utc();
     }
 
     /**
