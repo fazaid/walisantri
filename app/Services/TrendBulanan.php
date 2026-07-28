@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Support\Waktu;
+
 class TrendBulanan
 {
     /**
