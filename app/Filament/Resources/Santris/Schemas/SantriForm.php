@@ -48,7 +48,7 @@ class SantriForm
                         DatePicker::make('tanggal_lahir')
                             ->label('Tanggal Lahir')
                             ->native(false)
-                            ->maxDate(Waktu::hariIni()),
+                            ->maxDate(Waktu::akhirHariIni()),
                         Select::make('jenis_kelamin')
                             ->label('Jenis Kelamin')
                             ->options(JenisKelamin::options())

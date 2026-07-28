@@ -6,8 +6,10 @@ use App\Filament\Pages\MutabaahHarianPage;
 use App\Jobs\WarnExpiringTenants;
 use App\Mail\ExpiringTenantWarning;
 use App\Models\KesantrianAmalMaster;
+use App\Models\KesantrianMutabaah;
 use App\Models\Order;
 use App\Models\Pesantren;
+use App\Models\Santri;
 use App\Models\User;
 use App\Services\UpgradeOrderService;
 use App\Support\Waktu;
@@ -60,23 +62,48 @@ class BatasHariWibTest extends TestCase
         $this->assertSame('2026-07-28', Waktu::hariIni());
     }
 
-    public function test_mutabaah_subuh_memakai_tanggal_hari_ini_wib(): void
+    private function makeUstadz(): User
     {
-        $ustadz = User::create([
+        static $counter = 0;
+        $counter++;
+
+        return User::create([
             'pesantren_id' => $this->pesantren->id,
-            'name' => 'Ustadz Subuh',
-            'email' => 'ustadz.subuh@wa.test',
+            'name' => "Ustadz Subuh {$counter}",
+            'email' => "ustadz.subuh.{$counter}@wa.test",
             'password' => bcrypt('password'),
             'role' => 'ustadz',
         ]);
+    }
 
-        KesantrianAmalMaster::create([
+    private function makeAmalMaster(): KesantrianAmalMaster
+    {
+        return KesantrianAmalMaster::create([
             'pesantren_id' => $this->pesantren->id,
             'kode' => 'subuh_berjamaah',
             'label' => 'Sholat Subuh Berjamaah',
             'tipe' => 'boolean',
             'aktif' => true,
         ]);
+    }
+
+    /** Halaman mutaba'ah hanya menampilkan santri bimbingan ustadz yang login. */
+    private function makeSantri(User $pembimbing): Santri
+    {
+        return Santri::create([
+            'pesantren_id' => $this->pesantren->id,
+            'nama_lengkap' => 'Santri Subuh',
+            'nis' => 'NIS-'.uniqid(),
+            'jenis_kelamin' => 'laki_laki',
+            'status_aktif' => true,
+            'pembimbing_ustadz_id' => $pembimbing->id,
+        ]);
+    }
+
+    public function test_mutabaah_subuh_memakai_tanggal_hari_ini_wib(): void
+    {
+        $ustadz = $this->makeUstadz();
+        $this->makeAmalMaster();
 
         $tanggal = Livewire::actingAs($ustadz)
             ->test(MutabaahHarianPage::class)
@@ -86,6 +113,37 @@ class BatasHariWibTest extends TestCase
         // Carbon::parse() mengisi komponen jam dari waktu beku — artefak tes,
         // bukan perilaku produksi.
         $this->assertStringStartsWith('2026-07-28', $tanggal);
+    }
+
+    public function test_mutabaah_hari_ini_lolos_validasi_maxdate(): void
+    {
+        // State DatePicker selalu membawa komponen jam — PHP mengisi bagian
+        // yang hilang dengan jam saat ini ketika mem-parse 'Y-m-d'. Kalau
+        // maxDate hanya berisi tanggal (00.00), tanggal hari ini justru ditolak
+        // dengan "harus sebelum atau sama dengan <hari ini>".
+        $ustadz = $this->makeUstadz();
+        $this->makeAmalMaster();
+        $this->makeSantri($ustadz);
+
+        Livewire::actingAs($ustadz)
+            ->test(MutabaahHarianPage::class)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame('2026-07-28', KesantrianMutabaah::sole()->tanggal->toDateString());
+    }
+
+    public function test_mutabaah_tanggal_besok_tetap_ditolak(): void
+    {
+        $ustadz = $this->makeUstadz();
+        $this->makeAmalMaster();
+        $this->makeSantri($ustadz);
+
+        Livewire::actingAs($ustadz)
+            ->test(MutabaahHarianPage::class)
+            ->set('tanggal', '2026-07-29')
+            ->call('save')
+            ->assertHasErrors('tanggal');
     }
 
     public function test_nomor_order_dan_invoice_memakai_tanggal_wib(): void

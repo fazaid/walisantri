@@ -32,7 +32,7 @@ class KesantrianKesehatanForm
                         DatePicker::make('tanggal_periksa')
                             ->label('Tanggal Periksa')
                             ->default(Waktu::hariIni())
-                            ->maxDate(Waktu::hariIni())
+                            ->maxDate(Waktu::akhirHariIni())
                             ->native(false)
                             ->required()
                             ->rules([

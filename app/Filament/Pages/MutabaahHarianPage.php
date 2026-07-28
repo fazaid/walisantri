@@ -137,7 +137,7 @@ class MutabaahHarianPage extends Page implements HasForms
                 DatePicker::make('tanggal')
                     ->label('Tanggal')
                     ->required()
-                    ->maxDate(Waktu::hariIni())
+                    ->maxDate(Waktu::akhirHariIni())
                     ->native(false)
                     ->live()
                     ->afterStateUpdated(function ($state, callable $set) {

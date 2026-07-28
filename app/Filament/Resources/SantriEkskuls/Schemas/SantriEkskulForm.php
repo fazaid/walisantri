@@ -62,7 +62,7 @@ class SantriEkskulForm
                     DatePicker::make('tanggal_mulai')
                         ->label('Tanggal Mulai')
                         ->required()
-                        ->maxDate(Waktu::hariIni())
+                        ->maxDate(Waktu::akhirHariIni())
                         ->native(false),
                     Toggle::make('aktif')
                         ->label('Aktif')

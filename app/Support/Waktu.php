@@ -40,6 +40,18 @@ class Waktu
         return self::sekarang()->toDateString();
     }
 
+    /**
+     * Batas atas untuk ->maxDate() pada DatePicker, yaitu detik terakhir hari
+     * ini menurut WIB. Tidak boleh diisi hariIni() saja: state picker selalu
+     * membawa komponen jam (PHP mengisi bagian yang hilang dengan jam saat ini
+     * ketika mem-parse 'Y-m-d'), sehingga batas 00.00 akan menolak tanggal hari
+     * ini sendiri dengan pesan "harus sebelum atau sama dengan <hari ini>".
+     */
+    public static function akhirHariIni(): string
+    {
+        return self::sekarang()->endOfDay()->format('Y-m-d H:i:s');
+    }
+
     /** Batas awal hari WIB, dinyatakan dalam UTC. */
     public static function awalHari(?Carbon $waktu = null): Carbon
     {
