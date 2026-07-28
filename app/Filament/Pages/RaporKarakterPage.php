@@ -6,6 +6,7 @@ use App\Filament\Clusters\Rapor;
 use App\Models\KesantrianKarakterRapor;
 use App\Models\Santri;
 use App\Services\TahunAjaranOptions;
+use App\Support\Waktu;
 use BackedEnum;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Actions\Action;
@@ -37,7 +38,7 @@ class RaporKarakterPage extends Page
     {
         $this->tahunAjaran = TahunAjaranOptions::current();
         $this->periode = TahunAjaranOptions::currentPeriode();
-        $this->bulan = now()->month . '-' . now()->year;
+        $this->bulan = Waktu::sekarang()->month . '-' . Waktu::sekarang()->year;
     }
 
     public static function canAccess(): bool

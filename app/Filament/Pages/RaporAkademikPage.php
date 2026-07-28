@@ -5,11 +5,12 @@ namespace App\Filament\Pages;
 use App\Filament\Clusters\Rapor;
 use App\Models\MataPelajaran;
 use App\Models\NilaiAkademik;
-use App\Models\SantriEkskul;
 use App\Models\Santri;
+use App\Models\SantriEkskul;
 use App\Services\TahunAjaranOptions;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Support\Waktu;
 use BackedEnum;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -43,7 +44,7 @@ class RaporAkademikPage extends Page
     {
         $this->tahunAjaran = TahunAjaranOptions::current();
         $this->periode     = TahunAjaranOptions::currentPeriode();
-        $this->bulan       = now()->month . '-' . now()->year;
+        $this->bulan       = Waktu::sekarang()->month . '-' . Waktu::sekarang()->year;
     }
 
     public function getBulanOptions(): array

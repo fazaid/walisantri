@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Waktu;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -33,7 +34,7 @@ class DemoRequest extends Model
 
     public function businessDaysWaiting(): int
     {
-        return $this->created_at->diffInWeekdays(now());
+        return $this->created_at->copy()->timezone(Waktu::zona())->diffInWeekdays(Waktu::sekarang());
     }
 
     public function isOverdue(): bool
@@ -57,7 +58,9 @@ class DemoRequest extends Model
 
     public static function slaCutoff(int $businessDays = self::SLA_BUSINESS_DAYS): Carbon
     {
-        $cutoff = now();
+        // Hari kerja dihitung menurut kalender WIB — di UTC, Sabtu dini hari
+        // WIB masih terbaca Jumat dan salah dihitung sebagai hari kerja.
+        $cutoff = Waktu::sekarang();
         $counted = 0;
 
         while ($counted < $businessDays) {
@@ -68,6 +71,7 @@ class DemoRequest extends Model
             }
         }
 
-        return $cutoff;
+        // Dikembalikan dalam UTC supaya aman dibandingkan dengan created_at.
+        return $cutoff->utc();
     }
 }

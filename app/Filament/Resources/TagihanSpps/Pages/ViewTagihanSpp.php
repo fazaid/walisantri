@@ -3,9 +3,10 @@
 namespace App\Filament\Resources\TagihanSpps\Pages;
 
 use App\Enums\StatusTagihanSpp;
-use App\Filament\Resources\TagihanSpps\TagihanSppResource;
 use App\Filament\Resources\TagihanSpps\Schemas\TagihanSppInfolist;
+use App\Filament\Resources\TagihanSpps\TagihanSppResource;
 use App\Models\PembayaranSpp;
+use App\Support\Waktu;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
@@ -35,7 +36,7 @@ class ViewTagihanSpp extends ViewRecord
                 ->form([
                     DatePicker::make('tanggal_bayar')
                         ->label('Tanggal Bayar')
-                        ->default(now())
+                        ->default(Waktu::hariIni())
                         ->required(),
                     Select::make('metode_bayar')
                         ->label('Metode Bayar')

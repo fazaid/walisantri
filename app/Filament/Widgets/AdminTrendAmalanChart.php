@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Models\KesantrianMutabaah;
 use App\Models\Santri;
 use App\Services\MutabaahScoreCalculator;
+use App\Support\Waktu;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Auth;
@@ -49,11 +50,11 @@ class AdminTrendAmalanChart extends ChartWidget
             ->where('status_aktif', true)
             ->pluck('id');
 
-        $start = now()->subDays(6)->startOfDay();
+        $start = Waktu::sekarang()->subDays(6)->startOfDay();
 
         // 1 query untuk semua record 7 hari
         $allMutabaah = KesantrianMutabaah::whereIn('santri_id', $santriIds)
-            ->whereBetween('tanggal', [$start->toDateString(), now()->toDateString()])
+            ->whereBetween('tanggal', [$start->toDateString(), Waktu::sekarang()->toDateString()])
             ->get()
             ->groupBy(fn ($m) => $m->tanggal->toDateString());
 
@@ -61,7 +62,7 @@ class AdminTrendAmalanChart extends ChartWidget
         $data   = [];
 
         for ($i = 6; $i >= 0; $i--) {
-            $date     = now()->subDays($i);
+            $date     = Waktu::sekarang()->subDays($i);
             $key      = $date->toDateString();
             $list     = $allMutabaah->get($key, collect());
             $pct      = MutabaahScoreCalculator::persentaseRataRata($list);

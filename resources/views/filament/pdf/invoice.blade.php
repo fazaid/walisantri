@@ -126,7 +126,7 @@
 <body>
 
 <div class="footer">
-    Dicetak via Walisantri.com — {{ now()->translatedFormat('d F Y, H:i') }} WIB
+    Dicetak via Walisantri.com — {{ now()->timezone(config('app.display_timezone'))->translatedFormat('d F Y, H:i') }} WIB
 </div>
 
 <div class="letterhead">
@@ -139,7 +139,7 @@
         <div class="doc-title">INVOICE</div>
         <div class="doc-meta">
             No. {{ $invoice->nomor_invoice }}<br>
-            {{ $invoice->created_at->translatedFormat('d F Y') }}
+            {{ $invoice->created_at->timezone(config('app.display_timezone'))->translatedFormat('d F Y') }}
         </div>
     </div>
 </div>
@@ -200,7 +200,7 @@
 <div class="period-highlight">
     <div class="label">Periode Langganan</div>
     <div class="dates">
-        {{ $order->periodeMulai()->translatedFormat('d F Y') }} &mdash; {{ $order->periodeSelesai()->translatedFormat('d F Y') }}
+        {{ $order->periodeMulai()->timezone(config('app.display_timezone'))->translatedFormat('d F Y') }} &mdash; {{ $order->periodeSelesai()->timezone(config('app.display_timezone'))->translatedFormat('d F Y') }}
     </div>
 </div>
 

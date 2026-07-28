@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Resources\DemoRequests\DemoRequestResource;
 use App\Models\DemoRequest;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -43,6 +44,22 @@ class DemoRequestOverdueTest extends TestCase
         $record->save();
 
         return $record->refresh();
+    }
+
+    public function test_badge_hanya_menghitung_yang_belum_dihubungi(): void
+    {
+        $this->demoRequestAt(now());
+        $this->demoRequestAt(now());
+        $this->demoRequestAt(now(), contactedAt: now());
+
+        $this->assertSame('2', DemoRequestResource::getNavigationBadge());
+    }
+
+    public function test_badge_disembunyikan_saat_antrean_kosong(): void
+    {
+        $this->demoRequestAt(now(), contactedAt: now());
+
+        $this->assertNull(DemoRequestResource::getNavigationBadge());
     }
 
     public function test_tepat_di_batas_sla_belum_overdue(): void

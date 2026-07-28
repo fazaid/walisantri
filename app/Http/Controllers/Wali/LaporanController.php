@@ -9,6 +9,7 @@ use App\Models\Santri;
 use App\Models\TahfidzProgress;
 use App\Models\TahfidzUjian;
 use App\Services\TahunAjaranOptions;
+use App\Support\Waktu;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class LaporanController extends Controller
@@ -45,7 +46,7 @@ class LaporanController extends Controller
             ->get();
 
         $progressTahfidz = TahfidzProgress::where('santri_id', $santriId)
-            ->whereBetween('tanggal', [now()->startOfYear(), now()->endOfYear()])
+            ->whereBetween('tanggal', [Waktu::sekarang()->startOfYear(), Waktu::sekarang()->endOfYear()])
             ->latest('tanggal')
             ->take(10)
             ->get();

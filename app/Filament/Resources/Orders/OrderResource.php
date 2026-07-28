@@ -39,6 +39,24 @@ class OrderResource extends Resource
         return auth()->user()?->role === UserRole::SuperAdmin->value;
     }
 
+    public static function getNavigationBadge(): ?string
+    {
+        $jumlah = Order::query()->menungguKonfirmasi()->count();
+
+        // null → badge disembunyikan; "0" tetap dirender oleh Filament.
+        return $jumlah > 0 ? (string) $jumlah : null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return Order::query()->overdue()->exists() ? 'danger' : 'warning';
+    }
+
+    public static function getNavigationBadgeTooltip(): ?string
+    {
+        return 'Pesanan menunggu konfirmasi pembayaran';
+    }
+
     public static function infolist(Schema $schema): Schema
     {
         return OrderInfolist::configure($schema);

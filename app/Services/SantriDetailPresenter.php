@@ -11,6 +11,7 @@ use App\Models\Santri;
 use App\Models\SantriEkskul;
 use App\Models\TahfidzProgress;
 use App\Models\TahfidzUjian;
+use App\Support\Waktu;
 use Illuminate\Support\Collection;
 
 class SantriDetailPresenter
@@ -31,7 +32,7 @@ class SantriDetailPresenter
         $juz = TahfidzJuzCalculator::calculate($santri->id);
 
         $mutabaahMingguIni = KesantrianMutabaah::where('santri_id', $santri->id)
-            ->whereBetween('tanggal', [now()->subDays(6)->toDateString(), now()->toDateString()])
+            ->whereBetween('tanggal', [Waktu::sekarang()->subDays(6)->toDateString(), Waktu::sekarang()->toDateString()])
             ->get();
 
         $persentaseAmalanMingguIni = MutabaahScoreCalculator::persentaseRataRata($mutabaahMingguIni);
@@ -118,7 +119,7 @@ class SantriDetailPresenter
         $juzBySantri = TahfidzJuzCalculator::calculateMany($ids);
 
         $mutabaahBySantri = KesantrianMutabaah::whereIn('santri_id', $ids)
-            ->whereBetween('tanggal', [now()->subDays(6)->toDateString(), now()->toDateString()])
+            ->whereBetween('tanggal', [Waktu::sekarang()->subDays(6)->toDateString(), Waktu::sekarang()->toDateString()])
             ->get()
             ->groupBy('santri_id');
 

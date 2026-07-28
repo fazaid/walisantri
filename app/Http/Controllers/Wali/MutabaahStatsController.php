@@ -7,6 +7,7 @@ use App\Http\Controllers\Wali\Concerns\ResolvesSantriMilikWali;
 use App\Models\KesantrianMutabaah;
 use App\Services\MutabaahScoreCalculator;
 use App\Services\TrendBulanan;
+use App\Support\Waktu;
 
 class MutabaahStatsController extends Controller
 {
@@ -26,7 +27,7 @@ class MutabaahStatsController extends Controller
         $amalMasterList = MutabaahScoreCalculator::masterAktif($santri->pesantren_id);
 
         // Trend rata-rata skor per bulan (12 bulan terakhir)
-        $awalTren = now()->subMonths(11)->startOfMonth();
+        $awalTren = Waktu::sekarang()->subMonths(11)->startOfMonth();
         $trendGroup = $semua->filter(fn (KesantrianMutabaah $m) => $m->tanggal->greaterThanOrEqualTo($awalTren))
             ->groupBy(fn (KesantrianMutabaah $m) => $m->tanggal->format('Y-m'));
 

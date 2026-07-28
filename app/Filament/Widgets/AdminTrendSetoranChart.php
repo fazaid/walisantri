@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Support\Waktu;
 use Filament\Support\RawJs;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Contracts\Support\Htmlable;
@@ -45,11 +46,11 @@ class AdminTrendSetoranChart extends ChartWidget
     protected function getData(): array
     {
         $pesantrenId = Auth::user()?->pesantren_id;
-        $start       = now()->subDays(6)->toDateString();
+        $start       = Waktu::sekarang()->subDays(6)->toDateString();
 
         $rows = DB::table('tahfidz_progress')
             ->where('pesantren_id', $pesantrenId)
-            ->whereBetween('tanggal', [$start, now()->toDateString()])
+            ->whereBetween('tanggal', [$start, Waktu::sekarang()->toDateString()])
             ->selectRaw('tanggal, COUNT(*) as count')
             ->groupBy('tanggal')
             ->pluck('count', 'tanggal');
@@ -58,7 +59,7 @@ class AdminTrendSetoranChart extends ChartWidget
         $data   = [];
 
         for ($i = 6; $i >= 0; $i--) {
-            $day      = now()->subDays($i);
+            $day      = Waktu::sekarang()->subDays($i);
             $labels[] = $day->format('d/m');
             $data[]   = (int) ($rows[$day->toDateString()] ?? 0);
         }

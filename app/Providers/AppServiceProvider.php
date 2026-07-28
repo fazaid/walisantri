@@ -6,17 +6,20 @@
 namespace App\Providers;
 
 use App\Models\DemoRequest;
+use App\Models\Kelas;
 use App\Models\MasterPengumuman;
 use App\Models\Pesantren;
 use App\Models\PlatformBankAccount;
 use App\Models\Santri;
 use App\Models\User;
 use App\Observers\DemoRequestObserver;
+use App\Observers\KelasObserver;
 use App\Observers\MasterPengumumanObserver;
 use App\Observers\PesantrenObserver;
 use App\Observers\PlatformBankAccountObserver;
 use App\Observers\SantriObserver;
 use App\Observers\UserObserver;
+use Filament\Support\Facades\FilamentTimezone;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
@@ -34,6 +37,11 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Waktu disimpan UTC, tapi ditampilkan WIB — tanpa ini seluruh kolom
+        // & entry datetime Filament jatuh ke config('app.timezone') alias UTC,
+        // sehingga terlihat mundur 7 jam bagi pengguna.
+        FilamentTimezone::set(config('app.display_timezone'));
+
         $this->registerModuleGates();
         $this->registerRateLimiters();
         $this->registerObservers();
@@ -91,6 +99,7 @@ class AppServiceProvider extends ServiceProvider
         PlatformBankAccount::observe(PlatformBankAccountObserver::class);
         MasterPengumuman::observe(MasterPengumumanObserver::class);
         DemoRequest::observe(DemoRequestObserver::class);
+        Kelas::observe(KelasObserver::class);
     }
 
     // -----------------------------------------------------------------

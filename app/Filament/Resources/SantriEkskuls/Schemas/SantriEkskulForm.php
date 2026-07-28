@@ -4,6 +4,7 @@ namespace App\Filament\Resources\SantriEkskuls\Schemas;
 
 use App\Models\EkskulMaster;
 use App\Models\Santri;
+use App\Support\Waktu;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
@@ -61,7 +62,7 @@ class SantriEkskulForm
                     DatePicker::make('tanggal_mulai')
                         ->label('Tanggal Mulai')
                         ->required()
-                        ->maxDate(now())
+                        ->maxDate(Waktu::akhirHariIni())
                         ->native(false),
                     Toggle::make('aktif')
                         ->label('Aktif')

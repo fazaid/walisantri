@@ -4,10 +4,11 @@ namespace App\Filament\Resources\KesantrianKesehatans\Schemas;
 
 use App\Filament\Support\SantriOptions;
 use App\Models\KesantrianKesehatan;
+use App\Support\Waktu;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
@@ -30,8 +31,8 @@ class KesantrianKesehatanForm
                             ->required(),
                         DatePicker::make('tanggal_periksa')
                             ->label('Tanggal Periksa')
-                            ->default(now())
-                            ->maxDate(now())
+                            ->default(Waktu::hariIni())
+                            ->maxDate(Waktu::akhirHariIni())
                             ->native(false)
                             ->required()
                             ->rules([

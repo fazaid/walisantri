@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\KesantrianKesehatans\Tables;
 
 use App\Filament\Support\SantriOptions;
+use App\Support\Waktu;
 use Carbon\Carbon;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -116,7 +117,7 @@ class KesantrianKesehatansTable
                     ->label('Rentang Tanggal')
                     ->form([
                         DatePicker::make('dari')->label('Dari')->native(false),
-                        DatePicker::make('sampai')->label('Sampai')->native(false)->default(now()),
+                        DatePicker::make('sampai')->label('Sampai')->native(false)->default(Waktu::hariIni()),
                     ])
                     ->query(fn (Builder $query, array $data) => $query
                         ->when($data['dari'], fn ($q) => $q->whereDate('tanggal_periksa', '>=', $data['dari']))

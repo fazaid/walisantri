@@ -6,6 +6,7 @@ use App\Models\KesantrianKesehatan;
 use App\Models\KesantrianMutabaah;
 use App\Models\Santri;
 use App\Models\TahfidzProgress;
+use App\Support\Waktu;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
@@ -27,7 +28,7 @@ class UstadzStatsOverview extends StatsOverviewWidget
     {
         $ustadzId    = Auth::id();
         $pesantrenId = Auth::user()?->pesantren_id;
-        $today       = now()->toDateString();
+        $today       = Waktu::sekarang()->toDateString();
 
         // Santri halaqah milik ustadz ini
         $santriHalaqah = Santri::where('pesantren_id', $pesantrenId)

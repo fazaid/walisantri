@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Enums\OnboardingStep;
 use App\Enums\UserRole;
 use App\Filament\Pages\PesantrenSettingsPage;
+use App\Filament\Resources\Kelas\KelasResource;
 use App\Filament\Resources\MasterPengumumen\MasterPengumumanResource;
 use App\Filament\Resources\Santris\SantriResource;
 use App\Filament\Resources\Users\UserResource;
@@ -53,6 +54,7 @@ class OnboardingChecklistWidget extends Widget
         return match ($step) {
             OnboardingStep::Profil     => PesantrenSettingsPage::getUrl(),
             OnboardingStep::Ustadz     => UserResource::getUrl('create', ['role' => UserRole::Ustadz->value]),
+            OnboardingStep::Kelas      => KelasResource::getUrl('create'),
             OnboardingStep::Santri     => SantriResource::getUrl('create'),
             OnboardingStep::MagicLink  => SantriResource::getUrl('index'),
             OnboardingStep::Pengumuman => MasterPengumumanResource::getUrl('create'),

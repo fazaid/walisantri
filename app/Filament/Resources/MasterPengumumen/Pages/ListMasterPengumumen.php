@@ -13,7 +13,10 @@ class ListMasterPengumumen extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            // Filament hanya menegakkan canCreate() di halaman CreateRecord, jadi
+            // tanpa penjaga ini ustadz (yang aksesnya baca saja) tetap melihat
+            // tombol yang berujung 403. Pola sama dipakai di ListSantris.
+            CreateAction::make()->visible(fn (): bool => static::getResource()::canCreate()),
         ];
     }
 }

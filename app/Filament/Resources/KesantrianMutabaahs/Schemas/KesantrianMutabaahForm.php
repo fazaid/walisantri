@@ -4,6 +4,7 @@ namespace App\Filament\Resources\KesantrianMutabaahs\Schemas;
 
 use App\Filament\Support\SantriOptions;
 use App\Models\KesantrianAmalMaster;
+use App\Support\Waktu;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -27,7 +28,7 @@ class KesantrianMutabaahForm
                             ->searchable()->required(),
                         DatePicker::make('tanggal')
                             ->label('Tanggal')
-                            ->default(now())->required(),
+                            ->default(Waktu::hariIni())->required(),
                         Select::make('status_udzur')
                             ->label('Status Udzur')
                             ->options([

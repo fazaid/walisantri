@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Models\KesantrianMutabaah;
 use App\Models\Santri;
 use App\Services\MutabaahScoreCalculator;
+use App\Support\Waktu;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Auth;
@@ -56,8 +57,8 @@ class UstadzAmalanChart extends ChartWidget
             return ['datasets' => [['label' => '', 'data' => []]], 'labels' => []];
         }
 
-        $start = now()->subDays(6)->toDateString();
-        $end   = now()->toDateString();
+        $start = Waktu::sekarang()->subDays(6)->toDateString();
+        $end   = Waktu::sekarang()->toDateString();
 
         $allMutabaah = KesantrianMutabaah::whereIn('santri_id', $santriList->pluck('id'))
             ->whereBetween('tanggal', [$start, $end])

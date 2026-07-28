@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Enums\OnboardingStep;
 use App\Enums\UserRole;
 use App\Models\ActivityLog;
+use App\Models\Kelas;
 use App\Models\MasterPengumuman;
 use App\Models\Pesantren;
 use Illuminate\Console\Command;
@@ -77,6 +78,12 @@ class BackfillOnboardingSteps extends Command
 
         if ($pesantren->users()->where('role', UserRole::Ustadz->value)->exists()) {
             $steps[] = OnboardingStep::Ustadz->value;
+        }
+
+        // Kelas memakai trait Multitenantable, tapi global scope-nya hanya aktif
+        // saat ada sesi login — di console query lintas tenant ini aman.
+        if (Kelas::where('pesantren_id', $pesantren->id)->exists()) {
+            $steps[] = OnboardingStep::Kelas->value;
         }
 
         if ($pesantren->santri()->exists()) {

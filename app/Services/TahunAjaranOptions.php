@@ -2,23 +2,25 @@
 
 namespace App\Services;
 
+use App\Support\Waktu;
+
 class TahunAjaranOptions
 {
     public static function current(): string
     {
-        return now()->month >= 7
-            ? now()->year.'/'.(now()->year + 1)
-            : (now()->year - 1).'/'.now()->year;
+        return Waktu::sekarang()->month >= 7
+            ? Waktu::sekarang()->year.'/'.(Waktu::sekarang()->year + 1)
+            : (Waktu::sekarang()->year - 1).'/'.Waktu::sekarang()->year;
     }
 
     public static function currentPeriode(): string
     {
-        return now()->month >= 7 ? 'Semester_Ganjil' : 'Semester_Genap';
+        return Waktu::sekarang()->month >= 7 ? 'Semester_Ganjil' : 'Semester_Genap';
     }
 
     public static function options(int $before = 2, int $after = 1): array
     {
-        $startYear = now()->month >= 7 ? now()->year : now()->year - 1;
+        $startYear = Waktu::sekarang()->month >= 7 ? Waktu::sekarang()->year : Waktu::sekarang()->year - 1;
 
         $options = [];
         for ($i = -$before; $i <= $after; $i++) {

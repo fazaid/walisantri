@@ -4,8 +4,10 @@ namespace App\Enums;
 
 enum OnboardingStep: string
 {
+    // Urutan case menentukan urutan tampil di OnboardingChecklistWidget.
     case Profil     = 'profil';
     case Ustadz     = 'ustadz';
+    case Kelas      = 'kelas';
     case Santri     = 'santri';
     case MagicLink  = 'magic_link';
     case Pengumuman = 'pengumuman';
@@ -15,6 +17,7 @@ enum OnboardingStep: string
         return match($this) {
             self::Profil     => 'Lengkapi profil pesantren (alamat & logo)',
             self::Ustadz     => 'Tambah ustadz pertama',
+            self::Kelas      => 'Buat kelas pertama',
             self::Santri     => 'Tambah santri pertama',
             self::MagicLink  => 'Lihat/salin Magic Link wali pertama',
             self::Pengumuman => 'Buat pengumuman perdana',

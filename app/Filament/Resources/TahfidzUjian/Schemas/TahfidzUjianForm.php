@@ -5,10 +5,11 @@ namespace App\Filament\Resources\TahfidzUjian\Schemas;
 use App\Filament\Support\SantriOptions;
 use App\Models\User;
 use App\Services\TahunAjaranOptions;
+use App\Support\Waktu;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -36,7 +37,7 @@ class TahfidzUjianForm
                             ->searchable()->required(),
                         DatePicker::make('tanggal_ujian')
                             ->label('Tanggal Ujian')
-                            ->default(now())
+                            ->default(Waktu::hariIni())
                             ->required(),
                         Select::make('target_juz')
                             ->label('Target Juz')

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Wali\Concerns\ResolvesSantriMilikWali;
 use App\Models\KesantrianKesehatan;
 use App\Services\TrendBulanan;
+use App\Support\Waktu;
 use Illuminate\Support\Facades\DB;
 
 class KesehatanStatsController extends Controller
@@ -18,7 +19,7 @@ class KesehatanStatsController extends Controller
 
         // Pemeriksaan per bulan (12 bulan terakhir)
         $periksaPerBulan = KesantrianKesehatan::where('santri_id', $santri->id)
-            ->where('tanggal_periksa', '>=', now()->subMonths(11)->startOfMonth())
+            ->where('tanggal_periksa', '>=', Waktu::sekarang()->subMonths(11)->startOfMonth())
             ->select(DB::raw("TO_CHAR(tanggal_periksa, 'YYYY-MM') as bulan"), DB::raw('COUNT(*) as total'))
             ->groupBy('bulan')
             ->orderBy('bulan')

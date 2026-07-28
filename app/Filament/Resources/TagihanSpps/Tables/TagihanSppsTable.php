@@ -7,9 +7,9 @@ use App\Models\PembayaranSpp;
 use App\Models\Santri;
 use App\Models\TagihanSpp;
 use App\Models\TarifSpp;
+use App\Support\Waktu;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
-use Illuminate\Support\Facades\Storage;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -17,6 +17,7 @@ use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Storage;
 
 class TagihanSppsTable
 {
@@ -74,7 +75,7 @@ class TagihanSppsTable
                 SelectFilter::make('tahun')
                     ->label('Tahun')
                     ->options(
-                        collect(range(now()->year, now()->year - 2))
+                        collect(range(Waktu::sekarang()->year, Waktu::sekarang()->year - 2))
                             ->mapWithKeys(fn ($y) => [$y => $y])
                             ->all()
                     ),
@@ -88,12 +89,12 @@ class TagihanSppsTable
                         Select::make('bulan')
                             ->label('Bulan')
                             ->options(TagihanSpp::$namaBulan)
-                            ->default(now()->month)
+                            ->default(Waktu::sekarang()->month)
                             ->required(),
                         TextInput::make('tahun')
                             ->label('Tahun')
                             ->numeric()
-                            ->default(now()->year)
+                            ->default(Waktu::sekarang()->year)
                             ->minValue(2020)
                             ->maxValue(2099)
                             ->required(),
@@ -171,7 +172,7 @@ class TagihanSppsTable
                     ->form([
                         DatePicker::make('tanggal_bayar')
                             ->label('Tanggal Bayar')
-                            ->default(now())
+                            ->default(Waktu::hariIni())
                             ->required(),
                         Select::make('metode_bayar')
                             ->label('Metode Bayar')
