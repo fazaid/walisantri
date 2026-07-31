@@ -3,6 +3,9 @@ name: Deploy
 on:
   push:
     branches:
+      # `main` menjalankan test lalu deploy production.
+      # `dev` sengaja ikut di-trigger, tapi HANYA sampai job `test` — tidak ada
+      # environment lain yang dituju sejak staging dibubarkan (lihat PRD §18).
       - main
       - dev
 
@@ -87,47 +90,6 @@ jobs:
             php artisan down --retry=60 --refresh=15 || true
 
             git pull origin main
-            composer install --no-dev --optimize-autoloader --no-interaction
-            npm ci
-            npm run build
-            bash scripts/backup.sh --db-only --no-offsite --tag pre-deploy || echo "WARN: dump pra-deploy gagal/tidak ada, lanjut deploy"
-            php artisan migrate --force
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
-            php artisan filament:optimize
-            php artisan queue:restart
-
-            # Buka kembali situs (trap EXIT juga memanggil ini sebagai cadangan).
-            php artisan up
-
-  deploy-staging:
-    name: Deploy ke Staging (VPS lama)
-    needs: test
-    runs-on: ubuntu-latest
-    if: success() && github.ref == 'refs/heads/dev'
-
-    steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.STAGING_HOST }}
-          username: ${{ secrets.STAGING_USER }}
-          key: ${{ secrets.STAGING_SSH_KEY }}
-          script: |
-            set -e
-            cd /var/www/walisantri
-
-            # Jaminan: apa pun yang terjadi (sukses atau gagal di tengah), situs
-            # dikembalikan online saat skrip selesai — jangan sampai macet di 503.
-            trap 'php artisan up || true' EXIT
-
-            # Tutup situs sebelum operasi berisiko (pull, swap vendor/asset, migrasi).
-            # Pengunjung dapat halaman 503 "sedang pemeliharaan", bukan error acak.
-            # --retry: header Retry-After; --refresh: browser auto-muat ulang tiap 15 dtk.
-            php artisan down --retry=60 --refresh=15 || true
-
-            git pull origin dev
             composer install --no-dev --optimize-autoloader --no-interaction
             npm ci
             npm run build
