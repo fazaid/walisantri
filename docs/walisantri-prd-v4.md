@@ -4,7 +4,9 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Juli 2026 — v4.17
+**Last Updated:** Juli 2026 — v4.18
+
+**Changelog v4.18:** **Staging dibubarkan — hanya ada satu environment (production).** Staging yang sempat berjalan sejak 2026-07-09 di VPS lama (`staging.walisantri.com`) dihentikan karena ongkos sewanya tidak sepadan dengan manfaat yang didapat. Job `deploy-staging` dihapus dari `.github/workflows/deploy.yml`; trigger push `dev` **tetap dipertahankan** supaya job `test` terus berjalan sebagai jeda pengaman sebelum PR ke `main` (alur `dev` → PR → `main` → auto-deploy production tidak berubah). §18 ditulis ulang dari "roadmap staging" jadi keputusan eksplisit satu-environment beserta tiga pagar penggantinya (job `test`, dump pra-deploy, maintenance mode). Uji-restore backup bulanan dipindah dari server staging ke DB uji di laptop — prosedur baru di `docs/backup-restore.md`, dan justru lebih dekat ke skenario "server hilang total, pulihkan di mesin lain". Catatan keamanan yang ikut terdokumentasi: DB staging lama membawa snapshot data production asli **berikut token Fonnte production** di `whatsapp_gateway_settings`, sehingga scheduler-nya berpotensi mengirim WA ke nomor wali sungguhan — kalau staging suatu saat dihidupkan lagi, kredensial terpisah & data non-produksi jadi syarat wajib.
 
 **Changelog v4.17:** **Masa trial jadi 14 hari (sebelumnya 30) & dijadikan pengaturan, bukan hardcode** — `OnboardPesantren::execute()` sebelumnya hardcode `now()->addDays(30)`, sekarang baca `BillingSetting::get('trial_days', 14)` mengikuti pola persis `kuota_rintisan` yang sudah ada — super admin bisa ubah lewat halaman **Pengaturan Harga** (`BillingSettingsPage`, section baru "Masa Trial") tanpa perlu deploy. Teks halaman `/register` dan deskripsi halaman "Pengaturan Registrasi" ikut dibuat dinamis membaca nilai yang sama (sebelumnya keduanya juga hardcode "30 hari" terpisah, tidak sinkron dengan logika). Nilai awal di-seed 14 lewat migration baru.
 
@@ -914,22 +916,27 @@ tests/TenantIsolation/DataIsolationTest.php   ← wajib lulus sebelum go-live (P
 
 ---
 
-# 18. Staging Environment
+# 18. Environment
 
-> ⚠️ **Status (2026-06-07): belum dibuat.** Tabel di bawah adalah desain target/roadmap — saat ini hanya ada satu environment (production), deploy langsung dari push ke `main`. Belum ada domain `staging.*`, DB staging, branch `develop`, maupun kredensial WhatsApp/email terpisah.
+> ✅ **Keputusan (2026-07-31): hanya ada SATU environment — production.** Ini keputusan sadar, bukan pekerjaan tertunda. Staging sempat dibuat 2026-07-09 di VPS lama (`staging.walisantri.com`, 972MB) lalu **dibubarkan karena biaya sewa tidak sepadan dengan manfaatnya**. Jangan catat ulang staging sebagai roadmap tanpa keputusan baru.
 
-| Komponen | Production | Staging (target, belum dibuat) |
-|---|---|---|
-| Domain | `walisantri.com` / `*.walisantri.com` | `staging.walisantri.com` |
-| VPS / DB / R2 | ~1GB · `walisantri_db` · `walisantri-storage` | 2GB · `walisantri_staging` · `walisantri-staging` |
-| WhatsApp / Mail | Token prod / SMTP Relay | Token staging / Mailtrap |
-| `APP_DEBUG` / Deploy | `false` / push `main` | `true` / push `develop` |
+| Komponen | Production |
+|---|---|
+| Domain | `walisantri.com` (landing) · `app.walisantri.com` (app) · `*.walisantri.com` (profil publik tenant) |
+| VPS / DB | `157.20.159.70` (Debian 12, 4GB/3vCPU) · Postgres 15 `walisantri_db` |
+| `APP_DEBUG` / Deploy | `false` / auto-deploy saat push ke `main` |
 
-> ⚠️ Staging **wajib** kredensial WhatsApp & email terpisah — tanpa ini testing mengirim pesan nyata ke wali sungguhan.
+**Branch flow:** `dev` (kerja & push bebas — CI hanya menjalankan job `test`, tidak deploy ke mana pun) → buka PR ke `main` (wajib status check `Test` lolos + branch protection, lihat §6.4) → merge → auto-deploy production.
 
-**Branch flow saat ini (tanpa staging, v4.7):** `dev` (kerja & push bebas — CI hanya jalankan job `test`, tidak ada deploy) → buka PR ke `main` (wajib status check `Test` lolos + branch protection, lihat §6.4) → merge → auto-deploy production.
+**Konsekuensi yang diterima sadar.** Tanpa environment kedua, bug yang hanya muncul di production — beda `FILESYSTEM_DISK`, beda driver queue/cache, beda perilaku Postgres vs data asli — baru ketahuan dari laporan pengguna. Tiga hal berikut menggantikan fungsi staging dan **tidak boleh dilepas** saat merapikan CI:
 
-**Branch flow target (setelah staging dibuat):** `feature/*` (Herd lokal, tanpa deploy) → `develop` (auto-deploy staging) → `main` (auto-deploy production).
+1. Job `test` di `.github/workflows/deploy.yml` — satu-satunya pagar otomatis sebelum kode menyentuh production.
+2. Dump pra-deploy (`scripts/backup.sh --db-only --no-offsite --tag pre-deploy`) yang berjalan **sebelum** `migrate --force` — satu-satunya titik rollback bila migrasi merusak skema.
+3. Maintenance mode `php artisan down` + `trap ... EXIT` di skrip deploy — supaya deploy yang gagal berakhir di halaman 503, bukan error acak.
+
+Peredam tambahan: jaga `.env` lokal semirip mungkin dengan production untuk hal yang perilakunya berbeda antar-environment, dan perlakukan migrasi berat dengan ekstra hati-hati karena tidak ada gladi bersih.
+
+> ⚠️ Kalau suatu saat staging dihidupkan lagi: **wajib** kredensial WhatsApp & email terpisah, dan DB-nya jangan diisi snapshot production mentah. Staging lama melanggar keduanya — tabel `whatsapp_gateway_settings` di sana ikut membawa token Fonnte production asli, sehingga scheduler-nya berpotensi mengirim WA sungguhan ke nomor wali.
 
 ---
 
@@ -948,7 +955,7 @@ php artisan config:cache && php artisan route:cache && php artisan view:cache &&
 
 **Runbook 3 — VPS mati total (~1 jam):** (1) provisioning VPS Debian 12 (~1GB RAM), catat IP; (2) update A record Cloudflare `*` & `@`; (3) jalankan `setup-server.sh` (Nginx, PHP 8.4, PostgreSQL 17, Redis, Certbot, Supervisor); (4) clone repo, `.env.production`, `composer install`, `npm build`, `key:generate`; (5) `restore-db.sh` backup terakhir; (6) verifikasi login semua role + queue. Simpan `EMERGENCY.md` di GitHub, Google Drive, & Notes HP.
 
-**Verifikasi backup bulanan (~30 menit):** `restore-db.sh` ke DB staging → cek jumlah pesantren/santri/record → catat di `BACKUP_LOG.md` → hapus DB staging.
+**Verifikasi backup bulanan (~30 menit):** `scripts/restore.sh --from-offsite latest` ke DB uji di laptop (bukan di server — lihat prosedur lengkap di `docs/backup-restore.md`) → cek jumlah pesantren/santri/record → catat di `BACKUP_LOG.md` → hapus DB uji.
 
 **Eskalasi:** down <30mnt → restart via SSH · down >30mnt → Runbook 3 + info mitra · data korup → Runbook 2 + maintenance mode · breach → suspend semua tenant + ganti credential.
 
@@ -1018,7 +1025,7 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 9. File storage R2 via disk `r2` (`s3`, `use_path_style_endpoint: true`). Backup PostgreSQL harian via cron + AWS CLI ke `walisantri-backup`. Lifecycle rules di Cloudflare untuk rotasi.
 10. PostgreSQL 17: driver `pgsql`, auth `scram-sha-256`, JSON pakai `jsonb`, enum via `CHECK` constraint, ingat tak ada unsigned int. Backup `pg_dump -Fc`, restore `pg_restore`. Ekstensi `vector` untuk AI (§20), RLS opsional untuk isolasi tenant (§1.1).
 11. Unit test isolasi tenant (`tests/TenantIsolation/DataIsolationTest.php`) wajib lulus sebelum deploy — pakai PostgreSQL (bukan SQLite) agar RLS/policy teruji. Seluruh suite (`Unit`, `Feature`, `TenantIsolation`) dijalankan terhadap PostgreSQL di CI (lihat §6.4); Deploy GitHub Actions hanya jika `php artisan test` sukses.
-12. Staging: `.env` terpisah dengan `WHATSAPP_GATEWAY_TOKEN` & `MAIL_*` berbeda dari production. Jangan pernah pakai token production di staging.
+12. Hanya ada satu environment: production (§18 — staging sengaja dibubarkan). Konsekuensinya, job `test` di CI, dump pra-deploy sebelum `migrate --force`, dan maintenance mode saat deploy adalah pagar pengganti yang tidak boleh dilepas. Latihan restore dilakukan di laptop, bukan di server (`docs/backup-restore.md`).
 
 ---
 

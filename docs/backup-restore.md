@@ -114,7 +114,8 @@ Cron ini independen dari `schedule:run` Laravel — lebih sederhana & andal.
 
 ## Cara restore (mudah & aman)
 
-> **Selalu uji restore di STAGING dulu**, jangan langsung di production.
+> **Latihan restore selalu di laptop, jangan di production** (lihat "Uji-restore
+> berkala" di bawah). Restore di production hanya untuk pemulihan sungguhan.
 > Skrip **otomatis membuat snapshot pengaman** kondisi saat ini sebelum menimpa,
 > jadi restore yang salah tetap bisa dibalik.
 
@@ -159,17 +160,43 @@ tar xzf /home/fazaweb/backups/walisantri/pre-restore-<ts>/files-current.tar.gz -
 
 ---
 
-## Uji-restore berkala di staging (disarankan tiap bulan)
+## Uji-restore berkala di laptop (disarankan tiap bulan)
+
+Sejak staging dibubarkan (lihat PRD §18), uji-restore dilakukan di mesin lokal —
+**jangan** pernah menjalankannya di server production untuk sekadar latihan.
+Justru ini lebih dekat ke skenario sesungguhnya: "server hilang total, pulihkan
+dari nol di mesin lain".
+
+Syarat sekali-pasang di laptop: `rclone` versi baru (lihat gotcha di bawah),
+remote `odcrypt` (butuh passphrase yang disimpan di password manager), serta
+Postgres lokal (DBngin).
 
 ```bash
-# di server staging 116.206.196.37
-cd /var/www/walisantri
+# 1. Salinan repo TERPISAH dari direktori kerja sehari-hari,
+#    supaya .env-nya tidak tertukar dengan .env development.
+git clone https://github.com/fazaid/walisantri.git ~/restoretest
+cd ~/restoretest
+cp .env.example .env
+
+# 2. Arahkan ke DB uji lokal — restore.sh membaca target dari .env ini.
+#    Buat dulu database kosongnya: createdb walisantri_restoretest
+#    Isi DB_DATABASE=walisantri_restoretest, DB_HOST=127.0.0.1, DB_USERNAME/DB_PASSWORD lokal.
+
+# 3. Tarik & pulihkan backup terenkripsi terakhir.
+export APP_DIR="$HOME/restoretest"
+export BACKUP_DIR="$HOME/restoretest/backups"
 export RCLONE_REMOTE="odcrypt:walisantri-backup"
 bash scripts/restore.sh --from-offsite latest
-# lalu buka https://staging.walisantri.com, pastikan login & data tampil normal
 ```
 
-Backup yang tidak pernah diuji-restore = belum tentu bisa dipakai. Jadikan ini rutin.
+Verifikasi setelah selesai: jumlah baris `pesantrens`/`santris`/`users` masuk
+akal, dan `php artisan tinker` bisa membaca satu record. Untuk membuka aplikasinya
+di browser, pakai `APP_KEY` dari `.env` yang ikut ter-backup — tanpa itu isi
+`whatsapp_gateway_settings` (satu-satunya kolom terenkripsi) tidak terbaca.
+
+Backup yang tidak pernah diuji-restore = belum tentu bisa dipakai. Jadikan ini
+rutin — sekarang statusnya **naik jadi penting**, karena tidak ada lagi
+environment kedua yang bisa dipakai membuktikan pemulihan berjalan.
 
 ---
 
