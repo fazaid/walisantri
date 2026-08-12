@@ -13,12 +13,11 @@ use App\Support\Waktu;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
-use Illuminate\Validation\Rule;
 
 class SantriForm
 {
@@ -130,7 +129,7 @@ class SantriForm
                                     ->where('pesantren_id', auth()->user()?->pesantren_id)
                                     ->get()
                                     ->mapWithKeys(fn ($u) => [
-                                        $u->id => $u->name . ' (' . ($counts[$u->id] ?? 0) . '/20)',
+                                        $u->id => $u->name.' ('.($counts[$u->id] ?? 0).'/20)',
                                     ]);
                             })
                             ->searchable()

@@ -4,8 +4,6 @@ namespace App\Filament\Resources\MataPelajarans;
 
 use App\Filament\Clusters\Akademik;
 use App\Filament\Concerns\HasAdminOnlyAccess;
-use App\Filament\Resources\MataPelajarans\Pages\CreateMataPelajaran;
-use App\Filament\Resources\MataPelajarans\Pages\EditMataPelajaran;
 use App\Filament\Resources\MataPelajarans\Pages\ListMataPelajaran;
 use App\Filament\Resources\MataPelajarans\Pages\ViewMataPelajaran;
 use App\Filament\Resources\MataPelajarans\Schemas\MataPelajaranForm;
@@ -62,9 +60,7 @@ class MataPelajaranResource extends Resource
     {
         return [
             'index' => ListMataPelajaran::route('/'),
-            'create' => CreateMataPelajaran::route('/create'),
             'view' => ViewMataPelajaran::route('/{record}'),
-            'edit' => EditMataPelajaran::route('/{record}/edit'),
         ];
     }
 }

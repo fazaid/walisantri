@@ -4,8 +4,6 @@ namespace App\Filament\Resources\EkskulMasters;
 
 use App\Filament\Clusters\Akademik;
 use App\Filament\Concerns\HasAdminOnlyAccess;
-use App\Filament\Resources\EkskulMasters\Pages\CreateEkskulMaster;
-use App\Filament\Resources\EkskulMasters\Pages\EditEkskulMaster;
 use App\Filament\Resources\EkskulMasters\Pages\ListEkskulMasters;
 use App\Filament\Resources\EkskulMasters\Pages\ViewEkskulMaster;
 use App\Filament\Resources\EkskulMasters\Schemas\EkskulMasterForm;
@@ -68,9 +66,7 @@ class EkskulMasterResource extends Resource
     {
         return [
             'index' => ListEkskulMasters::route('/'),
-            'create' => CreateEkskulMaster::route('/create'),
             'view' => ViewEkskulMaster::route('/{record}'),
-            'edit' => EditEkskulMaster::route('/{record}/edit'),
         ];
     }
 }

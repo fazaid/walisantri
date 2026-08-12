@@ -7,6 +7,7 @@ use App\Filament\Resources\NilaiAkademiks\NilaiAkademikResource;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 
 class ListNilaiAkademik extends ListRecords
@@ -16,7 +17,9 @@ class ListNilaiAkademik extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            CreateAction::make()
+                ->modalWidth(Width::TwoExtraLarge)
+                ->before(NilaiAkademikResource::guardDuplikat()),
             // NilaiMassalPage sengaja tidak didaftarkan di navigasi; tombol ini
             // satu-satunya jalan masuknya.
             Action::make('inputMassal')

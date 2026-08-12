@@ -71,6 +71,19 @@ class Santri extends Model
         return static::where('pembimbing_ustadz_id', $ustadzId)->pluck('id');
     }
 
+    /**
+     * Link portal wali (magic link). Permanen sampai UUID di-regenerasi lewat
+     * RegenerasiUuidAction. Dipakai modal "Link Wali" dan kolom Link Wali di
+     * daftar santri — keduanya harus menghasilkan URL yang sama persis.
+     */
+    public function linkWali(): string
+    {
+        $appDomain = config('app.domain', 'app.walisantri.com');
+        $scheme = app()->environment('production') ? 'https' : 'http';
+
+        return "{$scheme}://{$appDomain}/report/{$this->uuid}";
+    }
+
     // --- Relations ---
 
     public function wali(): BelongsTo

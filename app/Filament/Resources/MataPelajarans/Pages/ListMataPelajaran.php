@@ -5,6 +5,7 @@ namespace App\Filament\Resources\MataPelajarans\Pages;
 use App\Filament\Resources\MataPelajarans\MataPelajaranResource;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Support\Enums\Width;
 
 class ListMataPelajaran extends ListRecords
 {
@@ -12,6 +13,6 @@ class ListMataPelajaran extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        return [CreateAction::make()];
+        return [CreateAction::make()->modalWidth(Width::Medium)];
     }
 }

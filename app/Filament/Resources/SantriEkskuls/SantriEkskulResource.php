@@ -5,8 +5,6 @@ namespace App\Filament\Resources\SantriEkskuls;
 use App\Filament\Clusters\Akademik;
 use App\Filament\Concerns\HasAdminUstadzAccess;
 use App\Filament\Concerns\ScopesQueryToUstadzSantri;
-use App\Filament\Resources\SantriEkskuls\Pages\CreateSantriEkskul;
-use App\Filament\Resources\SantriEkskuls\Pages\EditSantriEkskul;
 use App\Filament\Resources\SantriEkskuls\Pages\ListSantriEkskuls;
 use App\Filament\Resources\SantriEkskuls\Pages\ViewSantriEkskul;
 use App\Filament\Resources\SantriEkskuls\Schemas\SantriEkskulForm;
@@ -14,6 +12,9 @@ use App\Filament\Resources\SantriEkskuls\Schemas\SantriEkskulInfolist;
 use App\Filament\Resources\SantriEkskuls\Tables\SantriEkskulsTable;
 use App\Models\SantriEkskul;
 use BackedEnum;
+use Closure;
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -74,13 +75,40 @@ class SantriEkskulResource extends Resource
         return [];
     }
 
+    /**
+     * Cegah satu santri terdaftar dua kali di ekskul yang sama.
+     *
+     * Dulu tinggal di CreateSantriEkskul::beforeCreate() dan
+     * EditSantriEkskul::beforeSave(). Sejak tambah/edit jadi modal, kedua
+     * halaman itu hilang — closure ini dipasang lewat ->before() pada
+     * Create/EditAction. $record null saat membuat, terisi saat mengubah.
+     */
+    public static function guardDuplikat(): Closure
+    {
+        return function (array $data, Action $action, ?Model $record): void {
+            $exists = SantriEkskul::where('santri_id', $data['santri_id'])
+                ->where('ekskul_id', $data['ekskul_id'])
+                ->when($record, fn ($query) => $query->where('id', '!=', $record->getKey()))
+                ->exists();
+
+            if (! $exists) {
+                return;
+            }
+
+            Notification::make()
+                ->title('Santri ini sudah terdaftar di ekskul yang dipilih.')
+                ->danger()
+                ->send();
+
+            $action->halt();
+        };
+    }
+
     public static function getPages(): array
     {
         return [
             'index' => ListSantriEkskuls::route('/'),
-            'create' => CreateSantriEkskul::route('/create'),
             'view' => ViewSantriEkskul::route('/{record}'),
-            'edit' => EditSantriEkskul::route('/{record}/edit'),
         ];
     }
 }

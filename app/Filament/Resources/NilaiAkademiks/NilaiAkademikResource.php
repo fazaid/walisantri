@@ -5,8 +5,6 @@ namespace App\Filament\Resources\NilaiAkademiks;
 use App\Filament\Clusters\Akademik;
 use App\Filament\Concerns\HasAdminUstadzAccess;
 use App\Filament\Concerns\ScopesQueryToUstadzSantri;
-use App\Filament\Resources\NilaiAkademiks\Pages\CreateNilaiAkademik;
-use App\Filament\Resources\NilaiAkademiks\Pages\EditNilaiAkademik;
 use App\Filament\Resources\NilaiAkademiks\Pages\ListNilaiAkademik;
 use App\Filament\Resources\NilaiAkademiks\Pages\ViewNilaiAkademik;
 use App\Filament\Resources\NilaiAkademiks\Schemas\NilaiAkademikForm;
@@ -15,6 +13,9 @@ use App\Filament\Resources\NilaiAkademiks\Tables\NilaiAkademikTable;
 use App\Models\MataPelajaran;
 use App\Models\NilaiAkademik;
 use BackedEnum;
+use Closure;
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -84,13 +85,43 @@ class NilaiAkademikResource extends Resource
         return [];
     }
 
+    /**
+     * Cegah nilai ganda untuk kombinasi santri + mapel + periode yang sama.
+     *
+     * Dulu tinggal di CreateNilaiAkademik::beforeCreate() dan
+     * EditNilaiAkademik::beforeSave(). Sejak tambah/edit jadi modal, kedua
+     * halaman itu hilang — closure ini dipasang lewat ->before() pada
+     * Create/EditAction. $record null saat membuat, terisi saat mengubah.
+     */
+    public static function guardDuplikat(): Closure
+    {
+        return function (array $data, Action $action, ?Model $record): void {
+            $exists = NilaiAkademik::where('santri_id', $data['santri_id'])
+                ->where('mata_pelajaran_id', $data['mata_pelajaran_id'])
+                ->where('tahun_ajaran', $data['tahun_ajaran'])
+                ->where('periode', $data['periode'])
+                ->where('bulan', $data['bulan'] ?? null)
+                ->when($record, fn ($query) => $query->where('id', '!=', $record->getKey()))
+                ->exists();
+
+            if (! $exists) {
+                return;
+            }
+
+            Notification::make()
+                ->title('Nilai untuk santri, mata pelajaran, dan periode ini sudah ada.')
+                ->danger()
+                ->send();
+
+            $action->halt();
+        };
+    }
+
     public static function getPages(): array
     {
         return [
             'index' => ListNilaiAkademik::route('/'),
-            'create' => CreateNilaiAkademik::route('/create'),
             'view' => ViewNilaiAkademik::route('/{record}'),
-            'edit' => EditNilaiAkademik::route('/{record}/edit'),
         ];
     }
 }

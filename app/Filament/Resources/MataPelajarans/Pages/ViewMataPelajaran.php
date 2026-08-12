@@ -3,8 +3,10 @@
 namespace App\Filament\Resources\MataPelajarans\Pages;
 
 use App\Filament\Resources\MataPelajarans\MataPelajaranResource;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
+use Filament\Support\Enums\Width;
 
 class ViewMataPelajaran extends ViewRecord
 {
@@ -13,7 +15,8 @@ class ViewMataPelajaran extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            EditAction::make(),
+            EditAction::make()->modalWidth(Width::Medium),
+            DeleteAction::make(),
         ];
     }
 }
