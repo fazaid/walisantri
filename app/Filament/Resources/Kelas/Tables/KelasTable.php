@@ -3,8 +3,10 @@
 namespace App\Filament\Resources\Kelas\Tables;
 
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -30,7 +32,8 @@ class KelasTable
             ])
             ->defaultSort('nama_kelas', 'asc')
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()->modalWidth(Width::Medium),
+                DeleteAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

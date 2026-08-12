@@ -4,10 +4,13 @@ namespace App\Filament\Resources\SantriEkskuls;
 
 use App\Filament\Clusters\Akademik;
 use App\Filament\Concerns\HasAdminUstadzAccess;
+use App\Filament\Concerns\ScopesQueryToUstadzSantri;
 use App\Filament\Resources\SantriEkskuls\Pages\CreateSantriEkskul;
 use App\Filament\Resources\SantriEkskuls\Pages\EditSantriEkskul;
 use App\Filament\Resources\SantriEkskuls\Pages\ListSantriEkskuls;
+use App\Filament\Resources\SantriEkskuls\Pages\ViewSantriEkskul;
 use App\Filament\Resources\SantriEkskuls\Schemas\SantriEkskulForm;
+use App\Filament\Resources\SantriEkskuls\Schemas\SantriEkskulInfolist;
 use App\Filament\Resources\SantriEkskuls\Tables\SantriEkskulsTable;
 use App\Models\SantriEkskul;
 use BackedEnum;
@@ -21,6 +24,7 @@ use Illuminate\Database\Eloquent\Model;
 class SantriEkskulResource extends Resource
 {
     use HasAdminUstadzAccess;
+    use ScopesQueryToUstadzSantri;
 
     protected static ?string $model = SantriEkskul::class;
 
@@ -28,11 +32,14 @@ class SantriEkskulResource extends Resource
 
     protected static ?string $cluster = Akademik::class;
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 3;
 
     protected static ?string $recordTitleAttribute = 'id';
 
-    protected static ?string $navigationLabel = 'Ekskul Santri';
+    // Label menu diringkas; $modelLabel sengaja tetap "Ekskul Santri" supaya
+    // tombol "Tambah Ekskul Santri" tidak rancu dengan "Kelola Ekskul" yang
+    // ada di sebelahnya.
+    protected static ?string $navigationLabel = 'Ekskul';
 
     public static function getRecordTitle(?Model $record): Htmlable|string|null
     {
@@ -52,6 +59,11 @@ class SantriEkskulResource extends Resource
         return SantriEkskulForm::configure($schema);
     }
 
+    public static function infolist(Schema $schema): Schema
+    {
+        return SantriEkskulInfolist::configure($schema);
+    }
+
     public static function table(Table $table): Table
     {
         return SantriEkskulsTable::configure($table);
@@ -67,6 +79,7 @@ class SantriEkskulResource extends Resource
         return [
             'index' => ListSantriEkskuls::route('/'),
             'create' => CreateSantriEkskul::route('/create'),
+            'view' => ViewSantriEkskul::route('/{record}'),
             'edit' => EditSantriEkskul::route('/{record}/edit'),
         ];
     }

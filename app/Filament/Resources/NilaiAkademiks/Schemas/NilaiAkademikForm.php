@@ -22,8 +22,8 @@ class NilaiAkademikForm
                     Select::make('mata_pelajaran_id')
                         ->label('Mata Pelajaran')
                         ->options(function () {
-                            $query = MataPelajaran::with('kelas')
-                                ->where('pesantren_id', auth()->user()?->pesantren_id);
+                            // Global scope Multitenantable sudah menyaring pesantren_id.
+                            $query = MataPelajaran::with('kelas');
 
                             if (auth()->user()?->role === 'ustadz') {
                                 $query->where('ustadz_id', auth()->id());

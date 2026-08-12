@@ -2,8 +2,7 @@
 
 namespace App\Filament\Resources\SantriEkskuls\Schemas;
 
-use App\Models\EkskulMaster;
-use App\Models\Santri;
+use App\Enums\UserRole;
 use App\Support\Waktu;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
@@ -11,6 +10,8 @@ use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\Unique;
 
 class SantriEkskulForm
@@ -23,23 +24,36 @@ class SantriEkskulForm
                 ->schema([
                     Select::make('santri_id')
                         ->label('Santri')
-                        ->options(
-                            Santri::where('pesantren_id', auth()->user()?->pesantren_id)
-                                ->where('status_aktif', true)
-                                ->orderBy('nama_lengkap')
-                                ->pluck('nama_lengkap', 'id')
+                        // relationship() menghormati global scope Multitenantable,
+                        // jadi tidak perlu filter pesantren_id manual. Tanpa
+                        // preload(): pencarian dilakukan di server, bukan dengan
+                        // memuat seluruh tabel santri ke dalam payload Livewire.
+                        ->relationship(
+                            'santri',
+                            'nama_lengkap',
+                            function (Builder $query) {
+                                $query->where('status_aktif', true)
+                                    ->orderBy('nama_lengkap');
+
+                                // Ustadz hanya boleh mendaftarkan santri
+                                // bimbingannya sendiri — selaras dengan
+                                // ScopesQueryToUstadzSantri di resource.
+                                if (Auth::user()?->role === UserRole::Ustadz->value) {
+                                    $query->where('pembimbing_ustadz_id', Auth::id());
+                                }
+                            },
                         )
                         ->searchable()
                         ->required(),
                     Select::make('ekskul_id')
                         ->label('Ekskul')
-                        ->options(
-                            EkskulMaster::where('pesantren_id', auth()->user()?->pesantren_id)
-                                ->where('aktif', true)
-                                ->orderBy('nama')
-                                ->pluck('nama', 'id')
+                        ->relationship(
+                            'ekskulMaster',
+                            'nama',
+                            fn (Builder $query) => $query->where('aktif', true)->orderBy('nama'),
                         )
                         ->searchable()
+                        ->preload()
                         ->required()
                         ->unique(
                             table: 'santri_ekskuls',

@@ -3,8 +3,6 @@
 namespace App\Filament\Resources\Santris;
 
 use App\Filament\Clusters\Santri as SantriCluster;
-use App\Filament\Resources\Santris\Pages\CreateSantri;
-use App\Filament\Resources\Santris\Pages\EditSantri;
 use App\Filament\Resources\Santris\Pages\ListSantris;
 use App\Filament\Resources\Santris\Pages\ViewSantri;
 use App\Filament\Resources\Santris\Schemas\SantriForm;
@@ -104,9 +102,7 @@ class SantriResource extends Resource
     {
         return [
             'index' => ListSantris::route('/'),
-            'create' => CreateSantri::route('/create'),
             'view' => ViewSantri::route('/{record}'),
-            'edit' => EditSantri::route('/{record}/edit'),
         ];
     }
 

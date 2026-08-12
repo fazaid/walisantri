@@ -8,7 +8,9 @@ use App\Filament\Concerns\ScopesQueryToUstadzSantri;
 use App\Filament\Resources\NilaiAkademiks\Pages\CreateNilaiAkademik;
 use App\Filament\Resources\NilaiAkademiks\Pages\EditNilaiAkademik;
 use App\Filament\Resources\NilaiAkademiks\Pages\ListNilaiAkademik;
+use App\Filament\Resources\NilaiAkademiks\Pages\ViewNilaiAkademik;
 use App\Filament\Resources\NilaiAkademiks\Schemas\NilaiAkademikForm;
+use App\Filament\Resources\NilaiAkademiks\Schemas\NilaiAkademikInfolist;
 use App\Filament\Resources\NilaiAkademiks\Tables\NilaiAkademikTable;
 use App\Models\MataPelajaran;
 use App\Models\NilaiAkademik;
@@ -67,6 +69,11 @@ class NilaiAkademikResource extends Resource
         return NilaiAkademikForm::configure($schema);
     }
 
+    public static function infolist(Schema $schema): Schema
+    {
+        return NilaiAkademikInfolist::configure($schema);
+    }
+
     public static function table(Table $table): Table
     {
         return NilaiAkademikTable::configure($table);
@@ -82,6 +89,7 @@ class NilaiAkademikResource extends Resource
         return [
             'index' => ListNilaiAkademik::route('/'),
             'create' => CreateNilaiAkademik::route('/create'),
+            'view' => ViewNilaiAkademik::route('/{record}'),
             'edit' => EditNilaiAkademik::route('/{record}/edit'),
         ];
     }

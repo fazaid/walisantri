@@ -54,8 +54,8 @@ class OnboardingChecklistWidget extends Widget
         return match ($step) {
             OnboardingStep::Profil     => PesantrenSettingsPage::getUrl(),
             OnboardingStep::Ustadz     => UserResource::getUrl('create', ['role' => UserRole::Ustadz->value]),
-            OnboardingStep::Kelas      => KelasResource::getUrl('create'),
-            OnboardingStep::Santri     => SantriResource::getUrl('create'),
+            OnboardingStep::Kelas      => KelasResource::getUrl('index', ['action' => 'create']),
+            OnboardingStep::Santri     => SantriResource::getUrl('index', ['action' => 'create']),
             OnboardingStep::MagicLink  => SantriResource::getUrl('index'),
             OnboardingStep::Pengumuman => MasterPengumumanResource::getUrl('create'),
         };

@@ -4,8 +4,6 @@ namespace App\Filament\Resources\Kelas;
 
 use App\Filament\Clusters\Santri;
 use App\Filament\Concerns\HasAdminOnlyAccess;
-use App\Filament\Resources\Kelas\Pages\CreateKelas;
-use App\Filament\Resources\Kelas\Pages\EditKelas;
 use App\Filament\Resources\Kelas\Pages\ListKelas;
 use App\Filament\Resources\Kelas\Schemas\KelasForm;
 use App\Filament\Resources\Kelas\Tables\KelasTable;
@@ -55,8 +53,6 @@ class KelasResource extends Resource
     {
         return [
             'index' => ListKelas::route('/'),
-            'create' => CreateKelas::route('/create'),
-            'edit' => EditKelas::route('/{record}/edit'),
         ];
     }
 }

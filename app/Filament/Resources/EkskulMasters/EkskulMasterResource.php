@@ -7,7 +7,9 @@ use App\Filament\Concerns\HasAdminOnlyAccess;
 use App\Filament\Resources\EkskulMasters\Pages\CreateEkskulMaster;
 use App\Filament\Resources\EkskulMasters\Pages\EditEkskulMaster;
 use App\Filament\Resources\EkskulMasters\Pages\ListEkskulMasters;
+use App\Filament\Resources\EkskulMasters\Pages\ViewEkskulMaster;
 use App\Filament\Resources\EkskulMasters\Schemas\EkskulMasterForm;
+use App\Filament\Resources\EkskulMasters\Schemas\EkskulMasterInfolist;
 use App\Filament\Resources\EkskulMasters\Tables\EkskulMastersTable;
 use App\Models\EkskulMaster;
 use BackedEnum;
@@ -26,7 +28,13 @@ class EkskulMasterResource extends Resource
 
     protected static ?string $cluster = Akademik::class;
 
-    protected static ?int $navigationSort = 3;
+    /**
+     * Master data yang jarang disentuh setelah pengisian awal — bukan entri
+     * menu tersendiri. Masuknya lewat tombol "Kelola Ekskul" di header daftar
+     * Ekskul Santri (ListSantriEkskuls). HasAdminOnlyAccess tetap menjaga
+     * akses URL langsung.
+     */
+    protected static bool $shouldRegisterNavigation = false;
 
     protected static ?string $recordTitleAttribute = 'nama';
 
@@ -39,6 +47,11 @@ class EkskulMasterResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return EkskulMasterForm::configure($schema);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return EkskulMasterInfolist::configure($schema);
     }
 
     public static function table(Table $table): Table
@@ -56,6 +69,7 @@ class EkskulMasterResource extends Resource
         return [
             'index' => ListEkskulMasters::route('/'),
             'create' => CreateEkskulMaster::route('/create'),
+            'view' => ViewEkskulMaster::route('/{record}'),
             'edit' => EditEkskulMaster::route('/{record}/edit'),
         ];
     }

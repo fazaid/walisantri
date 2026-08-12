@@ -66,7 +66,11 @@
         x-effect="document.body.classList.toggle('pb-14', ! $store.sidebar.isOpen)"
         style="display: none"
         x-transition
-        class="fixed bottom-0 inset-x-0 z-40 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-lg"
+        {{-- z-30 disengaja: sejajar dengan topbar Filament (.fi-topbar-ctn) dan di
+             BAWAH modal (.fi-modal overlay & window = z-40). Kalau dinaikkan ke z-40,
+             tab bar ini menang karena dirender di BODY_END (urutan DOM belakangan)
+             lalu menutupi tombol simpan popup di layar mobile. --}}
+        class="fixed bottom-0 inset-x-0 z-30 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-lg"
     >
         <div class="flex items-stretch overflow-x-auto">
             @foreach($tabs as $tab)

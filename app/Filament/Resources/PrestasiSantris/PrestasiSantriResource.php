@@ -4,8 +4,6 @@ namespace App\Filament\Resources\PrestasiSantris;
 
 use App\Enums\UserRole;
 use App\Filament\Clusters\Santri;
-use App\Filament\Resources\PrestasiSantris\Pages\CreatePrestasiSantri;
-use App\Filament\Resources\PrestasiSantris\Pages\EditPrestasiSantri;
 use App\Filament\Resources\PrestasiSantris\Pages\ListPrestasiSantris;
 use App\Filament\Resources\PrestasiSantris\Pages\ViewPrestasiSantri;
 use App\Filament\Resources\PrestasiSantris\Schemas\PrestasiSantriForm;
@@ -97,10 +95,8 @@ class PrestasiSantriResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListPrestasiSantris::route('/'),
-            'create' => CreatePrestasiSantri::route('/create'),
-            'view'   => ViewPrestasiSantri::route('/{record}'),
-            'edit'   => EditPrestasiSantri::route('/{record}/edit'),
+            'index' => ListPrestasiSantris::route('/'),
+            'view'  => ViewPrestasiSantri::route('/{record}'),
         ];
     }
 }

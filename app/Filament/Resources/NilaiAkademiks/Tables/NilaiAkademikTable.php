@@ -6,6 +6,7 @@ use App\Services\TahunAjaranOptions;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -58,6 +59,12 @@ class NilaiAkademikTable
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
+                // Default ke tahun ajaran berjalan; tanpa ini daftar nilai
+                // mencampur seluruh tahun ajaran dan terus membengkak.
+                SelectFilter::make('tahun_ajaran')
+                    ->label('Tahun Ajaran')
+                    ->options(TahunAjaranOptions::options())
+                    ->default(TahunAjaranOptions::current()),
                 SelectFilter::make('periode')
                     ->label('Periode')
                     ->options(TahunAjaranOptions::periodeOptions()),
@@ -71,6 +78,7 @@ class NilaiAkademikTable
                     ->searchable(),
             ])
             ->recordActions([
+                ViewAction::make(),
                 EditAction::make(),
             ])
             ->toolbarActions([

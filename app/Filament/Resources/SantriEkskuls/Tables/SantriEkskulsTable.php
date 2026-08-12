@@ -2,9 +2,11 @@
 
 namespace App\Filament\Resources\SantriEkskuls\Tables;
 
+use App\Models\SantriEkskul;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -34,12 +36,7 @@ class SantriEkskulsTable
                         'mahir'    => 'success',
                         default    => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'pemula'   => 'Pemula',
-                        'menengah' => 'Menengah',
-                        'mahir'    => 'Mahir',
-                        default    => ucfirst($state),
-                    }),
+                    ->formatStateUsing(fn (SantriEkskul $record): string => $record->labelLevel()),
                 TextColumn::make('tanggal_mulai')
                     ->label('Mulai')
                     ->date('d M Y')
@@ -72,6 +69,7 @@ class SantriEkskulsTable
                     ->falseLabel('Tidak Aktif'),
             ])
             ->recordActions([
+                ViewAction::make(),
                 EditAction::make(),
             ])
             ->toolbarActions([
