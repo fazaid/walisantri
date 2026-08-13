@@ -4,7 +4,9 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Juli 2026 — v4.18
+**Last Updated:** Agustus 2026 — v4.19
+
+**Changelog v4.19:** Tujuh commit yang sebelumnya belum terdokumentasi, sekaligus koreksi §7/§8/§15/§17/§22 yang sudah tidak sesuai kode. (1) **Seluruh CRUD panel pindah ke modal form** — tidak ada lagi satu pun kelas `CreateX`/`EditX` di `app/Filament/Resources/**/Pages/`; semuanya diganti `CreateAction`/`EditAction` bermodal di tabel & header. Alasannya UX: admin pesantren mengisi data berulang (nilai, setoran, mutaba'ah) dan perpindahan halaman penuh memutus konteks daftar. Dikerjakan bertahap per cluster — Santri & Akademik, lalu Tahfidz/Mutabaah/Kesantrian, lalu Keuangan, lalu sisa panel (Pengguna, Pengumuman, Kupon, Pesantren, Rekening Bank). Dikunci tes per gelombang: `SantriModalCreateTest`, `AkademikModalFormTest`, `TahfidzModalFormTest`, `MutabaahModalFormTest`, `KesantrianModalFormTest`, `PanelModalTest`. (2) **Empat halaman rapor Filament jadi satu** — `Cluster Rapor` + `RaporAkademikPage`/`RaporTahfidzPage`/`RaporMutabaahPage`/`RaporKarakterPage` (dan 4 template PDF-nya) dihapus, diganti satu `App\Filament\Pages\RaporPage` top-level (slug `rapor`, sort 5) dengan checkbox modul `akademik · tahfidz · mutabaah · karakter` dan satu PDF gabungan `filament.pdf.rapor-gabungan`. Query tiap modul diekstrak jadi service `App\Services\Rapor\{RaporAkademikData,RaporTahfidzData,RaporMutabaahData,RaporKarakterData}::untuk($santriId, $tahunAjaran, $periode, $bulan)` supaya halaman dan PDF membaca sumber yang sama. Konsekuensi: Cluster Tahfidz menyusut dari 3 tab jadi 2 (Setoran · Ujian). (3) **Cluster Mutabaah dibubarkan, isinya masuk Cluster Kesantrian** — Mutaba'ah Harian dan Amal Master tidak lagi berdiri sendiri di sidebar; `MutabaahHarianPage` jadi halaman di dalam Kesantrian (slug `isi-harian`, tidak didaftarkan ke navigasi — dicapai dari tabel Mutabaah), Amal Master juga disembunyikan dari navigasi. Enam cluster top-level jadi lima. Dikunci `MutabaahNavigasiTest`. (4) **Cluster Pengaturan dibubarkan** — `BillingPage` dan `PesantrenSettingsPage` kembali jadi halaman lepas di grup Manajemen; slug `/admin/pengaturan` dipertahankan supaya tautan lama tidak putus. (5) **Halaman Input Nilai Massal** (`NilaiMassalPage`, slug `input-nilai-massal`, di Cluster Akademik tanpa entri navigasi) — grid satu layar untuk mengisi nilai sekelas sekaligus, dikunci `NilaiMassalPageTest`. (6) **Kolom "Link Wali" di daftar santri** — menyalin Magic Link tanpa membuka detail; disertai `filament.admin.clipboard-fallback` karena `navigator.clipboard` tidak tersedia di konteks non-HTTPS. (7) **Perbaikan bug halaman rapor wali** — lihat §8.
 
 **Changelog v4.18:** **Staging dibubarkan — hanya ada satu environment (production).** Staging yang sempat berjalan sejak 2026-07-09 di VPS lama (`staging.walisantri.com`) dihentikan karena ongkos sewanya tidak sepadan dengan manfaat yang didapat. Job `deploy-staging` dihapus dari `.github/workflows/deploy.yml`; trigger push `dev` **tetap dipertahankan** supaya job `test` terus berjalan sebagai jeda pengaman sebelum PR ke `main` (alur `dev` → PR → `main` → auto-deploy production tidak berubah). §18 ditulis ulang dari "roadmap staging" jadi keputusan eksplisit satu-environment beserta tiga pagar penggantinya (job `test`, dump pra-deploy, maintenance mode). Uji-restore backup bulanan dipindah dari server staging ke DB uji di laptop — prosedur baru di `docs/backup-restore.md`, dan justru lebih dekat ke skenario "server hilang total, pulihkan di mesin lain". Catatan keamanan yang ikut terdokumentasi: DB staging lama membawa snapshot data production asli **berikut token Fonnte production** di `whatsapp_gateway_settings`, sehingga scheduler-nya berpotensi mengirim WA ke nomor wali sungguhan — kalau staging suatu saat dihidupkan lagi, kredensial terpisah & data non-produksi jadi syarat wajib.
 
@@ -442,11 +444,11 @@ erDiagram
 
 **`tahfidz_ujian`** — `penguji_id` FK→users · `tanggal_ujian` · `target_juz` enum(1/3/5/10/15/20/25/30) · `status_kelulusan` enum(`Lulus`/`Mengulang`) · `catatan_ujian` text null.
 
-**`tahfidz_rapor`** — `tahun_ajaran` (`"2026/2027"`) · `periode` enum(`Bulanan`/`Semester_Ganjil`/`Semester_Genap`) · `bulan` string(10) null (v4.9, diisi saat `periode='Bulanan'`) · `nilai_hafalan` (auto) · `nilai_tilawah`/`makhraj`/`tajwid` enum A/B/C/D · `rekomendasi_pembimbing` text. *Unique: `(santri_id, tahun_ajaran, periode)`.*
+**`tahfidz_rapor`** — `tahun_ajaran` (`"2026/2027"`) · `periode` enum(`Bulanan`/`Semester_Ganjil`/`Semester_Genap`) · `bulan` string(10) null (v4.9, diisi saat `periode='Bulanan'`) · `nilai_hafalan` (auto) · `nilai_tilawah`/`makhraj`/`tajwid` enum A/B/C/D · `rekomendasi_pembimbing` text. *Index: `(pesantren_id, santri_id, tahun_ajaran, periode)`, `penguji_id`.* **Tidak ada unique** — unique `(santri_id, tahun_ajaran, periode)` yang semula ada dihapus migrasi `2026_06_23_000005_drop_unique_periode_on_tahfidz_rapor_table` supaya satu santri bisa punya lebih dari satu ujian dalam periode yang sama (mis. ujian ulang, atau beberapa bulan dalam periode Bulanan).
 
 **`mata_pelajaran`** — `id` PK · `pesantren_id` FK cascadeOnDelete · `kelas_id` FK→kelas cascadeOnDelete · `ustadz_id` FK→users cascadeOnDelete null (pengampu tetap — satu mapel = satu ustadz, bukan pivot many-to-many) · `nama_mapel` string(100) · timestamps. *Unique: `(pesantren_id, kelas_id, nama_mapel)`; Index: `(pesantren_id, kelas_id)`.* Master data, hanya `admin_pesantren` yang bisa CRUD (pola sama `kelas`/`kamar`).
 
-**`nilai_akademik`** — `id` PK · `pesantren_id` FK cascadeOnDelete · `santri_id` FK→santri cascadeOnDelete · `mata_pelajaran_id` FK→mata_pelajaran cascadeOnDelete · `tahun_ajaran` string(10) (`"2026/2027"`) · `periode` enum(`Bulanan`/`Semester_Ganjil`/`Semester_Genap`) · `bulan` string(10) null (v4.9, diisi saat `periode='Bulanan'`, tampil sebagai pilihan bulan di form) · `nilai` smallint (0-100, nilai tunggal — bukan komponen berbobot tugas/UTS/UAS, mengikuti kesederhanaan `tahfidz_rapor`) · `catatan` text null · timestamps. *Unique: `(santri_id, mata_pelajaran_id, tahun_ajaran, periode, bulan)` (v4.9, sebelumnya tanpa `bulan`); Index: `(pesantren_id, santri_id, tahun_ajaran, periode)`.* Input oleh `admin_pesantren` + `ustadz` (ustadz dibatasi hanya mapel yang ia ampu, via `mata_pelajaran.ustadz_id`); validasi mencegah duplikasi periode yang sama. **Rapor Akademik** dihitung on-the-fly (agregasi rata-rata per mapel/periode) — tidak ada tabel `rapor_akademik` tersimpan, ekspor PDF via halaman Filament khusus di Cluster Rapor (v4.9, lihat §7).
+**`nilai_akademik`** — `id` PK · `pesantren_id` FK cascadeOnDelete · `santri_id` FK→santri cascadeOnDelete · `mata_pelajaran_id` FK→mata_pelajaran cascadeOnDelete · `tahun_ajaran` string(10) (`"2026/2027"`) · `periode` enum(`Bulanan`/`Semester_Ganjil`/`Semester_Genap`) · `bulan` string(10) null (v4.9, diisi saat `periode='Bulanan'`, tampil sebagai pilihan bulan di form) · `nilai` smallint (0-100, nilai tunggal — bukan komponen berbobot tugas/UTS/UAS, mengikuti kesederhanaan `tahfidz_rapor`) · `catatan` text null · timestamps. *Unique: `(santri_id, mata_pelajaran_id, tahun_ajaran, periode, bulan)` (v4.9, sebelumnya tanpa `bulan`); Index: `(pesantren_id, santri_id, tahun_ajaran, periode)`.* Input oleh `admin_pesantren` + `ustadz` (ustadz dibatasi hanya mapel yang ia ampu, via `mata_pelajaran.ustadz_id`); validasi mencegah duplikasi periode yang sama. **Rapor Akademik** dihitung on-the-fly (agregasi rata-rata per mapel/periode) — tidak ada tabel `rapor_akademik` tersimpan, ekspor PDF via `RaporPage` (v4.19 — sebelumnya halaman khusus di Cluster Rapor; lihat §7). Query agregasinya hidup di `App\Services\Rapor\RaporAkademikData` dan dipakai bersama oleh halaman & PDF.
 
 ### Modul Ekstrakurikuler *(v4.9)*
 
@@ -456,7 +458,7 @@ erDiagram
 
 ### Modul Kesantrian & Logistik
 
-**`kesantrian_amal_master`** *(v4.8)* — `id` PK · `pesantren_id` FK cascadeOnDelete · `kode` string(50) (slug amalan, mis. `jamaah_5_waktu`) · `label` string(100) (tampilan UI) · `tipe` enum(`boolean`/`hitungan`) — boolean = centang ya/tidak, hitungan = angka 0–`nilai_maks` · `nilai_maks` smallint null (untuk tipe hitungan; null = boolean) · `satuan` string(20) default `'hari'` (mis. `'waktu'` untuk berjamaah) · `icon` string(10) null (emoji) · `bobot` smallint default 7 (dipakai kalkulasi skor) · `urutan` smallint default 0 · `aktif` bool default true · timestamps. *Unique: `(pesantren_id, kode)`.* Master data per-pesantren; diisi default 7 amalan saat registrasi. Hanya `admin_pesantren` yang bisa CRUD via Filament Cluster Mutabaah.
+**`kesantrian_amal_master`** *(v4.8)* — `id` PK · `pesantren_id` FK cascadeOnDelete · `kode` string(50) (slug amalan, mis. `jamaah_5_waktu`) · `label` string(100) (tampilan UI) · `tipe` enum(`boolean`/`hitungan`) — boolean = centang ya/tidak, hitungan = angka 0–`nilai_maks` · `nilai_maks` smallint null (untuk tipe hitungan; null = boolean) · `satuan` string(20) default `'hari'` (mis. `'waktu'` untuk berjamaah) · `icon` string(10) null (emoji) · `bobot` smallint default 7 (dipakai kalkulasi skor) · `urutan` smallint default 0 · `aktif` bool default true · timestamps. *Unique: `(pesantren_id, kode)`.* Master data per-pesantren; diisi default 7 amalan saat registrasi. Hanya `admin_pesantren` yang bisa CRUD — sejak v4.19 di dalam Cluster Kesantrian, tanpa entri navigasi sendiri (dicapai dari tabel Mutabaah).
 
 **`kesantrian_mutabaah`** — `tanggal` · `amalan` jsonb default `'{}'` (key = `kode` amalan dari `kesantrian_amal_master`, value = bool atau int sesuai tipe) · `status_udzur` enum(`Tidak`/`Sakit`/`Haid`/`Izin_Pulang`/`Tugas_Pondok`). *Unique: `(santri_id, tanggal)`; Index: `(pesantren_id, santri_id, tanggal)`.* Skema kolom boolean hardcode (`jamaah_5_waktu`, `is_rawatib`, dll.) diganti satu kolom `amalan jsonb` di v4.8 (migrasi `000008`); isi amalan mengikuti master per-pesantren.
 
@@ -714,43 +716,55 @@ Dashboard                        ← semua role
   Prestasi Trophy ← admin_pesantren + ustadz (label "Prestasi Santri" → "Prestasi", slug /admin/prestasi)
 ──
 [Cluster Akademik] AcademicCap ← top-level sidebar, tanpa group (v4.9, sort 1)
-  Mata Pelajaran [admin_pesantren] · Nilai Akademik
-  Ekskul (Master) Trophy [admin_pesantren only, v4.9] · Ekskul Santri UserGroup [admin_pesantren + ustadz, v4.9]
+  Pelajaran [admin_pesantren] · Nilai · Ekskul (Santri) [admin_pesantren + ustadz, v4.9]
+  ┊ Ekskul Master [admin_pesantren only] & Input Nilai Massal (v4.19, slug /admin/input-nilai-massal)
+  ┊ — keduanya di dalam cluster tapi tanpa entri navigasi, dicapai dari tabel induknya
 ──
-[Cluster Tahfidz] BookOpen ← top-level sidebar, tanpa group (v4.7, sort 2) → tab: Setoran · Ujian · Nilai
-──
-[Cluster Mutabaah] CheckBadge ← top-level sidebar, tanpa group (v4.8, sort 3)
-  Mutaba'ah Harian ClipboardDocumentList · Amal Master ListBullet [admin_pesantren only]
+[Cluster Tahfidz] BookOpen ← top-level sidebar, tanpa group (v4.7, sort 2) → tab: Setoran · Ujian
+  (v4.19: tab "Nilai" hilang — Rapor Tahfidz melebur ke halaman Rapor gabungan)
 ──
 [Cluster Kesantrian] ShieldCheck ← top-level sidebar, tanpa group (v4.8, sort 4)
-  Karakter Rapor Star · Kesehatan Heart [Rintisan+] · Inventaris ArchiveBox [Maju, admin_pesantren + ustadz sejak v4.9]
+  Mutabaah ClipboardDocumentList · Karakter Star · Kesehatan Heart [Rintisan+] · Inventaris ArchiveBox [Maju]
+  ┊ Isi Harian (slug /admin/isi-harian) & Amal Master — di dalam cluster tanpa entri navigasi (v4.19)
+  (v4.19: Cluster Mutabaah dibubarkan, isinya masuk ke sini — sort 3 kosong)
 ──
-[Cluster Rapor] DocumentChartBar ← top-level sidebar, tanpa group (v4.9, sort 5) → tab: Akademik · Tahfidz · Mutabaah · Karakter
+Rapor DocumentChartBar ← halaman top-level, BUKAN cluster (v4.19, slug /admin/rapor, sort 5)
+  satu halaman, modul dipilih lewat checkbox: Akademik · Tahfidz · Mutabaah · Karakter
+──
+[Cluster Keuangan] Banknotes ← top-level sidebar, tanpa group (v4.9, sort 6)
+  Tagihan SPP · Uang Saku Santri (SaldoUangSakuPage) [semua admin_pesantren only]
+  ┊ Tarif SPP & Uang Saku (mutasi) — di dalam cluster tanpa entri navigasi
 ──
 ── Langganan (group) ── [super_admin only]
-  Pesanan Upgrade Banknotes · Kupon Diskon Tag · Pengaturan Harga Cog6Tooth · Rekening Bank BuildingLibrary [v4.11]
+  Pesanan Upgrade Banknotes (1) · Kupon Diskon Tag (2)
+  Pengaturan Harga Cog6Tooth (10) · Pengaturan WhatsApp (11, v4.17) · Rekening Bank BuildingLibrary (11, v4.11)
+  Pengaturan Analytics (12) · Pengaturan Registrasi (12) · Logo & Favicon (13)
 ──
 ── Manajemen (group) ──
-  Pengguna UserGroup [Admin+SuperAdmin]
-  [Cluster Keuangan] Banknotes (v4.9) → Tarif · Tagihan SPP · Saldo Santri · Uang Saku [semua admin_pesantren only]
-  Pengumuman SpeakerWave
-  [Cluster Pengaturan] Cog6Tooth (v4.9, slug /admin/pengaturan) → Billing · Pengaturan Pesantren
+  Pengguna UserGroup (1) [Admin+SuperAdmin]
+  Langganan / BillingPage (2, slug /admin/billing-page)
+  Pengumuman SpeakerWave (3)
+  Pengaturan / PesantrenSettingsPage (4, slug /admin/pengaturan)
+  Pengumuman Central (5) [super_admin only]
+  (v4.19: Cluster Pengaturan dibubarkan — Billing & Pengaturan Pesantren jadi halaman lepas lagi)
 ──
 Pesantren BuildingOffice2 [SuperAdmin only]
 Demo Request [super_admin only] ← masuk di bawah Pesantren
 ```
 
-> **v4.9 — restrukturisasi navigasi total.** Grup top-level lama "Santri", "Akademik", dan "Keuangan" dibubarkan; semuanya jadi Filament Cluster. `AdminPanelProvider::navigationGroups()` kini hanya mendaftarkan `['Kesantrian', 'Langganan', 'Manajemen']` — nama `Kesantrian` di daftar ini adalah sisa registrasi lama yang sudah tidak dipakai cluster manapun (Cluster Kesantrian sendiri berjalan tanpa group, `$navigationGroup = null`) namun belum dibersihkan dari kode; ini observasi kecil, bukan gap fungsional. Enam Cluster kini top-level tanpa group — urutan render mengikuti `navigationSort` masing-masing: Santri(0) → Akademik(1) → Tahfidz(2) → Mutabaah(3) → Kesantrian(4) → Rapor(5). Grup **Manajemen** berisi campuran Resource biasa (Pengguna, Pengumuman) dan dua Cluster baru (Keuangan sort 2, Pengaturan sort 4).
+> **v4.9 — restrukturisasi navigasi total.** Grup top-level lama "Santri", "Akademik", dan "Keuangan" dibubarkan; semuanya jadi Filament Cluster. `AdminPanelProvider::navigationGroups()` kini hanya mendaftarkan `['Kesantrian', 'Langganan', 'Manajemen']` — nama `Kesantrian` di daftar ini adalah sisa registrasi lama yang sudah tidak dipakai cluster manapun (Cluster Kesantrian sendiri berjalan tanpa group, `$navigationGroup = null`) namun belum dibersihkan dari kode; ini observasi kecil, bukan gap fungsional. Enam Cluster kini top-level tanpa group — urutan render mengikuti `navigationSort` masing-masing: Santri(0) → Akademik(1) → Tahfidz(2) → Mutabaah(3) → Kesantrian(4) → Rapor(5). Grup **Manajemen** berisi campuran Resource biasa (Pengguna, Pengumuman) dan dua Cluster baru (Keuangan sort 2, Pengaturan sort 4). **Sudah berubah di v4.19** — lihat peta di atas: cluster top-level tinggal **lima** (Santri 0 → Akademik 1 → Tahfidz 2 → Kesantrian 4 → Keuangan 6; sort 3 kosong setelah Mutabaah dibubarkan, sort 5 tetap terpakai halaman Rapor yang kini bukan cluster), Keuangan naik jadi cluster top-level di luar grup Manajemen, dan Cluster Pengaturan tidak ada lagi.
 
-> **Cluster Tahfidz (v4.7):** 3 resource (Setoran/Ujian/Nilai — sebelumnya `Setoran Tahfidz`/`Ujian Tahfidz`/`Rapor Tahfidz` flat di grup Akademik) digabung jadi satu menu sidebar via `App\Filament\Clusters\Tahfidz`; navigasi antar-resource berupa tab. Filament default merender tab cluster (`SubNavigationPosition::Top`) di bawah header & sebagai dropdown di mobile — di-override via `renderHook(PanelsRenderHook::PAGE_START, …)` di `AdminPanelProvider` (render tab di atas breadcrumbs, ambil halaman aktif via `Livewire::current()`) + CSS (`width:fit-content` agar `margin-inline:auto` bawaan Filament benar-benar men-tengahkan tab, dan sembunyikan dropdown/tab versi default) supaya tampilan konsisten desktop & mobile.
+> **Cluster Tahfidz (v4.7, menyusut v4.19):** 3 resource (Setoran/Ujian/Nilai — sebelumnya `Setoran Tahfidz`/`Ujian Tahfidz`/`Rapor Tahfidz` flat di grup Akademik) digabung jadi satu menu sidebar via `App\Filament\Clusters\Tahfidz`; navigasi antar-resource berupa tab. Filament default merender tab cluster (`SubNavigationPosition::Top`) di bawah header & sebagai dropdown di mobile — di-override via `renderHook(PanelsRenderHook::PAGE_START, …)` di `AdminPanelProvider` (render tab di atas breadcrumbs, ambil halaman aktif via `Livewire::current()`) + CSS (`width:fit-content` agar `margin-inline:auto` bawaan Filament benar-benar men-tengahkan tab, dan sembunyikan dropdown/tab versi default) supaya tampilan konsisten desktop & mobile.
 
-> **Cluster Mutabaah & Kesantrian (v4.8):** "Kesantrian (group)" lama dipecah jadi dua Filament Cluster terpisah — `App\Filament\Clusters\Mutabaah` (Mutaba'ah Harian + Amal Master) dan `App\Filament\Clusters\Kesantrian` (Karakter Rapor + Kesehatan + Inventaris). Pola tab-cluster sama dengan Cluster Tahfidz (render hook + CSS). Pemisahan ini memungkinkan navigasi Amal Master tergabung natural dengan Mutaba'ah Harian tanpa merusak hierarki grup lain.
+> **Cluster Mutabaah & Kesantrian (v4.8):** "Kesantrian (group)" lama dipecah jadi dua Filament Cluster terpisah — `App\Filament\Clusters\Mutabaah` (Mutaba'ah Harian + Amal Master) dan `App\Filament\Clusters\Kesantrian` (Karakter Rapor + Kesehatan + Inventaris). Pola tab-cluster sama dengan Cluster Tahfidz (render hook + CSS). Pemisahan ini memungkinkan navigasi Amal Master tergabung natural dengan Mutaba'ah Harian tanpa merusak hierarki grup lain. **Dibatalkan sebagian di v4.19:** `Clusters\Mutabaah` dihapus dan kedua isinya pindah ke Cluster Kesantrian — dua cluster untuk satu domain kesantrian terasa berlebihan begitu Mutaba'ah Harian jadi halaman pendukung (tanpa entri navigasi), bukan menu utama.
 
 > **UX panel admin (v4.8):** `sidebarFullyCollapsibleOnDesktop()` aktif — sidebar bisa diciutkan penuh di desktop untuk ruang kerja lebih luas. Bottom navigation mobile ditambahkan via render hook `BODY_END` → view `filament.admin.bottom-nav` (shortcut ke Dashboard, Santri, Mutabaah, dan halaman sering dipakai).
 
-> **Cluster Santri, Akademik, Rapor, Keuangan, Pengaturan (v4.9):** perluasan pola cluster yang sama dipakai sejak Tahfidz (v4.7) dan Mutabaah/Kesantrian (v4.8) — render hook + CSS tab identik dipakai ulang tanpa modifikasi. `App\Filament\Clusters\Santri` & `App\Filament\Clusters\Akademik` mengangkat grup lama jadi cluster top-level (menambahkan Ekskul Master & Ekskul Santri ke Akademik). `App\Filament\Clusters\Rapor` menggabungkan 4 halaman laporan (Rapor Akademik dipindah keluar dari Cluster Akademik ke sini) sebagai custom Page dengan tab Akademik → Tahfidz → Mutabaah → Karakter. `App\Filament\Clusters\Keuangan` (dalam grup Manajemen) menaungi Tarif SPP, Tagihan SPP, Saldo Uang Saku, dan Uang Saku. `App\Filament\Clusters\PengaturanPesantren` (slug `/admin/pengaturan`, dalam grup Manajemen) menggabungkan `BillingPage` dan `PesantrenSettingsPage`.
+> **Cluster Santri, Akademik, Rapor, Keuangan, Pengaturan (v4.9):** perluasan pola cluster yang sama dipakai sejak Tahfidz (v4.7) dan Mutabaah/Kesantrian (v4.8) — render hook + CSS tab identik dipakai ulang tanpa modifikasi. `App\Filament\Clusters\Santri` & `App\Filament\Clusters\Akademik` mengangkat grup lama jadi cluster top-level (menambahkan Ekskul Master & Ekskul Santri ke Akademik). `App\Filament\Clusters\Rapor` menggabungkan 4 halaman laporan (Rapor Akademik dipindah keluar dari Cluster Akademik ke sini) sebagai custom Page dengan tab Akademik → Tahfidz → Mutabaah → Karakter. **Dibubarkan di v4.19** — keempat halaman itu melebur jadi satu `RaporPage` top-level dengan checkbox modul; empat tab yang tiap kali harus diisi ulang filter santri/tahun/periode ternyata cuma memindahkan pekerjaan ke pengguna. `App\Filament\Clusters\Keuangan` (dalam grup Manajemen) menaungi Tarif SPP, Tagihan SPP, Saldo Uang Saku, dan Uang Saku. `App\Filament\Clusters\PengaturanPesantren` (slug `/admin/pengaturan`, dalam grup Manajemen) menggabungkan `BillingPage` dan `PesantrenSettingsPage`.
 
 > Kelas & Kamar hanya tampil untuk `admin_pesantren` (bukan ustadz). Ustadz hanya melihat data santri binaannya di semua menu Kesantrian; sejak v4.9 ustadz juga bisa create/edit Inventaris santri binaannya (sebelumnya hanya bisa melihat) dan create/edit Ekskul Santri. TarifSpp, TagihanSpp, SaldoUangSaku, dan UangSaku hanya `admin_pesantren` + `super_admin` (bukan ustadz). Ekskul Master hanya `admin_pesantren`.
+
+> **CRUD modal (v4.19):** seluruh panel tidak lagi punya halaman Create/Edit terpisah — `app/Filament/Resources/**/Pages/` hanya berisi halaman `List` (dan `View` di beberapa resource). Tambah/ubah dilakukan lewat `CreateAction`/`EditAction` bermodal, sehingga konteks daftar tidak hilang saat mengisi data berulang. Konsekuensi yang perlu diingat saat menambah resource baru: schema form yang dirender di modal `ListRecords` dipaksa 2 kolom kalau form tidak menentukan sendiri — form yang memakai `Section` harus memanggil `->columns(1)` di level schema agar tiap Section penuh selebar modal (lihat komentar di `KesantrianKarakterRaporForm`).
 
 **Filament v5 notes:** Form/Infolist/Table di file terpisah · `Section` dari `Filament\Schemas\Components\Section` · `$navigationGroup` bertipe `string|UnitEnum|null` (bukan `?string`), `use UnitEnum;` wajib.
 
@@ -771,7 +785,17 @@ Blade + TailwindCSS murni (tanpa Flux UI), mobile-first. Akses via Magic Link (�
 - **Daftar Inventaris santri** (v4.9, selesai — sebelumnya roadmap): `InventarisController::show()` + view `wali/santri/inventaris.blade.php`, daftar barang & kondisi milik santri, baca-saja.
 - **Halaman SPP (`/wali/spp`):** ringkasan tunggakan per santri (status, nominal, jatuh tempo); info rekening bank pesantren; tombol "Saya Sudah Transfer" → form upload foto bukti → status berubah ke `menunggu_konfirmasi`. Tab di bottom nav wali.
 - **Halaman Uang Saku (`/wali/uang-saku` + `/wali/uang-saku/{santri}`)** *(v4.9)*: ringkasan saldo (akumulasi setoran − pengambilan) & riwayat transaksi uang saku per santri, baca-saja. Tab di bottom nav wali.
-- **Halaman Rapor (`/wali/rapor`):** filter santri + tahun ajaran, dua tab — "📖 Tahfidz" (nilai per periode & rekomendasi) dan "🌱 Karakter" (penilaian adab 7 item, kepribadian 9 item, catatan ustadz); tombol ekspor PDF siap cetak (`LaporanController::exportPdf`, route `wali.laporan.pdf`, via `barryvdh/laravel-dompdf`). Tab di bottom nav wali.
+- **Halaman Rapor (`/wali/rapor`):** filter santri + tahun ajaran, **tiga tab** — "📖 Tahfidz" (nilai per periode & rekomendasi), "🌱 Karakter" (penilaian adab 7 item, kepribadian 9 item, catatan ustadz), dan "📚 Akademik" (nilai per mapel, dikelompokkan per periode + rata-rata); tombol ekspor PDF siap cetak (`LaporanController::exportPdf`, route `wali.laporan.pdf`, via `barryvdh/laravel-dompdf`). Tab di bottom nav wali.
+
+  **Sengaja tanpa filter periode** (beda dari `RaporPage` panel admin): halaman ini menampilkan **satu tahun ajaran utuh**, dikelompokkan per periode, supaya wali tidak perlu menebak periode mana yang sudah diisi. PDF mengikuti cakupan yang sama. Modul Mutaba'ah tidak ditampilkan di sini — wali sudah punya halaman khusus `wali.santri.mutabaah`.
+
+  **v4.19 — empat bug diperbaiki** (halaman ini tidak ikut disesuaikan saat skema periode berubah di v4.9 maupun saat halaman rapor Filament digabung):
+  1. **Kebocoran data antar-wali.** `santri_id` dari query string dipakai mentah. Global scope `Multitenantable` hanya menyaring `pesantren_id`, **bukan** `wali_santri_id` — jadi wali bisa membaca nilai, rapor karakter, dan catatan khusus santri keluarga lain di pesantren yang sama hanya dengan mengubah URL. Kini `santri_id` divalidasi terhadap daftar anak wali, jatuh ke anak pertama bila tidak cocok (bukan 403 — wali bisa saja menyimpan tautan lama untuk anak yang sudah non-aktif). Pola ini menyamai `LaporanController` dan `RaporPage::getSantri()` yang sejak awal sudah benar.
+  2. **Filter karakter salah kolom** — memakai `tanggal_input LIKE '2026%'`, mengabaikan `tahun_ajaran`/`periode`/`bulan` yang jadi identitas periode sejak v4.9. Akibatnya record paruh kedua tahun ajaran (Januari–Juni) hilang, dan `->first()` membuat rapor semester tertimpa rapor bulanan yang kebetulan lebih baru.
+  3. **Rapor karakter di PDF selalu kosong** — periode dipetakan ke nilai `'Semester'`, yang sudah dihapus dari CHECK constraint oleh migrasi `2026_07_25_000001` dan tidak lagi ditulis form mana pun. Cakupan PDF sekaligus disamakan dengan halaman (satu tahun ajaran penuh), menghapus ketidakcocokan lama di mana halaman menampilkan semua periode tapi PDF hanya satu periode yang di-hardcode `currentPeriode()`.
+  4. **Dropdown tahun ajaran** hanya bersumber dari `TahfidzUjian`, jadi santri yang punya nilai akademik/karakter tapi belum pernah ujian tahfidz tidak bisa menjangkau tahun lain. Kini digabung dari tiga sumber.
+
+  Label adab/kepribadian di halaman & PDF wali kini diambil dari `RaporKarakterData::adabFields()`/`kepribadianFields()` — satu sumber dengan panel admin. Dikunci `tests/Feature/WaliRaporTest.php` (10 kasus); sebelumnya `Wali\RaporController` dan `Wali\LaporanController` sama sekali tidak punya tes.
 
 **Fitur roadmap (post v1.0):**
 - Kalender Amalan Harian (warna: hijau lengkap / kuning sebagian / abu udzur / merah alpa) — tampilan kalender interaktif.
@@ -894,7 +918,7 @@ Admin ajukan penghapusan permanen ke Super Admin via email → diproses ≤7 har
 | Modul | Format | Aktor | Catatan |
 |---|---|---|---|
 | Rekap Mutaba'ah Bulanan | Excel | Admin/Ustadz | Per santri/kamar, filter bulan |
-| Rapor Akademik / Tahfidz / Mutabaah / Karakter | PDF | Admin/Ustadz | Layout siap cetak per santri, via Cluster Rapor (v4.9, lihat §7) |
+| Rapor Akademik / Tahfidz / Mutabaah / Karakter | PDF | Admin/Ustadz | Satu dokumen gabungan per santri, modul dipilih lewat checkbox di `RaporPage` (v4.19, lihat §7) |
 | Data Santri | Excel | Admin | Semua santri aktif (arsip) |
 | Rekam Medis Periode | Excel | Admin/Ustadz | Filter tanggal, semua paket (v4.9: batasan "Berkembang+" dikoreksi — tidak ada Gate paket di kode) |
 | Rekap Inventaris | Excel | Admin | Status barang seluruh santri |
@@ -927,7 +951,7 @@ Validasi dilakukan di dua lapisan: opsi durasi yang tidak memenuhi syarat disemb
 
 # 17. Testing Strategy
 
-Pendekatan **Unit Test**, fokus lapisan kritis: isolasi tenant, business logic middleware, service layer. Jalan lokal sebelum push + otomatis di GitHub Actions sebelum deploy. Deploy hanya jalan jika `php artisan test` sukses (job `test` di `deploy.yml`, terhadap PostgreSQL — `paratest`/`--parallel` tidak dipakai karena migrasi bergantung fitur khusus Postgres yang tidak aman dijalankan paralel pada DB bersama). Target coverage tidak per-persentase; wajib: semua test `TenantIsolation/` & `Middleware/` lulus 100%.
+Pendekatan **Feature test** sebagai tulang punggung, ditopang unit test untuk kalkulasi murni. Fokus lapisan kritis: isolasi tenant, business logic middleware, service layer, dan perilaku halaman Filament (via `Livewire::test`). Jalan lokal sebelum push + otomatis di GitHub Actions sebelum deploy. Deploy hanya jalan jika `php artisan test` sukses (job `test` di `deploy.yml`, terhadap PostgreSQL — `paratest`/`--parallel` tidak dipakai karena migrasi bergantung fitur khusus Postgres yang tidak aman dijalankan paralel pada DB bersama). Target coverage tidak per-persentase; wajib: semua test `TenantIsolation/` & `Middleware/` lulus 100%.
 
 **Prioritas wajib sebelum go-live:**
 - *Tenant isolation:* santri/tahfidz/mutaba'ah/kesehatan/inventaris terisolasi per `pesantren_id`; Super Admin bisa lintas tenant via `withoutGlobalScope`; wali hanya akses anaknya. (Bila RLS aktif, tambahkan test policy di level DB.)
@@ -937,10 +961,18 @@ Pendekatan **Unit Test**, fokus lapisan kritis: isolasi tenant, business logic m
 
 **Konfigurasi:** unit test pakai PostgreSQL ephemeral (mis. service container `postgres` di GitHub Actions) atau SQLite in-memory untuk test yang tidak bergantung fitur PostgreSQL; `CACHE_DRIVER=array`, `QUEUE_CONNECTION=sync`. Test isolasi tenant & RLS **wajib** pakai PostgreSQL (bukan SQLite) agar policy ikut teruji.
 
+**Sebaran nyata (v4.19):** 354 tes / 1.072 asersi.
+
 ```
-tests/Unit/{Services,Rules,Models,Middleware,Observers}/...
-tests/TenantIsolation/DataIsolationTest.php   ← wajib lulus sebelum go-live (PostgreSQL)
+tests/Feature/                                47 berkas  ← tulang punggung: alur panel Filament,
+                                                            controller portal wali, cakupan per role
+tests/Unit/{Services,Rules}/                     3 berkas  ← kalkulasi & unit murni tanpa DB
+                                                            (BillingCalculator, FonnteWhatsApp, SlugRules)
+tests/TenantIsolation/                         2 berkas  ← DataIsolationTest + OnboardingIsolationTest,
+                                                            wajib lulus sebelum go-live (PostgreSQL)
 ```
+
+> Bobotnya condong ke Feature test karena sebagian besar risiko nyata di proyek ini bukan pada kalkulasi, melainkan pada **siapa boleh melihat apa** — dan itu hanya teruji lewat request/Livewire yang menjalankan global scope, middleware, dan `canAccess()` sekaligus. Pola yang berulang: satu berkas tes per gelombang perubahan (mis. `*ModalFormTest` per cluster), plus tes yang khusus mengunci batas cakupan agar pelebarannya harus jadi keputusan sadar (`PenugasanUstadzTest`, `WaliRaporTest`).
 
 ---
 
@@ -1021,9 +1053,9 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 
 **Bug & fix:** `HasUuids` isi `id` jika tak di-override → `uniqueIds(): ['uuid']` · `$navigationGroup` `?string` error → `string|UnitEnum|null` · index name >63 char (batas PostgreSQL) → nama eksplisit pendek · ingat PostgreSQL tak punya unsigned int (kolom unsigned → signed bigint) · (v4.7) `tahun_ajaran` di form Nilai Akademik/Rapor Tahfidz semula `TextInput` bebas → mismatch format antar input & filter rapor bikin data tidak muncul → diganti `Select` dropdown seragam (service `TahunAjaranOptions`) · (v4.7) Filament cluster default merender sub-navigation tab di bawah header & dropdown khusus mobile → di-override via render hook + CSS agar tab tampil di atas breadcrumbs, konsisten desktop/mobile (detail di §7).
 
-**Di-skip (post v1.0):** WhatsApp Gateway + Queue Job · Feature test isolasi & middleware · PostgreSQL RLS policy per tabel · zero-downtime deploy · migrasi schema-per-tenant (setelah >50 tenant) · Kalender Amalan Harian interaktif (warna). *(v4.9: "Excel Importer massal" dan "Daftar Inventaris santri" dipindah keluar dari daftar ini — sudah selesai, lihat §3.2/§22 changelog dan §8.)*
+**Di-skip (post v1.0):** PostgreSQL RLS policy per tabel · zero-downtime deploy · migrasi schema-per-tenant (setelah >50 tenant) · Kalender Amalan Harian interaktif (warna). *(v4.9: "Excel Importer massal" dan "Daftar Inventaris santri" dipindah keluar dari daftar ini — sudah selesai, lihat §3.2/§22 changelog dan §8. v4.19: **"WhatsApp Gateway + Queue Job"** dan **"Feature test isolasi & middleware"** juga dikeluarkan — keduanya sudah jalan sejak v4.17 (Fonnte + reminder H-3/H-1, §12) dan `tests/TenantIsolation/` + `tests/Feature/` (§17), tapi luput dihapus dari daftar ini.)*
 
-**Catatan skema periode (v4.9):** kolom `bulan` kini konsisten ditambahkan ke tiga tabel berbasis periode — `nilai_akademik`, `kesantrian_karakter_rapor`, `tahfidz_rapor` — mendampingi `tahun_ajaran`/`periode` yang sudah ada. Pola ini jadi referensi saat modul periode lain ditambah ke depan.
+**Catatan skema periode (v4.9, pelajaran v4.19):** kolom `bulan` kini konsisten ditambahkan ke tiga tabel berbasis periode — `nilai_akademik`, `kesantrian_karakter_rapor`, `tahfidz_rapor` — mendampingi `tahun_ajaran`/`periode` yang sudah ada. **Pelajaran v4.19:** menambah kolom identitas periode saja tidak cukup — setiap pembaca lama yang menebak periode dari tanggal harus ikut diubah. Halaman rapor wali luput dan baru ketahuan salah setahun kemudian (§8), dan seeder dummy juga tidak ikut diperbarui sehingga data demo tak terlihat di panel admin maupun portal wali. Saat menambah kolom identitas ke tabel yang sudah dipakai, telusuri dulu **semua** pembacanya, bukan hanya form penulisnya. Pola ini jadi referensi saat modul periode lain ditambah ke depan.
 
 **Batas yang Diketahui (keputusan sadar yang ditunda, dengan pemicu peninjauan):**
 
