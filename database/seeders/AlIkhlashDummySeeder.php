@@ -337,7 +337,8 @@ class AlIkhlashDummySeeder extends Seeder
         KesantrianKarakterRapor::create([
             'pesantren_id' => $this->pesantren->id,
             'santri_id' => $santri->id,
-            'periode' => 'Bulanan',
+            'tahun_ajaran' => TahunAjaranOptions::current(),
+            'periode' => TahunAjaranOptions::currentPeriode(),
             'tanggal_input' => now()->subDays(rand(1, 15)),
             'adab_ustadz' => $pick(),
             'adab_tamu' => $pick(),
@@ -458,7 +459,7 @@ class AlIkhlashDummySeeder extends Seeder
                 'santri_id' => $santri->id,
                 'mata_pelajaran_id' => $mapel->id,
                 'tahun_ajaran' => TahunAjaranOptions::current(),
-                'periode' => 'Bulanan',
+                'periode' => TahunAjaranOptions::currentPeriode(),
                 'nilai' => rand(70, 95),
                 'catatan' => null,
             ]);

@@ -9,7 +9,6 @@ use App\Models\Santri;
 use App\Models\TahfidzProgress;
 use App\Models\TahfidzUjian;
 use App\Services\TahunAjaranOptions;
-use App\Support\Waktu;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class LaporanController extends Controller
@@ -17,7 +16,6 @@ class LaporanController extends Controller
     public function exportPdf()
     {
         $santriId = request('santri_id');
-        $periode = request('periode', TahunAjaranOptions::currentPeriode());
         $tahunAjaran = request('tahun_ajaran', TahunAjaranOptions::current());
 
         // Validasi: santri harus milik wali yang sedang login
@@ -26,27 +24,30 @@ class LaporanController extends Controller
             ->with(['pesantren', 'kelas', 'kamar'])
             ->firstOrFail();
 
+        // Cakupan PDF sengaja satu tahun ajaran penuh — sama dengan yang tampil di
+        // halaman /wali/rapor, yang memang tidak punya filter periode.
         $raporTahfidz = TahfidzUjian::where('santri_id', $santriId)
             ->where('tahun_ajaran', $tahunAjaran)
-            ->where('periode', $periode)
-            ->first();
-
-        // Karakter rapor: map periode tahfidz → periode karakter (Bulanan / Semester)
-        $periodeKarakter = str_contains($periode, 'Semester') ? 'Semester' : 'Bulanan';
+            ->orderBy('periode')
+            ->get();
 
         $raporKarakter = KesantrianKarakterRapor::where('santri_id', $santriId)
-            ->where('periode', $periodeKarakter)
-            ->latest('tanggal_input')
-            ->first();
+            ->where('tahun_ajaran', $tahunAjaran)
+            ->orderByDesc('tanggal_input')
+            ->get();
 
         $raporAkademik = NilaiAkademik::with('mataPelajaran')
             ->where('santri_id', $santriId)
             ->where('tahun_ajaran', $tahunAjaran)
-            ->where('periode', $periode)
-            ->get();
+            ->get()
+            ->groupBy('periode');
+
+        // Setoran harian tidak punya kolom periode, jadi disaring lewat rentang
+        // tanggal tahun ajaran (Juli–Juni), bukan tahun kalender.
+        [$awal, $akhir] = TahunAjaranOptions::rentangTanggal($tahunAjaran, 'Tahunan');
 
         $progressTahfidz = TahfidzProgress::where('santri_id', $santriId)
-            ->whereBetween('tanggal', [Waktu::sekarang()->startOfYear(), Waktu::sekarang()->endOfYear()])
+            ->whereBetween('tanggal', [$awal, $akhir])
             ->latest('tanggal')
             ->take(10)
             ->get();
@@ -58,7 +59,6 @@ class LaporanController extends Controller
             'raporAkademik',
             'progressTahfidz',
             'tahunAjaran',
-            'periode',
         ))->setPaper('A4', 'portrait');
 
         $filename = 'Laporan-'
