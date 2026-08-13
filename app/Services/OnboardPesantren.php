@@ -7,6 +7,7 @@ use App\Models\BillingSetting;
 use App\Models\Pesantren;
 use App\Models\TenantDomain;
 use App\Models\User;
+use App\Support\AmalanDefault;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
@@ -18,7 +19,8 @@ class OnboardPesantren
      * 2. Buat baris tenant_domains (subdomain otomatis)
      * 3. Buat user pertama role admin_pesantren
      * 4. Aktifkan trial (durasi dari BillingSetting::trial_days)
-     * 5. Catat audit log
+     * 5. Isikan amalan bawaan supaya modul Mutaba'ah langsung bisa dipakai
+     * 6. Catat audit log
      */
     public function execute(
         string $namaPesantren,
@@ -49,6 +51,10 @@ class OnboardPesantren
                 'is_primary' => true,
                 'ssl_status' => 'pending',
             ]);
+
+            // Tanpa ini modul Mutaba'ah lumpuh diam-diam: tidak ada kolom di grid
+            // Isi Harian, tidak ada checkbox di form, dan skor selalu 0%.
+            AmalanDefault::untukPesantren($pesantren->id);
 
             $admin = User::create([
                 'pesantren_id' => $pesantren->id,
