@@ -4,10 +4,13 @@
 
 namespace App\Filament\Resources\TahfidzProgress\Tables;
 
+use App\Filament\Resources\TahfidzProgress\TahfidzProgressResource;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -78,13 +81,18 @@ class TahfidzProgressTable
                     ->relationship('santri', 'nama_lengkap')
                     ->searchable(),
             ])
+            // Filament v4 hanya membaca policy untuk mengunci action, dan aplikasi
+            // ini tidak punya policy — jadi aturan "hapus khusus admin" dari
+            // HasAdminUstadzAccess dipasang manual di sini.
             ->recordActions([
                 ViewAction::make(),
-                EditAction::make(),
+                EditAction::make()->modalWidth(Width::FourExtraLarge),
+                DeleteAction::make()
+                    ->visible(fn ($record): bool => TahfidzProgressResource::canDelete($record)),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()->visible(fn (): bool => TahfidzProgressResource::canDeleteAny()),
                 ]),
             ]);
     }

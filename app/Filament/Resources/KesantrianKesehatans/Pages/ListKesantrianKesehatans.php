@@ -6,8 +6,9 @@ use App\Filament\Resources\KesantrianKesehatans\KesantrianKesehatanResource;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\DatePicker;
-use Filament\Schemas\Components\Grid;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Schemas\Components\Grid;
+use Filament\Support\Enums\Width;
 
 class ListKesantrianKesehatans extends ListRecords
 {
@@ -36,7 +37,7 @@ class ListKesantrianKesehatans extends ListRecords
                     route('admin.export.rekam-medis', array_filter($data))
                 )),
 
-            CreateAction::make(),
+            CreateAction::make()->modalWidth(Width::FourExtraLarge),
         ];
     }
 }

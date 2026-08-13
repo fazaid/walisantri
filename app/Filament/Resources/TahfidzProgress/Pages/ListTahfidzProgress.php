@@ -5,6 +5,7 @@ namespace App\Filament\Resources\TahfidzProgress\Pages;
 use App\Filament\Resources\TahfidzProgress\TahfidzProgressResource;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Support\Enums\Width;
 
 class ListTahfidzProgress extends ListRecords
 {
@@ -13,7 +14,7 @@ class ListTahfidzProgress extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            CreateAction::make()->modalWidth(Width::FourExtraLarge),
         ];
     }
 }

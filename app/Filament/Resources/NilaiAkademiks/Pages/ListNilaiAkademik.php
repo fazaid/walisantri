@@ -18,7 +18,7 @@ class ListNilaiAkademik extends ListRecords
     {
         return [
             CreateAction::make()
-                ->modalWidth(Width::TwoExtraLarge)
+                ->modalWidth(Width::FourExtraLarge)
                 ->before(NilaiAkademikResource::guardDuplikat()),
             // NilaiMassalPage sengaja tidak didaftarkan di navigasi; tombol ini
             // satu-satunya jalan masuknya.

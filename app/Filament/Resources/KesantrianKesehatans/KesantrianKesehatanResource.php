@@ -5,8 +5,6 @@ namespace App\Filament\Resources\KesantrianKesehatans;
 use App\Filament\Clusters\Kesantrian;
 use App\Filament\Concerns\HasAdminUstadzAccess;
 use App\Filament\Concerns\ScopesRouteBindingToUstadzSantri;
-use App\Filament\Resources\KesantrianKesehatans\Pages\CreateKesantrianKesehatan;
-use App\Filament\Resources\KesantrianKesehatans\Pages\EditKesantrianKesehatan;
 use App\Filament\Resources\KesantrianKesehatans\Pages\ListKesantrianKesehatans;
 use App\Filament\Resources\KesantrianKesehatans\Pages\ViewKesantrianKesehatan;
 use App\Filament\Resources\KesantrianKesehatans\Schemas\KesantrianKesehatanForm;
@@ -79,9 +77,7 @@ class KesantrianKesehatanResource extends Resource
     {
         return [
             'index' => ListKesantrianKesehatans::route('/'),
-            'create' => CreateKesantrianKesehatan::route('/create'),
             'view' => ViewKesantrianKesehatan::route('/{record}'),
-            'edit' => EditKesantrianKesehatan::route('/{record}/edit'),
         ];
     }
 }

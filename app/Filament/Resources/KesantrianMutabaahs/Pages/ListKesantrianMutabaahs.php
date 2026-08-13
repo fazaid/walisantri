@@ -10,6 +10,7 @@ use Filament\Actions\CreateAction;
 use Filament\Forms\Components\Select;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Schemas\Components\Grid;
+use Filament\Support\Enums\Width;
 
 class ListKesantrianMutabaahs extends ListRecords
 {
@@ -48,7 +49,9 @@ class ListKesantrianMutabaahs extends ListRecords
                 ])
                 ->action(fn (array $data) => redirect()->to(route('admin.export.mutabaah', $data))),
 
-            CreateAction::make(),
+            CreateAction::make()
+                ->modalWidth(Width::FourExtraLarge)
+                ->using(KesantrianMutabaahResource::simpanAtauPerbarui()),
         ];
     }
 }

@@ -83,7 +83,7 @@ class NilaiAkademikTable
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make()
-                    ->modalWidth(Width::TwoExtraLarge)
+                    ->modalWidth(Width::FourExtraLarge)
                     ->before(NilaiAkademikResource::guardDuplikat()),
                 DeleteAction::make(),
             ])

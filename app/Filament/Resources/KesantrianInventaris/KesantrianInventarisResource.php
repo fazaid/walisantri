@@ -5,8 +5,6 @@ namespace App\Filament\Resources\KesantrianInventaris;
 use App\Filament\Clusters\Kesantrian;
 use App\Filament\Concerns\HasAdminUstadzAccess;
 use App\Filament\Concerns\ScopesRouteBindingToUstadzSantri;
-use App\Filament\Resources\KesantrianInventaris\Pages\CreateKesantrianInventaris;
-use App\Filament\Resources\KesantrianInventaris\Pages\EditKesantrianInventaris;
 use App\Filament\Resources\KesantrianInventaris\Pages\ListKesantrianInventaris;
 use App\Filament\Resources\KesantrianInventaris\Pages\ViewKesantrianInventaris;
 use App\Filament\Resources\KesantrianInventaris\Schemas\KesantrianInventarisForm;
@@ -79,9 +77,7 @@ class KesantrianInventarisResource extends Resource
     {
         return [
             'index' => ListKesantrianInventaris::route('/'),
-            'create' => CreateKesantrianInventaris::route('/create'),
             'view' => ViewKesantrianInventaris::route('/{record}'),
-            'edit' => EditKesantrianInventaris::route('/{record}/edit'),
         ];
     }
 }

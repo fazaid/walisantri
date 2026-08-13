@@ -5,8 +5,6 @@ namespace App\Filament\Resources\KesantrianKarakterRapors;
 use App\Filament\Clusters\Kesantrian;
 use App\Filament\Concerns\HasAdminUstadzAccess;
 use App\Filament\Concerns\ScopesRouteBindingToUstadzSantri;
-use App\Filament\Resources\KesantrianKarakterRapors\Pages\CreateKesantrianKarakterRapor;
-use App\Filament\Resources\KesantrianKarakterRapors\Pages\EditKesantrianKarakterRapor;
 use App\Filament\Resources\KesantrianKarakterRapors\Pages\ListKesantrianKarakterRapors;
 use App\Filament\Resources\KesantrianKarakterRapors\Pages\ViewKesantrianKarakterRapor;
 use App\Filament\Resources\KesantrianKarakterRapors\Schemas\KesantrianKarakterRaporForm;
@@ -14,6 +12,9 @@ use App\Filament\Resources\KesantrianKarakterRapors\Schemas\KesantrianKarakterRa
 use App\Filament\Resources\KesantrianKarakterRapors\Tables\KesantrianKarakterRaporsTable;
 use App\Models\KesantrianKarakterRapor;
 use BackedEnum;
+use Closure;
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -75,13 +76,40 @@ class KesantrianKarakterRaporResource extends Resource
         ];
     }
 
+    /**
+     * Satu santri hanya boleh punya satu rapor karakter per periode — dulu
+     * beforeCreate()/beforeSave() halaman Create dan Edit, kini menumpang
+     * ->before() pada action. $record null saat membuat, terisi saat mengubah.
+     */
+    public static function guardDuplikat(): Closure
+    {
+        return function (array $data, Action $action, ?Model $record): void {
+            $exists = KesantrianKarakterRapor::where('santri_id', $data['santri_id'])
+                ->where('tahun_ajaran', $data['tahun_ajaran'])
+                ->where('periode', $data['periode'])
+                ->where('bulan', $data['bulan'] ?? null)
+                ->when($record, fn ($query) => $query->where('id', '!=', $record->getKey()))
+                ->exists();
+
+            if (! $exists) {
+                return;
+            }
+
+            Notification::make()
+                ->title('Data sudah ada')
+                ->body('Rapor karakter santri ini untuk periode tersebut sudah pernah diinput.')
+                ->danger()
+                ->send();
+
+            $action->halt();
+        };
+    }
+
     public static function getPages(): array
     {
         return [
             'index' => ListKesantrianKarakterRapors::route('/'),
-            'create' => CreateKesantrianKarakterRapor::route('/create'),
             'view' => ViewKesantrianKarakterRapor::route('/{record}'),
-            'edit' => EditKesantrianKarakterRapor::route('/{record}/edit'),
         ];
     }
 }

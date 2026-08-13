@@ -17,7 +17,11 @@ class KesantrianMutabaahForm
 {
     public static function configure(Schema $schema): Schema
     {
+        // ListRecords memaksa schema modal jadi 2 kolom kalau form tidak
+        // menentukan sendiri, bikin Section cuma selebar separuh modal.
+        // columns(1) menahannya supaya tiap Section penuh selebar modal.
         return $schema
+            ->columns(1)
             ->components([
                 Section::make('Data Santri & Tanggal')
                     ->columns(2)
@@ -68,7 +72,9 @@ class KesantrianMutabaahForm
 
             return Toggle::make("amalan.{$item->kode}")
                 ->label($label)
-                ->default(false);
+                // Terisi, sama seperti MutabaahHarianPage: mayoritas santri
+                // mengerjakan, jadi pencatat tinggal mematikan yang bolong.
+                ->default(true);
         })->all();
     }
 }

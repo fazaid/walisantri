@@ -6,13 +6,16 @@
 
 namespace App\Filament\Resources\KesantrianMutabaahs\Tables;
 
+use App\Filament\Resources\KesantrianMutabaahs\KesantrianMutabaahResource;
 use App\Filament\Support\SantriOptions;
 use App\Models\KesantrianMutabaah;
 use App\Services\MutabaahScoreCalculator;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -57,7 +60,21 @@ class KesantrianMutabaahsTable
                     ->options(fn () => SantriOptions::aktifUntukPengguna())
                     ->searchable(),
             ])
-            ->recordActions([ViewAction::make(), EditAction::make()])
-            ->toolbarActions([BulkActionGroup::make([DeleteBulkAction::make()])]);
+            // Filament v4 hanya membaca policy untuk mengunci action, dan aplikasi
+            // ini tidak punya policy — jadi aturan "hapus khusus admin" dari
+            // HasAdminUstadzAccess dipasang manual di sini.
+            ->recordActions([
+                ViewAction::make(),
+                EditAction::make()
+                    ->modalWidth(Width::FourExtraLarge)
+                    ->before(KesantrianMutabaahResource::guardTanggalBentrok()),
+                DeleteAction::make()
+                    ->visible(fn ($record): bool => KesantrianMutabaahResource::canDelete($record)),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()->visible(fn (): bool => KesantrianMutabaahResource::canDeleteAny()),
+                ]),
+            ]);
     }
 }

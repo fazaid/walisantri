@@ -18,7 +18,11 @@ class KesantrianInventarisForm
 {
     public static function configure(Schema $schema): Schema
     {
+        // ListRecords memaksa schema modal jadi 2 kolom kalau form tidak
+        // menentukan sendiri, bikin Section cuma selebar separuh modal.
+        // columns(1) menahannya supaya tiap Section penuh selebar modal.
         return $schema
+            ->columns(1)
             ->components([
                 Section::make('Detail Barang')->columns(2)->schema([
                     Select::make('santri_id')->label('Santri')

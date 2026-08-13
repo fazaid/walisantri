@@ -5,8 +5,6 @@ namespace App\Filament\Resources\KesantrianMutabaahs;
 use App\Filament\Clusters\Mutabaah;
 use App\Filament\Concerns\HasAdminUstadzAccess;
 use App\Filament\Concerns\ScopesRouteBindingToUstadzSantri;
-use App\Filament\Resources\KesantrianMutabaahs\Pages\CreateKesantrianMutabaah;
-use App\Filament\Resources\KesantrianMutabaahs\Pages\EditKesantrianMutabaah;
 use App\Filament\Resources\KesantrianMutabaahs\Pages\ListKesantrianMutabaahs;
 use App\Filament\Resources\KesantrianMutabaahs\Pages\ViewKesantrianMutabaah;
 use App\Filament\Resources\KesantrianMutabaahs\Schemas\KesantrianMutabaahForm;
@@ -14,6 +12,9 @@ use App\Filament\Resources\KesantrianMutabaahs\Schemas\KesantrianMutabaahInfolis
 use App\Filament\Resources\KesantrianMutabaahs\Tables\KesantrianMutabaahsTable;
 use App\Models\KesantrianMutabaah;
 use BackedEnum;
+use Closure;
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -75,13 +76,68 @@ class KesantrianMutabaahResource extends Resource
         ];
     }
 
+    /**
+     * Satu santri hanya punya satu mutaba'ah per tanggal, jadi menambah data
+     * untuk tanggal yang sudah terisi diperlakukan sebagai memperbarui — dulu
+     * di handleRecordCreation() halaman Create, kini menumpang CreateAction.
+     */
+    public static function simpanAtauPerbarui(): Closure
+    {
+        return function (array $data): Model {
+            // whereDate(), bukan where(): kolomnya date sehingga di Postgres
+            // perbandingan langsung masih cocok, tapi tidak di SQLite yang
+            // menyimpan '00:00:00' ikut serta.
+            $lama = KesantrianMutabaah::where('santri_id', $data['santri_id'])
+                ->whereDate('tanggal', $data['tanggal'])
+                ->first();
+
+            $record = $lama
+                ? tap($lama)->update($data)
+                : KesantrianMutabaah::create($data);
+
+            if ($lama) {
+                Notification::make()
+                    ->title('Data diperbarui, bukan ditambah baru')
+                    ->body('Mutaba\'ah santri ini untuk tanggal tersebut sudah ada sebelumnya, sehingga data lama diperbarui dengan isian ini.')
+                    ->warning()
+                    ->send();
+            }
+
+            return $record;
+        };
+    }
+
+    /**
+     * Saat mengubah, pindah ke tanggal milik baris lain harus ditolak — dulu
+     * beforeSave() halaman Edit, kini menumpang ->before() EditAction.
+     */
+    public static function guardTanggalBentrok(): Closure
+    {
+        return function (array $data, Action $action, ?Model $record): void {
+            $bentrok = KesantrianMutabaah::where('santri_id', $data['santri_id'])
+                ->whereDate('tanggal', $data['tanggal'])
+                ->when($record, fn ($query) => $query->where('id', '!=', $record->getKey()))
+                ->exists();
+
+            if (! $bentrok) {
+                return;
+            }
+
+            Notification::make()
+                ->title('Tanggal bentrok')
+                ->body('Sudah ada mutaba\'ah untuk santri dan tanggal tersebut. Ubah tanggal atau santri terlebih dahulu.')
+                ->danger()
+                ->send();
+
+            $action->halt();
+        };
+    }
+
     public static function getPages(): array
     {
         return [
             'index' => ListKesantrianMutabaahs::route('/'),
-            'create' => CreateKesantrianMutabaah::route('/create'),
             'view' => ViewKesantrianMutabaah::route('/{record}'),
-            'edit' => EditKesantrianMutabaah::route('/{record}/edit'),
         ];
     }
 }

@@ -5,8 +5,6 @@ namespace App\Filament\Resources\TahfidzUjian;
 use App\Filament\Clusters\Tahfidz;
 use App\Filament\Concerns\HasAdminUstadzAccess;
 use App\Filament\Concerns\ScopesQueryToUstadzSantri;
-use App\Filament\Resources\TahfidzUjian\Pages\CreateTahfidzUjian;
-use App\Filament\Resources\TahfidzUjian\Pages\EditTahfidzUjian;
 use App\Filament\Resources\TahfidzUjian\Pages\ListTahfidzUjian;
 use App\Filament\Resources\TahfidzUjian\Pages\ViewTahfidzUjian;
 use App\Filament\Resources\TahfidzUjian\Schemas\TahfidzUjianForm;
@@ -66,9 +64,7 @@ class TahfidzUjianResource extends Resource
     {
         return [
             'index' => ListTahfidzUjian::route('/'),
-            'create' => CreateTahfidzUjian::route('/create'),
             'view' => ViewTahfidzUjian::route('/{record}'),
-            'edit' => EditTahfidzUjian::route('/{record}/edit'),
         ];
     }
 }

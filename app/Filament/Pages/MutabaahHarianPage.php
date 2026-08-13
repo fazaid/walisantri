@@ -27,6 +27,8 @@ use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class MutabaahHarianPage extends Page implements HasForms
 {
@@ -139,6 +141,10 @@ class MutabaahHarianPage extends Page implements HasForms
                     ->required()
                     ->maxDate(Waktu::akhirHariIni())
                     ->native(false)
+                    // Kalender Filament (native(false)) bawaannya tetap terbuka
+                    // setelah tanggal diklik; di sini tidak ada bagian jam yang
+                    // perlu diisi lagi, jadi ditutup begitu tanggal dipilih.
+                    ->closeOnDateSelection()
                     ->live()
                     ->afterStateUpdated(function ($state, callable $set) {
                         $set('rows', $this->buildRows($state));
@@ -207,20 +213,24 @@ class MutabaahHarianPage extends Page implements HasForms
         $rows = $data['rows'] ?? [];
 
         try {
-            foreach ($rows as $row) {
-                KesantrianMutabaah::updateOrCreate(
-                    [
-                        'santri_id' => $row['santri_id'],
-                        'tanggal'   => $data['tanggal'],
-                    ],
-                    [
-                        'amalan'       => $row['amalan'] ?? [],
-                        'status_udzur' => $row['status_udzur'],
-                    ]
-                );
-            }
+            // Satu tombol menyimpan seluruh santri, jadi kegagalan di tengah
+            // tidak boleh meninggalkan separuh data tersimpan tanpa penanda.
+            DB::transaction(function () use ($rows, $data): void {
+                foreach ($rows as $row) {
+                    KesantrianMutabaah::updateOrCreate(
+                        [
+                            'santri_id' => $row['santri_id'],
+                            'tanggal'   => $data['tanggal'],
+                        ],
+                        [
+                            'amalan'       => $row['amalan'] ?? [],
+                            'status_udzur' => $row['status_udzur'],
+                        ]
+                    );
+                }
+            });
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('mutabaah_harian_save_failed', ['message' => $e->getMessage()]);
+            Log::error('mutabaah_harian_save_failed', ['message' => $e->getMessage()]);
 
             Notification::make()
                 ->title('Gagal menyimpan mutaba\'ah')

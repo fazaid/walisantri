@@ -7,8 +7,8 @@ use App\Models\KesantrianKesehatan;
 use App\Support\Waktu;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
@@ -19,7 +19,11 @@ class KesantrianKesehatanForm
 {
     public static function configure(Schema $schema): Schema
     {
+        // ListRecords memaksa schema modal jadi 2 kolom kalau form tidak
+        // menentukan sendiri, bikin Section cuma selebar separuh modal.
+        // columns(1) menahannya supaya tiap Section penuh selebar modal.
         return $schema
+            ->columns(1)
             ->components([
                 Section::make('Data Pemeriksaan')
                     ->columns(2)

@@ -2,14 +2,17 @@
 
 namespace App\Filament\Resources\KesantrianKesehatans\Tables;
 
+use App\Filament\Resources\KesantrianKesehatans\KesantrianKesehatanResource;
 use App\Filament\Support\SantriOptions;
 use App\Support\Waktu;
 use Carbon\Carbon;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -135,13 +138,18 @@ class KesantrianKesehatansTable
                         return $indicators;
                     }),
             ])
+            // Filament v4 hanya membaca policy untuk mengunci action, dan aplikasi
+            // ini tidak punya policy — jadi aturan "hapus khusus admin" dari
+            // HasAdminUstadzAccess dipasang manual di sini.
             ->recordActions([
                 ViewAction::make(),
-                EditAction::make(),
+                EditAction::make()->modalWidth(Width::FourExtraLarge),
+                DeleteAction::make()
+                    ->visible(fn ($record): bool => KesantrianKesehatanResource::canDelete($record)),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()->visible(fn (): bool => KesantrianKesehatanResource::canDeleteAny()),
                 ]),
             ]);
     }

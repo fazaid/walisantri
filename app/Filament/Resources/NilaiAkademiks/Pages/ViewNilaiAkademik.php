@@ -16,7 +16,7 @@ class ViewNilaiAkademik extends ViewRecord
     {
         return [
             EditAction::make()
-                ->modalWidth(Width::TwoExtraLarge)
+                ->modalWidth(Width::FourExtraLarge)
                 ->before(NilaiAkademikResource::guardDuplikat()),
             DeleteAction::make(),
         ];

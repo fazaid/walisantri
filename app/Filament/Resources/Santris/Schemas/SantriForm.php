@@ -23,7 +23,11 @@ class SantriForm
 {
     public static function configure(Schema $schema): Schema
     {
+        // ListRecords memaksa schema modal jadi 2 kolom kalau form tidak
+        // menentukan sendiri, bikin Section cuma selebar separuh modal.
+        // columns(1) menahannya supaya tiap Section penuh selebar modal.
         return $schema
+            ->columns(1)
             ->components([
                 Section::make('Data Santri')
                     ->columns(2)
