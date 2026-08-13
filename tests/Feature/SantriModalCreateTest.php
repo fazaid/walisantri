@@ -7,6 +7,7 @@ use App\Models\Pesantren;
 use App\Models\Santri;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Route;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -99,7 +100,20 @@ class SantriModalCreateTest extends TestCase
 
         $this->actingAs($this->admin($pesantren));
 
-        $this->get('/admin/santri/santris/create')->assertNotFound();
-        $this->get("/admin/santri/santris/{$santri->getRouteKey()}/edit")->assertNotFound();
+        // Diperiksa lewat daftar route, bukan HTTP GET. SantriResource punya halaman
+        // View, jadi URL-nya memuat wildcard {record}: '/santris/create' ikut tertangkap
+        // route itu dan 'create' dicoba dipakai sebagai id. SQLite diam-diam tidak
+        // menemukan apa-apa (404, tes lulus), sementara PostgreSQL melempar
+        // SQLSTATE[22P02] karena 'create' bukan bigint. Cek nama route menguji hal yang
+        // sebenarnya dimaksud dan sama hasilnya di kedua driver.
+        $prefix = 'filament.admin.santri.resources.santris.';
+
+        $this->assertTrue(Route::has($prefix.'index'), 'Halaman daftar harus tetap ada');
+        $this->assertTrue(Route::has($prefix.'view'), 'Halaman lihat harus tetap ada');
+        $this->assertFalse(Route::has($prefix.'create'), 'Halaman create lama harus sudah hilang');
+        $this->assertFalse(Route::has($prefix.'edit'), 'Halaman edit lama harus sudah hilang');
+
+        // Halaman daftar tetap sehat — di sinilah modal tambah/ubah hidup sekarang.
+        $this->get('/admin/santri/santris')->assertOk();
     }
 }

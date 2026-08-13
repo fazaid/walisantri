@@ -23,10 +23,15 @@ class DeployPreflightTest extends TestCase
         DB::table('migrations')->where('migration', $migrasi)->delete();
     }
 
-    /** CHECK constraint sudah versi baru di DB test, jadi baris lama harus diselundupkan. */
+    /**
+     * CHECK constraint di DB test sudah versi baru, jadi baris berperiode 'Semester'
+     * harus diselundupkan melewatinya. Caranya berbeda per driver: SQLite punya
+     * PRAGMA, PostgreSQL harus melepas constraint-nya sementara. Tanpa cabang ini
+     * tes lulus di SQLite lokal tapi gagal di CI yang memakai PostgreSQL.
+     */
     private function sisipkanKarakterPeriodeLama(Pesantren $pesantren, string $tanggal): void
     {
-        DB::statement('PRAGMA ignore_check_constraints = ON');
+        $this->setelCheckPeriode(false);
 
         DB::table('kesantrian_karakter_rapor')->insert([
             'pesantren_id' => $pesantren->id,
@@ -37,7 +42,22 @@ class DeployPreflightTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        DB::statement('PRAGMA ignore_check_constraints = OFF');
+        $this->setelCheckPeriode(true);
+    }
+
+    private function setelCheckPeriode(bool $aktif): void
+    {
+        $constraint = 'kesantrian_karakter_rapor_periode_check';
+
+        if (DB::getDriverName() === 'sqlite') {
+            DB::statement('PRAGMA ignore_check_constraints = '.($aktif ? 'OFF' : 'ON'));
+
+            return;
+        }
+
+        DB::statement($aktif
+            ? "ALTER TABLE kesantrian_karakter_rapor ADD CONSTRAINT {$constraint} CHECK (periode IN ('Bulanan','Semester_Ganjil','Semester_Genap','Semester'))"
+            : "ALTER TABLE kesantrian_karakter_rapor DROP CONSTRAINT IF EXISTS {$constraint}");
     }
 
     public function test_lolos_saat_tidak_ada_migrasi_tertunda(): void
