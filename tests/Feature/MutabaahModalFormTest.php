@@ -184,6 +184,30 @@ class MutabaahModalFormTest extends TestCase
         $this->assertSame('Izin_Pulang', $mutabaah->refresh()->status_udzur);
     }
 
+    public function test_tombol_isi_harian_dan_amal_tampil_di_header_untuk_admin(): void
+    {
+        $pesantren = Pesantren::factory()->create();
+
+        // "Isi Harian" & "Amal" tidak lagi jadi tab cluster; jalan masuknya
+        // hanya lewat dua tombol header ini.
+        Livewire::actingAs($this->makeAdmin($pesantren))
+            ->test(ListKesantrianMutabaahs::class)
+            ->assertActionVisible('isiHarian')
+            ->assertActionVisible('pengaturanAmal');
+    }
+
+    public function test_ustadz_hanya_melihat_tombol_isi_harian(): void
+    {
+        $pesantren = Pesantren::factory()->create();
+        $ustadz = User::factory()->ustadz()->create(['pesantren_id' => $pesantren->id]);
+
+        // Pengaturan amal tetap admin-only, jadi tombolnya ikut tersembunyi.
+        Livewire::actingAs($ustadz)
+            ->test(ListKesantrianMutabaahs::class)
+            ->assertActionVisible('isiHarian')
+            ->assertActionHidden('pengaturanAmal');
+    }
+
     public function test_ustadz_tidak_bisa_hapus_mutabaah_dari_tabel(): void
     {
         $pesantren = Pesantren::factory()->create();

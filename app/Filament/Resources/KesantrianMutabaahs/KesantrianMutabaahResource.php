@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources\KesantrianMutabaahs;
 
-use App\Filament\Clusters\Mutabaah;
+use App\Filament\Clusters\Kesantrian;
 use App\Filament\Concerns\HasAdminUstadzAccess;
 use App\Filament\Concerns\ScopesRouteBindingToUstadzSantri;
 use App\Filament\Resources\KesantrianMutabaahs\Pages\ListKesantrianMutabaahs;
@@ -48,7 +48,7 @@ class KesantrianMutabaahResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Data Mutabaah';
 
-    protected static ?string $cluster = Mutabaah::class;
+    protected static ?string $cluster = Kesantrian::class;
 
     protected static ?int $navigationSort = 1;
 

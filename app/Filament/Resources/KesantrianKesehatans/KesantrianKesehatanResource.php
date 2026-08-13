@@ -47,7 +47,7 @@ class KesantrianKesehatanResource extends Resource
 
     protected static ?string $cluster = Kesantrian::class;
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 3;
 
     protected static ?string $slug = 'kesehatan';
 

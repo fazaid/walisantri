@@ -41,15 +41,6 @@
             ];
         }
 
-        if (\App\Filament\Clusters\Mutabaah::canAccessClusteredComponents()) {
-            $tabs[] = [
-                'label'  => 'Mutabaah',
-                'url'    => \App\Filament\Clusters\Mutabaah::getUrl(),
-                'active' => request()->routeIs('filament.admin.mutabaah*'),
-                'icon'   => 'M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
-            ];
-        }
-
         if (\App\Filament\Clusters\Kesantrian::canAccessClusteredComponents()) {
             $tabs[] = [
                 'label'  => 'Kesantrian',

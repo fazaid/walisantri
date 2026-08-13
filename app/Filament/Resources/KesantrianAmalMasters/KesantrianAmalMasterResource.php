@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources\KesantrianAmalMasters;
 
-use App\Filament\Clusters\Mutabaah;
+use App\Filament\Clusters\Kesantrian;
 use App\Filament\Resources\KesantrianAmalMasters\Pages\ListKesantrianAmalMaster;
 use App\Filament\Resources\KesantrianAmalMasters\Schemas\KesantrianAmalMasterForm;
 use App\Filament\Resources\KesantrianAmalMasters\Tables\KesantrianAmalMasterTable;
@@ -30,9 +30,16 @@ class KesantrianAmalMasterResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Pengaturan Amal Mutabaah';
 
-    protected static ?string $cluster = Mutabaah::class;
+    protected static ?string $cluster = Kesantrian::class;
 
     protected static ?int $navigationSort = 3;
+
+    /**
+     * Pengaturan master yang jarang dibuka — tidak perlu tab sendiri di cluster
+     * Mutabaah; masuknya lewat tombol "Amal" di header daftar Mutabaah.
+     * canViewAny() tetap membatasi ke admin pesantren.
+     */
+    protected static bool $shouldRegisterNavigation = false;
 
     protected static ?string $slug = 'amal';
 

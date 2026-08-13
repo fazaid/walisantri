@@ -47,7 +47,7 @@ class KesantrianInventarisResource extends Resource
 
     protected static ?string $cluster = Kesantrian::class;
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 4;
 
     protected static ?string $slug = 'inventaris';
 

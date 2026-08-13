@@ -2,7 +2,7 @@
 
 namespace App\Filament\Pages;
 
-use App\Filament\Clusters\Mutabaah;
+use App\Filament\Clusters\Kesantrian;
 use App\Models\KesantrianAmalMaster;
 use App\Models\KesantrianMutabaah;
 use App\Models\Santri;
@@ -36,13 +36,21 @@ class MutabaahHarianPage extends Page implements HasForms
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCheckBadge;
 
-    protected static ?string $cluster = Mutabaah::class;
+    protected static ?string $cluster = Kesantrian::class;
 
     protected static ?string $navigationLabel = 'Isi Harian';
 
     protected static ?string $title = 'Isi Mutabaah Harian';
 
     protected static ?int $navigationSort = 2;
+
+    /**
+     * Bukan tab tersendiri di cluster Mutabaah — halaman ini hanyalah cara lain
+     * mengisi data yang sama dengan daftar Mutabaah, jadi masuknya lewat tombol
+     * di header ListKesantrianMutabaahs. canAccess() tetap menjaga akses URL
+     * langsung.
+     */
+    protected static bool $shouldRegisterNavigation = false;
 
     protected static ?string $slug = 'isi-harian';
 
