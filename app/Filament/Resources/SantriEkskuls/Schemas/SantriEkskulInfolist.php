@@ -21,8 +21,9 @@ class SantriEkskulInfolist
                             ->label('Santri'),
                         TextEntry::make('ekskulMaster.nama')
                             ->label('Ekskul'),
-                        TextEntry::make('ekskulMaster.pengajar')
+                        TextEntry::make('pembina')
                             ->label('Pembina')
+                            ->state(fn ($record): ?string => $record->ekskulMaster?->namaPembina())
                             ->placeholder('— belum diisi —'),
                         TextEntry::make('level')
                             ->label('Level')

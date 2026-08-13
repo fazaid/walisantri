@@ -18,8 +18,9 @@ class EkskulMasterInfolist
                     ->schema([
                         TextEntry::make('nama')
                             ->label('Nama Ekskul'),
-                        TextEntry::make('pengajar')
+                        TextEntry::make('pembina')
                             ->label('Pembina')
+                            ->state(fn ($record): ?string => $record->namaPembina())
                             ->placeholder('— belum diisi —'),
                         IconEntry::make('aktif')
                             ->label('Aktif')

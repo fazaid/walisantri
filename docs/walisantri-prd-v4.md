@@ -10,6 +10,8 @@
 
 **Changelog v4.17:** **Masa trial jadi 14 hari (sebelumnya 30) & dijadikan pengaturan, bukan hardcode** — `OnboardPesantren::execute()` sebelumnya hardcode `now()->addDays(30)`, sekarang baca `BillingSetting::get('trial_days', 14)` mengikuti pola persis `kuota_rintisan` yang sudah ada — super admin bisa ubah lewat halaman **Pengaturan Harga** (`BillingSettingsPage`, section baru "Masa Trial") tanpa perlu deploy. Teks halaman `/register` dan deskripsi halaman "Pengaturan Registrasi" ikut dibuat dinamis membaca nilai yang sama (sebelumnya keduanya juga hardcode "30 hari" terpisah, tidak sinkron dengan logika). Nilai awal di-seed 14 lewat migration baru.
 
+**Changelog v4.17:** **Penugasan Ustadz** — menjawab kebutuhan membedakan ustadz pembimbing/pengampu/pencatat/penguji/pembina/wali kelas tanpa memecah `users.role`. Keputusan & alasannya didokumentasikan di §5.4 yang diperluas (dari "Aturan Pembimbing Ustadz"): keenam istilah itu penugasan, bukan tingkat hak akses, jadi disimpan sebagai FK di entitas yang ditugaskan — empat di antaranya memang sudah begitu sejak awal. (1) **Dua penugasan yang hilang dilengkapi** — `kelas.wali_kelas_id` (fondasi modul absensi, belum melebarkan cakupan apa pun hari ini) dan `ekskul_masters.pembina_id` (menggantikan ketergantungan pada teks bebas `pengajar`, yang tetap dipertahankan untuk pelatih luar tanpa akun; fallback dipusatkan di `EkskulMaster::namaPembina()`). (2) **`App\Support\PenugasanUstadz` baru** — satu sumber definisi "apa yang dipegang ustadz ini" (`santriIdsBimbingan`, `kelasIdsDiampu`, `kelasIdsPerwalian`, `mataPelajaranIdsDiampu`, `ekskulIdsDibina`). Sebelumnya definisi ini dihitung ad-hoc dan sudah mulai berbeda-beda antara `ScopesQueryToUstadzSantri`, `SantriResource`, dan dua method `SantriOptions` — docblock `SantriOptions` sendiri mengakuinya. Semua pemanggil dialihkan ke sana; `Santri::idsPembimbing()` jadi delegasi tipis ber-`@deprecated`. **Perilaku cakupan tidak berubah sama sekali** — 334 tes lama lulus tanpa disentuh. (3) **Daftar penugasan di halaman Pengguna** — `PenugasanUstadz::ringkasan()` menghasilkan badge "Pembimbing 12 santri · Wali Kelas 3A · Pengampu Fiqih 3A · Pembina Kaligrafi" di infolist & kolom tabel (toggleable), murni turunan FK tanpa kolom baru. (4) **Cakupan tetap terpisah per modul** — penugasan mengampu mapel tidak membuka modul tahfidz/mutaba'ah; dikunci tes eksplisit di `PenugasanUstadzTest` supaya pelebaran cakupan di masa depan harus jadi keputusan sadar, bukan efek samping refactor.
+
 **Changelog v4.16:** (1) **Ringkasan Setoran Rapor Tahfidz: "Total Halaman" → "Total Juz"** — stat card di `RaporTahfidzPage` (Filament) dan PDF-nya sebelumnya menjumlah panjang range tiap setoran mentah-mentah (bisa dobel-hitung kalau ada overlap antar setoran); diganti jadi "Total Juz" pakai algoritma dedup yang sama dengan `TahfidzJuzCalculator` (halaman unik / 20). `TahfidzJuzCalculator::calculate()` sendiri menghitung akumulasi **sepanjang waktu** dari DB langsung, jadi tidak bisa dipakai langsung untuk scope periode terpilih — di-refactor, logika dedup-nya diekstrak jadi method baru `TahfidzJuzCalculator::juzFromRanges(iterable $ranges)` yang generik, dipanggil dari `calculate()` (semua data santri) maupun `RaporTahfidzPage::getSetoranStats()` (data yang sudah difilter periode). Metrik ini berbeda dari "Capaian Juz (Lulus)" yang sudah ada (dihitung dari `target_juz` ujian yang lulus, bukan dari halaman yang disetorkan). (2) **Margin PDF Rapor** — kelima dokumen PDF (Akademik, Karakter, Mutaba'ah, Tahfidz, Laporan gabungan wali) sebelumnya memakai margin default DomPDF (`1.2cm`, dari `vendor/dompdf/dompdf/lib/res/html.css`, tidak pernah di-override) sehingga konten terasa mepet; ditambahkan `@page { margin: 2.2cm 1.8cm; }` eksplisit di tiap template. (3) **Kop PDF Rapor disederhanakan** — teks "Walisantri.com" di bawah logo dihapus atas permintaan; nama pesantren dipromosikan jadi heading utama kop (18px, hijau, gaya yang tadinya dipakai teks "Walisantri.com").
 
 **Changelog v4.15:** **Logo pesantren tampil di dokumen PDF Rapor & halaman login** — menyusul v4.14 (upload logo baru bisa dilakukan), dua tempat yang sudah lama menampilkan branding pesantren tapi belum/salah pakai logo kini diperbaiki. (1) **Header PDF Rapor** (Akademik, Karakter, Mutaba'ah, Tahfidz, dan Laporan gabungan wali — 5 template di `resources/views/filament/pdf/rapor-*.blade.php` & `resources/views/wali/pdf/laporan.blade.php`, semua sebelumnya text-only) kini menampilkan logo di atas nama aplikasi, jika ada. Karena `config/dompdf.php` punya `enable_remote => false` (DomPDF tak bisa fetch logo lewat URL), ditambahkan accessor baru `Pesantren::logo_path` (path filesystem absolut via `Storage::disk('public')->path()`, bukan URL) khusus untuk konteks render PDF — beda dari `logo_url` (v4.14) yang untuk konteks web. (2) **Bug fix halaman login** (`resources/views/auth/login.blade.php`) — logo pesantren selama ini dibaca langsung dari `profil['logo']` (path relatif disk, bukan URL), jadi `<img>`-nya selalu rusak; diseragamkan pakai accessor `logo_url` sama seperti header profil publik.
@@ -428,7 +430,7 @@ erDiagram
 
 ## 3.2 DB Tenant
 
-**`kelas`** — `id` PK · `pesantren_id` FK cascadeOnDelete · `nama_kelas` string · timestamps. *Unique: `(pesantren_id, nama_kelas)`.* Hanya `admin_pesantren` yang bisa CRUD.
+**`kelas`** — `id` PK · `pesantren_id` FK cascadeOnDelete · `nama_kelas` string · `wali_kelas_id` FK→users nullOnDelete, null (v4.17) · timestamps. *Unique: `(pesantren_id, nama_kelas)`; Index: `wali_kelas_id`.* Hanya `admin_pesantren` yang bisa CRUD. **v4.17:** `wali_kelas_id` ditambah sebagai penugasan wali kelas (§5.4) — satu kelas satu wali, satu ustadz boleh mewalikan beberapa kelas, tanpa batas kuota seperti aturan 20 santri pembimbing. Belum melebarkan cakupan data apa pun; disiapkan sebagai pijakan modul absensi masuk kelas (§22).
 
 **`kamar`** — `id` PK · `pesantren_id` FK cascadeOnDelete · `nama_kamar` string · timestamps. *Unique: `(pesantren_id, nama_kamar)`.* Hanya `admin_pesantren` yang bisa CRUD.
 
@@ -448,7 +450,7 @@ erDiagram
 
 ### Modul Ekstrakurikuler *(v4.9)*
 
-**`ekskul_masters`** — `id` PK · `pesantren_id` FK cascadeOnDelete · `nama` string · `deskripsi` text null · `pengajar` string null · `aktif` bool default true · timestamps. *Index: `pesantren_id`.* Master data ekskul per-pesantren (mis. Silat, Kaligrafi), hanya `admin_pesantren` yang bisa CRUD. Masuk Cluster Akademik.
+**`ekskul_masters`** — `id` PK · `pesantren_id` FK cascadeOnDelete · `nama` string · `deskripsi` text null · `pembina_id` FK→users nullOnDelete, null (v4.17) · `pengajar` string null · `aktif` bool default true · timestamps. *Index: `pesantren_id`, `pembina_id`.* **v4.17:** `pembina_id` ditambah supaya pembina ekskul bisa tertaut akun ustadz (ikut muncul di daftar penugasan §5.4). Kolom `pengajar` sengaja **dipertahankan**, bukan diganti — pembina ekskul sering pelatih luar tanpa akun (silat, pramuka), dan data lama tetap terbaca. Logika fallback hidup di satu tempat: `EkskulMaster::namaPembina()` (`pembina?->name ?? pengajar`). Master data ekskul per-pesantren (mis. Silat, Kaligrafi), hanya `admin_pesantren` yang bisa CRUD. Masuk Cluster Akademik.
 
 **`santri_ekskuls`** — `id` PK · `pesantren_id` FK · `santri_id` FK→santri cascadeOnDelete · `ekskul_id` FK→ekskul_masters cascadeOnDelete · `level` enum(`pemula`/`menengah`/`mahir`) default `pemula` · `tanggal_mulai` date · `aktif` bool default true · timestamps. *Unique: `(santri_id, ekskul_id)`; Index: `pesantren_id`.* Partisipasi santri per ekskul, input `admin_pesantren` + `ustadz`. Tampil sebagai "Ekstrakurikuler Aktif" di Rapor Akademik (§7) dan di detail santri portal wali (§8). Tersedia semua paket, tanpa Gate.
 
@@ -591,7 +593,33 @@ Kalkulasi di `BillingCalculatorService` pakai `bulanBayar()` (bukan `value`) unt
 Base paket Maju: 1.000 santri = Rp 750.000/bulan (X=0). Add-on per blok 100 santri di atas 1.000: `X = CEIL((N - 1000) / 100)` · `Total = Rp 750.000 + (X × Rp 100.000)` · `Kuota = 1000 + (X × 100)`.
 Contoh: 1.200 santri → X=2 → kuota 1.200 → Rp 950.000/bulan. Contoh X=0: 1.000 santri → Rp 750.000/bulan, kuota 1.000.
 
-## 5.4 Aturan Pembimbing Ustadz
+## 5.4 Penugasan Ustadz
+
+### Penugasan ≠ Role
+
+Istilah pembimbing, pengampu, pencatat, penguji, pembina, dan wali kelas adalah **penugasan**, bukan tingkat hak akses. Semuanya disimpan sebagai FK di entitas yang ditugaskan — **bukan** sebagai nilai tambahan di `users.role`, yang tetap 4 nilai (§3.2).
+
+| Penugasan | Sumber data |
+|---|---|
+| Pembimbing (halaqah) | `santri.pembimbing_ustadz_id` |
+| Pengampu mapel | `mata_pelajaran.ustadz_id` |
+| Pencatat setoran | `tahfidz_progress.ustadz_id` (jejak audit, terisi otomatis) |
+| Penguji | `tahfidz_rapor.penguji_id` |
+| Pembina ekskul | `ekskul_masters.pembina_id` (v4.17) — atau `pengajar` untuk pelatih luar tanpa akun |
+| Wali kelas | `kelas.wali_kelas_id` (v4.17) — fondasi modul absensi |
+
+Alasan `role` tidak dipecah jadi `ustadz_pengampu`, `ustadz_penguji`, dan seterusnya:
+
+1. **Satu orang lazim merangkap** — pembimbing 12 santri + pengampu Fiqih 3A + wali kelas 3A sekaligus. Kolom bernilai tunggal tidak muat tanpa akun ganda.
+2. **Permukaan hak aksesnya identik** — semua masuk panel & menu yang sama; yang berbeda hanya *record mana* yang terlihat, dan itu urusan scoping.
+3. **`role` dicek di ~35 file** — tiap jenis baru akan memanjangkan setiap `in_array($role, [...])`.
+4. **`role` itu struktural** — mengunci ERD (§3.2), index `(pesantren_id, role)`, rencana RLS, dan redirect pasca-login (§5.1).
+
+**Cakupan sengaja terpisah per modul.** Pengampu hanya menjangkau nilai mapel yang ia ampu; pembimbing hanya santri binaannya (tahfidz/mutaba'ah/karakter/kesehatan); wali kelas hanya kelasnya. Penugasan di satu modul **tidak** membuka modul lain — dikunci tes `PenugasanUstadzTest::test_pengampu_mapel_tidak_bisa_melihat_mutabaah_santri_di_kelasnya`.
+
+Definisi keenam jalur itu dipusatkan di `App\Support\PenugasanUstadz` (v4.17) supaya tidak lagi dihitung ad-hoc di tiap resource; `PenugasanUstadz::ringkasan()` menurunkan daftar penugasan per ustadz untuk ditampilkan di halaman Pengguna (dihitung, tidak disimpan).
+
+### Aturan kuota pembimbing
 
 Satu ustadz hanya dapat membimbing **maks 20 santri aktif** (`status_aktif = true`). Validasi dilakukan di dua lapisan:
 - **Form Filament:** dropdown ustadz pembimbing menampilkan kuota `(X/20)` per ustadz; validasi mencegah simpan jika ustadz sudah mencapai 20.

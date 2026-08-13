@@ -23,11 +23,14 @@ class EkskulMastersTable
                     ->label('Nama Ekskul')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('pengajar')
+                TextColumn::make('pembina')
                     ->label('Pembina')
-                    ->placeholder('— belum diisi —')
-                    ->searchable(),
-                TextColumn::make('santriEkskuls_count')
+                    ->state(fn ($record): ?string => $record->namaPembina())
+                    ->placeholder('— belum diisi —'),
+                // Nama kolom WAJIB sama dengan atribut hasil withCount, yaitu
+                // Str::snake(namaRelasi).'_count' — 'santriEkskuls_count' (camelCase)
+                // tidak pernah ada isinya sehingga kolom Peserta selalu kosong.
+                TextColumn::make('santri_ekskuls_count')
                     ->label('Peserta')
                     ->counts('santriEkskuls')
                     ->badge()

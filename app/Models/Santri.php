@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\JenisKelamin;
 use App\Models\Concerns\BelongsToPesantren;
+use App\Support\PenugasanUstadz;
 use App\Traits\Multitenantable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -66,9 +67,13 @@ class Santri extends Model
             : null;
     }
 
+    /**
+     * @deprecated Pakai PenugasanUstadz::santriIdsBimbingan() — definisi cakupan
+     *             ustadz dipusatkan di sana bersama jalur penugasan lainnya.
+     */
     public static function idsPembimbing(int $ustadzId): Collection
     {
-        return static::where('pembimbing_ustadz_id', $ustadzId)->pluck('id');
+        return PenugasanUstadz::santriIdsBimbingan($ustadzId);
     }
 
     /**

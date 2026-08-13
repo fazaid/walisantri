@@ -10,8 +10,8 @@ use App\Filament\Resources\NilaiAkademiks\Pages\ViewNilaiAkademik;
 use App\Filament\Resources\NilaiAkademiks\Schemas\NilaiAkademikForm;
 use App\Filament\Resources\NilaiAkademiks\Schemas\NilaiAkademikInfolist;
 use App\Filament\Resources\NilaiAkademiks\Tables\NilaiAkademikTable;
-use App\Models\MataPelajaran;
 use App\Models\NilaiAkademik;
+use App\Support\PenugasanUstadz;
 use BackedEnum;
 use Closure;
 use Filament\Actions\Action;
@@ -23,7 +23,6 @@ use Filament\Tables\Table;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
 
 class NilaiAkademikResource extends Resource
 {
@@ -62,7 +61,7 @@ class NilaiAkademikResource extends Resource
 
     protected static function ustadzScopedIds(): Collection
     {
-        return MataPelajaran::where('ustadz_id', Auth::id())->pluck('id');
+        return PenugasanUstadz::mataPelajaranIdsDiampu();
     }
 
     public static function form(Schema $schema): Schema

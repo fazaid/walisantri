@@ -20,6 +20,11 @@ class KelasTable
                     ->label('Nama Kelas')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('waliKelas.name')
+                    ->label('Wali Kelas')
+                    ->placeholder('—')
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('santri_count')
                     ->label('Jumlah Santri')
                     ->counts('santri')

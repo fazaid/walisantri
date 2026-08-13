@@ -2,8 +2,8 @@
 
 namespace App\Filament\Support;
 
-use App\Models\MataPelajaran;
 use App\Models\Santri;
+use App\Support\PenugasanUstadz;
 use Illuminate\Support\Collection;
 
 class SantriOptions
@@ -16,7 +16,7 @@ class SantriOptions
         $query = Santri::where('status_aktif', true);
 
         if (auth()->user()?->role === 'ustadz') {
-            $query->where('pembimbing_ustadz_id', auth()->id());
+            $query->whereIn('id', PenugasanUstadz::santriIdsBimbingan());
         }
 
         return $query->orderBy('nama_lengkap')->pluck('nama_lengkap', 'id');
@@ -36,11 +36,9 @@ class SantriOptions
         $query = Santri::where('status_aktif', true);
 
         if (auth()->user()?->role === 'ustadz') {
-            $kelasIds = MataPelajaran::where('ustadz_id', auth()->id())->pluck('kelas_id');
-
             $query->where(fn ($q) => $q
-                ->where('pembimbing_ustadz_id', auth()->id())
-                ->orWhereIn('kelas_id', $kelasIds));
+                ->whereIn('id', PenugasanUstadz::santriIdsBimbingan())
+                ->orWhereIn('kelas_id', PenugasanUstadz::kelasIdsDiampu()));
         }
 
         return $query->orderBy('nama_lengkap')->pluck('nama_lengkap', 'id')->toArray();

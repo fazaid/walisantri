@@ -9,6 +9,7 @@ use App\Filament\Resources\Santris\Schemas\SantriForm;
 use App\Filament\Resources\Santris\Schemas\SantriInfolist;
 use App\Filament\Resources\Santris\Tables\SantrisTable;
 use App\Models\Santri;
+use App\Support\PenugasanUstadz;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -77,7 +78,7 @@ class SantriResource extends Resource
         $query = parent::getEloquentQuery();
 
         if (Auth::user()?->role === 'ustadz') {
-            $query->where('pembimbing_ustadz_id', Auth::id());
+            $query->whereIn('id', PenugasanUstadz::santriIdsBimbingan());
         }
 
         return $query;
@@ -121,7 +122,7 @@ class SantriResource extends Resource
             ]);
 
         if (Auth::user()?->role === 'ustadz') {
-            $query->where('pembimbing_ustadz_id', Auth::id());
+            $query->whereIn('id', PenugasanUstadz::santriIdsBimbingan());
         }
 
         return $query;
