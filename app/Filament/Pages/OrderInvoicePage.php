@@ -8,9 +8,8 @@ use App\Models\PlatformBankAccount;
 use App\Models\PlatformContactSetting;
 use App\Models\WhatsAppMessageTemplate;
 use App\Services\UpgradeOrderService;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Database\Eloquent\Collection;
 use BackedEnum;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -22,25 +21,31 @@ use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\Form;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
-use UnitEnum;
 
 class OrderInvoicePage extends Page implements HasForms
 {
     use InteractsWithForms;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
-    protected static ?string $navigationLabel              = 'Invoice';
-    protected static ?string $title                        = 'Invoice Pembayaran';
-    protected static bool $shouldRegisterNavigation        = false;
+
+    protected static ?string $navigationLabel = 'Invoice';
+
+    protected static ?string $title = 'Invoice Pembayaran';
+
+    protected static bool $shouldRegisterNavigation = false;
 
     protected string $view = 'filament.pages.order-invoice-page';
 
-    public Order   $order;
+    public Order $order;
+
     public Invoice $invoice;
-    public array|null $bukti_transfer = [];
+
+    public ?array $bukti_transfer = [];
 
     public static function canAccess(): bool
     {
@@ -53,6 +58,7 @@ class OrderInvoicePage extends Page implements HasForms
 
         if (! $orderId) {
             $this->redirect(BillingPage::getUrl());
+
             return;
         }
 
@@ -122,8 +128,8 @@ class OrderInvoicePage extends Page implements HasForms
             ->color('success')
             ->outlined()
             ->visible(fn (): bool => filled(PlatformContactSetting::csWhatsapp()))
-            ->url(fn (): string => 'https://wa.me/' . PlatformContactSetting::csWhatsapp()
-                . '?text=' . rawurlencode($this->pesanBantuanWa()))
+            ->url(fn (): string => 'https://wa.me/'.PlatformContactSetting::csWhatsapp()
+                .'?text='.rawurlencode($this->pesanBantuanWa()))
             ->openUrlInNewTab();
     }
 
@@ -136,18 +142,18 @@ class OrderInvoicePage extends Page implements HasForms
         $template = WhatsAppMessageTemplate::get('cs_invoice_bantuan', self::DEFAULT_CS_BANTUAN_TEMPLATE);
 
         return strtr($template, [
-            '{nomor_invoice}'  => $this->invoice->nomor_invoice,
-            '{nomor_order}'    => $this->order->nomor_order,
+            '{nomor_invoice}' => $this->invoice->nomor_invoice,
+            '{nomor_order}' => $this->order->nomor_order,
             '{nama_pesantren}' => $this->order->pesantren->nama_pesantren,
-            '{total}'          => $this->formatRupiah($this->order->harga_total),
-            '{status_order}'   => $this->order->status->label(),
+            '{total}' => $this->formatRupiah($this->order->harga_total),
+            '{status_order}' => $this->order->status->label(),
         ]);
     }
 
     public function uploadBukti(): void
     {
         $data = $this->form->getState();
-        $raw  = $data['bukti_transfer'] ?? null;
+        $raw = $data['bukti_transfer'] ?? null;
         $file = $raw instanceof TemporaryUploadedFile ? $raw : ($raw[0] ?? null);
 
         if (! $file) {
@@ -163,10 +169,10 @@ class OrderInvoicePage extends Page implements HasForms
         // Livewire serializes TemporaryUploadedFile as just the basename (loses livewire-tmp/ prefix).
         // getFilename() always returns the basename regardless, so we reconstruct the correct path.
         if ($file instanceof TemporaryUploadedFile) {
-            $diskPath   = 'livewire-tmp/' . $file->getFilename();
+            $diskPath = 'livewire-tmp/'.$file->getFilename();
             $sourcePath = Storage::disk('local')->path($diskPath);
         } else {
-            $diskPath   = $file;
+            $diskPath = $file;
             $sourcePath = Storage::disk('local')->path($diskPath);
         }
 
@@ -205,12 +211,12 @@ class OrderInvoicePage extends Page implements HasForms
         }
 
         $ext = match ($mime) {
-            'image/jpeg'      => 'jpg',
-            'image/png'       => 'png',
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
             'application/pdf' => 'pdf',
         };
 
-        $dest     = "bukti-transfer/{$this->order->id}/bukti.{$ext}";
+        $dest = "bukti-transfer/{$this->order->id}/bukti.{$ext}";
         $fullPath = Storage::disk('local')->path($dest);
 
         Storage::disk('local')->move($diskPath, $dest);
@@ -225,7 +231,7 @@ class OrderInvoicePage extends Page implements HasForms
             return;
         }
 
-        $uploadedFile = new \Illuminate\Http\UploadedFile($fullPath, "bukti.{$ext}", $mime, null, true);
+        $uploadedFile = new UploadedFile($fullPath, "bukti.{$ext}", $mime, null, true);
 
         app(UpgradeOrderService::class)->uploadBuktiTransfer($this->invoice, $uploadedFile);
 
@@ -243,7 +249,7 @@ class OrderInvoicePage extends Page implements HasForms
 
     public function formatRupiah(int $nilai): string
     {
-        return 'Rp ' . number_format($nilai, 0, ',', '.');
+        return 'Rp '.number_format($nilai, 0, ',', '.');
     }
 
     protected function getHeaderActions(): array

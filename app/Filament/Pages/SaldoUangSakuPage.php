@@ -4,7 +4,9 @@ namespace App\Filament\Pages;
 
 use App\Enums\UserRole;
 use App\Filament\Clusters\Keuangan;
+use App\Filament\Resources\UangSakus\UangSakuResource;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -19,11 +21,11 @@ class SaldoUangSakuPage extends Page
 
     protected static ?string $cluster = Keuangan::class;
 
-    protected static ?string $navigationLabel = 'Saldo Santri';
+    protected static ?string $navigationLabel = 'Uang Saku Santri';
 
     protected static ?string $title = 'Saldo Uang Saku Santri';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 2;
 
     protected string $view = 'filament.pages.saldo-uang-saku-page';
 
@@ -32,6 +34,20 @@ class SaldoUangSakuPage extends Page
     public static function canAccess(): bool
     {
         return auth()->user()?->role === UserRole::AdminPesantren->value;
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            // UangSakuResource sengaja tidak didaftarkan di tab Keuangan;
+            // tombol ini satu-satunya jalan masuknya.
+            Action::make('uangSaku')
+                ->label('Uang Saku')
+                ->icon(Heroicon::OutlinedWallet)
+                ->url(UangSakuResource::getUrl('index'))
+                ->color('gray')
+                ->visible(fn (): bool => UangSakuResource::canAccess()),
+        ];
     }
 
     public function updatedSearch(): void
@@ -61,7 +77,7 @@ class SaldoUangSakuPage extends Page
             ]);
 
         if ($this->search !== '') {
-            $query->where('santri.nama_lengkap', 'ilike', '%' . $this->search . '%');
+            $query->where('santri.nama_lengkap', 'ilike', '%'.$this->search.'%');
         }
 
         return $query->paginate(50);

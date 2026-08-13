@@ -32,15 +32,15 @@ class KuponsTable
                     ->label('Nilai')
                     ->formatStateUsing(function ($record) {
                         if ($record->tipe_diskon === TipeDiskon::Nominal) {
-                            return 'Rp ' . number_format($record->nilai_diskon, 0, ',', '.');
+                            return 'Rp '.number_format($record->nilai_diskon, 0, ',', '.');
                         }
-                        return $record->nilai_diskon . '%';
+
+                        return $record->nilai_diskon.'%';
                     }),
 
                 TextColumn::make('jumlah_dipakai')
                     ->label('Dipakai')
-                    ->formatStateUsing(fn ($record) =>
-                        $record->max_penggunaan
+                    ->formatStateUsing(fn ($record) => $record->max_penggunaan
                             ? "{$record->jumlah_dipakai} / {$record->max_penggunaan}"
                             : "{$record->jumlah_dipakai} / ∞"
                     ),
@@ -49,8 +49,7 @@ class KuponsTable
                     ->label('Berlaku hingga')
                     ->dateTime('d M Y')
                     ->placeholder('Tidak terbatas')
-                    ->color(fn ($record) =>
-                        $record->berlaku_hingga?->isPast() ? 'danger' : 'success'
+                    ->color(fn ($record) => $record->berlaku_hingga?->isPast() ? 'danger' : 'success'
                     ),
 
                 IconColumn::make('is_aktif')

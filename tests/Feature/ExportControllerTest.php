@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Http\Middleware\ResolveTenantFromAccount;
 use App\Models\Pesantren;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -18,6 +19,7 @@ class ExportControllerTest extends TestCase
             'role' => 'admin_pesantren',
             'pesantren_id' => $pesantren->id,
         ]);
+
         return [$pesantren, $admin];
     }
 
@@ -26,7 +28,7 @@ class ExportControllerTest extends TestCase
         [, $admin] = $this->makeAdminUser();
 
         $response = $this->actingAs($admin)
-            ->withoutMiddleware(\App\Http\Middleware\ResolveTenantFromAccount::class)
+            ->withoutMiddleware(ResolveTenantFromAccount::class)
             ->get('/admin-export/santri');
 
         $response->assertStatus(200);
@@ -38,7 +40,7 @@ class ExportControllerTest extends TestCase
         [, $admin] = $this->makeAdminUser();
 
         $response = $this->actingAs($admin)
-            ->withoutMiddleware(\App\Http\Middleware\ResolveTenantFromAccount::class)
+            ->withoutMiddleware(ResolveTenantFromAccount::class)
             ->get('/admin-export/mutabaah?bulan=6&tahun=2026');
 
         $response->assertStatus(200);
@@ -50,7 +52,7 @@ class ExportControllerTest extends TestCase
         [, $admin] = $this->makeAdminUser();
 
         $response = $this->actingAs($admin)
-            ->withoutMiddleware(\App\Http\Middleware\ResolveTenantFromAccount::class)
+            ->withoutMiddleware(ResolveTenantFromAccount::class)
             ->get('/admin-export/rekam-medis');
 
         $response->assertStatus(200);
@@ -66,7 +68,7 @@ class ExportControllerTest extends TestCase
         ]);
 
         $response = $this->actingAs($wali)
-            ->withoutMiddleware(\App\Http\Middleware\ResolveTenantFromAccount::class)
+            ->withoutMiddleware(ResolveTenantFromAccount::class)
             ->get('/admin-export/santri');
 
         $response->assertStatus(403);

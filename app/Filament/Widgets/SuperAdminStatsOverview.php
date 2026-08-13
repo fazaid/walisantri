@@ -50,7 +50,7 @@ class SuperAdminStatsOverview extends StatsOverviewWidget
 
         return [
             Stat::make('Pesantren Aktif', $totalAktif)
-                ->description($totalTrial . ' pesantren trial')
+                ->description($totalTrial.' pesantren trial')
                 ->descriptionIcon('heroicon-m-building-office-2')
                 ->color('success'),
 
@@ -66,8 +66,8 @@ class SuperAdminStatsOverview extends StatsOverviewWidget
 
             Stat::make('Bermasalah', $pesantrenExpired + $pesantrenSuspended)
                 ->description(
-                    $pesantrenExpired . ' expired · ' .
-                    $pesantrenSuspended . ' suspended'
+                    $pesantrenExpired.' expired · '.
+                    $pesantrenSuspended.' suspended'
                 )
                 ->descriptionIcon('heroicon-m-exclamation-triangle')
                 ->color(($pesantrenExpired + $pesantrenSuspended) > 0 ? 'danger' : 'success'),

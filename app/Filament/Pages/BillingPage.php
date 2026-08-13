@@ -2,7 +2,6 @@
 
 namespace App\Filament\Pages;
 
-use App\Filament\Clusters\PengaturanPesantren;
 use App\Models\Order;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -15,9 +14,13 @@ class BillingPage extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCreditCard;
 
-    protected static ?string $cluster = PengaturanPesantren::class;
+    // Sengaja tidak di dalam Cluster PengaturanPesantren: label "Billing" bersebelahan
+    // dengan menu "Keuangan" bikin rancu (Keuangan = uang santri ke pesantren,
+    // Langganan = pesantren bayar platform). Di luar cluster, slug-nya kembali jadi
+    // "admin/billing-page" — persis URL yang dipakai notifikasi WA & email expired.
+    protected static string|UnitEnum|null $navigationGroup = 'Manajemen';
 
-    protected static ?string $navigationLabel = 'Billing';
+    protected static ?string $navigationLabel = 'Langganan';
 
     protected static ?string $title = 'Informasi Langganan';
 

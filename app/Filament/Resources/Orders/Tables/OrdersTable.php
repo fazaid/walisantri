@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\Orders\Tables;
 
-use App\Enums\PaketLangganan;
 use App\Enums\StatusOrder;
 use App\Models\Order;
 use App\Services\UpgradeOrderService;
@@ -42,12 +41,12 @@ class OrdersTable
 
                 TextColumn::make('durasi_total_bulan')
                     ->label('Durasi')
-                    ->formatStateUsing(fn (int $state): string => $state . ' bulan')
+                    ->formatStateUsing(fn (int $state): string => $state.' bulan')
                     ->sortable(),
 
                 TextColumn::make('harga_total')
                     ->label('Total')
-                    ->formatStateUsing(fn (int $state): string => 'Rp ' . number_format($state, 0, ',', '.'))
+                    ->formatStateUsing(fn (int $state): string => 'Rp '.number_format($state, 0, ',', '.'))
                     ->sortable(),
 
                 TextColumn::make('status')

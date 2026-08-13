@@ -38,7 +38,7 @@ class UstadzTrendSetoranChart extends ChartWidget
 
     protected function getData(): array
     {
-        $ustadzId    = Auth::id();
+        $ustadzId = Auth::id();
         $pesantrenId = Auth::user()?->pesantren_id;
 
         $santriIds = Santri::where('pesantren_id', $pesantrenId)
@@ -61,24 +61,24 @@ class UstadzTrendSetoranChart extends ChartWidget
             ->pluck('count', 'tanggal');
 
         $labels = [];
-        $data   = [];
+        $data = [];
 
         for ($i = 6; $i >= 0; $i--) {
-            $day      = Waktu::sekarang()->subDays($i);
+            $day = Waktu::sekarang()->subDays($i);
             $labels[] = $day->format('d/m');
-            $data[]   = (int) ($rows[$day->toDateString()] ?? 0);
+            $data[] = (int) ($rows[$day->toDateString()] ?? 0);
         }
 
         return [
             'datasets' => [
                 [
-                    'label'            => 'Jumlah Setoran',
-                    'data'             => $data,
-                    'borderColor'      => '#14b8a6',
-                    'backgroundColor'  => '#14b8a622',
-                    'fill'             => true,
-                    'tension'          => 0.4,
-                    'pointRadius'      => 3,
+                    'label' => 'Jumlah Setoran',
+                    'data' => $data,
+                    'borderColor' => '#14b8a6',
+                    'backgroundColor' => '#14b8a622',
+                    'fill' => true,
+                    'tension' => 0.4,
+                    'pointRadius' => 3,
                     'pointHoverRadius' => 5,
                 ],
             ],
@@ -92,7 +92,7 @@ class UstadzTrendSetoranChart extends ChartWidget
             'scales' => [
                 'y' => [
                     'beginAtZero' => true,
-                    'ticks'       => ['stepSize' => 1],
+                    'ticks' => ['stepSize' => 1],
                 ],
             ],
             'plugins' => [

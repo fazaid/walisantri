@@ -4,8 +4,6 @@ namespace App\Filament\Resources\TarifSpps;
 
 use App\Enums\UserRole;
 use App\Filament\Clusters\Keuangan;
-use App\Filament\Resources\TarifSpps\Pages\CreateTarifSpp;
-use App\Filament\Resources\TarifSpps\Pages\EditTarifSpp;
 use App\Filament\Resources\TarifSpps\Pages\ListTarifSpps;
 use App\Filament\Resources\TarifSpps\Schemas\TarifSppForm;
 use App\Filament\Resources\TarifSpps\Tables\TarifSppsTable;
@@ -24,10 +22,13 @@ class TarifSppResource extends Resource
 
     protected static ?string $cluster = Keuangan::class;
 
-    protected static ?int $navigationSort = 1;
+    // Tidak muncul sebagai tab Keuangan; masuknya lewat tombol "Tarif SPP" di halaman Tagihan SPP.
+    protected static bool $shouldRegisterNavigation = false;
 
-    protected static ?string $navigationLabel  = 'Tarif';
-    protected static ?string $modelLabel       = 'Tarif SPP';
+    protected static ?string $navigationLabel = 'Tarif SPP';
+
+    protected static ?string $modelLabel = 'Tarif SPP';
+
     protected static ?string $pluralModelLabel = 'Tarif SPP';
 
     public static function canAccess(): bool
@@ -58,9 +59,7 @@ class TarifSppResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListTarifSpps::route('/'),
-            'create' => CreateTarifSpp::route('/create'),
-            'edit'   => EditTarifSpp::route('/{record}/edit'),
+            'index' => ListTarifSpps::route('/'),
         ];
     }
 }

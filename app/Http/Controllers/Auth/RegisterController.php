@@ -24,7 +24,7 @@ class RegisterController extends Controller
 
         return view('auth.register', [
             'registrationOpen' => PlatformSetting::registrationOpen(),
-            'trialDays'         => BillingSetting::get('trial_days', 14),
+            'trialDays' => BillingSetting::get('trial_days', 14),
         ]);
     }
 
@@ -38,24 +38,24 @@ class RegisterController extends Controller
 
         $data = $request->validate([
             'nama_pesantren' => ['required', 'string', 'max:100'],
-            'slug'           => ['required', 'string', new ValidTenantSlug, new SlugNotReserved, 'unique:pesantrens,slug'],
-            'admin_name'     => ['required', 'string', 'max:100'],
-            'email'          => ['required', 'email', 'unique:users,email'],
-            'password'       => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()],
+            'slug' => ['required', 'string', new ValidTenantSlug, new SlugNotReserved, 'unique:pesantrens,slug'],
+            'admin_name' => ['required', 'string', 'max:100'],
+            'email' => ['required', 'email', 'unique:users,email'],
+            'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()],
         ]);
 
         try {
             $result = $onboard->execute(
                 namaPesantren: $data['nama_pesantren'],
-                slug:          $data['slug'],
-                adminName:     $data['admin_name'],
-                adminEmail:    $data['email'],
+                slug: $data['slug'],
+                adminName: $data['admin_name'],
+                adminEmail: $data['email'],
                 adminPassword: $data['password'],
             );
         } catch (QueryException $e) {
             Log::warning('register_onboard_failed', [
-                'slug'    => $data['slug'],
-                'email'   => $data['email'],
+                'slug' => $data['slug'],
+                'email' => $data['email'],
                 'message' => $e->getMessage(),
             ]);
 
@@ -80,6 +80,6 @@ class RegisterController extends Controller
 
     private function adminUrl(): string
     {
-        return request()->getScheme() . '://' . config('app.domain') . '/admin';
+        return request()->getScheme().'://'.config('app.domain').'/admin';
     }
 }

@@ -48,12 +48,11 @@ class SaaSLifecycleLock
         }
 
         // Halaman billing, invoice, upgrade, & auth panel selalu boleh diakses
-        // (mencegah infinite redirect). Dicek via route name, bukan path string —
-        // BillingPage ada di dalam Cluster PengaturanPesantren (slug "pengaturan"),
-        // jadi path-nya bukan lagi "admin/billing-page" melainkan
-        // "admin/pengaturan/billing-page". Route name tetap stabil walau halaman
-        // dipindah cluster di masa depan.
-        if ($request->routeIs('filament.admin.pengaturan.pages.billing-page')
+        // (mencegah infinite redirect). Dicek via route name, bukan path string.
+        // Route name Filament ikut memuat slug cluster, jadi nama literalnya berubah
+        // begitu halaman keluar-masuk cluster — karena itu diambil dari
+        // BillingPage::getRouteName() supaya tidak bisa basi lagi.
+        if ($request->routeIs(BillingPage::getRouteName())
             || $request->routeIs('filament.admin.pages.order-invoice-page')
             || $request->routeIs('filament.admin.pages.upgrade-page')
             || $request->is('admin/login')
@@ -79,6 +78,7 @@ class SaaSLifecycleLock
                     423
                 );
             }
+
             return $this->redirectBilling($request, $pesantren);
         }
 

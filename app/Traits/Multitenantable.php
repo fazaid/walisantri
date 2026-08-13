@@ -5,6 +5,7 @@
 namespace App\Traits;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Validation\ValidationException;
 
 trait Multitenantable
 {
@@ -14,7 +15,7 @@ trait Multitenantable
         static::addGlobalScope('pesantren', function (Builder $query) {
             if (auth()->check() && auth()->user()->role !== 'super_admin') {
                 $query->where(
-                    (new static)->getTable() . '.pesantren_id',
+                    (new static)->getTable().'.pesantren_id',
                     auth()->user()->pesantren_id
                 );
             }
@@ -37,7 +38,7 @@ trait Multitenantable
                 && auth()->user()->role === 'super_admin'
                 && empty($model->pesantren_id)
             ) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
+                throw ValidationException::withMessages([
                     'pesantren_id' => 'Akun super admin tidak terkait dengan pesantren manapun, sehingga tidak bisa menambah data pesantren di sini. Silakan masuk sebagai admin pesantren yang bersangkutan.',
                 ]);
             }

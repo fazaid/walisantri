@@ -12,7 +12,9 @@ class TarifSppForm
 {
     public static function configure(Schema $schema): Schema
     {
-        return $schema->components([
+        // ->columns(1) wajib: ListRecords memaksa schema modal jadi 2 kolom,
+        // tanpa ini field-field pendek berjejer setengah lebar.
+        return $schema->columns(1)->components([
             Select::make('kelas_id')
                 ->label('Kelas')
                 ->options(function () {

@@ -4,21 +4,21 @@ namespace App\Enums;
 
 enum JenisUangSaku: string
 {
-    case Setoran     = 'setoran';
+    case Setoran = 'setoran';
     case Pengambilan = 'pengambilan';
 
     public function label(): string
     {
-        return match($this) {
-            self::Setoran     => 'Setoran',
+        return match ($this) {
+            self::Setoran => 'Setoran',
             self::Pengambilan => 'Pengambilan',
         };
     }
 
     public function color(): string
     {
-        return match($this) {
-            self::Setoran     => 'success',
+        return match ($this) {
+            self::Setoran => 'success',
             self::Pengambilan => 'warning',
         };
     }

@@ -19,6 +19,7 @@ use Filament\Schemas\Components\Form;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\HtmlString;
 use UnitEnum;
 
@@ -55,8 +56,8 @@ class AnalyticsSettingsPage extends Page implements HasForms
     {
         $this->form->fill([
             'enabled' => AnalyticsSetting::enabled(),
-            'gtm_id'  => AnalyticsSetting::gtmId(),
-            'ga4_id'  => AnalyticsSetting::ga4Id(),
+            'gtm_id' => AnalyticsSetting::gtmId(),
+            'ga4_id' => AnalyticsSetting::ga4Id(),
         ]);
     }
 
@@ -130,7 +131,7 @@ class AnalyticsSettingsPage extends Page implements HasForms
             AnalyticsSetting::set('ga4_id', filled($state['ga4_id']) ? trim($state['ga4_id']) : null);
             AnalyticsSetting::set('enabled', $state['enabled'] ? '1' : '0');
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('analytics_settings_save_failed', ['message' => $e->getMessage()]);
+            Log::error('analytics_settings_save_failed', ['message' => $e->getMessage()]);
 
             Notification::make()
                 ->title('Gagal menyimpan pengaturan')

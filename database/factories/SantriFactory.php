@@ -14,12 +14,12 @@ class SantriFactory extends Factory
     public function definition(): array
     {
         return [
-            'pesantren_id'         => Pesantren::factory(),
-            'wali_santri_id'       => User::factory()->waliSantri(),
+            'pesantren_id' => Pesantren::factory(),
+            'wali_santri_id' => User::factory()->waliSantri(),
             'pembimbing_ustadz_id' => User::factory()->ustadz(),
-            'nis'                  => fake()->unique()->numerify('########'),
-            'nama_lengkap'         => fake()->name(),
-            'status_aktif'         => true,
+            'nis' => fake()->unique()->numerify('########'),
+            'nama_lengkap' => fake()->name(),
+            'status_aktif' => true,
         ];
     }
 

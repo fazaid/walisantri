@@ -11,9 +11,9 @@ class PengumumanController extends Controller
     {
         // Pengumuman dari pesantren sendiri + broadcast global super admin (hanya target wali/semua)
         $pengumumanPesantren = MasterPengumuman::where(function ($query) {
-                $query->where('pesantren_id', auth()->user()->pesantren_id)
-                    ->orWhereNull('pesantren_id');
-            })
+            $query->where('pesantren_id', auth()->user()->pesantren_id)
+                ->orWhereNull('pesantren_id');
+        })
             ->forWali()
             ->latest()
             ->get();

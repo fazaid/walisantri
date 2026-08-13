@@ -15,7 +15,7 @@ return new class extends Migration
         // Tambah key baru jika belum ada
         DB::table('billing_settings')->upsert([
             ['key' => 'kuota_gratis',    'value' => 5, 'keterangan' => 'Kuota santri paket Gratis',              'created_at' => now(), 'updated_at' => now()],
-            ['key' => 'bonus_bulan_enam','value' => 1, 'keterangan' => 'Bulan gratis saat berlangganan 6 bulan', 'created_at' => now(), 'updated_at' => now()],
+            ['key' => 'bonus_bulan_enam', 'value' => 1, 'keterangan' => 'Bulan gratis saat berlangganan 6 bulan', 'created_at' => now(), 'updated_at' => now()],
         ], uniqueBy: ['key'], update: ['value', 'keterangan', 'updated_at']);
     }
 

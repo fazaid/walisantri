@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\Orders\Pages;
 
 use App\Filament\Resources\Orders\OrderResource;
-use App\Models\Order;
 use App\Services\UpgradeOrderService;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;

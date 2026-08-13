@@ -17,12 +17,12 @@ class WaliDashboardUangSakuTest extends TestCase
     private function santriDenganWali(): Santri
     {
         $pesantren = Pesantren::factory()->create();
-        $wali      = User::factory()->waliSantri()->create(['pesantren_id' => $pesantren->id]);
+        $wali = User::factory()->waliSantri()->create(['pesantren_id' => $pesantren->id]);
 
         return Santri::factory()->create([
-            'pesantren_id'   => $pesantren->id,
+            'pesantren_id' => $pesantren->id,
             'wali_santri_id' => $wali->id,
-            'status_aktif'   => true,
+            'status_aktif' => true,
         ]);
     }
 
@@ -30,10 +30,10 @@ class WaliDashboardUangSakuTest extends TestCase
     {
         UangSakuSantri::create([
             'pesantren_id' => $santri->pesantren_id,
-            'santri_id'    => $santri->id,
-            'jenis'        => $jenis,
-            'nominal'      => $nominal,
-            'tanggal'      => '2026-07-01',
+            'santri_id' => $santri->id,
+            'jenis' => $jenis,
+            'nominal' => $nominal,
+            'tanggal' => '2026-07-01',
         ]);
     }
 

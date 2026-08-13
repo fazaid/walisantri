@@ -14,7 +14,6 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use UnitEnum;
 
 class TagihanSppResource extends Resource
 {
@@ -24,15 +23,18 @@ class TagihanSppResource extends Resource
 
     protected static ?string $cluster = Keuangan::class;
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 1;
 
-    protected static ?string $navigationLabel  = 'Tagihan';
-    protected static ?string $modelLabel       = 'Tagihan SPP';
+    protected static ?string $navigationLabel = 'Tagihan SPP';
+
+    protected static ?string $modelLabel = 'Tagihan SPP';
+
     protected static ?string $pluralModelLabel = 'Tagihan SPP';
 
     public static function canAccess(): bool
     {
         $role = auth()->user()?->role;
+
         return $role === UserRole::AdminPesantren->value;
     }
 
@@ -60,7 +62,7 @@ class TagihanSppResource extends Resource
     {
         return [
             'index' => ListTagihanSpps::route('/'),
-            'view'  => ViewTagihanSpp::route('/{record}'),
+            'view' => ViewTagihanSpp::route('/{record}'),
         ];
     }
 }

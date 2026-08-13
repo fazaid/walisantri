@@ -15,10 +15,10 @@ class SuperAdminSeeder extends Seeder
             ['email' => 'superadmin@walisantri.com'],
             [
                 'pesantren_id' => null,
-                'name'         => 'Super Admin',
+                'name' => 'Super Admin',
                 'phone_number' => '081200000000',
-                'password'     => 'superadmin123',  // di-hash otomatis via cast 'hashed'
-                'role'         => 'super_admin',
+                'password' => 'superadmin123',  // di-hash otomatis via cast 'hashed'
+                'role' => 'super_admin',
             ]
         );
     }

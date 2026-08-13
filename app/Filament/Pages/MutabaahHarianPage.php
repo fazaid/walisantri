@@ -61,10 +61,10 @@ class MutabaahHarianPage extends Page implements HasForms
     public array $rows = [];
 
     public const STATUS_UDZUR_OPTIONS = [
-        'Tidak'        => 'Tidak',
-        'Sakit'        => 'Sakit',
-        'Haid'         => 'Haid',
-        'Izin_Pulang'  => 'Izin Pulang',
+        'Tidak' => 'Tidak',
+        'Sakit' => 'Sakit',
+        'Haid' => 'Haid',
+        'Izin_Pulang' => 'Izin Pulang',
         'Tugas_Pondok' => 'Tugas Pondok',
     ];
 
@@ -83,7 +83,7 @@ class MutabaahHarianPage extends Page implements HasForms
 
         $this->form->fill([
             'tanggal' => $tanggal,
-            'rows'    => $this->buildRows($tanggal),
+            'rows' => $this->buildRows($tanggal),
         ]);
     }
 
@@ -122,7 +122,7 @@ class MutabaahHarianPage extends Page implements HasForms
         $masterList = $this->amalMasterList();
 
         return $santriList->map(function (Santri $santri) use ($existing, $masterList) {
-            $rec    = $existing->get($santri->id);
+            $rec = $existing->get($santri->id);
             $amalan = $rec?->amalan ?? [];
 
             $defaultAmalan = $masterList->mapWithKeys(function (KesantrianAmalMaster $item) use ($amalan) {
@@ -132,9 +132,9 @@ class MutabaahHarianPage extends Page implements HasForms
             })->all();
 
             return [
-                'santri_id'    => $santri->id,
-                'nama'         => $santri->nama_lengkap,
-                'amalan'       => $defaultAmalan,
+                'santri_id' => $santri->id,
+                'nama' => $santri->nama_lengkap,
+                'amalan' => $defaultAmalan,
                 'status_udzur' => $rec?->status_udzur ?? 'Tidak',
             ];
         })->values()->toArray();
@@ -228,10 +228,10 @@ class MutabaahHarianPage extends Page implements HasForms
                     KesantrianMutabaah::updateOrCreate(
                         [
                             'santri_id' => $row['santri_id'],
-                            'tanggal'   => $data['tanggal'],
+                            'tanggal' => $data['tanggal'],
                         ],
                         [
-                            'amalan'       => $row['amalan'] ?? [],
+                            'amalan' => $row['amalan'] ?? [],
                             'status_udzur' => $row['status_udzur'],
                         ]
                     );

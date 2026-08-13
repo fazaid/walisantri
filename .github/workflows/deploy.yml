@@ -43,6 +43,9 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
+      - name: Cek format kode (Pint)
+        run: vendor/bin/pint --test
+
       - name: Install & build frontend assets
         run: |
           npm ci

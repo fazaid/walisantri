@@ -11,7 +11,9 @@ class SlugRelease extends Model
     public $timestamps = false;
 
     protected $primaryKey = 'slug';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = ['slug', 'released_at'];

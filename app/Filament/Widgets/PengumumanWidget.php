@@ -50,14 +50,14 @@ class PengumumanWidget extends Widget
             ->limit(3)
             ->get()
             ->map(fn ($item) => [
-                'judul'   => $item->judul_maklumat,
+                'judul' => $item->judul_maklumat,
                 'tanggal' => $item->created_at->format('d M Y'),
-                'isi'     => Str::limit(strip_tags($item->isi_maklumat), 100),
+                'isi' => Str::limit(strip_tags($item->isi_maklumat), 100),
             ]);
 
         return [
             'pengumuman' => $pengumuman,
-            'url'        => MasterPengumumanResource::getUrl('index'),
+            'url' => MasterPengumumanResource::getUrl('index'),
         ];
     }
 }

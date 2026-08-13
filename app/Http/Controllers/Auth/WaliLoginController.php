@@ -32,14 +32,15 @@ class WaliLoginController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'email'    => ['required', 'email'],
+            'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
 
-        $throttleKey = Str::lower($request->input('email')) . '|' . $request->ip();
+        $throttleKey = Str::lower($request->input('email')).'|'.$request->ip();
 
         if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
             $seconds = RateLimiter::availableIn($throttleKey);
+
             return back()->withErrors([
                 'email' => "Terlalu banyak percobaan login. Coba lagi dalam {$seconds} detik.",
             ])->onlyInput('email');
@@ -48,6 +49,7 @@ class WaliLoginController extends Controller
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             RateLimiter::clear($throttleKey);
             $request->session()->regenerate();
+
             return $this->redirectAfterLogin(Auth::user());
         }
 
@@ -63,15 +65,16 @@ class WaliLoginController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect()->route('login');
     }
 
     private function redirectAfterLogin($user)
     {
         return match ($user->role) {
-            'wali_santri'    => redirect()->route('wali.dashboard'),
-            'super_admin'    => redirect('/admin'),
-            default          => redirect('/admin'),
+            'wali_santri' => redirect()->route('wali.dashboard'),
+            'super_admin' => redirect('/admin'),
+            default => redirect('/admin'),
         };
     }
 }

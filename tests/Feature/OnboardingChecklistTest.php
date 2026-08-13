@@ -125,9 +125,9 @@ class OnboardingChecklistTest extends TestCase
         $pesantren = Pesantren::factory()->create();
 
         MasterPengumuman::create([
-            'pesantren_id'   => $pesantren->id,
+            'pesantren_id' => $pesantren->id,
             'judul_maklumat' => 'Pengumuman Perdana',
-            'isi_maklumat'   => 'Selamat datang.',
+            'isi_maklumat' => 'Selamat datang.',
         ]);
 
         $this->assertTrue($pesantren->fresh()->hasCompletedOnboardingStep(OnboardingStep::Pengumuman));
@@ -138,9 +138,9 @@ class OnboardingChecklistTest extends TestCase
         $pesantren = Pesantren::factory()->create();
 
         MasterPengumuman::create([
-            'pesantren_id'   => null,
+            'pesantren_id' => null,
             'judul_maklumat' => 'Pengumuman Platform',
-            'isi_maklumat'   => 'Broadcast global.',
+            'isi_maklumat' => 'Broadcast global.',
         ]);
 
         $this->assertFalse($pesantren->fresh()->hasCompletedOnboardingStep(OnboardingStep::Pengumuman));
@@ -149,7 +149,7 @@ class OnboardingChecklistTest extends TestCase
     public function test_widget_tampil_untuk_admin_pesantren_yang_belum_selesai_onboarding(): void
     {
         $pesantren = Pesantren::factory()->create();
-        $admin     = User::factory()->adminPesantren()->create(['pesantren_id' => $pesantren->id]);
+        $admin = User::factory()->adminPesantren()->create(['pesantren_id' => $pesantren->id]);
 
         $this->actingAs($admin);
 
@@ -159,7 +159,7 @@ class OnboardingChecklistTest extends TestCase
     public function test_widget_hilang_setelah_5_step_wajib_selesai_meski_pengumuman_belum(): void
     {
         $pesantren = Pesantren::factory()->create();
-        $admin     = User::factory()->adminPesantren()->create(['pesantren_id' => $pesantren->id]);
+        $admin = User::factory()->adminPesantren()->create(['pesantren_id' => $pesantren->id]);
 
         $pesantren->completeOnboardingStep(OnboardingStep::Profil);
         $pesantren->completeOnboardingStep(OnboardingStep::Ustadz);
@@ -179,7 +179,7 @@ class OnboardingChecklistTest extends TestCase
         // saat kompilasi. Render sungguhan sekaligus memastikan URL resource
         // di dalam cluster (KelasResource) bisa di-resolve.
         $pesantren = Pesantren::factory()->create();
-        $admin     = User::factory()->adminPesantren()->create(['pesantren_id' => $pesantren->id]);
+        $admin = User::factory()->adminPesantren()->create(['pesantren_id' => $pesantren->id]);
 
         Livewire::actingAs($admin)
             ->test(OnboardingChecklistWidget::class)
@@ -214,11 +214,11 @@ class OnboardingChecklistTest extends TestCase
         $santri = Santri::factory()->create(['pesantren_id' => $pesantren->id]);
 
         ActivityLog::create([
-            'pesantren_id'   => $pesantren->id,
-            'event'          => 'magic_link.viewed',
+            'pesantren_id' => $pesantren->id,
+            'event' => 'magic_link.viewed',
             'auditable_type' => Santri::class,
-            'auditable_id'   => $santri->id,
-            'created_at'     => now(),
+            'auditable_id' => $santri->id,
+            'created_at' => now(),
         ]);
 
         // Create santri/ustadz di atas sudah men-trigger Observer secara live. Reset ke []

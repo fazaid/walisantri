@@ -24,38 +24,51 @@ use Filament\Schemas\Schema;
 use Filament\Support\Enums\Size;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Auth;
-use UnitEnum;
 
 class UpgradePage extends Page implements HasForms
 {
     use InteractsWithForms;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowUpCircle;
+
     protected static ?string $navigationLabel = 'Upgrade Paket';
-    protected static ?string $title           = 'Upgrade / Perpanjang Paket';
+
+    protected static ?string $title = 'Upgrade / Perpanjang Paket';
+
     protected static bool $shouldRegisterNavigation = false;
 
     protected string $view = 'filament.pages.upgrade-page';
 
     // Form state
-    public string $paket_target            = '';
-    public int    $durasi_bulan            = 1;
-    public int    $max_santri_kuota_target = 1000;
-    public string $kode_kupon              = '';
+    public string $paket_target = '';
+
+    public int $durasi_bulan = 1;
+
+    public int $max_santri_kuota_target = 1000;
+
+    public string $kode_kupon = '';
 
     // Computed once in mount — minimum durasi berdasarkan sisa masa aktif
     public int $min_durasi_upgrade = 1;
 
     // Computed (reactive)
-    public int    $harga_per_bulan             = 0;
-    public int    $harga_total_sebelum_diskon  = 0;
-    public int    $diskon_nominal              = 0;
-    public ?int   $diskon_persen               = null;
-    public int    $bonus_bulan                 = 0;
-    public int    $harga_total                 = 0;
-    public ?string $kupon_pesan                = null;
-    public bool   $kupon_valid                 = false;
-    public int    $bulan_bayar                 = 1;
+    public int $harga_per_bulan = 0;
+
+    public int $harga_total_sebelum_diskon = 0;
+
+    public int $diskon_nominal = 0;
+
+    public ?int $diskon_persen = null;
+
+    public int $bonus_bulan = 0;
+
+    public int $harga_total = 0;
+
+    public ?string $kupon_pesan = null;
+
+    public bool $kupon_valid = false;
+
+    public int $bulan_bayar = 1;
 
     public static function canAccess(): bool
     {
@@ -68,16 +81,16 @@ class UpgradePage extends Page implements HasForms
 
         abort_unless($pesantren, 403, 'Pesantren tidak ditemukan.');
 
-        $this->paket_target            = $pesantren->paket_langganan ?? 'rintisan';
+        $this->paket_target = $pesantren->paket_langganan ?? 'rintisan';
         $this->max_santri_kuota_target = $pesantren->max_santri_kuota ?? 1000;
-        $this->min_durasi_upgrade      = $this->hitungMinDurasi($pesantren);
-        $this->durasi_bulan            = max($this->durasi_bulan, $this->min_durasi_upgrade);
+        $this->min_durasi_upgrade = $this->hitungMinDurasi($pesantren);
+        $this->durasi_bulan = max($this->durasi_bulan, $this->min_durasi_upgrade);
 
         $this->form->fill([
-            'paket_target'            => $this->paket_target,
-            'durasi_bulan'            => $this->durasi_bulan,
+            'paket_target' => $this->paket_target,
+            'durasi_bulan' => $this->durasi_bulan,
             'max_santri_kuota_target' => $this->max_santri_kuota_target,
-            'kode_kupon'              => '',
+            'kode_kupon' => '',
         ]);
 
         $this->hitungHarga();
@@ -91,8 +104,13 @@ class UpgradePage extends Page implements HasForms
 
         $sisaBulan = (int) ceil(now()->floatDiffInMonths($pesantren->expired_at));
 
-        if ($sisaBulan > 9) return 12;
-        if ($sisaBulan > 6) return 6;
+        if ($sisaBulan > 9) {
+            return 12;
+        }
+        if ($sisaBulan > 6) {
+            return 6;
+        }
+
         return 1;
     }
 
@@ -108,9 +126,9 @@ class UpgradePage extends Page implements HasForms
 
                             return collect(PaketLangganan::cases())
                                 ->mapWithKeys(function (PaketLangganan $paket) use ($calculator) {
-                                    $kuota          = $calculator->hitungUntukTarget($paket->value, 0)['kuota_maksimal'];
+                                    $kuota = $calculator->hitungUntukTarget($paket->value, 0)['kuota_maksimal'];
                                     $kuotaFormatted = number_format($kuota, 0, ',', '.');
-                                    $keterangan     = $paket === PaketLangganan::Maju
+                                    $keterangan = $paket === PaketLangganan::Maju
                                         ? "mulai dari {$kuotaFormatted} santri"
                                         : "maksimal {$kuotaFormatted} santri";
 
@@ -166,6 +184,7 @@ class UpgradePage extends Page implements HasForms
                             if ($this->min_durasi_upgrade === 6) {
                                 return 'Durasi minimum 6 bulan karena sisa langganan aktif lebih dari 6 bulan.';
                             }
+
                             return null;
                         })
                         ->required()
@@ -228,12 +247,12 @@ class UpgradePage extends Page implements HasForms
     public function hitungHarga(): void
     {
         $calculator = app(BillingCalculatorService::class);
-        $hasil      = $calculator->hitungUntukTarget($this->paket_target, $this->max_santri_kuota_target);
+        $hasil = $calculator->hitungUntukTarget($this->paket_target, $this->max_santri_kuota_target);
 
-        $durasi                           = DurasiLangganan::from($this->durasi_bulan);
-        $this->harga_per_bulan            = $hasil['total_biaya'];
-        $this->bonus_bulan                = $durasi->bonusBulan();
-        $this->bulan_bayar                = $durasi->bulanBayar();
+        $durasi = DurasiLangganan::from($this->durasi_bulan);
+        $this->harga_per_bulan = $hasil['total_biaya'];
+        $this->bonus_bulan = $durasi->bonusBulan();
+        $this->bulan_bayar = $durasi->bulanBayar();
         $this->harga_total_sebelum_diskon = $this->harga_per_bulan * $this->bulan_bayar;
 
         $this->terapkanKupon();
@@ -243,10 +262,11 @@ class UpgradePage extends Page implements HasForms
     {
         if (empty($this->kode_kupon)) {
             $this->diskon_nominal = 0;
-            $this->diskon_persen  = null;
-            $this->kupon_pesan    = null;
-            $this->kupon_valid    = false;
-            $this->harga_total    = $this->harga_total_sebelum_diskon;
+            $this->diskon_persen = null;
+            $this->kupon_pesan = null;
+            $this->kupon_valid = false;
+            $this->harga_total = $this->harga_total_sebelum_diskon;
+
             return;
         }
 
@@ -254,18 +274,19 @@ class UpgradePage extends Page implements HasForms
 
         if (! $kupon || ! $kupon->isValid($this->durasi_bulan)) {
             $this->diskon_nominal = 0;
-            $this->diskon_persen  = null;
-            $this->kupon_pesan    = 'Kode kupon tidak valid atau sudah kadaluwarsa.';
-            $this->kupon_valid    = false;
-            $this->harga_total    = $this->harga_total_sebelum_diskon;
+            $this->diskon_persen = null;
+            $this->kupon_pesan = 'Kode kupon tidak valid atau sudah kadaluwarsa.';
+            $this->kupon_valid = false;
+            $this->harga_total = $this->harga_total_sebelum_diskon;
+
             return;
         }
 
         $this->diskon_nominal = $kupon->hitungDiskon($this->harga_total_sebelum_diskon);
-        $this->diskon_persen  = $kupon->tipe_diskon === TipeDiskon::Persentase ? $kupon->nilai_diskon : null;
-        $this->harga_total    = max(0, $this->harga_total_sebelum_diskon - $this->diskon_nominal);
-        $this->kupon_valid    = true;
-        $this->kupon_pesan    = 'Kupon berhasil diterapkan!';
+        $this->diskon_persen = $kupon->tipe_diskon === TipeDiskon::Persentase ? $kupon->nilai_diskon : null;
+        $this->harga_total = max(0, $this->harga_total_sebelum_diskon - $this->diskon_nominal);
+        $this->kupon_valid = true;
+        $this->kupon_pesan = 'Kupon berhasil diterapkan!';
     }
 
     public function prosesPembayaran(): void
@@ -281,12 +302,12 @@ class UpgradePage extends Page implements HasForms
         $pesantren = Auth::user()->pesantren;
 
         $service = app(UpgradeOrderService::class);
-        $result  = $service->createOrder(
-            pesantren:       $pesantren,
-            paketTarget:     $this->paket_target,
-            durasibulan:     $this->durasi_bulan,
-            maxSantriKuota:  $this->max_santri_kuota_target,
-            kodeKupon:       $this->kode_kupon ?: null,
+        $result = $service->createOrder(
+            pesantren: $pesantren,
+            paketTarget: $this->paket_target,
+            durasibulan: $this->durasi_bulan,
+            maxSantriKuota: $this->max_santri_kuota_target,
+            kodeKupon: $this->kode_kupon ?: null,
         );
 
         Notification::make()
@@ -300,6 +321,6 @@ class UpgradePage extends Page implements HasForms
 
     public function formatRupiah(int $nilai): string
     {
-        return 'Rp ' . number_format($nilai, 0, ',', '.');
+        return 'Rp '.number_format($nilai, 0, ',', '.');
     }
 }

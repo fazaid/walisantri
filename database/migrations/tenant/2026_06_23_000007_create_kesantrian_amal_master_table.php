@@ -45,9 +45,9 @@ return new class extends Migration
             $rows = array_map(function (array $item) use ($pesantrenId, $now) {
                 return $item + [
                     'pesantren_id' => $pesantrenId,
-                    'aktif'        => true,
-                    'created_at'   => $now,
-                    'updated_at'   => $now,
+                    'aktif' => true,
+                    'created_at' => $now,
+                    'updated_at' => $now,
                 ];
             }, $default);
 

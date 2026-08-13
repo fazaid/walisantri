@@ -9,18 +9,18 @@ return new class extends Migration
     {
         DB::table('billing_settings')->upsert([
             [
-                'key'         => 'harga_tumbuh',
-                'value'       => 299000,
-                'keterangan'  => 'Harga paket Tumbuh per bulan',
-                'created_at'  => now(),
-                'updated_at'  => now(),
+                'key' => 'harga_tumbuh',
+                'value' => 299000,
+                'keterangan' => 'Harga paket Tumbuh per bulan',
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
             [
-                'key'         => 'kuota_tumbuh',
-                'value'       => 250,
-                'keterangan'  => 'Kuota santri paket Tumbuh',
-                'created_at'  => now(),
-                'updated_at'  => now(),
+                'key' => 'kuota_tumbuh',
+                'value' => 250,
+                'keterangan' => 'Kuota santri paket Tumbuh',
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
         ], uniqueBy: ['key'], update: ['value', 'keterangan', 'updated_at']);
     }

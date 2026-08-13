@@ -20,19 +20,19 @@ class SaaSLifecycleLockTest extends TestCase
 
         // Minimal route protected by saas.lifecycle only (not in web group,
         // so SaaSLifecycleLock runs exactly once per request).
-        Route::match(['GET', 'POST'], '/test-saas', fn() => response('ok', 200))
+        Route::match(['GET', 'POST'], '/test-saas', fn () => response('ok', 200))
             ->middleware(['auth', 'saas.lifecycle']);
     }
 
     private function makePesantren(array $override = []): Pesantren
     {
         return Pesantren::create(array_merge([
-            'nama_pesantren'      => 'Pesantren Lifecycle',
-            'slug'                => 'pesantren-lifecycle-' . uniqid(),
-            'paket_langganan'     => 'rintisan',
-            'max_santri_kuota'    => 100,
+            'nama_pesantren' => 'Pesantren Lifecycle',
+            'slug' => 'pesantren-lifecycle-'.uniqid(),
+            'paket_langganan' => 'rintisan',
+            'max_santri_kuota' => 100,
             'status_berlangganan' => 'active',
-            'expired_at'          => now()->addYear(),
+            'expired_at' => now()->addYear(),
         ], $override));
     }
 
@@ -43,10 +43,10 @@ class SaaSLifecycleLockTest extends TestCase
 
         return User::create([
             'pesantren_id' => $pesantren->id,
-            'name'         => "{$role} {$counter}",
-            'email'        => strtolower(str_replace('_', '', $role)) . ".{$counter}@saas.test",
-            'password'     => bcrypt('password'),
-            'role'         => $role,
+            'name' => "{$role} {$counter}",
+            'email' => strtolower(str_replace('_', '', $role)).".{$counter}@saas.test",
+            'password' => bcrypt('password'),
+            'role' => $role,
         ]);
     }
 
@@ -55,7 +55,7 @@ class SaaSLifecycleLockTest extends TestCase
     public function test_akses_diblokir_saat_status_suspended_untuk_admin(): void
     {
         $pesantren = $this->makePesantren(['status_berlangganan' => 'suspended']);
-        $admin     = $this->makeUser($pesantren, 'admin_pesantren');
+        $admin = $this->makeUser($pesantren, 'admin_pesantren');
 
         // Admin pesantren → redirectBilling → JSON 402
         $this->actingAs($admin)
@@ -66,7 +66,7 @@ class SaaSLifecycleLockTest extends TestCase
     public function test_akses_diblokir_saat_status_suspended_untuk_wali_santri(): void
     {
         $pesantren = $this->makePesantren(['status_berlangganan' => 'suspended']);
-        $wali      = $this->makeUser($pesantren, 'wali_santri');
+        $wali = $this->makeUser($pesantren, 'wali_santri');
 
         // Wali santri → lockResponse 423 (Locked)
         $this->actingAs($wali)
@@ -77,7 +77,7 @@ class SaaSLifecycleLockTest extends TestCase
     public function test_akses_diblokir_saat_status_suspended_untuk_ustadz(): void
     {
         $pesantren = $this->makePesantren(['status_berlangganan' => 'suspended']);
-        $ustadz    = $this->makeUser($pesantren, 'ustadz');
+        $ustadz = $this->makeUser($pesantren, 'ustadz');
 
         // Ustadz bukan admin_pesantren → tidak boleh diarahkan ke BillingPage
         // (BillingPage::canAccess() menolaknya) → lockResponse 403, bukan redirect/402.
@@ -93,7 +93,7 @@ class SaaSLifecycleLockTest extends TestCase
         // Expired 3 days ago → still within the 7-day grace window.
         $pesantren = $this->makePesantren([
             'status_berlangganan' => 'expired',
-            'expired_at'          => now()->subDays(3),
+            'expired_at' => now()->subDays(3),
         ]);
         $wali = $this->makeUser($pesantren, 'wali_santri');
 
@@ -107,7 +107,7 @@ class SaaSLifecycleLockTest extends TestCase
     {
         $pesantren = $this->makePesantren([
             'status_berlangganan' => 'expired',
-            'expired_at'          => now()->subDays(3),
+            'expired_at' => now()->subDays(3),
         ]);
         $wali = $this->makeUser($pesantren, 'wali_santri');
 
@@ -131,7 +131,7 @@ class SaaSLifecycleLockTest extends TestCase
         // Expired 10 hari lalu → sudah lewat grace period 7 hari.
         $pesantren = $this->makePesantren([
             'status_berlangganan' => 'expired',
-            'expired_at'          => now()->subDays(10),
+            'expired_at' => now()->subDays(10),
         ]);
         $wali = $this->makeUser($pesantren, 'wali_santri');
 
@@ -153,7 +153,7 @@ class SaaSLifecycleLockTest extends TestCase
         // SaaSLifecycleLock, bukan diarahkan ke halaman yang mereka tidak boleh buka.
         $pesantren = $this->makePesantren([
             'status_berlangganan' => 'expired',
-            'expired_at'          => now()->subDays(3),
+            'expired_at' => now()->subDays(3),
         ]);
         $ustadz = $this->makeUser($pesantren, 'ustadz');
 
@@ -167,7 +167,7 @@ class SaaSLifecycleLockTest extends TestCase
     {
         $pesantren = $this->makePesantren([
             'status_berlangganan' => 'expired',
-            'expired_at'          => now()->subDays(3),
+            'expired_at' => now()->subDays(3),
         ]);
         $admin = $this->makeUser($pesantren, 'admin_pesantren');
 
@@ -186,7 +186,7 @@ class SaaSLifecycleLockTest extends TestCase
         // karena halaman error 403/423 bawaan tidak punya navigasi sama sekali.
         $pesantren = $this->makePesantren([
             'status_berlangganan' => 'expired',
-            'expired_at'          => now()->subDays(3),
+            'expired_at' => now()->subDays(3),
         ]);
         $ustadz = $this->makeUser($pesantren, 'ustadz');
 
@@ -200,7 +200,7 @@ class SaaSLifecycleLockTest extends TestCase
     {
         $pesantren = $this->makePesantren([
             'status_berlangganan' => 'expired',
-            'expired_at'          => now()->subDays(10),
+            'expired_at' => now()->subDays(10),
         ]);
         $wali = $this->makeUser($pesantren, 'wali_santri');
 
@@ -222,7 +222,7 @@ class SaaSLifecycleLockTest extends TestCase
         // di SaaSLifecycleLock::lockResponse().
         $pesantren = $this->makePesantren([
             'status_berlangganan' => 'expired',
-            'expired_at'          => now()->subDays(10),
+            'expired_at' => now()->subDays(10),
         ]);
         $wali = $this->makeUser($pesantren, 'wali_santri');
 
@@ -238,7 +238,7 @@ class SaaSLifecycleLockTest extends TestCase
     {
         $pesantren = $this->makePesantren([
             'status_berlangganan' => 'expired',
-            'expired_at'          => now()->subDays(3),
+            'expired_at' => now()->subDays(3),
         ]);
         $admin = $this->makeUser($pesantren, 'admin_pesantren');
 
@@ -253,7 +253,7 @@ class SaaSLifecycleLockTest extends TestCase
     {
         $pesantren = $this->makePesantren([
             'status_berlangganan' => 'expired',
-            'expired_at'          => now()->subDays(3),
+            'expired_at' => now()->subDays(3),
         ]);
         $admin = $this->makeUser($pesantren, 'admin_pesantren');
 

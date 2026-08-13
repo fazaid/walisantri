@@ -50,7 +50,7 @@ class AdminKesehatanTrendChart extends ChartWidget
             Select::make('period')
                 ->label('Periode')
                 ->options([
-                    '7'  => '7 Hari',
+                    '7' => '7 Hari',
                     '14' => '14 Hari',
                     '30' => '30 Hari',
                 ])
@@ -65,7 +65,7 @@ class AdminKesehatanTrendChart extends ChartWidget
 
     protected function getData(): array
     {
-        $days  = (int) ($this->filters['period'] ?? 30);
+        $days = (int) ($this->filters['period'] ?? 30);
         $start = Waktu::sekarang()->subDays($days - 1)->toDateString();
 
         $rows = KesantrianKesehatan::whereBetween('tanggal_periksa', [$start, Waktu::sekarang()->toDateString()])
@@ -74,24 +74,24 @@ class AdminKesehatanTrendChart extends ChartWidget
             ->map->count();
 
         $labels = [];
-        $data   = [];
+        $data = [];
 
         for ($i = $days - 1; $i >= 0; $i--) {
-            $date     = Waktu::sekarang()->subDays($i)->toDateString();
+            $date = Waktu::sekarang()->subDays($i)->toDateString();
             $labels[] = Waktu::sekarang()->subDays($i)->format('d/m');
-            $data[]   = (int) ($rows[$date] ?? 0);
+            $data[] = (int) ($rows[$date] ?? 0);
         }
 
         return [
             'datasets' => [
                 [
-                    'label'            => 'Insiden Kesehatan',
-                    'data'             => $data,
-                    'borderColor'      => '#f97316',
-                    'backgroundColor'  => '#f9731622',
-                    'fill'             => true,
-                    'tension'          => 0.4,
-                    'pointRadius'      => 3,
+                    'label' => 'Insiden Kesehatan',
+                    'data' => $data,
+                    'borderColor' => '#f97316',
+                    'backgroundColor' => '#f9731622',
+                    'fill' => true,
+                    'tension' => 0.4,
+                    'pointRadius' => 3,
                     'pointHoverRadius' => 5,
                 ],
             ],
@@ -105,7 +105,7 @@ class AdminKesehatanTrendChart extends ChartWidget
             'scales' => [
                 'y' => [
                     'beginAtZero' => true,
-                    'ticks'       => ['stepSize' => 1],
+                    'ticks' => ['stepSize' => 1],
                 ],
             ],
             'plugins' => [

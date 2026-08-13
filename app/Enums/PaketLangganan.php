@@ -4,38 +4,38 @@ namespace App\Enums;
 
 enum PaketLangganan: string
 {
-    case Rintisan   = 'rintisan';
-    case Tumbuh     = 'tumbuh';
+    case Rintisan = 'rintisan';
+    case Tumbuh = 'tumbuh';
     case Berkembang = 'berkembang';
-    case Maju       = 'maju';
+    case Maju = 'maju';
 
     public function label(): string
     {
-        return match($this) {
-            self::Rintisan   => 'Rintisan',
-            self::Tumbuh     => 'Tumbuh',
+        return match ($this) {
+            self::Rintisan => 'Rintisan',
+            self::Tumbuh => 'Tumbuh',
             self::Berkembang => 'Berkembang',
-            self::Maju       => 'Maju',
+            self::Maju => 'Maju',
         };
     }
 
     public function color(): string
     {
-        return match($this) {
-            self::Rintisan   => 'info',
-            self::Tumbuh     => 'success',
+        return match ($this) {
+            self::Rintisan => 'info',
+            self::Tumbuh => 'success',
             self::Berkembang => 'warning',
-            self::Maju       => 'primary',
+            self::Maju => 'primary',
         };
     }
 
     public function maxSantri(): int
     {
-        return match($this) {
-            self::Rintisan   => 100,
-            self::Tumbuh     => 250,
+        return match ($this) {
+            self::Rintisan => 100,
+            self::Tumbuh => 250,
             self::Berkembang => 500,
-            self::Maju       => 1000,
+            self::Maju => 1000,
         };
     }
 

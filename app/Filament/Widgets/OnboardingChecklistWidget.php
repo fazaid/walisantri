@@ -36,15 +36,15 @@ class OnboardingChecklistWidget extends Widget
         $pesantren = Auth::user()->pesantren;
 
         $items = collect(OnboardingStep::cases())->map(fn (OnboardingStep $step) => [
-            'label'    => $step->label(),
-            'done'     => $pesantren->hasCompletedOnboardingStep($step),
+            'label' => $step->label(),
+            'done' => $pesantren->hasCompletedOnboardingStep($step),
             'required' => $step->isRequired(),
-            'url'      => $this->urlFor($step),
+            'url' => $this->urlFor($step),
         ]);
 
         return [
-            'items'         => $items,
-            'requiredDone'  => $items->where('required', true)->where('done', true)->count(),
+            'items' => $items,
+            'requiredDone' => $items->where('required', true)->where('done', true)->count(),
             'requiredTotal' => count(OnboardingStep::required()),
         ];
     }
@@ -52,11 +52,11 @@ class OnboardingChecklistWidget extends Widget
     private function urlFor(OnboardingStep $step): string
     {
         return match ($step) {
-            OnboardingStep::Profil     => PesantrenSettingsPage::getUrl(),
-            OnboardingStep::Ustadz     => UserResource::getUrl('create', ['role' => UserRole::Ustadz->value]),
-            OnboardingStep::Kelas      => KelasResource::getUrl('index', ['action' => 'create']),
-            OnboardingStep::Santri     => SantriResource::getUrl('index', ['action' => 'create']),
-            OnboardingStep::MagicLink  => SantriResource::getUrl('index'),
+            OnboardingStep::Profil => PesantrenSettingsPage::getUrl(),
+            OnboardingStep::Ustadz => UserResource::getUrl('create', ['role' => UserRole::Ustadz->value]),
+            OnboardingStep::Kelas => KelasResource::getUrl('index', ['action' => 'create']),
+            OnboardingStep::Santri => SantriResource::getUrl('index', ['action' => 'create']),
+            OnboardingStep::MagicLink => SantriResource::getUrl('index'),
             OnboardingStep::Pengumuman => MasterPengumumanResource::getUrl('create'),
         };
     }

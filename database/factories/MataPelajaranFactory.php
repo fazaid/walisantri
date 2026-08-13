@@ -16,13 +16,13 @@ class MataPelajaranFactory extends Factory
     {
         return [
             'pesantren_id' => Pesantren::factory(),
-            'kelas_id'     => function (array $attributes) {
+            'kelas_id' => function (array $attributes) {
                 return Kelas::factory()->create(['pesantren_id' => $attributes['pesantren_id']])->id;
             },
-            'ustadz_id'    => function (array $attributes) {
+            'ustadz_id' => function (array $attributes) {
                 return User::factory()->ustadz()->create(['pesantren_id' => $attributes['pesantren_id']])->id;
             },
-            'nama_mapel'   => fake()->randomElement([
+            'nama_mapel' => fake()->randomElement([
                 'Tafsir', 'Hadits', 'Fiqih', 'Bahasa Arab', 'Akidah Akhlak',
             ]),
         ];

@@ -4,12 +4,12 @@ namespace App\Filament\Resources\UangSakus;
 
 use App\Enums\UserRole;
 use App\Filament\Clusters\Keuangan;
-use App\Filament\Resources\UangSakus\Pages\CreateUangSaku;
 use App\Filament\Resources\UangSakus\Pages\ListUangSakus;
 use App\Filament\Resources\UangSakus\Schemas\UangSakuForm;
 use App\Filament\Resources\UangSakus\Tables\UangSakusTable;
 use App\Models\UangSakuSantri;
 use BackedEnum;
+use Closure;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -23,10 +23,13 @@ class UangSakuResource extends Resource
 
     protected static ?string $cluster = Keuangan::class;
 
-    protected static ?int $navigationSort = 4;
+    // Tidak muncul sebagai tab Keuangan; masuknya lewat tombol "Uang Saku" di halaman Saldo.
+    protected static bool $shouldRegisterNavigation = false;
 
-    protected static ?string $navigationLabel  = 'Uang Saku';
-    protected static ?string $modelLabel       = 'Transaksi Uang Saku';
+    protected static ?string $navigationLabel = 'Uang Saku';
+
+    protected static ?string $modelLabel = 'Transaksi Uang Saku';
+
     protected static ?string $pluralModelLabel = 'Uang Saku Santri';
 
     public static function canAccess(): bool
@@ -37,6 +40,16 @@ class UangSakuResource extends Resource
     public static function canViewAny(): bool
     {
         return static::canAccess();
+    }
+
+    /** Catat siapa yang menginput transaksi; dipakai CreateAction lewat ->mutateDataUsing(). */
+    public static function catatPencatat(): Closure
+    {
+        return function (array $data): array {
+            $data['dicatat_oleh'] = auth()->id();
+
+            return $data;
+        };
     }
 
     public static function form(Schema $schema): Schema
@@ -57,8 +70,7 @@ class UangSakuResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListUangSakus::route('/'),
-            'create' => CreateUangSaku::route('/create'),
+            'index' => ListUangSakus::route('/'),
         ];
     }
 }

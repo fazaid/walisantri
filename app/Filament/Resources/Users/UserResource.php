@@ -11,11 +11,11 @@ use App\Filament\Resources\Users\Schemas\UserForm;
 use App\Filament\Resources\Users\Schemas\UserInfolist;
 use App\Filament\Resources\Users\Tables\UsersTable;
 use App\Models\User;
+use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use BackedEnum;
 use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
@@ -30,8 +30,11 @@ class UserResource extends Resource
     protected static ?int $navigationSort = 1;
 
     protected static ?string $recordTitleAttribute = 'name';
+
     protected static ?string $navigationLabel = 'Pengguna';
+
     protected static ?string $modelLabel = 'Pengguna';
+
     protected static ?string $pluralModelLabel = 'Data Pengguna';
 
     public static function canAccess(): bool
@@ -57,7 +60,7 @@ class UserResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        $user  = auth()->user();
+        $user = auth()->user();
 
         if ($user?->role === UserRole::AdminPesantren->value) {
             $query->where('pesantren_id', $user->pesantren_id);
@@ -89,10 +92,10 @@ class UserResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListUsers::route('/'),
+            'index' => ListUsers::route('/'),
             'create' => CreateUser::route('/create'),
-            'view'   => ViewUser::route('/{record}'),
-            'edit'   => EditUser::route('/{record}/edit'),
+            'view' => ViewUser::route('/{record}'),
+            'edit' => EditUser::route('/{record}/edit'),
         ];
     }
 }

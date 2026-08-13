@@ -1,5 +1,11 @@
 <?php
 
+use App\Jobs\CheckExpiredTenants;
+use App\Jobs\PruneStaleCache;
+use App\Jobs\PurgeAuditLogs;
+use App\Jobs\WarmDashboardCache;
+use App\Jobs\WarnExpiringTenants;
+use App\Jobs\WarnExpiringTenantsWhatsApp;
 use Illuminate\Support\Facades\Schedule;
 
 // PRD §11 — Semua scheduled task terdaftar di sini.
@@ -13,26 +19,26 @@ use Illuminate\Support\Facades\Schedule;
 // supaya "09.00" benar-benar pagi bagi pesantren, bukan 16.00 WIB.
 
 // Harian 00.01 — Update status_berlangganan dari expired_at
-Schedule::job(\App\Jobs\CheckExpiredTenants::class)
+Schedule::job(CheckExpiredTenants::class)
     ->dailyAt('00:01')
     ->timezone(config('app.display_timezone'))
     ->withoutOverlapping();
 
 // Harian 09.00 — Email peringatan 7 & 3 hari sebelum expired
-Schedule::job(\App\Jobs\WarnExpiringTenants::class)
+Schedule::job(WarnExpiringTenants::class)
     ->dailyAt('09:00')
     ->timezone(config('app.display_timezone'))
     ->withoutOverlapping();
 
 // Harian 09.05 — WhatsApp peringatan 3 & 1 hari sebelum expired (channel tambahan,
 // pengecualian sempit atas kebijakan WA manual — lihat komentar di atas & PRD §12)
-Schedule::job(\App\Jobs\WarnExpiringTenantsWhatsApp::class)
+Schedule::job(WarnExpiringTenantsWhatsApp::class)
     ->dailyAt('09:05')
     ->timezone(config('app.display_timezone'))
     ->withoutOverlapping();
 
 // Tanggal 1 tiap bulan — Purge audit logs sesuai retention (§10.3)
-Schedule::job(\App\Jobs\PurgeAuditLogs::class)
+Schedule::job(PurgeAuditLogs::class)
     ->monthlyOn(1, '03:30')
     ->timezone(config('app.display_timezone'))
     ->withoutOverlapping();
@@ -43,12 +49,12 @@ Schedule::job(\App\Jobs\PurgeAuditLogs::class)
 // disk 'r2-backup' yang tidak pernah dikonfigurasi (selalu error diam-diam).
 
 // Tiap 25 menit — Pre-generate cache dashboard wali santri aktif (§4.5)
-Schedule::job(\App\Jobs\WarmDashboardCache::class)
+Schedule::job(WarmDashboardCache::class)
     ->cron('*/25 * * * *')
     ->withoutOverlapping();
 
 // Harian 03.00 — Hapus cache Redis santri non-aktif
-Schedule::job(\App\Jobs\PruneStaleCache::class)
+Schedule::job(PruneStaleCache::class)
     ->dailyAt('03:00')
     ->timezone(config('app.display_timezone'))
     ->withoutOverlapping();

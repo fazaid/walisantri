@@ -16,8 +16,8 @@ class LaporanController extends Controller
 {
     public function exportPdf()
     {
-        $santriId    = request('santri_id');
-        $periode     = request('periode', TahunAjaranOptions::currentPeriode());
+        $santriId = request('santri_id');
+        $periode = request('periode', TahunAjaranOptions::currentPeriode());
         $tahunAjaran = request('tahun_ajaran', TahunAjaranOptions::current());
 
         // Validasi: santri harus milik wali yang sedang login
@@ -62,9 +62,9 @@ class LaporanController extends Controller
         ))->setPaper('A4', 'portrait');
 
         $filename = 'Laporan-'
-            . str_replace(' ', '-', $santri->nama_lengkap)
-            . '-' . str_replace('/', '-', $tahunAjaran)
-            . '.pdf';
+            .str_replace(' ', '-', $santri->nama_lengkap)
+            .'-'.str_replace('/', '-', $tahunAjaran)
+            .'.pdf';
 
         return $pdf->download($filename);
     }

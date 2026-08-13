@@ -17,11 +17,11 @@ class UserFactory extends Factory
     {
         return [
             'pesantren_id' => null,
-            'name'         => fake()->name(),
-            'email'        => fake()->unique()->safeEmail(),
+            'name' => fake()->name(),
+            'email' => fake()->unique()->safeEmail(),
             'phone_number' => null,
-            'password'     => static::$password ??= Hash::make('password'),
-            'role'         => 'wali_santri',
+            'password' => static::$password ??= Hash::make('password'),
+            'role' => 'wali_santri',
             'remember_token' => Str::random(10),
         ];
     }

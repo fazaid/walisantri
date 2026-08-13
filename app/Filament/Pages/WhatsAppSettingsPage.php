@@ -24,6 +24,7 @@ use Filament\Schemas\Components\Form;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Facades\Log;
 use UnitEnum;
 
 class WhatsAppSettingsPage extends Page implements HasForms
@@ -250,7 +251,7 @@ class WhatsAppSettingsPage extends Page implements HasForms
             );
             WhatsAppMessageTemplate::set('cs_invoice_bantuan', $state['cs_bantuan_template']);
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('whatsapp_settings_save_failed', ['message' => $e->getMessage()]);
+            Log::error('whatsapp_settings_save_failed', ['message' => $e->getMessage()]);
 
             Notification::make()
                 ->title('Gagal menyimpan pengaturan')

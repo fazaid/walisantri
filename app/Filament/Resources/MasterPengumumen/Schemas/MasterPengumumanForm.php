@@ -30,7 +30,7 @@ class MasterPengumumanForm
                         ->options([
                             'semua' => '👥 Semua Pengguna',
                             'admin' => '🏫 Admin & Ustadz Pesantren',
-                            'wali'  => '👨‍👩‍👧 Wali Santri',
+                            'wali' => '👨‍👩‍👧 Wali Santri',
                         ])
                         ->default('semua')
                         ->required(),

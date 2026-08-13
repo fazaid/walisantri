@@ -30,7 +30,7 @@ class UangSakusTable
 
                 TextColumn::make('nominal')
                     ->label('Nominal')
-                    ->formatStateUsing(fn (int $state): string => 'Rp ' . number_format($state, 0, ',', '.'))
+                    ->formatStateUsing(fn (int $state): string => 'Rp '.number_format($state, 0, ',', '.'))
                     ->sortable()
                     ->alignEnd(),
 

@@ -25,9 +25,9 @@ class KesantrianInventarisInfolist
                         ->formatStateUsing(fn ($state) => str_replace('_', ' ', $state))
                         ->badge()
                         ->color(fn (string $state): string => match ($state) {
-                            'Baik'        => 'success',
+                            'Baik' => 'success',
                             'Layak_Rusak' => 'warning',
-                            'Hilang'      => 'danger',
+                            'Hilang' => 'danger',
                         }),
                     TextEntry::make('tanggal_sidak_terakhir')->label('Sidak Terakhir')
                         ->date('d M Y')->placeholder('-'),

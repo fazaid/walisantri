@@ -1,8 +1,18 @@
 <?php
 
+use App\Http\Middleware\BlockMagicLinkSession;
+use App\Http\Middleware\CheckTenantQuota;
+use App\Http\Middleware\PublicTenantResolver;
+use App\Http\Middleware\ResolveTenantFromAccount;
+use App\Http\Middleware\SaaSLifecycleLock;
+use App\Http\Middleware\VerifyMagicToken;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -13,12 +23,12 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // Daftarkan alias untuk dipanggil via #[Middleware] atau route middleware
         $middleware->alias([
-            'tenant.quota'   => \App\Http\Middleware\CheckTenantQuota::class,
-            'saas.lifecycle' => \App\Http\Middleware\SaaSLifecycleLock::class,
-            'magic.token'    => \App\Http\Middleware\VerifyMagicToken::class,
-            'magic.block'    => \App\Http\Middleware\BlockMagicLinkSession::class,
-            'public.tenant'  => \App\Http\Middleware\PublicTenantResolver::class,
-            'tenant.resolve' => \App\Http\Middleware\ResolveTenantFromAccount::class,
+            'tenant.quota' => CheckTenantQuota::class,
+            'saas.lifecycle' => SaaSLifecycleLock::class,
+            'magic.token' => VerifyMagicToken::class,
+            'magic.block' => BlockMagicLinkSession::class,
+            'public.tenant' => PublicTenantResolver::class,
+            'tenant.resolve' => ResolveTenantFromAccount::class,
         ]);
 
         // SaaSLifecycleLock hanya di panel app (bukan dash/super_admin)
@@ -36,9 +46,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // return null supaya rendering default Laravel tetap jalan seperti biasa
         // (murni side-effect logging, tidak mengubah response yang dilihat user).
         // HAPUS blok ini setelah root cause ditemukan & diperbaiki.
-        $exceptions->renderable(function (\Throwable $e, $request) {
-            $isForbidden = $e instanceof \Illuminate\Auth\Access\AuthorizationException
-                || ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface
+        $exceptions->renderable(function (Throwable $e, $request) {
+            $isForbidden = $e instanceof AuthorizationException
+                || ($e instanceof HttpExceptionInterface
                     && $e->getStatusCode() === 403);
 
             if (! $isForbidden || ! $request->hasHeader('X-Livewire')) {
@@ -51,25 +61,25 @@ return Application::configure(basePath: dirname(__DIR__))
                 foreach ((array) $request->input('components', []) as $component) {
                     $snapshot = json_decode($component['snapshot'] ?? '', true);
                     $components[] = [
-                        'name'  => $snapshot['memo']['name'] ?? null,
+                        'name' => $snapshot['memo']['name'] ?? null,
                         'calls' => array_map(
                             fn ($call) => $call['method'] ?? null,
                             $component['calls'] ?? []
                         ),
                     ];
                 }
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 $components = ['parse_failed' => true];
             }
 
-            \Illuminate\Support\Facades\Log::warning('diag_livewire_403', [
-                'path'       => $request->path(),
-                'user_id'    => auth()->id(),
-                'role'       => auth()->user()?->role,
-                'pesantren'  => auth()->user()?->pesantren_id,
+            Log::warning('diag_livewire_403', [
+                'path' => $request->path(),
+                'user_id' => auth()->id(),
+                'role' => auth()->user()?->role,
+                'pesantren' => auth()->user()?->pesantren_id,
                 'components' => $components,
-                'exception'  => get_class($e),
-                'message'    => $e->getMessage(),
+                'exception' => get_class($e),
+                'message' => $e->getMessage(),
             ]);
 
             return null;
@@ -80,7 +90,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // error 500 / "Server Error" mentah. Ini menutup alur NON-Livewire
         // (controller Wali, registrasi, dsb). Form Filament sudah punya validasi
         // inline sendiri, jadi request Livewire dibiarkan ke mekanismenya.
-        $exceptions->renderable(function (\Illuminate\Database\QueryException $e, $request) {
+        $exceptions->renderable(function (QueryException $e, $request) {
             $sqlState = (string) $e->getCode();
 
             $message = match ($sqlState) {
@@ -91,11 +101,11 @@ return Application::configure(basePath: dirname(__DIR__))
                 default => 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi, atau hubungi admin bila berulang.',
             };
 
-            \Illuminate\Support\Facades\Log::warning('db_constraint_violation', [
+            Log::warning('db_constraint_violation', [
                 'sqlstate' => $sqlState,
-                'path'     => $request->path(),
-                'user_id'  => auth()->id(),
-                'message'  => $e->getMessage(),
+                'path' => $request->path(),
+                'user_id' => auth()->id(),
+                'message' => $e->getMessage(),
             ]);
 
             // Livewire/Filament & permintaan JSON ditangani mekanismenya sendiri.

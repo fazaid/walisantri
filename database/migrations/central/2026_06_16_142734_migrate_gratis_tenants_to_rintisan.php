@@ -16,19 +16,19 @@ return new class extends Migration
             DB::table('pesantrens')
                 ->where('paket_langganan', 'gratis')
                 ->update([
-                    'paket_langganan'  => 'rintisan',
+                    'paket_langganan' => 'rintisan',
                     'max_santri_kuota' => $kuotaRintisan,
-                    'expired_at'       => DB::raw("datetime(COALESCE(expired_at, 'now'), '+30 days')"),
-                    'updated_at'       => now(),
+                    'expired_at' => DB::raw("datetime(COALESCE(expired_at, 'now'), '+30 days')"),
+                    'updated_at' => now(),
                 ]);
         } else {
             DB::table('pesantrens')
                 ->where('paket_langganan', 'gratis')
                 ->update([
-                    'paket_langganan'  => 'rintisan',
+                    'paket_langganan' => 'rintisan',
                     'max_santri_kuota' => $kuotaRintisan,
-                    'expired_at'       => DB::raw("COALESCE(expired_at, NOW()) + INTERVAL '30 days'"),
-                    'updated_at'       => now(),
+                    'expired_at' => DB::raw("COALESCE(expired_at, NOW()) + INTERVAL '30 days'"),
+                    'updated_at' => now(),
                 ]);
         }
 
@@ -39,8 +39,8 @@ return new class extends Migration
     public function down(): void
     {
         DB::table('billing_settings')->insertOrIgnore([
-            'key'        => 'kuota_gratis',
-            'value'      => 5,
+            'key' => 'kuota_gratis',
+            'value' => 5,
             'keterangan' => 'Kuota santri paket Gratis',
             'created_at' => now(),
             'updated_at' => now(),

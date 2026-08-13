@@ -30,9 +30,9 @@ class PengumumanAksesUstadzTest extends TestCase
         $this->pesantren = Pesantren::factory()->create();
 
         MasterPengumuman::create([
-            'pesantren_id'   => $this->pesantren->id,
+            'pesantren_id' => $this->pesantren->id,
             'judul_maklumat' => 'Pengumuman Tenant',
-            'isi_maklumat'   => 'Isi pengumuman.',
+            'isi_maklumat' => 'Isi pengumuman.',
         ]);
     }
 

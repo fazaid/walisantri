@@ -12,7 +12,7 @@ class LandingPageTest extends TestCase
 
     private function landingUrl(): string
     {
-        return 'http://' . config('app.base_domain') . '/';
+        return 'http://'.config('app.base_domain').'/';
     }
 
     public function test_tombol_daftar_tampil_di_header_saat_registrasi_dibuka(): void

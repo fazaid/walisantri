@@ -37,7 +37,7 @@ class UserAvatarTest extends TestCase
         Storage::fake('public');
 
         $pesantren = Pesantren::factory()->create();
-        $ustadz    = User::factory()->ustadz()->create(['pesantren_id' => $pesantren->id]);
+        $ustadz = User::factory()->ustadz()->create(['pesantren_id' => $pesantren->id]);
 
         $this->actingAs($ustadz);
 

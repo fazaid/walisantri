@@ -4,13 +4,13 @@ namespace App\Enums;
 
 enum TipeDiskon: string
 {
-    case Nominal    = 'nominal';
+    case Nominal = 'nominal';
     case Persentase = 'persentase';
 
     public function label(): string
     {
-        return match($this) {
-            self::Nominal    => 'Nominal (Rp)',
+        return match ($this) {
+            self::Nominal => 'Nominal (Rp)',
             self::Persentase => 'Persentase (%)',
         };
     }

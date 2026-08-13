@@ -26,8 +26,10 @@ class KuponResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
-    protected static ?string $navigationLabel  = 'Kupon Diskon';
-    protected static ?string $modelLabel       = 'Kupon';
+    protected static ?string $navigationLabel = 'Kupon Diskon';
+
+    protected static ?string $modelLabel = 'Kupon';
+
     protected static ?string $pluralModelLabel = 'Kupon Diskon';
 
     public static function canAccess(): bool
@@ -58,9 +60,9 @@ class KuponResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListKupons::route('/'),
+            'index' => ListKupons::route('/'),
             'create' => CreateKupon::route('/create'),
-            'edit'   => EditKupon::route('/{record}/edit'),
+            'edit' => EditKupon::route('/{record}/edit'),
         ];
     }
 }

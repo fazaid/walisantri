@@ -18,12 +18,12 @@ class TenantIsolationTest extends TestCase
     private function makePesantren(string $tag): Pesantren
     {
         return Pesantren::create([
-            'nama_pesantren'      => "Pesantren {$tag}",
-            'slug'                => "pesantren-" . strtolower($tag),
-            'paket_langganan'     => 'rintisan',
-            'max_santri_kuota'    => 100,
+            'nama_pesantren' => "Pesantren {$tag}",
+            'slug' => 'pesantren-'.strtolower($tag),
+            'paket_langganan' => 'rintisan',
+            'max_santri_kuota' => 100,
             'status_berlangganan' => 'active',
-            'expired_at'          => now()->addYear(),
+            'expired_at' => now()->addYear(),
         ]);
     }
 
@@ -31,10 +31,10 @@ class TenantIsolationTest extends TestCase
     {
         return User::create([
             'pesantren_id' => $pesantren->id,
-            'name'         => "{$role} {$tag}",
-            'email'        => strtolower(str_replace('_', '', $role)) . ".{$tag}@test.com",
-            'password'     => bcrypt('password'),
-            'role'         => $role,
+            'name' => "{$role} {$tag}",
+            'email' => strtolower(str_replace('_', '', $role)).".{$tag}@test.com",
+            'password' => bcrypt('password'),
+            'role' => $role,
         ]);
     }
 
@@ -44,13 +44,13 @@ class TenantIsolationTest extends TestCase
         // (which only overwrites when pesantren_id is empty) leaves it untouched,
         // regardless of any stale auth state from a previous test.
         return Santri::create([
-            'pesantren_id'         => $pesantren->id,
-            'wali_santri_id'       => $wali->id,
+            'pesantren_id' => $pesantren->id,
+            'wali_santri_id' => $wali->id,
             'pembimbing_ustadz_id' => $ustadz->id,
-            'nis'                  => $nis,
-            'nama_lengkap'         => "Santri {$nis}",
-            'kelas'                => '1A',
-            'kamar'                => 'A',
+            'nis' => $nis,
+            'nama_lengkap' => "Santri {$nis}",
+            'kelas' => '1A',
+            'kamar' => 'A',
         ]);
     }
 
@@ -58,7 +58,7 @@ class TenantIsolationTest extends TestCase
     {
         return Kelas::create([
             'pesantren_id' => $pesantren->id,
-            'nama_kelas'   => $nama,
+            'nama_kelas' => $nama,
         ]);
     }
 
@@ -66,21 +66,21 @@ class TenantIsolationTest extends TestCase
     {
         return MataPelajaran::create([
             'pesantren_id' => $pesantren->id,
-            'kelas_id'     => $kelas->id,
-            'ustadz_id'    => $ustadz->id,
-            'nama_mapel'   => $nama,
+            'kelas_id' => $kelas->id,
+            'ustadz_id' => $ustadz->id,
+            'nama_mapel' => $nama,
         ]);
     }
 
     private function makeNilaiAkademik(Pesantren $pesantren, Santri $santri, MataPelajaran $mapel, int $nilai, string $periode = 'Semester_Ganjil'): NilaiAkademik
     {
         return NilaiAkademik::create([
-            'pesantren_id'      => $pesantren->id,
-            'santri_id'         => $santri->id,
+            'pesantren_id' => $pesantren->id,
+            'santri_id' => $santri->id,
             'mata_pelajaran_id' => $mapel->id,
-            'tahun_ajaran'      => '2026/2027',
-            'periode'           => $periode,
-            'nilai'             => $nilai,
+            'tahun_ajaran' => '2026/2027',
+            'periode' => $periode,
+            'nilai' => $nilai,
         ]);
     }
 
@@ -89,7 +89,7 @@ class TenantIsolationTest extends TestCase
         $pesantrenA = $this->makePesantren('A');
         $pesantrenB = $this->makePesantren('B');
 
-        $adminA  = $this->makeUser($pesantrenA, 'admin_pesantren', 'A');
+        $adminA = $this->makeUser($pesantrenA, 'admin_pesantren', 'A');
         $ustadzA = $this->makeUser($pesantrenA, 'ustadz', 'A');
         $ustadzB = $this->makeUser($pesantrenB, 'ustadz', 'B');
 
@@ -105,7 +105,7 @@ class TenantIsolationTest extends TestCase
         $mapel = MataPelajaran::all();
 
         $this->assertCount(2, $mapel);
-        $mapel->each(fn($m) => $this->assertEquals($pesantrenA->id, $m->pesantren_id));
+        $mapel->each(fn ($m) => $this->assertEquals($pesantrenA->id, $m->pesantren_id));
     }
 
     public function test_admin_pesantren_a_hanya_melihat_nilai_akademik_pesantren_a(): void
@@ -113,10 +113,10 @@ class TenantIsolationTest extends TestCase
         $pesantrenA = $this->makePesantren('A');
         $pesantrenB = $this->makePesantren('B');
 
-        $adminA  = $this->makeUser($pesantrenA, 'admin_pesantren', 'A');
-        $waliA   = $this->makeUser($pesantrenA, 'wali_santri', 'A');
+        $adminA = $this->makeUser($pesantrenA, 'admin_pesantren', 'A');
+        $waliA = $this->makeUser($pesantrenA, 'wali_santri', 'A');
         $ustadzA = $this->makeUser($pesantrenA, 'ustadz', 'A');
-        $waliB   = $this->makeUser($pesantrenB, 'wali_santri', 'B');
+        $waliB = $this->makeUser($pesantrenB, 'wali_santri', 'B');
         $ustadzB = $this->makeUser($pesantrenB, 'ustadz', 'B');
 
         $kelasA = $this->makeKelas($pesantrenA, 'Kelas A');
@@ -137,7 +137,7 @@ class TenantIsolationTest extends TestCase
         $nilai = NilaiAkademik::all();
 
         $this->assertCount(2, $nilai);
-        $nilai->each(fn($n) => $this->assertEquals($pesantrenA->id, $n->pesantren_id));
+        $nilai->each(fn ($n) => $this->assertEquals($pesantrenA->id, $n->pesantren_id));
     }
 
     public function test_admin_pesantren_a_hanya_melihat_santri_pesantren_a(): void
@@ -145,10 +145,10 @@ class TenantIsolationTest extends TestCase
         $pesantrenA = $this->makePesantren('A');
         $pesantrenB = $this->makePesantren('B');
 
-        $adminA  = $this->makeUser($pesantrenA, 'admin_pesantren', 'A');
-        $waliA   = $this->makeUser($pesantrenA, 'wali_santri', 'A');
+        $adminA = $this->makeUser($pesantrenA, 'admin_pesantren', 'A');
+        $waliA = $this->makeUser($pesantrenA, 'wali_santri', 'A');
         $ustadzA = $this->makeUser($pesantrenA, 'ustadz', 'A');
-        $waliB   = $this->makeUser($pesantrenB, 'wali_santri', 'B');
+        $waliB = $this->makeUser($pesantrenB, 'wali_santri', 'B');
         $ustadzB = $this->makeUser($pesantrenB, 'ustadz', 'B');
 
         // Insert 2 santri per pesantren without auth so INSERT is not scoped.
@@ -163,7 +163,7 @@ class TenantIsolationTest extends TestCase
         $santri = Santri::all();
 
         $this->assertCount(2, $santri);
-        $santri->each(fn($s) => $this->assertEquals($pesantrenA->id, $s->pesantren_id));
+        $santri->each(fn ($s) => $this->assertEquals($pesantrenA->id, $s->pesantren_id));
     }
 
     public function test_admin_pesantren_b_hanya_melihat_santri_pesantren_b(): void
@@ -171,10 +171,10 @@ class TenantIsolationTest extends TestCase
         $pesantrenA = $this->makePesantren('A');
         $pesantrenB = $this->makePesantren('B');
 
-        $adminB  = $this->makeUser($pesantrenB, 'admin_pesantren', 'B');
-        $waliA   = $this->makeUser($pesantrenA, 'wali_santri', 'A');
+        $adminB = $this->makeUser($pesantrenB, 'admin_pesantren', 'B');
+        $waliA = $this->makeUser($pesantrenA, 'wali_santri', 'A');
         $ustadzA = $this->makeUser($pesantrenA, 'ustadz', 'A');
-        $waliB   = $this->makeUser($pesantrenB, 'wali_santri', 'B');
+        $waliB = $this->makeUser($pesantrenB, 'wali_santri', 'B');
         $ustadzB = $this->makeUser($pesantrenB, 'ustadz', 'B');
 
         $this->makeSantri($pesantrenA, $waliA, $ustadzA, 'A001');
@@ -187,6 +187,6 @@ class TenantIsolationTest extends TestCase
         $santri = Santri::all();
 
         $this->assertCount(2, $santri);
-        $santri->each(fn($s) => $this->assertEquals($pesantrenB->id, $s->pesantren_id));
+        $santri->each(fn ($s) => $this->assertEquals($pesantrenB->id, $s->pesantren_id));
     }
 }

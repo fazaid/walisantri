@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources\TarifSpps\Tables;
 
-use App\Models\TarifSpp;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -21,7 +21,7 @@ class TarifSppsTable
 
                 TextColumn::make('nominal')
                     ->label('Nominal')
-                    ->formatStateUsing(fn (int $state): string => 'Rp ' . number_format($state, 0, ',', '.'))
+                    ->formatStateUsing(fn (int $state): string => 'Rp '.number_format($state, 0, ',', '.'))
                     ->sortable(),
 
                 TextColumn::make('keterangan')
@@ -30,7 +30,8 @@ class TarifSppsTable
             ])
             ->defaultSort('kelas.nama_kelas')
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()
+                    ->modalWidth(Width::Medium),
                 DeleteAction::make(),
             ]);
     }

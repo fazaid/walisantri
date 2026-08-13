@@ -17,6 +17,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use UnitEnum;
 
@@ -31,8 +32,11 @@ class MasterPengumumanResource extends Resource
     protected static ?int $navigationSort = 3;
 
     protected static ?string $recordTitleAttribute = 'judul_maklumat';
+
     protected static ?string $navigationLabel = 'Pengumuman';
+
     protected static ?string $modelLabel = 'Pengumuman';
+
     protected static ?string $pluralModelLabel = 'Pengumuman';
 
     public static function canAccess(): bool
@@ -65,19 +69,29 @@ class MasterPengumumanResource extends Resource
         ]);
     }
 
-    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canEdit(Model $record): bool
     {
         $role = auth()->user()?->role;
-        if ($role === UserRole::SuperAdmin->value) return true;
-        if ($role === UserRole::AdminPesantren->value) return $record->pesantren_id === auth()->user()->pesantren_id;
+        if ($role === UserRole::SuperAdmin->value) {
+            return true;
+        }
+        if ($role === UserRole::AdminPesantren->value) {
+            return $record->pesantren_id === auth()->user()->pesantren_id;
+        }
+
         return false;
     }
 
-    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canDelete(Model $record): bool
     {
         $role = auth()->user()?->role;
-        if ($role === UserRole::SuperAdmin->value) return true;
-        if ($role === UserRole::AdminPesantren->value) return $record->pesantren_id === auth()->user()->pesantren_id;
+        if ($role === UserRole::SuperAdmin->value) {
+            return true;
+        }
+        if ($role === UserRole::AdminPesantren->value) {
+            return $record->pesantren_id === auth()->user()->pesantren_id;
+        }
+
         return false;
     }
 
@@ -131,10 +145,10 @@ class MasterPengumumanResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListMasterPengumumen::route('/'),
+            'index' => ListMasterPengumumen::route('/'),
             'create' => CreateMasterPengumuman::route('/create'),
-            'view'   => ViewMasterPengumuman::route('/{record}'),
-            'edit'   => EditMasterPengumuman::route('/{record}/edit'),
+            'view' => ViewMasterPengumuman::route('/{record}'),
+            'edit' => EditMasterPengumuman::route('/{record}/edit'),
         ];
     }
 }

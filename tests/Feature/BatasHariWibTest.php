@@ -199,7 +199,7 @@ class BatasHariWibTest extends TestCase
             'role' => 'admin_pesantren',
         ]);
 
-        (new WarnExpiringTenants())->handle();
+        (new WarnExpiringTenants)->handle();
 
         Mail::assertQueued(
             ExpiringTenantWarning::class,

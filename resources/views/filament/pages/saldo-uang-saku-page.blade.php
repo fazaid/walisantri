@@ -2,7 +2,7 @@
 @php
     $summary = $this->getSummary();
     $rows    = $this->getData();
-    $baseUrl = url('/admin/keuangan/uang-sakus');
+    $baseUrl = \App\Filament\Resources\UangSakus\UangSakuResource::getUrl('index');
 @endphp
 
 {{-- Ringkasan --}}

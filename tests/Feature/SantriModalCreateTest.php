@@ -17,7 +17,7 @@ class SantriModalCreateTest extends TestCase
     private function admin(Pesantren $pesantren): User
     {
         return User::factory()->create([
-            'role'         => 'admin_pesantren',
+            'role' => 'admin_pesantren',
             'pesantren_id' => $pesantren->id,
         ]);
     }
@@ -29,7 +29,7 @@ class SantriModalCreateTest extends TestCase
 
         Livewire::test(ListSantris::class)
             ->callAction('create', [
-                'nis'          => '20260001',
+                'nis' => '20260001',
                 'nama_lengkap' => 'Ahmad Fauzi',
                 'status_aktif' => true,
             ])
@@ -37,7 +37,7 @@ class SantriModalCreateTest extends TestCase
 
         $this->assertDatabaseHas('santri', [
             'pesantren_id' => $pesantren->id,
-            'nis'          => '20260001',
+            'nis' => '20260001',
             'nama_lengkap' => 'Ahmad Fauzi',
         ]);
     }
@@ -51,7 +51,7 @@ class SantriModalCreateTest extends TestCase
 
         Livewire::test(ListSantris::class)
             ->callAction('create', [
-                'nis'          => '20260002',
+                'nis' => '20260002',
                 'nama_lengkap' => 'Santri Melebihi Kuota',
                 'status_aktif' => true,
             ])
@@ -63,13 +63,13 @@ class SantriModalCreateTest extends TestCase
     public function test_admin_bisa_edit_santri_lewat_modal_di_tabel(): void
     {
         $pesantren = Pesantren::factory()->create(['max_santri_kuota' => 10]);
-        $wali      = User::factory()->waliSantri()->create(['pesantren_id' => $pesantren->id]);
-        $ustadz    = User::factory()->ustadz()->create(['pesantren_id' => $pesantren->id]);
-        $santri    = Santri::factory()->create([
-            'pesantren_id'         => $pesantren->id,
-            'wali_santri_id'       => $wali->id,
+        $wali = User::factory()->waliSantri()->create(['pesantren_id' => $pesantren->id]);
+        $ustadz = User::factory()->ustadz()->create(['pesantren_id' => $pesantren->id]);
+        $santri = Santri::factory()->create([
+            'pesantren_id' => $pesantren->id,
+            'wali_santri_id' => $wali->id,
             'pembimbing_ustadz_id' => $ustadz->id,
-            'nama_lengkap'         => 'Nama Lama',
+            'nama_lengkap' => 'Nama Lama',
         ]);
 
         $this->actingAs($this->admin($pesantren));
@@ -84,7 +84,7 @@ class SantriModalCreateTest extends TestCase
     public function test_ustadz_tidak_melihat_tombol_tambah_santri(): void
     {
         $pesantren = Pesantren::factory()->create();
-        $ustadz    = User::factory()->ustadz()->create(['pesantren_id' => $pesantren->id]);
+        $ustadz = User::factory()->ustadz()->create(['pesantren_id' => $pesantren->id]);
 
         $this->actingAs($ustadz);
 
@@ -95,7 +95,7 @@ class SantriModalCreateTest extends TestCase
     public function test_halaman_create_dan_edit_lama_sudah_tidak_ada(): void
     {
         $pesantren = Pesantren::factory()->create();
-        $santri    = Santri::factory()->create(['pesantren_id' => $pesantren->id]);
+        $santri = Santri::factory()->create(['pesantren_id' => $pesantren->id]);
 
         $this->actingAs($this->admin($pesantren));
 

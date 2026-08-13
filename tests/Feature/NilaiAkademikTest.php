@@ -20,30 +20,30 @@ class NilaiAkademikTest extends TestCase
     private function makePesantren(): Pesantren
     {
         return Pesantren::factory()->create([
-            'paket_langganan'     => 'rintisan',
+            'paket_langganan' => 'rintisan',
             'status_berlangganan' => 'active',
-            'expired_at'          => now()->addYear(),
+            'expired_at' => now()->addYear(),
         ]);
     }
 
     public function test_kombinasi_santri_mapel_periode_tahun_ajaran_harus_unik(): void
     {
         $pesantren = $this->makePesantren();
-        $kelas     = Kelas::factory()->create(['pesantren_id' => $pesantren->id]);
-        $santri    = Santri::factory()->create(['pesantren_id' => $pesantren->id, 'kelas_id' => $kelas->id]);
-        $mapel     = MataPelajaran::factory()->create([
+        $kelas = Kelas::factory()->create(['pesantren_id' => $pesantren->id]);
+        $santri = Santri::factory()->create(['pesantren_id' => $pesantren->id, 'kelas_id' => $kelas->id]);
+        $mapel = MataPelajaran::factory()->create([
             'pesantren_id' => $pesantren->id,
-            'kelas_id'     => $kelas->id,
+            'kelas_id' => $kelas->id,
         ]);
 
         $atribut = [
-            'pesantren_id'      => $pesantren->id,
-            'santri_id'         => $santri->id,
+            'pesantren_id' => $pesantren->id,
+            'santri_id' => $santri->id,
             'mata_pelajaran_id' => $mapel->id,
-            'tahun_ajaran'      => '2026/2027',
-            'periode'           => 'Bulanan',
-            'bulan'             => '06',
-            'nilai'             => 90,
+            'tahun_ajaran' => '2026/2027',
+            'periode' => 'Bulanan',
+            'bulan' => '06',
+            'nilai' => 90,
         ];
 
         NilaiAkademik::create($atribut);
@@ -57,41 +57,41 @@ class NilaiAkademikTest extends TestCase
     public function test_ustadz_hanya_melihat_nilai_untuk_mapel_yang_diampu(): void
     {
         $pesantren = $this->makePesantren();
-        $kelas     = Kelas::factory()->create(['pesantren_id' => $pesantren->id]);
+        $kelas = Kelas::factory()->create(['pesantren_id' => $pesantren->id]);
 
         $ustadzA = User::factory()->ustadz()->create(['pesantren_id' => $pesantren->id]);
         $ustadzB = User::factory()->ustadz()->create(['pesantren_id' => $pesantren->id]);
 
         $mapelA = MataPelajaran::factory()->create([
             'pesantren_id' => $pesantren->id,
-            'kelas_id'     => $kelas->id,
-            'ustadz_id'    => $ustadzA->id,
-            'nama_mapel'   => 'Tafsir',
+            'kelas_id' => $kelas->id,
+            'ustadz_id' => $ustadzA->id,
+            'nama_mapel' => 'Tafsir',
         ]);
         $mapelB = MataPelajaran::factory()->create([
             'pesantren_id' => $pesantren->id,
-            'kelas_id'     => $kelas->id,
-            'ustadz_id'    => $ustadzB->id,
-            'nama_mapel'   => 'Hadits',
+            'kelas_id' => $kelas->id,
+            'ustadz_id' => $ustadzB->id,
+            'nama_mapel' => 'Hadits',
         ]);
 
         $santri = Santri::factory()->create(['pesantren_id' => $pesantren->id, 'kelas_id' => $kelas->id]);
 
         $nilaiA = NilaiAkademik::create([
-            'pesantren_id'      => $pesantren->id,
-            'santri_id'         => $santri->id,
+            'pesantren_id' => $pesantren->id,
+            'santri_id' => $santri->id,
             'mata_pelajaran_id' => $mapelA->id,
-            'tahun_ajaran'      => '2026/2027',
-            'periode'           => 'Semester_Ganjil',
-            'nilai'             => 88,
+            'tahun_ajaran' => '2026/2027',
+            'periode' => 'Semester_Ganjil',
+            'nilai' => 88,
         ]);
         $nilaiB = NilaiAkademik::create([
-            'pesantren_id'      => $pesantren->id,
-            'santri_id'         => $santri->id,
+            'pesantren_id' => $pesantren->id,
+            'santri_id' => $santri->id,
             'mata_pelajaran_id' => $mapelB->id,
-            'tahun_ajaran'      => '2026/2027',
-            'periode'           => 'Semester_Ganjil',
-            'nilai'             => 76,
+            'tahun_ajaran' => '2026/2027',
+            'periode' => 'Semester_Ganjil',
+            'nilai' => 76,
         ]);
 
         $this->actingAs($ustadzA);
@@ -105,36 +105,36 @@ class NilaiAkademikTest extends TestCase
     public function test_admin_pesantren_melihat_semua_nilai_di_pesantrennya(): void
     {
         $pesantren = $this->makePesantren();
-        $kelas     = Kelas::factory()->create(['pesantren_id' => $pesantren->id]);
-        $admin     = User::factory()->adminPesantren()->create(['pesantren_id' => $pesantren->id]);
+        $kelas = Kelas::factory()->create(['pesantren_id' => $pesantren->id]);
+        $admin = User::factory()->adminPesantren()->create(['pesantren_id' => $pesantren->id]);
 
         $mapelA = MataPelajaran::factory()->create([
             'pesantren_id' => $pesantren->id,
-            'kelas_id'     => $kelas->id,
-            'nama_mapel'   => 'Bahasa Arab',
+            'kelas_id' => $kelas->id,
+            'nama_mapel' => 'Bahasa Arab',
         ]);
         $mapelB = MataPelajaran::factory()->create([
             'pesantren_id' => $pesantren->id,
-            'kelas_id'     => $kelas->id,
-            'nama_mapel'   => 'Akidah Akhlak',
+            'kelas_id' => $kelas->id,
+            'nama_mapel' => 'Akidah Akhlak',
         ]);
         $santri = Santri::factory()->create(['pesantren_id' => $pesantren->id, 'kelas_id' => $kelas->id]);
 
         $nilaiA = NilaiAkademik::create([
-            'pesantren_id'      => $pesantren->id,
-            'santri_id'         => $santri->id,
+            'pesantren_id' => $pesantren->id,
+            'santri_id' => $santri->id,
             'mata_pelajaran_id' => $mapelA->id,
-            'tahun_ajaran'      => '2026/2027',
-            'periode'           => 'Bulanan',
-            'nilai'             => 80,
+            'tahun_ajaran' => '2026/2027',
+            'periode' => 'Bulanan',
+            'nilai' => 80,
         ]);
         $nilaiB = NilaiAkademik::create([
-            'pesantren_id'      => $pesantren->id,
-            'santri_id'         => $santri->id,
+            'pesantren_id' => $pesantren->id,
+            'santri_id' => $santri->id,
             'mata_pelajaran_id' => $mapelB->id,
-            'tahun_ajaran'      => '2026/2027',
-            'periode'           => 'Bulanan',
-            'nilai'             => 92,
+            'tahun_ajaran' => '2026/2027',
+            'periode' => 'Bulanan',
+            'nilai' => 92,
         ]);
 
         $this->actingAs($admin);

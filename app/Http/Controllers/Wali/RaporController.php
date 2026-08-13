@@ -16,7 +16,7 @@ class RaporController extends Controller
 
         $anakList = $wali->anakSantri()->where('status_aktif', true)->get();
 
-        $santriId    = request('santri_id', $anakList->first()?->id);
+        $santriId = request('santri_id', $anakList->first()?->id);
         $tahunAjaran = request('tahun_ajaran', TahunAjaranOptions::current());
 
         $raporTahfidz = TahfidzUjian::where('santri_id', $santriId)
@@ -26,7 +26,7 @@ class RaporController extends Controller
 
         // Filter karakter rapor berdasarkan tahun (4 digit pertama tahun_ajaran)
         $raporKarakter = KesantrianKarakterRapor::where('santri_id', $santriId)
-            ->where('tanggal_input', 'like', substr($tahunAjaran, 0, 4) . '%')
+            ->where('tanggal_input', 'like', substr($tahunAjaran, 0, 4).'%')
             ->latest('tanggal_input')
             ->first();
 

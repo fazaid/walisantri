@@ -54,7 +54,9 @@ class AppServiceProvider extends ServiceProvider
     {
         // Modul Kesehatan — Rintisan ke atas (§5.1, v4.6: dipindah dari Berkembang+)
         Gate::define('access-modul-kesehatan', function ($user) {
-            if ($user->isSuperAdmin()) return true;
+            if ($user->isSuperAdmin()) {
+                return true;
+            }
 
             return in_array($user->pesantren?->paket_langganan, [
                 'rintisan',
@@ -65,14 +67,18 @@ class AppServiceProvider extends ServiceProvider
 
         // Modul Inventaris — Maju saja (§5.1)
         Gate::define('access-modul-inventaris', function ($user) {
-            if ($user->isSuperAdmin()) return true;
+            if ($user->isSuperAdmin()) {
+                return true;
+            }
 
             return $user->pesantren?->paket_langganan === 'maju';
         });
 
         // Modul AI — Maju saja, post v1.0 (§5.1)
         Gate::define('access-modul-ai', function ($user) {
-            if ($user->isSuperAdmin()) return true;
+            if ($user->isSuperAdmin()) {
+                return true;
+            }
 
             return $user->pesantren?->paket_langganan === 'maju';
         });
@@ -107,19 +113,14 @@ class AppServiceProvider extends ServiceProvider
     // -----------------------------------------------------------------
     private function registerRateLimiters(): void
     {
-        RateLimiter::for('check-slug', fn ($request) =>
-            Limit::perMinute(30)->by($request->ip())->response(fn () =>
-                response()->json(['available' => false, 'message' => 'Terlalu banyak permintaan.'], 429)
-            )
+        RateLimiter::for('check-slug', fn ($request) => Limit::perMinute(30)->by($request->ip())->response(fn () => response()->json(['available' => false, 'message' => 'Terlalu banyak permintaan.'], 429)
+        )
         );
 
-        RateLimiter::for('register', fn ($request) =>
-            Limit::perHour(5)->by($request->ip())
+        RateLimiter::for('register', fn ($request) => Limit::perHour(5)->by($request->ip())
         );
 
-        RateLimiter::for('demo', fn ($request) =>
-            Limit::perHour(5)->by($request->ip())
+        RateLimiter::for('demo', fn ($request) => Limit::perHour(5)->by($request->ip())
         );
     }
-
 }

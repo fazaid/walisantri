@@ -17,12 +17,12 @@ class MagicLinkReadOnlyTest extends TestCase
     private function santriDenganWali(): Santri
     {
         $pesantren = Pesantren::factory()->create();
-        $wali      = User::factory()->waliSantri()->create(['pesantren_id' => $pesantren->id]);
+        $wali = User::factory()->waliSantri()->create(['pesantren_id' => $pesantren->id]);
 
         return Santri::factory()->create([
-            'pesantren_id'   => $pesantren->id,
+            'pesantren_id' => $pesantren->id,
             'wali_santri_id' => $wali->id,
-            'status_aktif'   => true,
+            'status_aktif' => true,
         ]);
     }
 
@@ -44,9 +44,9 @@ class MagicLinkReadOnlyTest extends TestCase
         // Pengumuman disurutkan ke report karena sesi magic link tak punya
         // akses dashboard/nav tempat pengumuman biasanya muncul.
         MasterPengumuman::create([
-            'pesantren_id'    => $santri->pesantren_id,
-            'judul_maklumat'  => 'Libur Idul Adha PENGUMUMAN_MAGIC',
-            'isi_maklumat'    => 'Kegiatan diliburkan.',
+            'pesantren_id' => $santri->pesantren_id,
+            'judul_maklumat' => 'Libur Idul Adha PENGUMUMAN_MAGIC',
+            'isi_maklumat' => 'Kegiatan diliburkan.',
             'target_audience' => 'wali',
         ]);
 
@@ -111,11 +111,11 @@ class MagicLinkReadOnlyTest extends TestCase
         // yang menolak POST benar-benar middleware magic.block (403), bukan 404 binding.
         $tagihan = TagihanSpp::create([
             'pesantren_id' => $santri->pesantren_id,
-            'santri_id'    => $santri->id,
-            'bulan'        => 1,
-            'tahun'        => 2026,
-            'nominal'      => 100000,
-            'status'       => 'belum_bayar',
+            'santri_id' => $santri->id,
+            'bulan' => 1,
+            'tahun' => 2026,
+            'nominal' => 100000,
+            'status' => 'belum_bayar',
         ]);
 
         $this->get("/report/{$santri->uuid}")->assertOk();
@@ -131,7 +131,7 @@ class MagicLinkReadOnlyTest extends TestCase
     public function test_wali_login_normal_tetap_bisa_buka_dashboard(): void
     {
         $santri = $this->santriDenganWali();
-        $wali   = $santri->wali;
+        $wali = $santri->wali;
 
         // Login normal (tanpa flag magic_link_session) tidak boleh terpengaruh.
         $this->actingAs($wali)

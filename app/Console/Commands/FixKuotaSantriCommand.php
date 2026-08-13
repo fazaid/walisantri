@@ -17,7 +17,7 @@ class FixKuotaSantriCommand extends Command
         $isDryRun = $this->option('dry-run');
 
         $kuotaPerPaket = [
-            'rintisan'   => BillingSetting::get('kuota_rintisan', 100),
+            'rintisan' => BillingSetting::get('kuota_rintisan', 100),
             'berkembang' => BillingSetting::get('kuota_berkembang', 500),
         ];
 
@@ -33,6 +33,7 @@ class FixKuotaSantriCommand extends Command
 
         if ($terdampak->isEmpty()) {
             $this->info('Tidak ada tenant yang perlu diperbaiki.');
+
             return self::SUCCESS;
         }
 
@@ -55,11 +56,13 @@ class FixKuotaSantriCommand extends Command
         if ($isDryRun) {
             $this->newLine();
             $this->warn('Mode dry-run: tidak ada perubahan yang disimpan.');
+
             return self::SUCCESS;
         }
 
         if (! $this->confirm("Lanjutkan perbaikan untuk {$terdampak->count()} tenant?")) {
             $this->info('Dibatalkan.');
+
             return self::SUCCESS;
         }
 

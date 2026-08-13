@@ -23,14 +23,14 @@ class PembayaranSpp extends Model
     ];
 
     protected $casts = [
-        'jumlah'       => 'integer',
+        'jumlah' => 'integer',
         'tanggal_bayar' => 'date',
     ];
 
     public static array $metodeBayar = [
-        'tunai'         => 'Tunai',
+        'tunai' => 'Tunai',
         'transfer_bank' => 'Transfer Bank',
-        'lainnya'       => 'Lainnya',
+        'lainnya' => 'Lainnya',
     ];
 
     public function tagihan(): BelongsTo

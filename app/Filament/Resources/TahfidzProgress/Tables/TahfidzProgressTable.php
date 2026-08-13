@@ -33,14 +33,13 @@ class TahfidzProgressTable
                     ->label('Tipe')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'Sabaq'  => 'success',
-                        'Sabqi'  => 'info',
+                        'Sabaq' => 'success',
+                        'Sabqi' => 'info',
                         'Manzil' => 'warning',
                     }),
                 TextColumn::make('halaman_mulai')
                     ->label('Halaman')
-                    ->formatStateUsing(fn ($record): string =>
-                        $record->halaman_mulai . ' – ' . $record->halaman_selesai
+                    ->formatStateUsing(fn ($record): string => $record->halaman_mulai.' – '.$record->halaman_selesai
                     ),
                 TextColumn::make('nama_surah')
                     ->label('Surah')
@@ -50,10 +49,10 @@ class TahfidzProgressTable
                     ->label('Nilai')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'Mumtaz'        => 'success',
+                        'Mumtaz' => 'success',
                         'Jayyid Jiddan' => 'info',
-                        'Jayyid'        => 'warning',
-                        'Maqbul'        => 'danger',
+                        'Jayyid' => 'warning',
+                        'Maqbul' => 'danger',
                     }),
                 TextColumn::make('ustadz.name')
                     ->label('Ustadz')
@@ -64,17 +63,17 @@ class TahfidzProgressTable
                 SelectFilter::make('tipe_setoran')
                     ->label('Tipe Setoran')
                     ->options([
-                        'Sabaq'  => 'Sabaq',
-                        'Sabqi'  => 'Sabqi',
+                        'Sabaq' => 'Sabaq',
+                        'Sabqi' => 'Sabqi',
                         'Manzil' => 'Manzil',
                     ]),
                 SelectFilter::make('nilai_kelancaran')
                     ->label('Nilai')
                     ->options([
-                        'Mumtaz'        => 'Mumtaz',
+                        'Mumtaz' => 'Mumtaz',
                         'Jayyid Jiddan' => 'Jayyid Jiddan',
-                        'Jayyid'        => 'Jayyid',
-                        'Maqbul'        => 'Maqbul',
+                        'Jayyid' => 'Jayyid',
+                        'Maqbul' => 'Maqbul',
                     ]),
                 SelectFilter::make('santri')
                     ->label('Santri')

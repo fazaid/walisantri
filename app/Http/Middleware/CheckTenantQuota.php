@@ -14,7 +14,7 @@ class CheckTenantQuota
         $user = Auth::user();
 
         // Guard: skip jika belum login, super_admin, atau bukan POST/PUT
-        if (!$user) {
+        if (! $user) {
             return $next($request);
         }
 
@@ -22,23 +22,23 @@ class CheckTenantQuota
             return $next($request);
         }
 
-        if (!$request->isMethod('POST') && !$request->isMethod('PUT')) {
+        if (! $request->isMethod('POST') && ! $request->isMethod('PUT')) {
             return $next($request);
         }
 
-        if (!str_contains($request->path(), 'santri')) {
+        if (! str_contains($request->path(), 'santri')) {
             return $next($request);
         }
 
         // Guard: skip jika pesantren_id null
-        if (!$user->pesantren_id) {
+        if (! $user->pesantren_id) {
             return $next($request);
         }
 
         $pesantren = $user->pesantren;
 
         // Guard: skip jika relasi pesantren tidak ditemukan
-        if (!$pesantren) {
+        if (! $pesantren) {
             return $next($request);
         }
 
@@ -51,16 +51,16 @@ class CheckTenantQuota
         if ($santriAktif >= $kuota) {
             if ($request->expectsJson() || $request->hasHeader('X-Livewire')) {
                 return response()->json([
-                    'message' => 'Batas kuota paket tercapai! ' .
-                        'Akun aktif Anda saat ini adalah ' . $santriAktif .
+                    'message' => 'Batas kuota paket tercapai! '.
+                        'Akun aktif Anda saat ini adalah '.$santriAktif.
                         ' santri. Silakan upgrade kuota melalui menu Billing.',
                 ], 422);
             }
 
             return back()->withErrors([
-                'quota' => 'Batas kuota paket tercapai! ' .
-                    'Akun aktif Anda saat ini adalah ' . $santriAktif .
-                    ' santri (maks. ' . $kuota . '). ' .
+                'quota' => 'Batas kuota paket tercapai! '.
+                    'Akun aktif Anda saat ini adalah '.$santriAktif.
+                    ' santri (maks. '.$kuota.'). '.
                     'Silakan upgrade kuota melalui menu Billing.',
             ]);
         }

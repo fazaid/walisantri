@@ -14,7 +14,7 @@ class KelasFactory extends Factory
     {
         return [
             'pesantren_id' => Pesantren::factory(),
-            'nama_kelas'   => fake()->unique()->randomElement([
+            'nama_kelas' => fake()->unique()->randomElement([
                 'Tahfidz 1', 'Tahfidz 2', 'Tahfidz 3', 'Ulya 1', 'Ulya 2', 'Wustha 1',
             ]),
         ];

@@ -29,8 +29,11 @@ class PesantrenResource extends Resource
     protected static ?int $navigationSort = 1;
 
     protected static ?string $recordTitleAttribute = 'nama_pesantren';
+
     protected static ?string $navigationLabel = 'Pesantren';
+
     protected static ?string $modelLabel = 'Pesantren';
+
     protected static ?string $pluralModelLabel = 'Data Pesantren';
 
     public static function canAccess(): bool
@@ -66,10 +69,10 @@ class PesantrenResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListPesantrens::route('/'),
+            'index' => ListPesantrens::route('/'),
             'create' => CreatePesantren::route('/create'),
-            'view'   => ViewPesantren::route('/{record}'),
-            'edit'   => EditPesantren::route('/{record}/edit'),
+            'view' => ViewPesantren::route('/{record}'),
+            'edit' => EditPesantren::route('/{record}/edit'),
         ];
     }
 }

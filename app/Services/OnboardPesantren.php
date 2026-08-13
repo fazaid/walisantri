@@ -32,40 +32,40 @@ class OnboardPesantren
             $namaPesantren, $slug, $adminName, $adminEmail, $adminPassword, $adminPhone
         ) {
             $pesantren = Pesantren::create([
-                'nama_pesantren'     => $namaPesantren,
-                'slug'               => $slug,
-                'paket_langganan'     => 'rintisan',
-                'max_santri_kuota'    => \App\Models\BillingSetting::get('kuota_rintisan', 100),
+                'nama_pesantren' => $namaPesantren,
+                'slug' => $slug,
+                'paket_langganan' => 'rintisan',
+                'max_santri_kuota' => BillingSetting::get('kuota_rintisan', 100),
                 'status_berlangganan' => 'trial',
-                'expired_at'          => now()->addDays(BillingSetting::get('trial_days', 14)),
+                'expired_at' => now()->addDays(BillingSetting::get('trial_days', 14)),
                 'santri_count_cache' => 0,
                 'onboarding_completed_steps' => [],
             ]);
 
             TenantDomain::create([
                 'pesantren_id' => $pesantren->id,
-                'hostname'     => "{$slug}.walisantri.com",
-                'type'         => 'subdomain',
-                'is_primary'   => true,
-                'ssl_status'   => 'pending',
+                'hostname' => "{$slug}.walisantri.com",
+                'type' => 'subdomain',
+                'is_primary' => true,
+                'ssl_status' => 'pending',
             ]);
 
             $admin = User::create([
                 'pesantren_id' => $pesantren->id,
-                'name'         => $adminName,
-                'email'        => $adminEmail,
+                'name' => $adminName,
+                'email' => $adminEmail,
                 'phone_number' => $adminPhone,
-                'password'     => Hash::make($adminPassword),
-                'role'         => 'admin_pesantren',
+                'password' => Hash::make($adminPassword),
+                'role' => 'admin_pesantren',
             ]);
 
             ActivityLog::create([
-                'pesantren_id'   => $pesantren->id,
-                'user_id'        => $admin->id,
-                'event'          => 'pesantren.created',
+                'pesantren_id' => $pesantren->id,
+                'user_id' => $admin->id,
+                'event' => 'pesantren.created',
                 'auditable_type' => Pesantren::class,
-                'auditable_id'   => $pesantren->id,
-                'new_values'     => ['nama' => $namaPesantren, 'slug' => $slug],
+                'auditable_id' => $pesantren->id,
+                'new_values' => ['nama' => $namaPesantren, 'slug' => $slug],
             ]);
 
             return ['pesantren' => $pesantren, 'admin' => $admin];
