@@ -3,8 +3,6 @@
 namespace App\Filament\Resources\MasterPengumumen;
 
 use App\Enums\UserRole;
-use App\Filament\Resources\MasterPengumumen\Pages\CreateMasterPengumuman;
-use App\Filament\Resources\MasterPengumumen\Pages\EditMasterPengumuman;
 use App\Filament\Resources\MasterPengumumen\Pages\ListMasterPengumumen;
 use App\Filament\Resources\MasterPengumumen\Pages\ViewMasterPengumuman;
 use App\Filament\Resources\MasterPengumumen\Schemas\MasterPengumumanForm;
@@ -12,6 +10,7 @@ use App\Filament\Resources\MasterPengumumen\Schemas\MasterPengumumanInfolist;
 use App\Filament\Resources\MasterPengumumen\Tables\MasterPengumumenTable;
 use App\Models\MasterPengumuman;
 use BackedEnum;
+use Closure;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -122,6 +121,22 @@ class MasterPengumumanResource extends Resource
             });
     }
 
+    // Super Admin menyimpan dengan pesantren_id = null (pengumuman global).
+    // Admin menyimpan dengan pesantren_id miliknya sendiri. Dulu dijaga di
+    // halaman CreateMasterPengumuman, sekarang menempel di aksi modalnya.
+    public static function tetapkanPemilik(): Closure
+    {
+        return function (array $data): array {
+            $user = Auth::user();
+
+            $data['pesantren_id'] = $user->role === UserRole::SuperAdmin->value
+                ? null
+                : $user->pesantren_id;
+
+            return $data;
+        };
+    }
+
     public static function form(Schema $schema): Schema
     {
         return MasterPengumumanForm::configure($schema);
@@ -146,9 +161,7 @@ class MasterPengumumanResource extends Resource
     {
         return [
             'index' => ListMasterPengumumen::route('/'),
-            'create' => CreateMasterPengumuman::route('/create'),
             'view' => ViewMasterPengumuman::route('/{record}'),
-            'edit' => EditMasterPengumuman::route('/{record}/edit'),
         ];
     }
 }

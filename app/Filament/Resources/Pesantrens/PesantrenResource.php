@@ -3,8 +3,6 @@
 namespace App\Filament\Resources\Pesantrens;
 
 use App\Enums\UserRole;
-use App\Filament\Resources\Pesantrens\Pages\CreatePesantren;
-use App\Filament\Resources\Pesantrens\Pages\EditPesantren;
 use App\Filament\Resources\Pesantrens\Pages\ListPesantrens;
 use App\Filament\Resources\Pesantrens\Pages\ViewPesantren;
 use App\Filament\Resources\Pesantrens\Schemas\PesantrenForm;
@@ -70,9 +68,7 @@ class PesantrenResource extends Resource
     {
         return [
             'index' => ListPesantrens::route('/'),
-            'create' => CreatePesantren::route('/create'),
             'view' => ViewPesantren::route('/{record}'),
-            'edit' => EditPesantren::route('/{record}/edit'),
         ];
     }
 }

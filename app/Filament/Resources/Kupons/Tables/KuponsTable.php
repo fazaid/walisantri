@@ -3,7 +3,9 @@
 namespace App\Filament\Resources\Kupons\Tables;
 
 use App\Enums\TipeDiskon;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -62,8 +64,9 @@ class KuponsTable
                     ->label('Tipe Diskon')
                     ->options(TipeDiskon::options()),
             ])
-            ->actions([
-                EditAction::make(),
+            ->recordActions([
+                EditAction::make()->modalWidth(Width::FourExtraLarge),
+                DeleteAction::make(),
             ])
             ->defaultSort('created_at', 'desc');
     }

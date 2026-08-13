@@ -3,10 +3,13 @@
 namespace App\Filament\Resources\Users\Tables;
 
 use App\Enums\UserRole;
+use App\Filament\Resources\Users\UserResource;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -46,7 +49,10 @@ class UsersTable
             ])
             ->recordActions([
                 ViewAction::make(),
-                EditAction::make(),
+                EditAction::make()
+                    ->modalWidth(Width::TwoExtraLarge)
+                    ->mutateDataUsing(UserResource::paksaTenantSaatUbah()),
+                DeleteAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

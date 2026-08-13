@@ -3,8 +3,6 @@
 namespace App\Filament\Resources\PlatformBankAccounts;
 
 use App\Enums\UserRole;
-use App\Filament\Resources\PlatformBankAccounts\Pages\CreatePlatformBankAccount;
-use App\Filament\Resources\PlatformBankAccounts\Pages\EditPlatformBankAccount;
 use App\Filament\Resources\PlatformBankAccounts\Pages\ListPlatformBankAccounts;
 use App\Filament\Resources\PlatformBankAccounts\Schemas\PlatformBankAccountForm;
 use App\Filament\Resources\PlatformBankAccounts\Tables\PlatformBankAccountsTable;
@@ -63,8 +61,6 @@ class PlatformBankAccountResource extends Resource
     {
         return [
             'index' => ListPlatformBankAccounts::route('/'),
-            'create' => CreatePlatformBankAccount::route('/create'),
-            'edit' => EditPlatformBankAccount::route('/{record}/edit'),
         ];
     }
 }

@@ -3,8 +3,6 @@
 namespace App\Filament\Resources\MasterPengumumanCentral;
 
 use App\Enums\UserRole;
-use App\Filament\Resources\MasterPengumumanCentral\Pages\CreateMasterPengumumanCentral;
-use App\Filament\Resources\MasterPengumumanCentral\Pages\EditMasterPengumumanCentral;
 use App\Filament\Resources\MasterPengumumanCentral\Pages\ListMasterPengumumanCentral;
 use App\Filament\Resources\MasterPengumumanCentral\Pages\ViewMasterPengumumanCentral;
 use App\Filament\Resources\MasterPengumumanCentral\Schemas\MasterPengumumanCentralForm;
@@ -91,9 +89,7 @@ class MasterPengumumanCentralResource extends Resource
     {
         return [
             'index' => ListMasterPengumumanCentral::route('/'),
-            'create' => CreateMasterPengumumanCentral::route('/create'),
             'view' => ViewMasterPengumumanCentral::route('/{record}'),
-            'edit' => EditMasterPengumumanCentral::route('/{record}/edit'),
         ];
     }
 }
