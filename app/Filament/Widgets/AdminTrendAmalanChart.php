@@ -6,6 +6,7 @@ use App\Models\KesantrianMutabaah;
 use App\Models\Santri;
 use App\Services\MutabaahScoreCalculator;
 use App\Support\Waktu;
+use Filament\Support\RawJs;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Auth;
@@ -46,7 +47,7 @@ class AdminTrendAmalanChart extends ChartWidget
     protected function getData(): array
     {
         $pesantrenId = Auth::user()?->pesantren_id;
-        $santriIds   = Santri::where('pesantren_id', $pesantrenId)
+        $santriIds = Santri::where('pesantren_id', $pesantrenId)
             ->where('status_aktif', true)
             ->pluck('id');
 
@@ -59,31 +60,31 @@ class AdminTrendAmalanChart extends ChartWidget
             ->groupBy(fn ($m) => $m->tanggal->toDateString());
 
         $labels = [];
-        $data   = [];
+        $data = [];
 
         for ($i = 6; $i >= 0; $i--) {
-            $date     = Waktu::sekarang()->subDays($i);
-            $key      = $date->toDateString();
-            $list     = $allMutabaah->get($key, collect());
-            $pct      = MutabaahScoreCalculator::persentaseRataRata($list);
+            $date = Waktu::sekarang()->subDays($i);
+            $key = $date->toDateString();
+            $list = $allMutabaah->get($key, collect());
+            $pct = MutabaahScoreCalculator::persentaseRataRata($list);
 
             $labels[] = $date->translatedFormat('D d/m');
-            $data[]   = $pct;
+            $data[] = $pct;
         }
 
-        $avg   = count($data) > 0 ? array_sum($data) / count($data) : 0;
+        $avg = count($data) > 0 ? array_sum($data) / count($data) : 0;
         $color = $avg >= 75 ? '#10b981' : ($avg >= 50 ? '#f59e0b' : '#ef4444');
 
         return [
             'datasets' => [
                 [
-                    'label'           => '% Amalan',
-                    'data'            => $data,
-                    'borderColor'     => $color,
-                    'backgroundColor' => $color . '22',
-                    'fill'            => true,
-                    'tension'         => 0.4,
-                    'pointRadius'     => 4,
+                    'label' => '% Amalan',
+                    'data' => $data,
+                    'borderColor' => $color,
+                    'backgroundColor' => $color.'22',
+                    'fill' => true,
+                    'tension' => 0.4,
+                    'pointRadius' => 4,
                     'pointHoverRadius' => 6,
                 ],
             ],
@@ -91,14 +92,14 @@ class AdminTrendAmalanChart extends ChartWidget
         ];
     }
 
-    protected function getOptions(): array|\Filament\Support\RawJs|null
+    protected function getOptions(): array|RawJs|null
     {
         // Seluruh options harus jadi satu RawJs (bukan array PHP dengan RawJs
         // tersisip di dalamnya) — kalau di-nest, seluruh struktur di-json_encode()
         // dan RawJs untuk callback tick berubah jadi objek kosong {} (tidak bisa
         // dipanggil), bikin Chart.js crash saat generateTickLabels(). Pola yang
         // benar ini sudah dipakai di UstadzAmalanChart.
-        return \Filament\Support\RawJs::make("{
+        return RawJs::make("{
             scales: {
                 y: {
                     min: 0,

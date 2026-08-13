@@ -26,9 +26,9 @@ class Kupon extends Model
     protected function casts(): array
     {
         return [
-            'tipe_diskon'    => TipeDiskon::class,
+            'tipe_diskon' => TipeDiskon::class,
             'berlaku_hingga' => 'datetime',
-            'is_aktif'       => 'boolean',
+            'is_aktif' => 'boolean',
         ];
     }
 

@@ -18,13 +18,13 @@ return new class extends Migration
                     ->where('id', $row->id)
                     ->update([
                         'amalan' => json_encode([
-                            'jamaah_5_waktu'  => $row->jamaah_5_waktu,
-                            'is_rawatib'      => (bool) $row->is_rawatib,
+                            'jamaah_5_waktu' => $row->jamaah_5_waktu,
+                            'is_rawatib' => (bool) $row->is_rawatib,
                             'is_shalat_malam' => (bool) $row->is_shalat_malam,
-                            'is_dhuha'        => (bool) $row->is_dhuha,
+                            'is_dhuha' => (bool) $row->is_dhuha,
                             'is_tilawah_1juz' => (bool) $row->is_tilawah_1juz,
-                            'is_infak'        => (bool) $row->is_infak,
-                            'is_puasa'        => (bool) $row->is_puasa,
+                            'is_infak' => (bool) $row->is_infak,
+                            'is_puasa' => (bool) $row->is_puasa,
                         ]),
                     ]);
             }
@@ -63,13 +63,13 @@ return new class extends Migration
                 DB::table('kesantrian_mutabaah')
                     ->where('id', $row->id)
                     ->update([
-                        'jamaah_5_waktu'  => $amalan['jamaah_5_waktu'] ?? 5,
-                        'is_rawatib'      => $amalan['is_rawatib'] ?? false,
+                        'jamaah_5_waktu' => $amalan['jamaah_5_waktu'] ?? 5,
+                        'is_rawatib' => $amalan['is_rawatib'] ?? false,
                         'is_shalat_malam' => $amalan['is_shalat_malam'] ?? false,
-                        'is_dhuha'        => $amalan['is_dhuha'] ?? false,
+                        'is_dhuha' => $amalan['is_dhuha'] ?? false,
                         'is_tilawah_1juz' => $amalan['is_tilawah_1juz'] ?? false,
-                        'is_infak'        => $amalan['is_infak'] ?? false,
-                        'is_puasa'        => $amalan['is_puasa'] ?? false,
+                        'is_infak' => $amalan['is_infak'] ?? false,
+                        'is_puasa' => $amalan['is_puasa'] ?? false,
                     ]);
             }
         });

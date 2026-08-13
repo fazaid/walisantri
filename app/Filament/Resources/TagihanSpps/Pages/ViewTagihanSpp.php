@@ -49,13 +49,13 @@ class ViewTagihanSpp extends ViewRecord
                 ->action(function (array $data): void {
                     if (! $this->record->pembayaran()->exists()) {
                         PembayaranSpp::create([
-                            'pesantren_id'   => $this->record->pesantren_id,
+                            'pesantren_id' => $this->record->pesantren_id,
                             'tagihan_spp_id' => $this->record->id,
-                            'jumlah'         => $this->record->nominal,
-                            'tanggal_bayar'  => $data['tanggal_bayar'],
-                            'metode_bayar'   => $data['metode_bayar'],
-                            'catatan'        => $data['catatan'] ?? null,
-                            'dicatat_oleh'   => auth()->id(),
+                            'jumlah' => $this->record->nominal,
+                            'tanggal_bayar' => $data['tanggal_bayar'],
+                            'metode_bayar' => $data['metode_bayar'],
+                            'catatan' => $data['catatan'] ?? null,
+                            'dicatat_oleh' => auth()->id(),
                         ]);
                     }
 
@@ -82,9 +82,9 @@ class ViewTagihanSpp extends ViewRecord
                     }
 
                     $this->record->update([
-                        'bukti_transfer'       => null,
+                        'bukti_transfer' => null,
                         'dikonfirmasi_wali_at' => null,
-                        'status'               => StatusTagihanSpp::BelumBayar,
+                        'status' => StatusTagihanSpp::BelumBayar,
                     ]);
 
                     $this->record->refresh();

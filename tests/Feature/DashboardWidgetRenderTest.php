@@ -51,15 +51,15 @@ class DashboardWidgetRenderTest extends TestCase
     public function test_semua_widget_ustadz_bisa_dirender(): void
     {
         $pesantren = Pesantren::factory()->create();
-        $ustadz    = User::factory()->ustadz()->create(['pesantren_id' => $pesantren->id]);
+        $ustadz = User::factory()->ustadz()->create(['pesantren_id' => $pesantren->id]);
 
         // Wajib ada santri bimbingan: beberapa chart keluar lebih awal saat
         // daftar santrinya kosong, sehingga jalur pengambilan data — tempat
         // kesalahan sesungguhnya bersembunyi — tidak pernah dieksekusi.
         Santri::factory()->create([
-            'pesantren_id'         => $pesantren->id,
+            'pesantren_id' => $pesantren->id,
             'pembimbing_ustadz_id' => $ustadz->id,
-            'status_aktif'         => true,
+            'status_aktif' => true,
         ]);
 
         foreach (self::WIDGET_USTADZ as $widget) {
@@ -72,7 +72,7 @@ class DashboardWidgetRenderTest extends TestCase
     public function test_semua_widget_admin_pesantren_bisa_dirender(): void
     {
         $pesantren = Pesantren::factory()->create();
-        $admin     = User::factory()->adminPesantren()->create(['pesantren_id' => $pesantren->id]);
+        $admin = User::factory()->adminPesantren()->create(['pesantren_id' => $pesantren->id]);
 
         Santri::factory()->create(['pesantren_id' => $pesantren->id, 'status_aktif' => true]);
 

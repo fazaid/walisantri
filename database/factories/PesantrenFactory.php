@@ -13,16 +13,17 @@ class PesantrenFactory extends Factory
     public function definition(): array
     {
         $nama = fake()->unique()->words(2, true);
+
         return [
-            'nama_pesantren'             => 'Pesantren ' . ucwords($nama),
-            'slug'                       => Str::slug($nama) . '-' . fake()->numerify('##'),
-            'paket_langganan'            => 'rintisan',
-            'max_santri_kuota'           => 10,
-            'status_berlangganan'        => 'trial',
-            'expired_at'                 => now()->addDays(14),
-            'santri_count_cache'         => 0,
+            'nama_pesantren' => 'Pesantren '.ucwords($nama),
+            'slug' => Str::slug($nama).'-'.fake()->numerify('##'),
+            'paket_langganan' => 'rintisan',
+            'max_santri_kuota' => 10,
+            'status_berlangganan' => 'trial',
+            'expired_at' => now()->addDays(14),
+            'santri_count_cache' => 0,
             'onboarding_completed_steps' => [],
-            'profil'                     => null,
+            'profil' => null,
         ];
     }
 

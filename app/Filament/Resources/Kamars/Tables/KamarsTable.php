@@ -3,8 +3,10 @@
 namespace App\Filament\Resources\Kamars\Tables;
 
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -34,7 +36,8 @@ class KamarsTable
             ])
             ->defaultSort('nama_kamar', 'asc')
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()->modalWidth(Width::Medium),
+                DeleteAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

@@ -3,8 +3,6 @@
 namespace App\Filament\Resources\PlatformBankAccounts;
 
 use App\Enums\UserRole;
-use App\Filament\Resources\PlatformBankAccounts\Pages\CreatePlatformBankAccount;
-use App\Filament\Resources\PlatformBankAccounts\Pages\EditPlatformBankAccount;
 use App\Filament\Resources\PlatformBankAccounts\Pages\ListPlatformBankAccounts;
 use App\Filament\Resources\PlatformBankAccounts\Schemas\PlatformBankAccountForm;
 use App\Filament\Resources\PlatformBankAccounts\Tables\PlatformBankAccountsTable;
@@ -27,8 +25,11 @@ class PlatformBankAccountResource extends Resource
     protected static ?int $navigationSort = 11;
 
     protected static ?string $recordTitleAttribute = 'bank';
+
     protected static ?string $navigationLabel = 'Rekening Bank';
+
     protected static ?string $modelLabel = 'Rekening Bank';
+
     protected static ?string $pluralModelLabel = 'Rekening Bank Platform';
 
     public static function canAccess(): bool
@@ -59,9 +60,7 @@ class PlatformBankAccountResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListPlatformBankAccounts::route('/'),
-            'create' => CreatePlatformBankAccount::route('/create'),
-            'edit'   => EditPlatformBankAccount::route('/{record}/edit'),
+            'index' => ListPlatformBankAccounts::route('/'),
         ];
     }
 }

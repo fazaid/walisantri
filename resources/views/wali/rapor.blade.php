@@ -21,6 +21,10 @@
         'Semester_Genap'  => 'Semester Genap',
         default           => $p,
     };
+
+    // Label karakter dipakai bersama panel admin supaya tidak bercabang dua.
+    $adabFields        = \App\Services\Rapor\RaporKarakterData::adabFields();
+    $kepribadianFields = \App\Services\Rapor\RaporKarakterData::kepribadianFields();
 @endphp
 
 <div class="space-y-4">
@@ -149,75 +153,63 @@
     {{-- ══════════════════════════════════════════════════════════════════ --}}
     @if($activeTab === 'karakter')
 
-    @if($raporKarakter)
-
-    {{-- Section Adab --}}
+    @forelse($daftarKarakter as $karakter)
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-4 py-3 bg-emerald-50 border-b border-emerald-100">
-            <h3 class="text-sm font-semibold text-emerald-800">🤲 Adab</h3>
+        {{-- Badge Periode --}}
+        <div class="px-4 py-3 bg-emerald-50 border-b border-emerald-100 flex items-center justify-between">
+            <span class="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-700 text-white">
+                {{ \App\Services\TahunAjaranOptions::labelPeriode($karakter->periode, $karakter->bulan, $tahunAjaran) }}
+            </span>
+            <span class="text-xs text-emerald-600 font-medium">
+                {{ $karakter->tanggal_input?->translatedFormat('d M Y') }}
+            </span>
+        </div>
+
+        {{-- Section Adab --}}
+        <div class="px-4 py-2 bg-gray-50 border-b border-gray-100">
+            <h3 class="text-xs font-semibold text-gray-600 uppercase tracking-wide">🤲 Adab</h3>
         </div>
         <div class="divide-y divide-gray-50">
-            @foreach([
-                'adab_ustadz'  => 'Adab kepada Ustadz',
-                'adab_tamu'    => 'Adab kepada Tamu',
-                'adab_asrama'  => 'Adab di Asrama',
-                'adab_kelas'   => 'Adab di Kelas',
-                'adab_sholat'  => 'Adab Sholat',
-                'adab_quran'   => 'Adab Al-Quran',
-                'adab_minum'   => 'Adab Minum',
-            ] as $field => $label)
+            @foreach($adabFields as $field => $label)
             <div class="px-4 py-2.5 flex items-center justify-between">
                 <span class="text-sm text-gray-700">{{ $label }}</span>
-                <span class="text-xs font-bold px-2.5 py-0.5 rounded-full {{ $badgeClass($raporKarakter->$field) }}">
-                    {{ $raporKarakter->$field }}
+                <span class="text-xs font-bold px-2.5 py-0.5 rounded-full {{ $badgeClass($karakter->$field) }}">
+                    {{ $karakter->$field }}
                 </span>
             </div>
             @endforeach
         </div>
-    </div>
 
-    {{-- Section Kepribadian --}}
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-4 py-3 bg-blue-50 border-b border-blue-100">
-            <h3 class="text-sm font-semibold text-blue-800">🌟 Kepribadian</h3>
+        {{-- Section Kepribadian --}}
+        <div class="px-4 py-2 bg-gray-50 border-y border-gray-100">
+            <h3 class="text-xs font-semibold text-gray-600 uppercase tracking-wide">🌟 Kepribadian</h3>
         </div>
         <div class="divide-y divide-gray-50">
-            @foreach([
-                'kepribadian_tanggungjawab' => 'Tanggung Jawab',
-                'kepribadian_kemandirian'   => 'Kemandirian',
-                'kepribadian_kepatuhan'     => 'Kepatuhan',
-                'kepribadian_kebersihan'    => 'Kebersihan',
-                'kepribadian_mengelola'     => 'Mengelola Diri',
-                'kepribadian_kepedulian'    => 'Kepedulian',
-                'kepribadian_empati'        => 'Empati',
-                'kepribadian_kebersamaan'   => 'Kebersamaan',
-                'kepribadian_kedisiplinan'  => 'Kedisiplinan',
-            ] as $field => $label)
+            @foreach($kepribadianFields as $field => $label)
             <div class="px-4 py-2.5 flex items-center justify-between">
                 <span class="text-sm text-gray-700">{{ $label }}</span>
-                <span class="text-xs font-bold px-2.5 py-0.5 rounded-full {{ $badgeClass($raporKarakter->$field) }}">
-                    {{ $raporKarakter->$field }}
+                <span class="text-xs font-bold px-2.5 py-0.5 rounded-full {{ $badgeClass($karakter->$field) }}">
+                    {{ $karakter->$field }}
                 </span>
             </div>
             @endforeach
         </div>
-    </div>
 
-    {{-- Catatan Khusus --}}
-    @if($raporKarakter->log_kasus_khusus)
-    <div class="bg-yellow-50 border border-yellow-200 rounded-2xl p-4">
-        <p class="text-xs font-semibold text-yellow-800 mb-2">⚠ Catatan Khusus</p>
-        <p class="text-sm text-yellow-700 leading-relaxed">{{ $raporKarakter->log_kasus_khusus }}</p>
+        {{-- Catatan Khusus --}}
+        @if($karakter->log_kasus_khusus)
+        <div class="m-4 bg-yellow-50 border border-yellow-200 rounded-xl p-3">
+            <p class="text-xs font-semibold text-yellow-800 mb-1">⚠ Catatan Khusus</p>
+            <p class="text-sm text-yellow-700 leading-relaxed">{{ $karakter->log_kasus_khusus }}</p>
+        </div>
+        @endif
     </div>
-    @endif
-
-    @else
+    @empty
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 px-4 py-10 text-center">
         <p class="text-3xl mb-2">🌱</p>
         <p class="text-sm font-medium text-gray-600">Belum ada data rapor karakter</p>
-        <p class="text-xs text-gray-400 mt-1">Rapor karakter untuk tahun {{ $tahunAjaran }} belum tersedia.</p>
+        <p class="text-xs text-gray-400 mt-1">Rapor karakter untuk tahun ajaran {{ $tahunAjaran }} belum tersedia.</p>
     </div>
-    @endif
+    @endforelse
 
     @endif {{-- /karakter tab --}}
 
@@ -269,7 +261,6 @@
     <a href="{{ route('wali.laporan.pdf', [
             'santri_id'    => $santriId,
             'tahun_ajaran' => $tahunAjaran,
-            'periode'      => \App\Services\TahunAjaranOptions::currentPeriode(),
         ]) }}"
        class="flex items-center justify-center gap-2 w-full py-3 px-4
               bg-green-700 text-white rounded-xl font-medium text-sm

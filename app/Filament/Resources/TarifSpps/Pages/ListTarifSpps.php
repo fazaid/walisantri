@@ -5,6 +5,7 @@ namespace App\Filament\Resources\TarifSpps\Pages;
 use App\Filament\Resources\TarifSpps\TarifSppResource;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Support\Enums\Width;
 
 class ListTarifSpps extends ListRecords
 {
@@ -13,7 +14,9 @@ class ListTarifSpps extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            CreateAction::make()
+                ->label('Tambah Tarif SPP')
+                ->modalWidth(Width::Medium),
         ];
     }
 }

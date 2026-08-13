@@ -3,11 +3,9 @@
 namespace App\Filament\Resources\Orders\Schemas;
 
 use App\Models\Order;
-use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
-use Illuminate\Support\Facades\Storage;
 
 class OrderInfolist
 {
@@ -48,7 +46,7 @@ class OrderInfolist
 
                     TextEntry::make('durasi_bulan')
                         ->label('Durasi Bayar')
-                        ->formatStateUsing(fn (int $state): string => $state . ' bulan'),
+                        ->formatStateUsing(fn (int $state): string => $state.' bulan'),
 
                     TextEntry::make('bonus_bulan')
                         ->label('Bonus')
@@ -56,7 +54,7 @@ class OrderInfolist
 
                     TextEntry::make('durasi_total_bulan')
                         ->label('Total Aktif')
-                        ->formatStateUsing(fn (int $state): string => $state . ' bulan'),
+                        ->formatStateUsing(fn (int $state): string => $state.' bulan'),
 
                     TextEntry::make('created_at')
                         ->label('Dibuat')
@@ -68,11 +66,11 @@ class OrderInfolist
                 ->schema([
                     TextEntry::make('harga_per_bulan')
                         ->label('Harga / Bulan')
-                        ->formatStateUsing(fn (int $state): string => 'Rp ' . number_format($state, 0, ',', '.')),
+                        ->formatStateUsing(fn (int $state): string => 'Rp '.number_format($state, 0, ',', '.')),
 
                     TextEntry::make('harga_total_sebelum_diskon')
                         ->label('Subtotal')
-                        ->formatStateUsing(fn (int $state): string => 'Rp ' . number_format($state, 0, ',', '.')),
+                        ->formatStateUsing(fn (int $state): string => 'Rp '.number_format($state, 0, ',', '.')),
 
                     TextEntry::make('kode_kupon_snapshot')
                         ->label('Kode Kupon')
@@ -80,13 +78,12 @@ class OrderInfolist
 
                     TextEntry::make('diskon_nominal')
                         ->label('Diskon')
-                        ->formatStateUsing(fn (int $state): string =>
-                            $state > 0 ? '− Rp ' . number_format($state, 0, ',', '.') : '—'
+                        ->formatStateUsing(fn (int $state): string => $state > 0 ? '− Rp '.number_format($state, 0, ',', '.') : '—'
                         ),
 
                     TextEntry::make('harga_total')
                         ->label('Total Bayar')
-                        ->formatStateUsing(fn (int $state): string => 'Rp ' . number_format($state, 0, ',', '.'))
+                        ->formatStateUsing(fn (int $state): string => 'Rp '.number_format($state, 0, ',', '.'))
                         ->weight('bold')
                         ->size('lg'),
                 ]),
@@ -101,8 +98,7 @@ class OrderInfolist
 
                     TextEntry::make('invoice.bukti_transfer_path')
                         ->label('File')
-                        ->formatStateUsing(fn (?string $state, Order $record): string =>
-                            $state
+                        ->formatStateUsing(fn (?string $state, Order $record): string => $state
                                 ? '✓ Tersedia — gunakan tombol "Lihat Bukti Transfer" di atas'
                                 : '—'
                         )

@@ -21,7 +21,6 @@ use App\Observers\SantriObserver;
 use App\Observers\UserObserver;
 use Filament\Support\Facades\FilamentTimezone;
 use Illuminate\Cache\RateLimiting\Limit;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
@@ -42,50 +41,8 @@ class AppServiceProvider extends ServiceProvider
         // sehingga terlihat mundur 7 jam bagi pengguna.
         FilamentTimezone::set(config('app.display_timezone'));
 
-        $this->registerModuleGates();
         $this->registerRateLimiters();
         $this->registerObservers();
-    }
-
-    // -----------------------------------------------------------------
-    // Laravel Gate — lock modul berdasarkan paket langganan (PRD §5.1)
-    // -----------------------------------------------------------------
-    private function registerModuleGates(): void
-    {
-        // Modul Kesehatan — Rintisan ke atas (§5.1, v4.6: dipindah dari Berkembang+)
-        Gate::define('access-modul-kesehatan', function ($user) {
-            if ($user->isSuperAdmin()) return true;
-
-            return in_array($user->pesantren?->paket_langganan, [
-                'rintisan',
-                'berkembang',
-                'maju',
-            ]);
-        });
-
-        // Modul Inventaris — Maju saja (§5.1)
-        Gate::define('access-modul-inventaris', function ($user) {
-            if ($user->isSuperAdmin()) return true;
-
-            return $user->pesantren?->paket_langganan === 'maju';
-        });
-
-        // Modul AI — Maju saja, post v1.0 (§5.1)
-        Gate::define('access-modul-ai', function ($user) {
-            if ($user->isSuperAdmin()) return true;
-
-            return $user->pesantren?->paket_langganan === 'maju';
-        });
-
-        // Modul Akademik + Mutaba'ah — semua paket termasuk Gratis (§5.1)
-        Gate::define('access-modul-akademik', function ($user) {
-            return ! is_null($user->pesantren?->paket_langganan);
-        });
-
-        // Akses billing — hanya admin pesantren & super admin
-        Gate::define('access-billing', function ($user) {
-            return $user->isSuperAdmin() || $user->isAdminPesantren();
-        });
     }
 
     // -----------------------------------------------------------------
@@ -107,19 +64,14 @@ class AppServiceProvider extends ServiceProvider
     // -----------------------------------------------------------------
     private function registerRateLimiters(): void
     {
-        RateLimiter::for('check-slug', fn ($request) =>
-            Limit::perMinute(30)->by($request->ip())->response(fn () =>
-                response()->json(['available' => false, 'message' => 'Terlalu banyak permintaan.'], 429)
-            )
+        RateLimiter::for('check-slug', fn ($request) => Limit::perMinute(30)->by($request->ip())->response(fn () => response()->json(['available' => false, 'message' => 'Terlalu banyak permintaan.'], 429)
+        )
         );
 
-        RateLimiter::for('register', fn ($request) =>
-            Limit::perHour(5)->by($request->ip())
+        RateLimiter::for('register', fn ($request) => Limit::perHour(5)->by($request->ip())
         );
 
-        RateLimiter::for('demo', fn ($request) =>
-            Limit::perHour(5)->by($request->ip())
+        RateLimiter::for('demo', fn ($request) => Limit::perHour(5)->by($request->ip())
         );
     }
-
 }

@@ -6,6 +6,7 @@ use App\Models\KesantrianMutabaah;
 use App\Models\Santri;
 use App\Services\MutabaahScoreCalculator;
 use App\Support\Waktu;
+use Filament\Support\RawJs;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Auth;
@@ -32,6 +33,7 @@ class UstadzAmalanChart extends ChartWidget
     public function getDescription(): string|Htmlable|null
     {
         $labels = $this->getCachedData()['labels'] ?? [];
+
         return empty($labels)
             ? 'Belum ada data mutabaah yang diinput dalam 7 hari terakhir.'
             : 'Persentase amalan tiap santri Anda';
@@ -44,7 +46,7 @@ class UstadzAmalanChart extends ChartWidget
 
     protected function getData(): array
     {
-        $ustadzId    = Auth::id();
+        $ustadzId = Auth::id();
         $pesantrenId = Auth::user()?->pesantren_id;
 
         $santriList = Santri::where('pesantren_id', $pesantrenId)
@@ -58,7 +60,7 @@ class UstadzAmalanChart extends ChartWidget
         }
 
         $start = Waktu::sekarang()->subDays(6)->toDateString();
-        $end   = Waktu::sekarang()->toDateString();
+        $end = Waktu::sekarang()->toDateString();
 
         $allMutabaah = KesantrianMutabaah::whereIn('santri_id', $santriList->pluck('id'))
             ->whereBetween('tanggal', [$start, $end])
@@ -70,38 +72,38 @@ class UstadzAmalanChart extends ChartWidget
         }
 
         $labels = [];
-        $data   = [];
+        $data = [];
         $colors = [];
 
         foreach ($santriList as $santri) {
             $list = $allMutabaah->get($santri->id, collect());
-            $pct  = MutabaahScoreCalculator::persentaseRataRata($list);
+            $pct = MutabaahScoreCalculator::persentaseRataRata($list);
 
             // Nama pendek untuk label chart
-            $nama     = $santri->nama_panggilan
+            $nama = $santri->nama_panggilan
                 ?: explode(' ', $santri->nama_lengkap)[0];
 
             $labels[] = $nama;
-            $data[]   = $pct;
+            $data[] = $pct;
             $colors[] = $pct >= 75 ? '#10b981' : ($pct >= 50 ? '#f59e0b' : '#ef4444');
         }
 
         return [
             'datasets' => [
                 [
-                    'label'           => '% Amalan',
-                    'data'            => $data,
+                    'label' => '% Amalan',
+                    'data' => $data,
                     'backgroundColor' => $colors,
-                    'borderRadius'    => 6,
+                    'borderRadius' => 6,
                 ],
             ],
             'labels' => $labels,
         ];
     }
 
-    protected function getOptions(): array|\Filament\Support\RawJs|null
+    protected function getOptions(): array|RawJs|null
     {
-        return \Filament\Support\RawJs::make("{
+        return RawJs::make("{
             scales: {
                 y: {
                     min: 0,

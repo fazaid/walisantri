@@ -25,7 +25,7 @@ class KirimMagicLinkAction extends Action
             ->color('info')
             ->modalHeading('Link Portal Wali')
             ->modalContent(fn (Santri $record) => view('filament.actions.magic-link-modal', [
-                'url' => $this->buildMagicLinkUrl($record),
+                'url' => $record->linkWali(),
             ]))
             ->modalSubmitAction(false)
             ->modalCancelActionLabel('Tutup')
@@ -42,13 +42,5 @@ class KirimMagicLinkAction extends Action
 
                 $record->pesantren?->completeOnboardingStep(OnboardingStep::MagicLink);
             });
-    }
-
-    private function buildMagicLinkUrl(Santri $record): string
-    {
-        $appDomain = config('app.domain', 'app.walisantri.com');
-        $scheme    = app()->environment('production') ? 'https' : 'http';
-
-        return "{$scheme}://{$appDomain}/report/{$record->uuid}";
     }
 }

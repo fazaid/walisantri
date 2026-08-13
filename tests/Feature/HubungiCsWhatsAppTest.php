@@ -6,9 +6,9 @@ use App\Enums\StatusOrder;
 use App\Filament\Pages\OrderInvoicePage;
 use App\Filament\Pages\WhatsAppSettingsPage;
 use App\Models\Order;
+use App\Models\Pesantren;
 use App\Models\PlatformContactSetting;
 use App\Models\User;
-use App\Models\Pesantren;
 use App\Models\WhatsAppMessageTemplate;
 use App\Services\UpgradeOrderService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -25,20 +25,20 @@ class HubungiCsWhatsAppTest extends TestCase
         $n++;
 
         $pesantren = Pesantren::create([
-            'nama_pesantren'      => "Pesantren CS {$n}",
-            'slug'                => "pesantren-cs-{$n}-" . uniqid(),
-            'paket_langganan'     => 'rintisan',
-            'max_santri_kuota'    => 100,
+            'nama_pesantren' => "Pesantren CS {$n}",
+            'slug' => "pesantren-cs-{$n}-".uniqid(),
+            'paket_langganan' => 'rintisan',
+            'max_santri_kuota' => 100,
             'status_berlangganan' => 'active',
-            'expired_at'          => now()->addDays(30),
+            'expired_at' => now()->addDays(30),
         ]);
 
         return User::create([
             'pesantren_id' => $pesantren->id,
-            'name'         => "Admin CS {$n}",
-            'email'        => "admin.cs.{$n}@walisantri.test",
-            'password'     => bcrypt('password'),
-            'role'         => 'admin_pesantren',
+            'name' => "Admin CS {$n}",
+            'email' => "admin.cs.{$n}@walisantri.test",
+            'password' => bcrypt('password'),
+            'role' => 'admin_pesantren',
         ]);
     }
 
@@ -49,21 +49,21 @@ class HubungiCsWhatsAppTest extends TestCase
 
         return User::create([
             'pesantren_id' => null,
-            'name'         => "Super Admin {$n}",
-            'email'        => "super.{$n}@walisantri.test",
-            'password'     => bcrypt('password'),
-            'role'         => 'super_admin',
+            'name' => "Super Admin {$n}",
+            'email' => "super.{$n}@walisantri.test",
+            'password' => bcrypt('password'),
+            'role' => 'super_admin',
         ]);
     }
 
     private function buatOrder(User $admin): Order
     {
         return app(UpgradeOrderService::class)->createOrder(
-            pesantren:      $admin->pesantren,
-            paketTarget:    'berkembang',
-            durasibulan:    12,
+            pesantren: $admin->pesantren,
+            paketTarget: 'berkembang',
+            durasibulan: 12,
             maxSantriKuota: 2000,
-            kodeKupon:      null,
+            kodeKupon: null,
         )['order'];
     }
 
@@ -210,10 +210,10 @@ class HubungiCsWhatsAppTest extends TestCase
             ->assertOk()->getContent();
 
         $pesan = "Assalamualaikum, {$admin->pesantren->nama_pesantren} mau tanya invoice "
-            . "{$order->invoice->nomor_invoice} sebesar Rp " . number_format($order->harga_total, 0, ',', '.')
-            . ' (status: ' . $order->status->label() . ').';
+            ."{$order->invoice->nomor_invoice} sebesar Rp ".number_format($order->harga_total, 0, ',', '.')
+            .' (status: '.$order->status->label().').';
 
-        $this->assertStringContainsString('https://wa.me/6281399096658?text=' . rawurlencode($pesan), $html);
+        $this->assertStringContainsString('https://wa.me/6281399096658?text='.rawurlencode($pesan), $html);
 
         // Semua placeholder tergantikan — jangan ada kurung kurawal tersisa.
         $this->assertStringNotContainsString(rawurlencode('{'), $html);

@@ -8,15 +8,15 @@ use App\Http\Controllers\PublicProfileController;
 use App\Http\Controllers\SlugCheckController;
 use App\Http\Controllers\Wali\DashboardController;
 use App\Http\Controllers\Wali\InventarisController;
+use App\Http\Controllers\Wali\KesehatanStatsController;
 use App\Http\Controllers\Wali\LaporanController;
+use App\Http\Controllers\Wali\MutabaahStatsController;
 use App\Http\Controllers\Wali\PengumumanController;
 use App\Http\Controllers\Wali\RaporController;
 use App\Http\Controllers\Wali\ReportController;
-use App\Http\Controllers\Wali\KesehatanStatsController;
-use App\Http\Controllers\Wali\MutabaahStatsController;
 use App\Http\Controllers\Wali\SppController;
-use App\Http\Controllers\Wali\UangSakuController;
 use App\Http\Controllers\Wali\TahfidzStatsController;
+use App\Http\Controllers\Wali\UangSakuController;
 use App\Models\Order;
 use App\Models\PlatformSetting;
 use Illuminate\Support\Facades\Auth;
@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 
 $baseDomain = config('app.base_domain', 'walisantri.com');
-$appDomain  = config('app.domain', 'app.walisantri.com');
+$appDomain = config('app.domain', 'app.walisantri.com');
 
 // Lingkungan dengan satu hostname saja (mis. staging: base_domain == app_domain)
 // tidak bisa mendaftarkan '/' dua kali pada domain yang sama — itu bikin route
@@ -40,7 +40,7 @@ Route::domain($baseDomain)->group(function () use ($sameDomain) {
         if ($sameDomain && auth()->check()) {
             return match (auth()->user()->role) {
                 'wali_santri' => redirect()->route('wali.dashboard'),
-                default       => redirect('/admin'),
+                default => redirect('/admin'),
             };
         }
 
@@ -84,9 +84,10 @@ Route::domain($appDomain)->group(function () use ($sameDomain) {
             if (! auth()->check()) {
                 return redirect()->route('login');
             }
+
             return match (auth()->user()->role) {
                 'wali_santri' => redirect()->route('wali.dashboard'),
-                default       => redirect('/admin'),
+                default => redirect('/admin'),
             };
         });
     }
@@ -158,7 +159,7 @@ Route::domain($appDomain)->group(function () use ($sameDomain) {
 // PROFIL PUBLIK — {slug}.walisantri.com (§1.4)
 // PublicTenantResolver cocokkan hostname ke tenant_domains → set pesantren
 // =============================================================================
-Route::domain('{slug}.' . $baseDomain)
+Route::domain('{slug}.'.$baseDomain)
     ->middleware('public.tenant')
     ->group(function () {
         Route::get('/', [PublicProfileController::class, 'index'])->name('public.profile');

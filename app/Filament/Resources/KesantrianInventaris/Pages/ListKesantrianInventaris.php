@@ -5,6 +5,7 @@ namespace App\Filament\Resources\KesantrianInventaris\Pages;
 use App\Filament\Resources\KesantrianInventaris\KesantrianInventarisResource;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Support\Enums\Width;
 
 class ListKesantrianInventaris extends ListRecords
 {
@@ -13,7 +14,7 @@ class ListKesantrianInventaris extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            CreateAction::make()->modalWidth(Width::FourExtraLarge),
         ];
     }
 }

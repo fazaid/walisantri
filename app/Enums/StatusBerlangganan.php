@@ -4,28 +4,28 @@ namespace App\Enums;
 
 enum StatusBerlangganan: string
 {
-    case Trial     = 'trial';
-    case Active    = 'active';
+    case Trial = 'trial';
+    case Active = 'active';
     case Suspended = 'suspended';
-    case Expired   = 'expired';
+    case Expired = 'expired';
 
     public function label(): string
     {
-        return match($this) {
-            self::Trial     => 'Trial',
-            self::Active    => 'Aktif',
+        return match ($this) {
+            self::Trial => 'Trial',
+            self::Active => 'Aktif',
             self::Suspended => 'Suspended',
-            self::Expired   => 'Expired',
+            self::Expired => 'Expired',
         };
     }
 
     public function color(): string
     {
-        return match($this) {
-            self::Trial     => 'info',
-            self::Active    => 'success',
+        return match ($this) {
+            self::Trial => 'info',
+            self::Active => 'success',
             self::Suspended => 'danger',
-            self::Expired   => 'warning',
+            self::Expired => 'warning',
         };
     }
 

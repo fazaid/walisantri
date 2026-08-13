@@ -4,8 +4,6 @@ namespace App\Filament\Resources\Kamars;
 
 use App\Filament\Clusters\Santri;
 use App\Filament\Concerns\HasAdminOnlyAccess;
-use App\Filament\Resources\Kamars\Pages\CreateKamar;
-use App\Filament\Resources\Kamars\Pages\EditKamar;
 use App\Filament\Resources\Kamars\Pages\ListKamars;
 use App\Filament\Resources\Kamars\Schemas\KamarForm;
 use App\Filament\Resources\Kamars\Tables\KamarsTable;
@@ -55,8 +53,6 @@ class KamarResource extends Resource
     {
         return [
             'index' => ListKamars::route('/'),
-            'create' => CreateKamar::route('/create'),
-            'edit' => EditKamar::route('/{record}/edit'),
         ];
     }
 }

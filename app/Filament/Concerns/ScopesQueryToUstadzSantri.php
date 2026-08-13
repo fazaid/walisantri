@@ -3,7 +3,7 @@
 namespace App\Filament\Concerns;
 
 use App\Enums\UserRole;
-use App\Models\Santri;
+use App\Support\PenugasanUstadz;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -22,7 +22,7 @@ trait ScopesQueryToUstadzSantri
 
     protected static function ustadzScopedIds(): Collection
     {
-        return Santri::idsPembimbing(Auth::id());
+        return PenugasanUstadz::santriIdsBimbingan();
     }
 
     public static function getEloquentQuery(): Builder

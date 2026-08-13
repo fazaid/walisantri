@@ -26,16 +26,16 @@ class MasterPengumumanInfolist
                     TextEntry::make('target_audience')
                         ->label('Kepada')
                         ->badge()
-                        ->color(fn (string $state): string => match($state) {
+                        ->color(fn (string $state): string => match ($state) {
                             'semua' => 'success',
                             'admin' => 'info',
-                            'wali'  => 'warning',
+                            'wali' => 'warning',
                             default => 'gray',
                         })
-                        ->formatStateUsing(fn (string $state): string => match($state) {
+                        ->formatStateUsing(fn (string $state): string => match ($state) {
                             'semua' => 'Semua Pengguna',
                             'admin' => 'Admin & Ustadz',
-                            'wali'  => 'Wali Santri',
+                            'wali' => 'Wali Santri',
                             default => $state,
                         }),
                     TextEntry::make('isi_maklumat')->label('Isi')->html(),

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Pesantrens\Pages;
 use App\Filament\Resources\Pesantrens\PesantrenResource;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Support\Enums\Width;
 
 class ListPesantrens extends ListRecords
 {
@@ -13,7 +14,7 @@ class ListPesantrens extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            CreateAction::make()->modalWidth(Width::TwoExtraLarge),
         ];
     }
 }

@@ -35,18 +35,29 @@ class BillingSettingsPage extends Page implements HasForms
 
     protected string $view = 'filament.pages.billing-settings';
 
-    public int $harga_rintisan           = 0;
-    public int $harga_tumbuh             = 0;
-    public int $harga_berkembang          = 0;
-    public int $harga_maju_base           = 0;
+    public int $harga_rintisan = 0;
+
+    public int $harga_tumbuh = 0;
+
+    public int $harga_berkembang = 0;
+
+    public int $harga_maju_base = 0;
+
     public int $harga_maju_per_100_santri = 0;
-    public int $kuota_rintisan            = 0;
-    public int $kuota_tumbuh             = 0;
-    public int $kuota_berkembang          = 0;
-    public int $kuota_maju_base           = 0;
-    public int $bonus_bulan_enam          = 0;
-    public int $bonus_bulan_tahunan       = 0;
-    public int $trial_days                = 0;
+
+    public int $kuota_rintisan = 0;
+
+    public int $kuota_tumbuh = 0;
+
+    public int $kuota_berkembang = 0;
+
+    public int $kuota_maju_base = 0;
+
+    public int $bonus_bulan_enam = 0;
+
+    public int $bonus_bulan_tahunan = 0;
+
+    public int $trial_days = 0;
 
     public static function canAccess(): bool
     {

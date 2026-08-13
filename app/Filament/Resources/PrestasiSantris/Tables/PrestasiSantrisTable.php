@@ -7,6 +7,7 @@ use App\Models\PrestasiSantri;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -59,7 +60,7 @@ class PrestasiSantrisTable
             ])
             ->recordActions([
                 ViewAction::make(),
-                EditAction::make(),
+                EditAction::make()->modalWidth(Width::FourExtraLarge),
                 DeleteAction::make(),
             ]);
     }

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\TahfidzUjian\Pages;
 use App\Filament\Resources\TahfidzUjian\TahfidzUjianResource;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Support\Enums\Width;
 
 class ListTahfidzUjian extends ListRecords
 {
@@ -13,7 +14,7 @@ class ListTahfidzUjian extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            CreateAction::make()->modalWidth(Width::FourExtraLarge),
         ];
     }
 }

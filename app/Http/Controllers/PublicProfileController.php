@@ -12,7 +12,7 @@ class PublicProfileController extends Controller
         /** @var Pesantren $pesantren */
         $pesantren = $request->attributes->get('public_pesantren');
 
-        $loginUrl = route('login') . '?tenant=' . $pesantren->slug;
+        $loginUrl = route('login').'?tenant='.$pesantren->slug;
 
         return view('public.profile', compact('pesantren', 'loginUrl'));
     }
@@ -33,7 +33,7 @@ class PublicProfileController extends Controller
         /** @var Pesantren $pesantren */
         $pesantren = $request->attributes->get('public_pesantren');
 
-        $loginUrl = route('login') . '?tenant=' . $pesantren->slug;
+        $loginUrl = route('login').'?tenant='.$pesantren->slug;
 
         return view('public.coming-soon', compact('pesantren', 'loginUrl', 'menu'));
     }

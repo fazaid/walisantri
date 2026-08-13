@@ -2,11 +2,14 @@
 
 namespace App\Filament\Resources\TahfidzUjian\Tables;
 
+use App\Filament\Resources\TahfidzUjian\TahfidzUjianResource;
 use App\Services\TahunAjaranOptions;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -47,7 +50,19 @@ class TahfidzUjianTable
                 SelectFilter::make('status_kelulusan')->label('Status')
                     ->options(['Lulus' => 'Lulus', 'Mengulang' => 'Mengulang']),
             ])
-            ->recordActions([ViewAction::make(), EditAction::make()])
-            ->toolbarActions([BulkActionGroup::make([DeleteBulkAction::make()])]);
+            // Filament v4 hanya membaca policy untuk mengunci action, dan aplikasi
+            // ini tidak punya policy — jadi aturan "hapus khusus admin" dari
+            // HasAdminUstadzAccess dipasang manual di sini.
+            ->recordActions([
+                ViewAction::make(),
+                EditAction::make()->modalWidth(Width::FourExtraLarge),
+                DeleteAction::make()
+                    ->visible(fn ($record): bool => TahfidzUjianResource::canDelete($record)),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()->visible(fn (): bool => TahfidzUjianResource::canDeleteAny()),
+                ]),
+            ]);
     }
 }

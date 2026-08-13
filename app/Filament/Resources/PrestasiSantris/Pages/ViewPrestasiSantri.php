@@ -7,6 +7,7 @@ use App\Filament\Resources\PrestasiSantris\Schemas\PrestasiSantriInfolist;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
 
 class ViewPrestasiSantri extends ViewRecord
 {
@@ -20,7 +21,7 @@ class ViewPrestasiSantri extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            EditAction::make(),
+            EditAction::make()->modalWidth(Width::FourExtraLarge),
         ];
     }
 }

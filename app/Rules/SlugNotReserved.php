@@ -18,6 +18,7 @@ class SlugNotReserved implements ValidationRule
     {
         if (in_array(strtolower((string) $value), self::RESERVED, strict: true)) {
             $fail('Slug ini tidak dapat digunakan karena merupakan kata yang dicadangkan sistem.');
+
             return;
         }
 

@@ -23,7 +23,7 @@ class OnboardingIsolationTest extends TestCase
 
         if (config('database.default') !== 'pgsql') {
             $this->markTestSkipped(
-                'OnboardingIsolationTest wajib pakai PostgreSQL. ' .
+                'OnboardingIsolationTest wajib pakai PostgreSQL. '.
                 'Jalankan dengan DB_CONNECTION=pgsql.'
             );
         }
@@ -37,7 +37,7 @@ class OnboardingIsolationTest extends TestCase
         // Tambah ustadz pertama untuk tenant A saja — trigger UserObserver::created().
         User::factory()->create([
             'pesantren_id' => $pesantrenA->id,
-            'role'         => UserRole::Ustadz->value,
+            'role' => UserRole::Ustadz->value,
         ]);
 
         $this->assertTrue($pesantrenA->fresh()->hasCompletedOnboardingStep(OnboardingStep::Ustadz));

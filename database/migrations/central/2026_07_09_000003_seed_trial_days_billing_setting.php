@@ -11,8 +11,8 @@ return new class extends Migration
     public function up(): void
     {
         DB::table('billing_settings')->insert([
-            'key'        => 'trial_days',
-            'value'      => 14,
+            'key' => 'trial_days',
+            'value' => 14,
             'keterangan' => 'Lama masa trial paket Rintisan (hari)',
             'created_at' => now(),
             'updated_at' => now(),

@@ -3,16 +3,20 @@
 namespace App\Filament\Resources\MasterPengumumen\Tables;
 
 use App\Enums\UserRole;
+use App\Filament\Resources\MasterPengumumen\MasterPengumumanResource;
 use App\Models\Pesantren;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class MasterPengumumenTable
 {
@@ -36,16 +40,16 @@ class MasterPengumumenTable
                 TextColumn::make('target_audience')
                     ->label('Kepada')
                     ->badge()
-                    ->color(fn (string $state): string => match($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'semua' => 'success',
                         'admin' => 'info',
-                        'wali'  => 'warning',
+                        'wali' => 'warning',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match($state) {
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
                         'semua' => 'Semua',
                         'admin' => 'Admin & Ustadz',
-                        'wali'  => 'Wali Santri',
+                        'wali' => 'Wali Santri',
                         default => $state,
                     }),
 
@@ -79,7 +83,17 @@ class MasterPengumumenTable
                     )
                     ->visible(fn (): bool => auth()->user()?->role === UserRole::SuperAdmin->value),
             ])
-            ->recordActions([ViewAction::make(), EditAction::make()])
+            ->recordActions([
+                ViewAction::make(),
+                // Aksi tabel tidak diotorisasi otomatis oleh Filament, dan halaman
+                // Edit yang dulu menegakkan canEdit()/canDelete() sudah dihapus —
+                // jadi penjaganya harus dipasang manual di sini.
+                EditAction::make()
+                    ->visible(fn (Model $record): bool => MasterPengumumanResource::canEdit($record))
+                    ->modalWidth(Width::TwoExtraLarge),
+                DeleteAction::make()
+                    ->visible(fn (Model $record): bool => MasterPengumumanResource::canDelete($record)),
+            ])
             ->toolbarActions([BulkActionGroup::make([DeleteBulkAction::make()->authorizeIndividualRecords('delete')])]);
     }
 }

@@ -26,26 +26,26 @@ return new class extends Migration
         // tinggal lengkapi logo lewat panel setelahnya.
         $legacyBanks = [
             [
-                'bank'      => env('BILLING_BANK1_NAMA', 'BCA'),
-                'nomor'     => env('BILLING_BANK1_NOMOR', '1234567890'),
+                'bank' => env('BILLING_BANK1_NAMA', 'BCA'),
+                'nomor' => env('BILLING_BANK1_NOMOR', '1234567890'),
                 'atas_nama' => env('BILLING_BANK1_ATAS_NAMA', 'PT Walisantri Digital'),
             ],
             [
-                'bank'      => env('BILLING_BANK2_NAMA', 'Mandiri'),
-                'nomor'     => env('BILLING_BANK2_NOMOR', '1110002223334'),
+                'bank' => env('BILLING_BANK2_NAMA', 'Mandiri'),
+                'nomor' => env('BILLING_BANK2_NOMOR', '1110002223334'),
                 'atas_nama' => env('BILLING_BANK2_ATAS_NAMA', 'PT Walisantri Digital'),
             ],
         ];
 
         foreach ($legacyBanks as $i => $bank) {
             DB::table('platform_bank_accounts')->insert([
-                'bank'           => $bank['bank'],
+                'bank' => $bank['bank'],
                 'nomor_rekening' => $bank['nomor'],
-                'atas_nama'      => $bank['atas_nama'],
-                'urutan'         => $i,
-                'aktif'          => true,
-                'created_at'     => now(),
-                'updated_at'     => now(),
+                'atas_nama' => $bank['atas_nama'],
+                'urutan' => $i,
+                'aktif' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
         }
     }

@@ -27,7 +27,7 @@ class MutabaahScoreCalculator
     public static function skor(KesantrianMutabaah $mutabaah): int
     {
         $amalan = $mutabaah->amalan ?? [];
-        $skor   = 0.0;
+        $skor = 0.0;
 
         foreach (self::masterAktif($mutabaah->pesantren_id) as $item) {
             $nilai = $amalan[$item->kode] ?? null;
@@ -80,21 +80,21 @@ class MutabaahScoreCalculator
         return self::masterAktif($pesantrenId)->map(function (KesantrianAmalMaster $item) use ($list, $totalHari) {
             if ($item->tipe === 'hitungan') {
                 $total = $list->sum(fn (KesantrianMutabaah $m) => (float) (($m->amalan ?? [])[$item->kode] ?? 0));
-                $max   = $totalHari * $item->nilai_maks;
+                $max = $totalHari * $item->nilai_maks;
             } else {
                 $total = $list->filter(fn (KesantrianMutabaah $m) => (bool) (($m->amalan ?? [])[$item->kode] ?? false))->count();
-                $max   = $totalHari;
+                $max = $totalHari;
             }
 
             return [
-                'kode'  => $item->kode,
-                'tipe'  => $item->tipe,
-                'icon'  => $item->icon ?: '✅',
+                'kode' => $item->kode,
+                'tipe' => $item->tipe,
+                'icon' => $item->icon ?: '✅',
                 'label' => $item->label,
                 'total' => $total,
-                'max'   => $max,
-                'unit'  => $item->satuan,
-                'pct'   => $max > 0 ? (int) round($total / $max * 100) : 0,
+                'max' => $max,
+                'unit' => $item->satuan,
+                'pct' => $max > 0 ? (int) round($total / $max * 100) : 0,
             ];
         })->values()->all();
     }

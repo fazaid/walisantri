@@ -2,29 +2,31 @@
 
 namespace App\Enums;
 
+use App\Models\BillingSetting;
+
 enum DurasiLangganan: int
 {
-    case SatuBulan      = 1;
-    case TigaBulan      = 3;
-    case EnamBulan      = 6;
-    case DuabelasBulan  = 12;
+    case SatuBulan = 1;
+    case TigaBulan = 3;
+    case EnamBulan = 6;
+    case DuabelasBulan = 12;
 
     public function label(): string
     {
-        return match($this) {
-            self::SatuBulan     => '1 Bulan',
-            self::TigaBulan     => '3 Bulan',
-            self::EnamBulan     => '6 Bulan',
+        return match ($this) {
+            self::SatuBulan => '1 Bulan',
+            self::TigaBulan => '3 Bulan',
+            self::EnamBulan => '6 Bulan',
             self::DuabelasBulan => '12 Bulan (1 Tahun)',
         };
     }
 
     public function bonusBulan(): int
     {
-        return match($this) {
-            self::EnamBulan     => \App\Models\BillingSetting::get('bonus_bulan_enam', 1),
-            self::DuabelasBulan => \App\Models\BillingSetting::get('bonus_bulan_tahunan', 2),
-            default             => 0,
+        return match ($this) {
+            self::EnamBulan => BillingSetting::get('bonus_bulan_enam', 1),
+            self::DuabelasBulan => BillingSetting::get('bonus_bulan_tahunan', 2),
+            default => 0,
         };
     }
 

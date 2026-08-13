@@ -3,14 +3,14 @@
 namespace App\Filament\Resources\Santris;
 
 use App\Filament\Clusters\Santri as SantriCluster;
-use App\Filament\Resources\Santris\Pages\CreateSantri;
-use App\Filament\Resources\Santris\Pages\EditSantri;
 use App\Filament\Resources\Santris\Pages\ListSantris;
 use App\Filament\Resources\Santris\Pages\ViewSantri;
 use App\Filament\Resources\Santris\Schemas\SantriForm;
 use App\Filament\Resources\Santris\Schemas\SantriInfolist;
 use App\Filament\Resources\Santris\Tables\SantrisTable;
 use App\Models\Santri;
+use App\Support\PenugasanUstadz;
+use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -18,7 +18,6 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
-use BackedEnum;
 
 class SantriResource extends Resource
 {
@@ -31,10 +30,12 @@ class SantriResource extends Resource
     protected static ?int $navigationSort = 1;
 
     protected static ?string $recordTitleAttribute = 'nama_lengkap';
-    protected static ?string $navigationLabel = 'Santri';
-    protected static ?string $modelLabel = 'Santri';
-    protected static ?string $pluralModelLabel = 'Data Santri';
 
+    protected static ?string $navigationLabel = 'Santri';
+
+    protected static ?string $modelLabel = 'Santri';
+
+    protected static ?string $pluralModelLabel = 'Data Santri';
 
     public static function canViewAny(): bool
     {
@@ -52,8 +53,13 @@ class SantriResource extends Resource
     public static function canEdit($record): bool
     {
         $user = Auth::user();
-        if ($user?->role === 'admin_pesantren') return true;
-        if ($user?->role === 'ustadz') return $record->pembimbing_ustadz_id === $user->id;
+        if ($user?->role === 'admin_pesantren') {
+            return true;
+        }
+        if ($user?->role === 'ustadz') {
+            return $record->pembimbing_ustadz_id === $user->id;
+        }
+
         return false;
     }
 
@@ -72,7 +78,7 @@ class SantriResource extends Resource
         $query = parent::getEloquentQuery();
 
         if (Auth::user()?->role === 'ustadz') {
-            $query->where('pembimbing_ustadz_id', Auth::id());
+            $query->whereIn('id', PenugasanUstadz::santriIdsBimbingan());
         }
 
         return $query;
@@ -104,9 +110,7 @@ class SantriResource extends Resource
     {
         return [
             'index' => ListSantris::route('/'),
-            'create' => CreateSantri::route('/create'),
             'view' => ViewSantri::route('/{record}'),
-            'edit' => EditSantri::route('/{record}/edit'),
         ];
     }
 
@@ -118,7 +122,7 @@ class SantriResource extends Resource
             ]);
 
         if (Auth::user()?->role === 'ustadz') {
-            $query->where('pembimbing_ustadz_id', Auth::id());
+            $query->whereIn('id', PenugasanUstadz::santriIdsBimbingan());
         }
 
         return $query;

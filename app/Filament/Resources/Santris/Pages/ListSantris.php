@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Santris\Pages;
 
+use App\Exceptions\SantriQuotaExceededException;
 use App\Exports\SantriTemplateExport;
 use App\Filament\Resources\Santris\SantriResource;
 use App\Imports\SantriImport;
@@ -13,6 +14,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Schemas\Components\Actions as FormActions;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Support\Enums\Width;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
@@ -180,7 +182,22 @@ class ListSantris extends ListRecords
                 ->visible(fn () => auth()->user()?->role === 'admin_pesantren')
                 ->url(fn () => route('admin.export.santri')),
 
-            CreateAction::make()->visible(fn () => static::getResource()::canCreate()),
+            CreateAction::make()
+                ->visible(fn () => static::getResource()::canCreate())
+                ->modalWidth(Width::FourExtraLarge)
+                ->using(function (array $data, string $model, Action $action) {
+                    try {
+                        return $model::create($data);
+                    } catch (SantriQuotaExceededException $e) {
+                        Notification::make()
+                            ->title('Kuota Santri Penuh')
+                            ->body($e->getMessage())
+                            ->danger()
+                            ->send();
+
+                        $action->halt();
+                    }
+                }),
         ];
     }
 }

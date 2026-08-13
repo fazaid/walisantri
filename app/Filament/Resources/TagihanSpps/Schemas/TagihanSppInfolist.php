@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\TagihanSpps\Schemas;
 
+use App\Models\PembayaranSpp;
 use App\Models\TagihanSpp;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\TextEntry;
@@ -22,7 +23,7 @@ class TagihanSppInfolist
                         ->formatStateUsing(fn (TagihanSpp $record): string => $record->label_periode),
                     TextEntry::make('nominal')
                         ->label('Nominal')
-                        ->formatStateUsing(fn (int $state): string => 'Rp ' . number_format($state, 0, ',', '.')),
+                        ->formatStateUsing(fn (int $state): string => 'Rp '.number_format($state, 0, ',', '.')),
                     TextEntry::make('jatuh_tempo')->label('Jatuh Tempo')->date('d M Y')->placeholder('—'),
                     TextEntry::make('keterangan')->label('Keterangan')->placeholder('—'),
                     TextEntry::make('status')
@@ -56,14 +57,12 @@ class TagihanSppInfolist
                         ->placeholder('Belum dikonfirmasi admin'),
                     TextEntry::make('pembayaran.metode_bayar')
                         ->label('Metode')
-                        ->formatStateUsing(fn (?string $state): string =>
-                            \App\Models\PembayaranSpp::$metodeBayar[$state] ?? '—'
+                        ->formatStateUsing(fn (?string $state): string => PembayaranSpp::$metodeBayar[$state] ?? '—'
                         )
                         ->placeholder('—'),
                     TextEntry::make('pembayaran.jumlah')
                         ->label('Jumlah Dibayar')
-                        ->formatStateUsing(fn (?int $state): string =>
-                            $state ? 'Rp ' . number_format($state, 0, ',', '.') : '—'
+                        ->formatStateUsing(fn (?int $state): string => $state ? 'Rp '.number_format($state, 0, ',', '.') : '—'
                         ),
                     TextEntry::make('pembayaran.dicatatOleh.name')
                         ->label('Dicatat Oleh')

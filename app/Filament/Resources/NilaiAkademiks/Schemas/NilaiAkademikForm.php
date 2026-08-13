@@ -15,82 +15,87 @@ class NilaiAkademikForm
 {
     public static function configure(Schema $schema): Schema
     {
-        return $schema->components([
-            Section::make('Detail Penilaian')
-                ->columns(2)
-                ->schema([
-                    Select::make('mata_pelajaran_id')
-                        ->label('Mata Pelajaran')
-                        ->options(function () {
-                            $query = MataPelajaran::with('kelas')
-                                ->where('pesantren_id', auth()->user()?->pesantren_id);
+        // ListRecords memaksa schema modal jadi 2 kolom kalau form tidak
+        // menentukan sendiri, bikin Section cuma selebar separuh modal.
+        // columns(1) menahannya supaya tiap Section penuh selebar modal.
+        return $schema
+            ->columns(1)
+            ->components([
+                Section::make('Detail Penilaian')
+                    ->columns(2)
+                    ->schema([
+                        Select::make('mata_pelajaran_id')
+                            ->label('Mata Pelajaran')
+                            ->options(function () {
+                                // Global scope Multitenantable sudah menyaring pesantren_id.
+                                $query = MataPelajaran::with('kelas');
 
-                            if (auth()->user()?->role === 'ustadz') {
-                                $query->where('ustadz_id', auth()->id());
-                            }
+                                if (auth()->user()?->role === 'ustadz') {
+                                    $query->where('ustadz_id', auth()->id());
+                                }
 
-                            return $query->get()
-                                ->mapWithKeys(fn (MataPelajaran $mapel) => [
-                                    $mapel->id => $mapel->nama_mapel.' — '.$mapel->kelas?->nama_kelas,
-                                ]);
-                        })
-                        ->searchable()
-                        ->required()
-                        ->live()
-                        ->afterStateUpdated(fn (callable $set) => $set('santri_id', null)),
-                    Select::make('santri_id')
-                        ->label('Santri')
-                        ->options(function (callable $get) {
-                            $mapel = MataPelajaran::find($get('mata_pelajaran_id'));
+                                return $query->get()
+                                    ->mapWithKeys(fn (MataPelajaran $mapel) => [
+                                        $mapel->id => $mapel->nama_mapel.' — '.$mapel->kelas?->nama_kelas,
+                                    ]);
+                            })
+                            ->searchable()
+                            ->required()
+                            ->live()
+                            ->afterStateUpdated(fn (callable $set) => $set('santri_id', null)),
+                        Select::make('santri_id')
+                            ->label('Santri')
+                            ->options(function (callable $get) {
+                                $mapel = MataPelajaran::find($get('mata_pelajaran_id'));
 
-                            if (! $mapel) {
-                                return [];
-                            }
+                                if (! $mapel) {
+                                    return [];
+                                }
 
-                            return Santri::where('kelas_id', $mapel->kelas_id)
-                                ->where('status_aktif', true)
-                                ->pluck('nama_lengkap', 'id');
-                        })
-                        ->disabled(fn (callable $get) => ! $get('mata_pelajaran_id'))
-                        ->placeholder('Pilih mata pelajaran dulu')
-                        ->searchable()
-                        ->required(),
-                    Select::make('tahun_ajaran')
-                        ->label('Tahun Ajaran')
-                        ->options(TahunAjaranOptions::options())
-                        ->default(TahunAjaranOptions::current())
-                        ->live()
-                        ->afterStateUpdated(fn (callable $set) => $set('bulan', null))
-                        ->required(),
-                    Select::make('periode')
-                        ->label('Periode')
-                        ->options(TahunAjaranOptions::periodeOptions())
-                        ->default(TahunAjaranOptions::currentPeriode())
-                        ->live()
-                        ->afterStateUpdated(fn (callable $set) => $set('bulan', null))
-                        ->required(),
-                    Select::make('bulan')
-                        ->label('Bulan')
-                        ->options(fn (callable $get) => TahunAjaranOptions::bulanOptions($get('tahun_ajaran')))
-                        ->visible(fn (callable $get) => $get('periode') === 'Bulanan')
-                        ->required(fn (callable $get) => $get('periode') === 'Bulanan')
-                        ->columnSpanFull(),
-                ]),
+                                return Santri::where('kelas_id', $mapel->kelas_id)
+                                    ->where('status_aktif', true)
+                                    ->pluck('nama_lengkap', 'id');
+                            })
+                            ->disabled(fn (callable $get) => ! $get('mata_pelajaran_id'))
+                            ->placeholder('Pilih mata pelajaran dulu')
+                            ->searchable()
+                            ->required(),
+                        Select::make('tahun_ajaran')
+                            ->label('Tahun Ajaran')
+                            ->options(TahunAjaranOptions::options())
+                            ->default(TahunAjaranOptions::current())
+                            ->live()
+                            ->afterStateUpdated(fn (callable $set) => $set('bulan', null))
+                            ->required(),
+                        Select::make('periode')
+                            ->label('Periode')
+                            ->options(TahunAjaranOptions::periodeOptions())
+                            ->default(TahunAjaranOptions::currentPeriode())
+                            ->live()
+                            ->afterStateUpdated(fn (callable $set) => $set('bulan', null))
+                            ->required(),
+                        Select::make('bulan')
+                            ->label('Bulan')
+                            ->options(fn (callable $get) => TahunAjaranOptions::bulanOptions($get('tahun_ajaran')))
+                            ->visible(fn (callable $get) => $get('periode') === 'Bulanan')
+                            ->required(fn (callable $get) => $get('periode') === 'Bulanan')
+                            ->columnSpanFull(),
+                    ]),
 
-            Section::make('Nilai')
-                ->columns(1)
-                ->schema([
-                    TextInput::make('nilai')
-                        ->label('Nilai (0-100)')
-                        ->numeric()
-                        ->minValue(0)
-                        ->maxValue(100)
-                        ->required(),
-                    Textarea::make('catatan')
-                        ->label('Catatan')
-                        ->rows(3)
-                        ->nullable(),
-                ]),
-        ]);
+                Section::make('Nilai')
+                    ->columns(1)
+                    ->schema([
+                        TextInput::make('nilai')
+                            ->label('Nilai (0-100)')
+                            ->numeric()
+                            ->minValue(0)
+                            ->maxValue(100)
+                            ->required(),
+                        Textarea::make('catatan')
+                            ->label('Catatan')
+                            ->rows(3)
+                            ->nullable(),
+                    ]),
+            ]);
     }
 }

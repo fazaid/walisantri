@@ -32,12 +32,12 @@ class KesantrianKesehatanInfolist
                             ->label('Jenis Rekam')
                             ->badge()
                             ->color(fn (?string $state): string => match ($state) {
-                                'rutin'   => 'success',
-                                default   => 'danger',
+                                'rutin' => 'success',
+                                default => 'danger',
                             })
                             ->formatStateUsing(fn (?string $state): string => match ($state) {
-                                'rutin'   => 'Pemeriksaan Rutin',
-                                default   => 'Keluhan Sakit',
+                                'rutin' => 'Pemeriksaan Rutin',
+                                default => 'Keluhan Sakit',
                             })
                             ->columnSpanFull(),
                     ]),
@@ -50,13 +50,13 @@ class KesantrianKesehatanInfolist
                             ->label('Kategori Keluhan')
                             ->badge()
                             ->color(fn (?string $state): string => match ($state) {
-                                'Demam'       => 'danger',
+                                'Demam' => 'danger',
                                 'Batuk_Pilek' => 'warning',
                                 'Sakit_Perut' => 'warning',
-                                'Pusing'      => 'info',
+                                'Pusing' => 'info',
                                 'Kulit_Gatal' => 'info',
-                                'Luka_Fisik'  => 'danger',
-                                default       => 'gray',
+                                'Luka_Fisik' => 'danger',
+                                default => 'gray',
                             }),
                         TextEntry::make('detail_keluhan_teks')
                             ->label('Detail Keluhan')
@@ -68,11 +68,11 @@ class KesantrianKesehatanInfolist
                             ->label('Status Pemulihan')
                             ->badge()
                             ->color(fn (?string $state): string => match ($state) {
-                                'Sembuh'          => 'success',
-                                'Rawat_Mandiri'   => 'info',
+                                'Sembuh' => 'success',
+                                'Rawat_Mandiri' => 'info',
                                 'Istirahat_Total' => 'warning',
-                                'Rujukan_Luar'    => 'danger',
-                                default           => 'gray',
+                                'Rujukan_Luar' => 'danger',
+                                default => 'gray',
                             }),
                         TextEntry::make('tanggal_sembuh')
                             ->label('Tanggal Sembuh')

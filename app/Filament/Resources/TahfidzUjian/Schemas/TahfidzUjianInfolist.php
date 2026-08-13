@@ -20,9 +20,9 @@ class TahfidzUjianInfolist
                         ->formatStateUsing(fn ($state) => $state ? "{$state} Juz" : '—'),
                     TextEntry::make('status_kelulusan')->label('Status Kelulusan')->badge()
                         ->color(fn (?string $state): string => match ($state) {
-                            'Lulus'     => 'success',
+                            'Lulus' => 'success',
                             'Mengulang' => 'danger',
-                            default     => 'gray',
+                            default => 'gray',
                         }),
                 ]),
                 Section::make('Periode Rapor')->columns(3)->schema([

@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\JenisKelamin;
 use App\Models\Concerns\BelongsToPesantren;
+use App\Support\PenugasanUstadz;
 use App\Traits\Multitenantable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -66,9 +67,26 @@ class Santri extends Model
             : null;
     }
 
+    /**
+     * @deprecated Pakai PenugasanUstadz::santriIdsBimbingan() — definisi cakupan
+     *             ustadz dipusatkan di sana bersama jalur penugasan lainnya.
+     */
     public static function idsPembimbing(int $ustadzId): Collection
     {
-        return static::where('pembimbing_ustadz_id', $ustadzId)->pluck('id');
+        return PenugasanUstadz::santriIdsBimbingan($ustadzId);
+    }
+
+    /**
+     * Link portal wali (magic link). Permanen sampai UUID di-regenerasi lewat
+     * RegenerasiUuidAction. Dipakai modal "Link Wali" dan kolom Link Wali di
+     * daftar santri — keduanya harus menghasilkan URL yang sama persis.
+     */
+    public function linkWali(): string
+    {
+        $appDomain = config('app.domain', 'app.walisantri.com');
+        $scheme = app()->environment('production') ? 'https' : 'http';
+
+        return "{$scheme}://{$appDomain}/report/{$this->uuid}";
     }
 
     // --- Relations ---

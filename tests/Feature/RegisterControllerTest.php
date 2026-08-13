@@ -23,12 +23,12 @@ class RegisterControllerTest extends TestCase
 
     private function registerUrl(): string
     {
-        return 'http://' . config('app.base_domain') . '/register';
+        return 'http://'.config('app.base_domain').'/register';
     }
 
     private function adminUrl(): string
     {
-        return 'http://' . config('app.domain') . '/admin';
+        return 'http://'.config('app.domain').'/admin';
     }
 
     public function test_form_menampilkan_keterangan_nonaktif_saat_registrasi_ditutup(): void
@@ -78,11 +78,11 @@ class RegisterControllerTest extends TestCase
         $this->withoutMiddleware(ValidateCsrfToken::class)
             ->actingAs($admin)
             ->post($this->registerUrl(), [
-                'nama_pesantren'        => 'Pesantren Susupan',
-                'slug'                  => 'pesantren-susupan',
-                'admin_name'            => 'Penyusup',
-                'email'                 => 'penyusup@example.com',
-                'password'              => 'Password123',
+                'nama_pesantren' => 'Pesantren Susupan',
+                'slug' => 'pesantren-susupan',
+                'admin_name' => 'Penyusup',
+                'email' => 'penyusup@example.com',
+                'password' => 'Password123',
                 'password_confirmation' => 'Password123',
             ])
             ->assertRedirect($this->adminUrl());
@@ -110,11 +110,11 @@ class RegisterControllerTest extends TestCase
     {
         $this->withoutMiddleware(ValidateCsrfToken::class)
             ->post($this->registerUrl(), [
-                'nama_pesantren'        => 'Pesantren Al-Hidayah',
-                'slug'                  => 'al-hidayah-baru',
-                'admin_name'            => 'Admin Baru',
-                'email'                 => 'admin-baru@example.com',
-                'password'              => 'Password123',
+                'nama_pesantren' => 'Pesantren Al-Hidayah',
+                'slug' => 'al-hidayah-baru',
+                'admin_name' => 'Admin Baru',
+                'email' => 'admin-baru@example.com',
+                'password' => 'Password123',
                 'password_confirmation' => 'Password123',
             ])
             ->assertRedirect($this->adminUrl());

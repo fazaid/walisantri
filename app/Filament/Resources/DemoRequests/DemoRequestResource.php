@@ -13,7 +13,6 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use UnitEnum;
 
 class DemoRequestResource extends Resource
 {
@@ -23,8 +22,10 @@ class DemoRequestResource extends Resource
 
     protected static ?int $navigationSort = 5;
 
-    protected static ?string $navigationLabel  = 'Antrean Demo';
-    protected static ?string $modelLabel       = 'Permintaan Demo';
+    protected static ?string $navigationLabel = 'Antrean Demo';
+
+    protected static ?string $modelLabel = 'Permintaan Demo';
+
     protected static ?string $pluralModelLabel = 'Antrean Demo';
 
     public static function canAccess(): bool
@@ -69,7 +70,7 @@ class DemoRequestResource extends Resource
     {
         return [
             'index' => ListDemoRequests::route('/'),
-            'view'  => ViewDemoRequest::route('/{record}'),
+            'view' => ViewDemoRequest::route('/{record}'),
         ];
     }
 }

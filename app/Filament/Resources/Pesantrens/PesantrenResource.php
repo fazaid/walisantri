@@ -3,8 +3,6 @@
 namespace App\Filament\Resources\Pesantrens;
 
 use App\Enums\UserRole;
-use App\Filament\Resources\Pesantrens\Pages\CreatePesantren;
-use App\Filament\Resources\Pesantrens\Pages\EditPesantren;
 use App\Filament\Resources\Pesantrens\Pages\ListPesantrens;
 use App\Filament\Resources\Pesantrens\Pages\ViewPesantren;
 use App\Filament\Resources\Pesantrens\Schemas\PesantrenForm;
@@ -29,8 +27,11 @@ class PesantrenResource extends Resource
     protected static ?int $navigationSort = 1;
 
     protected static ?string $recordTitleAttribute = 'nama_pesantren';
+
     protected static ?string $navigationLabel = 'Pesantren';
+
     protected static ?string $modelLabel = 'Pesantren';
+
     protected static ?string $pluralModelLabel = 'Data Pesantren';
 
     public static function canAccess(): bool
@@ -66,10 +67,8 @@ class PesantrenResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListPesantrens::route('/'),
-            'create' => CreatePesantren::route('/create'),
-            'view'   => ViewPesantren::route('/{record}'),
-            'edit'   => EditPesantren::route('/{record}/edit'),
+            'index' => ListPesantrens::route('/'),
+            'view' => ViewPesantren::route('/{record}'),
         ];
     }
 }

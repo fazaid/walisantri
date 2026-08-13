@@ -8,8 +8,10 @@ use Illuminate\Support\Facades\Cache;
 class BillingSetting extends Model
 {
     protected $primaryKey = 'key';
-    protected $keyType    = 'string';
-    public    $incrementing = false;
+
+    protected $keyType = 'string';
+
+    public $incrementing = false;
 
     protected $fillable = ['key', 'value', 'keterangan'];
 
@@ -20,8 +22,7 @@ class BillingSetting extends Model
 
     public static function get(string $key, int $default = 0): int
     {
-        return Cache::remember("billing_setting:{$key}", 3600, fn () =>
-            static::where('key', $key)->value('value') ?? $default
+        return Cache::remember("billing_setting:{$key}", 3600, fn () => static::where('key', $key)->value('value') ?? $default
         );
     }
 

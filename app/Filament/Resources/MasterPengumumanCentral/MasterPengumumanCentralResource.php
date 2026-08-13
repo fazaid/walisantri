@@ -3,8 +3,6 @@
 namespace App\Filament\Resources\MasterPengumumanCentral;
 
 use App\Enums\UserRole;
-use App\Filament\Resources\MasterPengumumanCentral\Pages\CreateMasterPengumumanCentral;
-use App\Filament\Resources\MasterPengumumanCentral\Pages\EditMasterPengumumanCentral;
 use App\Filament\Resources\MasterPengumumanCentral\Pages\ListMasterPengumumanCentral;
 use App\Filament\Resources\MasterPengumumanCentral\Pages\ViewMasterPengumumanCentral;
 use App\Filament\Resources\MasterPengumumanCentral\Schemas\MasterPengumumanCentralForm;
@@ -16,6 +14,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 class MasterPengumumanCentralResource extends Resource
@@ -29,8 +28,11 @@ class MasterPengumumanCentralResource extends Resource
     protected static ?int $navigationSort = 5;
 
     protected static ?string $recordTitleAttribute = 'judul_maklumat';
+
     protected static ?string $navigationLabel = 'Pengumuman Central';
+
     protected static ?string $modelLabel = 'Pengumuman Central';
+
     protected static ?string $pluralModelLabel = 'Pengumuman Central';
 
     public static function canAccess(): bool
@@ -48,12 +50,12 @@ class MasterPengumumanCentralResource extends Resource
         return static::canAccess();
     }
 
-    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canEdit(Model $record): bool
     {
         return static::canAccess();
     }
 
-    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canDelete(Model $record): bool
     {
         return static::canAccess();
     }
@@ -86,10 +88,8 @@ class MasterPengumumanCentralResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListMasterPengumumanCentral::route('/'),
-            'create' => CreateMasterPengumumanCentral::route('/create'),
-            'view'   => ViewMasterPengumumanCentral::route('/{record}'),
-            'edit'   => EditMasterPengumumanCentral::route('/{record}/edit'),
+            'index' => ListMasterPengumumanCentral::route('/'),
+            'view' => ViewMasterPengumumanCentral::route('/{record}'),
         ];
     }
 }

@@ -37,7 +37,7 @@ class UstadzNilaiAkademikChart extends ChartWidget
 
     protected function getData(): array
     {
-        $ustadzId    = Auth::id();
+        $ustadzId = Auth::id();
         $pesantrenId = Auth::user()?->pesantren_id;
 
         $santriList = Santri::where('pesantren_id', $pesantrenId)
@@ -59,16 +59,16 @@ class UstadzNilaiAkademikChart extends ChartWidget
             ->pluck('avg_nilai', 'santri_id');
 
         $labels = [];
-        $data   = [];
+        $data = [];
         $colors = [];
 
         foreach ($santriList as $santri) {
-            $nama    = $santri->nama_panggilan ?: explode(' ', $santri->nama_lengkap)[0];
+            $nama = $santri->nama_panggilan ?: explode(' ', $santri->nama_lengkap)[0];
             $hasData = isset($rows[$santri->id]);
-            $avg     = (float) ($rows[$santri->id] ?? 0);
+            $avg = (float) ($rows[$santri->id] ?? 0);
 
             $labels[] = $nama;
-            $data[]   = $avg;
+            $data[] = $avg;
             $colors[] = ! $hasData
                 ? '#9ca3af'
                 : ($avg >= 80 ? '#10b981' : ($avg >= 65 ? '#f59e0b' : '#ef4444'));
@@ -77,10 +77,10 @@ class UstadzNilaiAkademikChart extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label'           => 'Rata-rata Nilai',
-                    'data'            => $data,
+                    'label' => 'Rata-rata Nilai',
+                    'data' => $data,
                     'backgroundColor' => $colors,
-                    'borderRadius'    => 6,
+                    'borderRadius' => 6,
                 ],
             ],
             'labels' => $labels,
@@ -92,8 +92,8 @@ class UstadzNilaiAkademikChart extends ChartWidget
         return [
             'scales' => [
                 'y' => [
-                    'min'   => 0,
-                    'max'   => 100,
+                    'min' => 0,
+                    'max' => 100,
                     'ticks' => ['stepSize' => 10],
                 ],
             ],

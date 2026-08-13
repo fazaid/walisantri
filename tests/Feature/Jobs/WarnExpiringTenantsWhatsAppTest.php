@@ -50,7 +50,7 @@ class WarnExpiringTenantsWhatsAppTest extends TestCase
         $pesantren = $this->makePesantren(['expired_at' => now()->addDays(3)->setTime(10, 0)]);
         $this->makeAdmin($pesantren);
 
-        (new WarnExpiringTenantsWhatsApp())->handle();
+        (new WarnExpiringTenantsWhatsApp)->handle();
 
         Queue::assertPushed(KirimNotifikasiWhatsapp::class, fn ($job) => $job->phoneNumber === '081234567890'
             && str_contains($job->message, $pesantren->nama_pesantren)
@@ -64,7 +64,7 @@ class WarnExpiringTenantsWhatsAppTest extends TestCase
         $pesantren = $this->makePesantren(['expired_at' => now()->addDays(1)->setTime(10, 0)]);
         $this->makeAdmin($pesantren);
 
-        (new WarnExpiringTenantsWhatsApp())->handle();
+        (new WarnExpiringTenantsWhatsApp)->handle();
 
         Queue::assertPushed(KirimNotifikasiWhatsapp::class);
     }
@@ -76,7 +76,7 @@ class WarnExpiringTenantsWhatsAppTest extends TestCase
         $pesantren = $this->makePesantren(['expired_at' => now()->addDays(3)->setTime(10, 0)]);
         $this->makeAdmin($pesantren, null);
 
-        (new WarnExpiringTenantsWhatsApp())->handle();
+        (new WarnExpiringTenantsWhatsApp)->handle();
 
         Queue::assertNotPushed(KirimNotifikasiWhatsapp::class);
     }
@@ -88,7 +88,7 @@ class WarnExpiringTenantsWhatsAppTest extends TestCase
         $pesantren = $this->makePesantren(['expired_at' => now()->addDays(10)]);
         $this->makeAdmin($pesantren);
 
-        (new WarnExpiringTenantsWhatsApp())->handle();
+        (new WarnExpiringTenantsWhatsApp)->handle();
 
         Queue::assertNotPushed(KirimNotifikasiWhatsapp::class);
     }
@@ -103,7 +103,7 @@ class WarnExpiringTenantsWhatsAppTest extends TestCase
         ]);
         $this->makeAdmin($pesantren);
 
-        (new WarnExpiringTenantsWhatsApp())->handle();
+        (new WarnExpiringTenantsWhatsApp)->handle();
 
         Queue::assertNotPushed(KirimNotifikasiWhatsapp::class);
     }
@@ -117,7 +117,7 @@ class WarnExpiringTenantsWhatsAppTest extends TestCase
         $pesantren = $this->makePesantren(['expired_at' => now()->addDays(3)->setTime(10, 0)]);
         $this->makeAdmin($pesantren);
 
-        (new WarnExpiringTenantsWhatsApp())->handle();
+        (new WarnExpiringTenantsWhatsApp)->handle();
 
         Queue::assertNotPushed(KirimNotifikasiWhatsapp::class);
     }
@@ -129,7 +129,7 @@ class WarnExpiringTenantsWhatsAppTest extends TestCase
         $pesantren = $this->makePesantren(['expired_at' => now()->addDays(3)->setTime(10, 0)]);
         $this->makeAdmin($pesantren);
 
-        (new WarnExpiringTenantsWhatsApp())->handle();
+        (new WarnExpiringTenantsWhatsApp)->handle();
 
         Queue::assertPushed(KirimNotifikasiWhatsapp::class, fn ($job) => str_contains($job->message, $pesantren->nama_pesantren)
             && str_contains($job->message, $pesantren->expired_at->locale('id')->translatedFormat('d F Y'))
@@ -149,7 +149,7 @@ class WarnExpiringTenantsWhatsAppTest extends TestCase
         $pesantren = $this->makePesantren(['expired_at' => now()->addDays(3)->setTime(10, 0)]);
         $this->makeAdmin($pesantren);
 
-        (new WarnExpiringTenantsWhatsApp())->handle();
+        (new WarnExpiringTenantsWhatsApp)->handle();
 
         Queue::assertPushed(KirimNotifikasiWhatsapp::class, fn ($job) => $job->message === "Halo {$pesantren->nama_pesantren}, sisa 3 hari, expired {$pesantren->expired_at->locale('id')->translatedFormat('d F Y')}, bayar di ".url('/admin/billing-page').'.'
         );

@@ -19,7 +19,7 @@ class ExportController extends Controller
 
         return Excel::download(
             new DataSantriExport(Auth::user()->pesantren_id),
-            'data-santri-' . Waktu::sekarang()->format('Y-m-d') . '.xlsx',
+            'data-santri-'.Waktu::sekarang()->format('Y-m-d').'.xlsx',
         );
     }
 
@@ -27,8 +27,8 @@ class ExportController extends Controller
     {
         abort_unless(in_array(Auth::user()?->role, ['admin_pesantren', 'ustadz']), 403);
 
-        $bulan    = $request->integer('bulan', Waktu::sekarang()->month);
-        $tahun    = $request->integer('tahun', Waktu::sekarang()->year);
+        $bulan = $request->integer('bulan', Waktu::sekarang()->month);
+        $tahun = $request->integer('tahun', Waktu::sekarang()->year);
         $ustadzId = Auth::user()?->role === 'ustadz' ? Auth::id() : null;
 
         return Excel::download(
@@ -50,7 +50,7 @@ class ExportController extends Controller
                 $request->get('sampai'),
                 $ustadzId,
             ),
-            'rekam-medis-' . Waktu::sekarang()->format('Y-m-d') . '.xlsx',
+            'rekam-medis-'.Waktu::sekarang()->format('Y-m-d').'.xlsx',
         );
     }
 }

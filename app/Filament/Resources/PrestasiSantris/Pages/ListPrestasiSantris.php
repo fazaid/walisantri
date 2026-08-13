@@ -5,6 +5,7 @@ namespace App\Filament\Resources\PrestasiSantris\Pages;
 use App\Filament\Resources\PrestasiSantris\PrestasiSantriResource;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Support\Enums\Width;
 
 class ListPrestasiSantris extends ListRecords
 {
@@ -12,6 +13,6 @@ class ListPrestasiSantris extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        return [CreateAction::make()];
+        return [CreateAction::make()->modalWidth(Width::FourExtraLarge)];
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\KesantrianAmalMasters\Tables;
 
 use Filament\Actions\EditAction;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -27,6 +28,6 @@ class KesantrianAmalMasterTable
                 IconColumn::make('aktif')->label('Aktif')->boolean()->sortable(),
             ])
             ->defaultSort('urutan')
-            ->recordActions([EditAction::make()]);
+            ->recordActions([EditAction::make()->modalWidth(Width::TwoExtraLarge)]);
     }
 }

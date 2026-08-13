@@ -28,8 +28,8 @@ class TahfidzProgressInfolist
                             ->label('Tipe Setoran')
                             ->badge()
                             ->color(fn (string $state): string => match ($state) {
-                                'Sabaq'  => 'success',
-                                'Sabqi'  => 'info',
+                                'Sabaq' => 'success',
+                                'Sabqi' => 'info',
                                 'Manzil' => 'warning',
                             }),
                     ]),
@@ -53,10 +53,10 @@ class TahfidzProgressInfolist
                             ->label('Nilai Kelancaran')
                             ->badge()
                             ->color(fn (string $state): string => match ($state) {
-                                'Mumtaz'        => 'success',
+                                'Mumtaz' => 'success',
                                 'Jayyid Jiddan' => 'info',
-                                'Jayyid'        => 'warning',
-                                'Maqbul'        => 'danger',
+                                'Jayyid' => 'warning',
+                                'Maqbul' => 'danger',
                             }),
                         TextEntry::make('catatan_evaluasi')
                             ->label('Catatan Evaluasi')

@@ -11,21 +11,21 @@ enum UserRole: string
 
     public function label(): string
     {
-        return match($this) {
-            self::SuperAdmin    => 'Super Admin',
+        return match ($this) {
+            self::SuperAdmin => 'Super Admin',
             self::AdminPesantren => 'Admin Pesantren',
-            self::Ustadz        => 'Ustadz',
-            self::WaliSantri    => 'Wali Santri',
+            self::Ustadz => 'Ustadz',
+            self::WaliSantri => 'Wali Santri',
         };
     }
 
     public function color(): string
     {
-        return match($this) {
-            self::SuperAdmin     => 'danger',
+        return match ($this) {
+            self::SuperAdmin => 'danger',
             self::AdminPesantren => 'warning',
-            self::Ustadz         => 'success',
-            self::WaliSantri     => 'info',
+            self::Ustadz => 'success',
+            self::WaliSantri => 'info',
         };
     }
 

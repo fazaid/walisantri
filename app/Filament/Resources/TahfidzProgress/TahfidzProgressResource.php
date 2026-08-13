@@ -5,8 +5,6 @@ namespace App\Filament\Resources\TahfidzProgress;
 use App\Filament\Clusters\Tahfidz;
 use App\Filament\Concerns\HasAdminUstadzAccess;
 use App\Filament\Concerns\ScopesQueryToUstadzSantri;
-use App\Filament\Resources\TahfidzProgress\Pages\CreateTahfidzProgress;
-use App\Filament\Resources\TahfidzProgress\Pages\EditTahfidzProgress;
 use App\Filament\Resources\TahfidzProgress\Pages\ListTahfidzProgress;
 use App\Filament\Resources\TahfidzProgress\Pages\ViewTahfidzProgress;
 use App\Filament\Resources\TahfidzProgress\Schemas\TahfidzProgressForm;
@@ -68,9 +66,7 @@ class TahfidzProgressResource extends Resource
     {
         return [
             'index' => ListTahfidzProgress::route('/'),
-            'create' => CreateTahfidzProgress::route('/create'),
             'view' => ViewTahfidzProgress::route('/{record}'),
-            'edit' => EditTahfidzProgress::route('/{record}/edit'),
         ];
     }
 }

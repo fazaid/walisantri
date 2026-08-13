@@ -14,23 +14,21 @@
         >
         <button
             type="button"
+            {{-- Fallback non-secure-context ditangani polyfill panel di
+                 filament/admin/clipboard-fallback.blade.php, sama seperti
+                 kolom Link Wali di daftar santri. --}}
             onclick="
                 var inp = this.previousElementSibling;
+                var btn = this;
                 inp.select();
                 inp.setSelectionRange(0, 99999);
-                var copied = false;
-                if (navigator.clipboard && window.isSecureContext) {
-                    navigator.clipboard.writeText(inp.value).then(function() {
-                        copied = true;
-                    }).catch(function() {
-                        copied = document.execCommand('copy');
-                    });
-                } else {
-                    copied = document.execCommand('copy');
-                }
-                var btn = this;
-                btn.textContent = 'Tersalin ✓';
-                setTimeout(function() { btn.textContent = 'Salin'; }, 2000);
+                navigator.clipboard.writeText(inp.value).then(function () {
+                    btn.textContent = 'Tersalin ✓';
+                }).catch(function () {
+                    btn.textContent = 'Gagal menyalin';
+                }).finally(function () {
+                    setTimeout(function () { btn.textContent = 'Salin'; }, 2000);
+                });
             "
             class="shrink-0 rounded-lg bg-teal-600 px-3 py-2 text-sm font-medium text-white hover:bg-teal-700 focus:outline-none"
         >Salin</button>

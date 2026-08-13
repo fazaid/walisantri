@@ -50,7 +50,7 @@ class PlatformLogoSettingsPage extends Page implements HasForms
     public function mount(): void
     {
         $this->form->fill([
-            'logo'    => PlatformBrandingSetting::get('logo'),
+            'logo' => PlatformBrandingSetting::get('logo'),
             'favicon' => PlatformBrandingSetting::get('favicon'),
         ]);
     }

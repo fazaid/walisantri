@@ -12,11 +12,13 @@ class Keuangan extends Cluster
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Manajemen';
+    // Top-level (bukan grup Manajemen) supaya tidak tertukar dengan menu "Langganan"
+    // yang mengurus tagihan pesantren ke platform. Sort 6 = tepat di bawah Rapor (5).
+    protected static string|UnitEnum|null $navigationGroup = null;
 
     protected static ?string $navigationLabel = 'Keuangan';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 6;
 
     protected static ?SubNavigationPosition $subNavigationPosition = SubNavigationPosition::Top;
 }

@@ -11,16 +11,19 @@ class ValidTenantSlug implements ValidationRule
     {
         if (! is_string($value)) {
             $fail('Slug harus berupa teks.');
+
             return;
         }
 
         if (strlen($value) < 3 || strlen($value) > 30) {
             $fail('Slug harus antara 3 hingga 30 karakter.');
+
             return;
         }
 
         if (! preg_match('/^[a-z0-9][a-z0-9\-]*[a-z0-9]$/', $value) && strlen($value) > 1) {
             $fail('Slug hanya boleh huruf kecil, angka, dan tanda hubung; tidak boleh diawali atau diakhiri tanda hubung.');
+
             return;
         }
 

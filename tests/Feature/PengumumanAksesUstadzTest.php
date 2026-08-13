@@ -13,9 +13,9 @@ use Tests\TestCase;
 
 /**
  * Ustadz punya akses BACA ke pengumuman (karena itu menunya tampil), tapi tidak
- * boleh membuatnya. Filament hanya menegakkan canCreate() di halaman
- * CreateRecord, sehingga tombol "Buat" di daftar harus dijaga manual — kalau
- * tidak, tombolnya tampil lalu berujung 403.
+ * boleh membuatnya. Filament tidak menyembunyikan tombol "Buat" berdasarkan
+ * canCreate(), sehingga tombol di daftar harus dijaga manual — kalau tidak,
+ * tombolnya tampil lalu modalnya berujung ditolak.
  */
 class PengumumanAksesUstadzTest extends TestCase
 {
@@ -30,9 +30,9 @@ class PengumumanAksesUstadzTest extends TestCase
         $this->pesantren = Pesantren::factory()->create();
 
         MasterPengumuman::create([
-            'pesantren_id'   => $this->pesantren->id,
+            'pesantren_id' => $this->pesantren->id,
             'judul_maklumat' => 'Pengumuman Tenant',
-            'isi_maklumat'   => 'Isi pengumuman.',
+            'isi_maklumat' => 'Isi pengumuman.',
         ]);
     }
 
@@ -56,32 +56,69 @@ class PengumumanAksesUstadzTest extends TestCase
 
     public function test_ustadz_tidak_melihat_tombol_buat_pengumuman(): void
     {
-        $html = Livewire::actingAs($this->ustadz())
+        Livewire::actingAs($this->ustadz())
             ->test(ListMasterPengumumen::class)
-            ->html();
-
-        $this->assertStringNotContainsString(
-            MasterPengumumanResource::getUrl('create'),
-            $html,
-            'Tombol buat tidak boleh dirender untuk ustadz — link-nya berujung 403.',
-        );
+            ->assertActionHidden('create');
     }
 
     public function test_admin_pesantren_tetap_melihat_tombol_buat_pengumuman(): void
     {
-        $html = Livewire::actingAs($this->adminPesantren())
+        Livewire::actingAs($this->adminPesantren())
             ->test(ListMasterPengumumen::class)
-            ->html();
-
-        $this->assertStringContainsString(MasterPengumumanResource::getUrl('create'), $html);
+            ->assertActionVisible('create');
     }
 
-    public function test_ustadz_ditolak_saat_membuka_halaman_buat_langsung(): void
+    public function test_ustadz_tetap_ditolak_meski_aksi_buat_dipanggil_langsung(): void
     {
-        // Penjaga di UI hanya kosmetik; otorisasi sebenarnya tetap harus menutup
-        // akses lewat URL langsung.
-        $this->actingAs($this->ustadz())
-            ->get(MasterPengumumanResource::getUrl('create'))
-            ->assertForbidden();
+        // Penjaga ->visible() bukan sekadar kosmetik: Filament menolak me-mount
+        // aksi yang tersembunyi (isDisabled() ikut true saat hidden), jadi jalur
+        // pemanggilan langsung tanpa lewat tombol pun buntu.
+        $ustadz = $this->ustadz();
+
+        $this->actingAs($ustadz);
+        $this->assertFalse(MasterPengumumanResource::canCreate());
+
+        Livewire::actingAs($ustadz)
+            ->test(ListMasterPengumumen::class)
+            ->mountAction('create')
+            ->assertActionNotMounted();
+
+        $this->assertSame(1, MasterPengumuman::count());
+    }
+
+    public function test_ustadz_tidak_bisa_mengubah_atau_menghapus_pengumuman(): void
+    {
+        // Aksi tabel Filament tidak diotorisasi otomatis, dan halaman Edit yang dulu
+        // menegakkan canEdit() sudah dihapus — tes ini mengunci penjaga penggantinya.
+        $pengumuman = MasterPengumuman::first();
+
+        Livewire::actingAs($this->ustadz())
+            ->test(ListMasterPengumumen::class)
+            ->assertTableActionHidden('edit', $pengumuman)
+            ->assertTableActionHidden('delete', $pengumuman);
+    }
+
+    public function test_admin_pesantren_bisa_mengubah_pengumuman_pesantrennya(): void
+    {
+        $pengumuman = MasterPengumuman::first();
+
+        Livewire::actingAs($this->adminPesantren())
+            ->test(ListMasterPengumumen::class)
+            ->assertTableActionVisible('edit', $pengumuman)
+            ->assertTableActionVisible('delete', $pengumuman);
+    }
+
+    public function test_admin_pesantren_tidak_bisa_mengubah_pengumuman_global(): void
+    {
+        $global = MasterPengumuman::create([
+            'pesantren_id' => null,
+            'judul_maklumat' => 'Pengumuman Platform',
+            'isi_maklumat' => 'Broadcast global.',
+        ]);
+
+        Livewire::actingAs($this->adminPesantren())
+            ->test(ListMasterPengumumen::class)
+            ->assertTableActionHidden('edit', $global)
+            ->assertTableActionHidden('delete', $global);
     }
 }

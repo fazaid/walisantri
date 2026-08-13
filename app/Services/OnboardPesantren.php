@@ -7,6 +7,7 @@ use App\Models\BillingSetting;
 use App\Models\Pesantren;
 use App\Models\TenantDomain;
 use App\Models\User;
+use App\Support\AmalanDefault;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
@@ -18,7 +19,8 @@ class OnboardPesantren
      * 2. Buat baris tenant_domains (subdomain otomatis)
      * 3. Buat user pertama role admin_pesantren
      * 4. Aktifkan trial (durasi dari BillingSetting::trial_days)
-     * 5. Catat audit log
+     * 5. Isikan amalan bawaan supaya modul Mutaba'ah langsung bisa dipakai
+     * 6. Catat audit log
      */
     public function execute(
         string $namaPesantren,
@@ -32,40 +34,44 @@ class OnboardPesantren
             $namaPesantren, $slug, $adminName, $adminEmail, $adminPassword, $adminPhone
         ) {
             $pesantren = Pesantren::create([
-                'nama_pesantren'     => $namaPesantren,
-                'slug'               => $slug,
-                'paket_langganan'     => 'rintisan',
-                'max_santri_kuota'    => \App\Models\BillingSetting::get('kuota_rintisan', 100),
+                'nama_pesantren' => $namaPesantren,
+                'slug' => $slug,
+                'paket_langganan' => 'rintisan',
+                'max_santri_kuota' => BillingSetting::get('kuota_rintisan', 100),
                 'status_berlangganan' => 'trial',
-                'expired_at'          => now()->addDays(BillingSetting::get('trial_days', 14)),
+                'expired_at' => now()->addDays(BillingSetting::get('trial_days', 14)),
                 'santri_count_cache' => 0,
                 'onboarding_completed_steps' => [],
             ]);
 
             TenantDomain::create([
                 'pesantren_id' => $pesantren->id,
-                'hostname'     => "{$slug}.walisantri.com",
-                'type'         => 'subdomain',
-                'is_primary'   => true,
-                'ssl_status'   => 'pending',
+                'hostname' => "{$slug}.walisantri.com",
+                'type' => 'subdomain',
+                'is_primary' => true,
+                'ssl_status' => 'pending',
             ]);
+
+            // Tanpa ini modul Mutaba'ah lumpuh diam-diam: tidak ada kolom di grid
+            // Isi Harian, tidak ada checkbox di form, dan skor selalu 0%.
+            AmalanDefault::untukPesantren($pesantren->id);
 
             $admin = User::create([
                 'pesantren_id' => $pesantren->id,
-                'name'         => $adminName,
-                'email'        => $adminEmail,
+                'name' => $adminName,
+                'email' => $adminEmail,
                 'phone_number' => $adminPhone,
-                'password'     => Hash::make($adminPassword),
-                'role'         => 'admin_pesantren',
+                'password' => Hash::make($adminPassword),
+                'role' => 'admin_pesantren',
             ]);
 
             ActivityLog::create([
-                'pesantren_id'   => $pesantren->id,
-                'user_id'        => $admin->id,
-                'event'          => 'pesantren.created',
+                'pesantren_id' => $pesantren->id,
+                'user_id' => $admin->id,
+                'event' => 'pesantren.created',
                 'auditable_type' => Pesantren::class,
-                'auditable_id'   => $pesantren->id,
-                'new_values'     => ['nama' => $namaPesantren, 'slug' => $slug],
+                'auditable_id' => $pesantren->id,
+                'new_values' => ['nama' => $namaPesantren, 'slug' => $slug],
             ]);
 
             return ['pesantren' => $pesantren, 'admin' => $admin];

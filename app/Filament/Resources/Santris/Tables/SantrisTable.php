@@ -5,17 +5,16 @@
 namespace App\Filament\Resources\Santris\Tables;
 
 use App\Enums\JenisKelamin;
-use App\Filament\Resources\Santris\Actions\KirimMagicLinkAction;
 use App\Filament\Resources\Santris\Actions\PindahKamarBulkAction;
 use App\Filament\Resources\Santris\Actions\PindahKelasBulkAction;
-use App\Filament\Resources\Santris\Actions\PreviewSebagaiWaliAction;
-use App\Filament\Resources\Santris\Actions\RegenerasiUuidAction;
+use App\Models\Santri;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -40,7 +39,7 @@ class SantrisTable
                 TextColumn::make('jenis_kelamin')
                     ->label('Jenis Kelamin')
                     ->formatStateUsing(fn ($state) => $state?->label())
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('kelas.nama_kelas')
                     ->label('Kelas')
                     ->searchable()
@@ -53,10 +52,28 @@ class SantrisTable
                     ->label('Wali Santri')
                     ->searchable()
                     ->toggleable(),
+                // Kolom hitungan: yang tampil cuma badge pendek, yang tersalin
+                // URL penuh lewat copyableState(). Tanpa copyableState eksplisit
+                // Filament menyalin teks badge-nya, bukan link-nya.
+                TextColumn::make('link_wali')
+                    ->label('Link Wali')
+                    ->badge()
+                    ->state(fn (Santri $record): string => $record->wali_santri_id === null
+                        ? '— belum ada wali —'
+                        : 'Salin Link')
+                    ->color(fn (Santri $record): string => $record->wali_santri_id === null ? 'gray' : 'info')
+                    ->icon(fn (Santri $record): ?string => $record->wali_santri_id === null ? null : 'heroicon-o-link')
+                    ->copyable(fn (Santri $record): bool => $record->wali_santri_id !== null)
+                    ->copyableState(fn (Santri $record): string => $record->linkWali())
+                    ->copyMessage('Link portal wali tersalin')
+                    ->tooltip(fn (Santri $record): string => $record->wali_santri_id === null
+                        ? 'Hubungkan santri ke akun wali dulu lewat Edit → bagian Relasi.'
+                        : $record->linkWali())
+                    ->toggleable(),
                 TextColumn::make('pembimbing.name')
                     ->label('Ustadz Pembimbing')
                     ->searchable()
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 IconColumn::make('status_aktif')
                     ->label('Aktif')
                     ->boolean(),
@@ -85,10 +102,7 @@ class SantrisTable
             ])
             ->recordActions([
                 ViewAction::make(),
-                KirimMagicLinkAction::make(),
-                PreviewSebagaiWaliAction::make(),
-                RegenerasiUuidAction::make(),
-                EditAction::make(),
+                EditAction::make()->modalWidth(Width::FourExtraLarge),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

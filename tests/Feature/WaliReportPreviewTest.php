@@ -17,13 +17,13 @@ class WaliReportPreviewTest extends TestCase
     private function santriDanAdmin(): array
     {
         $pesantren = Pesantren::factory()->create();
-        $wali      = User::factory()->waliSantri()->create(['pesantren_id' => $pesantren->id]);
-        $admin     = User::factory()->adminPesantren()->create(['pesantren_id' => $pesantren->id]);
+        $wali = User::factory()->waliSantri()->create(['pesantren_id' => $pesantren->id]);
+        $admin = User::factory()->adminPesantren()->create(['pesantren_id' => $pesantren->id]);
 
         $santri = Santri::factory()->create([
-            'pesantren_id'   => $pesantren->id,
+            'pesantren_id' => $pesantren->id,
             'wali_santri_id' => $wali->id,
-            'status_aktif'   => true,
+            'status_aktif' => true,
         ]);
 
         return [$santri, $admin];
@@ -49,7 +49,7 @@ class WaliReportPreviewTest extends TestCase
 
     public function test_wali_login_normal_tetap_melihat_link_detail_dan_statistik(): void
     {
-        [$santri, ] = $this->santriDanAdmin();
+        [$santri] = $this->santriDanAdmin();
 
         $this->actingAs($santri->wali)
             ->get(route('wali.santri.show', $santri->id))
@@ -65,9 +65,9 @@ class WaliReportPreviewTest extends TestCase
         [$santri, $admin] = $this->santriDanAdmin();
 
         MasterPengumuman::create([
-            'pesantren_id'    => $santri->pesantren_id,
-            'judul_maklumat'  => 'Rapat Wali PENGUMUMAN_PREVIEW',
-            'isi_maklumat'    => 'Mohon hadir.',
+            'pesantren_id' => $santri->pesantren_id,
+            'judul_maklumat' => 'Rapat Wali PENGUMUMAN_PREVIEW',
+            'isi_maklumat' => 'Mohon hadir.',
             'target_audience' => 'semua',
         ]);
 
@@ -79,14 +79,14 @@ class WaliReportPreviewTest extends TestCase
 
     public function test_wali_login_report_tidak_menduplikasi_pengumuman(): void
     {
-        [$santri, ] = $this->santriDanAdmin();
+        [$santri] = $this->santriDanAdmin();
 
         // Sesi login normal sudah melihat pengumuman di dashboard; halaman report
         // tidak boleh mengulanginya (kartu di partial hanya untuk magic/preview).
         MasterPengumuman::create([
-            'pesantren_id'    => $santri->pesantren_id,
-            'judul_maklumat'  => 'Rapat Wali PENGUMUMAN_DUP',
-            'isi_maklumat'    => 'Mohon hadir.',
+            'pesantren_id' => $santri->pesantren_id,
+            'judul_maklumat' => 'Rapat Wali PENGUMUMAN_DUP',
+            'isi_maklumat' => 'Mohon hadir.',
             'target_audience' => 'semua',
         ]);
 

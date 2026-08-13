@@ -25,12 +25,12 @@ class DemoController extends Controller
     {
         $validated = $request->validate([
             'nama_pesantren' => ['required', 'string', 'max:200'],
-            'nama_kontak'    => ['required', 'string', 'max:200'],
-            'email'          => ['required', 'email', 'max:200'],
-            'no_hp'          => ['required', 'string', 'max:20', 'regex:/^[0-9+\-\s()]{8,20}$/'],
-            'jumlah_santri'  => ['nullable', 'string', 'max:50'],
-            'kota'           => ['nullable', 'string', 'max:100'],
-            'catatan'        => ['nullable', 'string', 'max:1000'],
+            'nama_kontak' => ['required', 'string', 'max:200'],
+            'email' => ['required', 'email', 'max:200'],
+            'no_hp' => ['required', 'string', 'max:20', 'regex:/^[0-9+\-\s()]{8,20}$/'],
+            'jumlah_santri' => ['nullable', 'string', 'max:50'],
+            'kota' => ['nullable', 'string', 'max:100'],
+            'catatan' => ['nullable', 'string', 'max:1000'],
         ], [
             'no_hp.regex' => 'Format No. HP tidak valid — gunakan angka saja.',
         ]);

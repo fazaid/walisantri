@@ -22,12 +22,12 @@ class PublicTenantResolverTest extends TestCase
     /** Subdomain publik mengikuti pola route `{slug}.` . config('app.base_domain'). */
     private function hostFor(string $slug): string
     {
-        return $slug . '.' . config('app.base_domain');
+        return $slug.'.'.config('app.base_domain');
     }
 
     public function test_hostname_tidak_terdaftar_mengembalikan_404(): void
     {
-        $this->get('http://' . $this->hostFor('tidak-terdaftar') . '/')
+        $this->get('http://'.$this->hostFor('tidak-terdaftar').'/')
             ->assertNotFound();
     }
 
@@ -35,19 +35,19 @@ class PublicTenantResolverTest extends TestCase
     {
         $pesantren = Pesantren::factory()->create([
             'nama_pesantren' => 'Pesantren Al-Hidayah',
-            'slug'           => 'al-hidayah',
-            'profil'         => ['deskripsi' => 'Pesantren tahfidz Al-Quran'],
+            'slug' => 'al-hidayah',
+            'profil' => ['deskripsi' => 'Pesantren tahfidz Al-Quran'],
         ]);
 
         TenantDomain::create([
             'pesantren_id' => $pesantren->id,
-            'hostname'     => $this->hostFor('al-hidayah'),
-            'type'         => 'subdomain',
-            'is_primary'   => true,
-            'ssl_status'   => 'active',
+            'hostname' => $this->hostFor('al-hidayah'),
+            'type' => 'subdomain',
+            'is_primary' => true,
+            'ssl_status' => 'active',
         ]);
 
-        $this->get('http://' . $this->hostFor('al-hidayah') . '/')
+        $this->get('http://'.$this->hostFor('al-hidayah').'/')
             ->assertOk()
             ->assertSee('Pesantren Al-Hidayah')
             ->assertViewHas('pesantren', fn (Pesantren $viewPesantren) => $viewPesantren->is($pesantren));
@@ -59,13 +59,13 @@ class PublicTenantResolverTest extends TestCase
 
         TenantDomain::create([
             'pesantren_id' => $pesantren->id,
-            'hostname'     => $this->hostFor('darul-ilmi'),
-            'type'         => 'subdomain',
-            'is_primary'   => true,
-            'ssl_status'   => 'active',
+            'hostname' => $this->hostFor('darul-ilmi'),
+            'type' => 'subdomain',
+            'is_primary' => true,
+            'ssl_status' => 'active',
         ]);
 
-        $this->get('http://' . $this->hostFor('darul-ilmi') . '/kegiatan')
+        $this->get('http://'.$this->hostFor('darul-ilmi').'/kegiatan')
             ->assertOk()
             ->assertViewHas('pesantren', fn (Pesantren $viewPesantren) => $viewPesantren->id === $pesantren->id);
     }

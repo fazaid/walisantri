@@ -4,7 +4,6 @@ namespace App\Filament\Pages;
 
 use App\Rules\SlugNotReserved;
 use App\Rules\ValidTenantSlug;
-use App\Filament\Clusters\PengaturanPesantren;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
@@ -34,27 +33,42 @@ class PesantrenSettingsPage extends Page implements HasForms
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
 
-    protected static ?string $cluster = PengaturanPesantren::class;
+    protected static string|UnitEnum|null $navigationGroup = 'Manajemen';
 
     protected static ?string $navigationLabel = 'Pengaturan';
 
     protected static ?string $title = 'Pengaturan';
 
-    protected static ?int $navigationSort = 1;
+    // Cluster PengaturanPesantren dibubarkan (tinggal satu anggota setelah Billing
+    // dipindah). Slug dipertahankan "pengaturan" supaya URL tetap /admin/pengaturan
+    // persis seperti waktu masih jadi root cluster.
+    protected static ?string $slug = 'pengaturan';
+
+    protected static ?int $navigationSort = 4;
 
     protected string $view = 'filament.pages.pesantren-settings-page';
 
-    public string $nama_pesantren  = '';
-    public string $pesantren_slug  = '';
-    public string $alamat          = '';
-    public string $telepon         = '';
-    public string $deskripsi       = '';
-    public array  $rekening        = [];
-    public array  $program         = [];
-    public ?string $tahun_berdiri  = null;
-    public ?string $akreditasi     = null;
-    public $logo                  = null; // FileUpload state (single) hydrates sebagai array secara internal
-    public array  $galeri          = [];
+    public string $nama_pesantren = '';
+
+    public string $pesantren_slug = '';
+
+    public string $alamat = '';
+
+    public string $telepon = '';
+
+    public string $deskripsi = '';
+
+    public array $rekening = [];
+
+    public array $program = [];
+
+    public ?string $tahun_berdiri = null;
+
+    public ?string $akreditasi = null;
+
+    public $logo = null; // FileUpload state (single) hydrates sebagai array secara internal
+
+    public array $galeri = [];
 
     public static function canAccess(): bool
     {
@@ -68,21 +82,21 @@ class PesantrenSettingsPage extends Page implements HasForms
         $this->form->fill([
             'nama_pesantren' => $pesantren->nama_pesantren,
             'pesantren_slug' => $pesantren->slug,
-            'alamat'         => $pesantren->profil['alamat']    ?? '',
-            'telepon'        => $pesantren->profil['telepon']   ?? '',
-            'deskripsi'      => $pesantren->profil['deskripsi']     ?? '',
-            'rekening'       => $pesantren->profil['rekening']      ?? [],
-            'program'        => $pesantren->profil['program']       ?? [],
-            'tahun_berdiri'  => $pesantren->profil['tahun_berdiri'] ?? null,
-            'akreditasi'     => $pesantren->profil['akreditasi']    ?? null,
-            'logo'           => $pesantren->profil['logo']          ?? null,
-            'galeri'         => $pesantren->profil['galeri']        ?? [],
+            'alamat' => $pesantren->profil['alamat'] ?? '',
+            'telepon' => $pesantren->profil['telepon'] ?? '',
+            'deskripsi' => $pesantren->profil['deskripsi'] ?? '',
+            'rekening' => $pesantren->profil['rekening'] ?? [],
+            'program' => $pesantren->profil['program'] ?? [],
+            'tahun_berdiri' => $pesantren->profil['tahun_berdiri'] ?? null,
+            'akreditasi' => $pesantren->profil['akreditasi'] ?? null,
+            'logo' => $pesantren->profil['logo'] ?? null,
+            'galeri' => $pesantren->profil['galeri'] ?? [],
         ]);
     }
 
     public function form(Schema $schema): Schema
     {
-        $pesantren  = Auth::user()->pesantren;
+        $pesantren = Auth::user()->pesantren;
         $baseDomain = config('app.base_domain', 'walisantri.com');
 
         return $schema
@@ -99,17 +113,16 @@ class PesantrenSettingsPage extends Page implements HasForms
                         TextInput::make('pesantren_slug')
                             ->label('Subdomain')
                             ->required()
-                            ->suffix('.' . $baseDomain)
-                            ->helperText(fn (Get $get): string =>
-                                'URL publik: https://' . ($get('pesantren_slug') ?: '...') . '.' . $baseDomain
+                            ->suffix('.'.$baseDomain)
+                            ->helperText(fn (Get $get): string => 'URL publik: https://'.($get('pesantren_slug') ?: '...').'.'.$baseDomain
                             )
                             ->live(onBlur: true)
                             ->rules([
                                 'required',
                                 'string',
                                 Rule::unique('pesantrens', 'slug')->ignore($pesantren->id),
-                                new ValidTenantSlug(),
-                                new SlugNotReserved(),
+                                new ValidTenantSlug,
+                                new SlugNotReserved,
                             ])
                             ->hint('Mengubah slug akan melepas slug lama ke cooldown 90 hari.')
                             ->hintColor('warning'),
@@ -242,7 +255,7 @@ class PesantrenSettingsPage extends Page implements HasForms
 
     public function save(): void
     {
-        $data      = $this->form->getState();
+        $data = $this->form->getState();
         $pesantren = Auth::user()->pesantren;
         $oldProfil = $pesantren->profil ?? [];
 
@@ -259,17 +272,17 @@ class PesantrenSettingsPage extends Page implements HasForms
 
         $pesantren->update([
             'nama_pesantren' => $data['nama_pesantren'],
-            'slug'           => Str::slug($data['pesantren_slug']),
-            'profil'         => array_merge($oldProfil, [
-                'alamat'        => $data['alamat'],
-                'telepon'       => $data['telepon'],
-                'deskripsi'     => $data['deskripsi'],
-                'rekening'      => $data['rekening'] ?? [],
-                'program'       => $data['program'] ?? [],
+            'slug' => Str::slug($data['pesantren_slug']),
+            'profil' => array_merge($oldProfil, [
+                'alamat' => $data['alamat'],
+                'telepon' => $data['telepon'],
+                'deskripsi' => $data['deskripsi'],
+                'rekening' => $data['rekening'] ?? [],
+                'program' => $data['program'] ?? [],
                 'tahun_berdiri' => $data['tahun_berdiri'],
-                'akreditasi'    => $data['akreditasi'],
-                'logo'          => $data['logo'],
-                'galeri'        => $data['galeri'] ?? [],
+                'akreditasi' => $data['akreditasi'],
+                'logo' => $data['logo'],
+                'galeri' => $data['galeri'] ?? [],
             ]),
         ]);
 

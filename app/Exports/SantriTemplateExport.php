@@ -8,7 +8,7 @@ use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithTitle;
 
-class SantriTemplateExport implements FromCollection, WithHeadings, WithTitle, ShouldAutoSize
+class SantriTemplateExport implements FromCollection, ShouldAutoSize, WithHeadings, WithTitle
 {
     public function collection(): Collection
     {

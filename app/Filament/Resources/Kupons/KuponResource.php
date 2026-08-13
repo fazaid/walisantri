@@ -3,8 +3,6 @@
 namespace App\Filament\Resources\Kupons;
 
 use App\Enums\UserRole;
-use App\Filament\Resources\Kupons\Pages\CreateKupon;
-use App\Filament\Resources\Kupons\Pages\EditKupon;
 use App\Filament\Resources\Kupons\Pages\ListKupons;
 use App\Filament\Resources\Kupons\Schemas\KuponForm;
 use App\Filament\Resources\Kupons\Tables\KuponsTable;
@@ -26,8 +24,10 @@ class KuponResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
-    protected static ?string $navigationLabel  = 'Kupon Diskon';
-    protected static ?string $modelLabel       = 'Kupon';
+    protected static ?string $navigationLabel = 'Kupon Diskon';
+
+    protected static ?string $modelLabel = 'Kupon';
+
     protected static ?string $pluralModelLabel = 'Kupon Diskon';
 
     public static function canAccess(): bool
@@ -58,9 +58,7 @@ class KuponResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListKupons::route('/'),
-            'create' => CreateKupon::route('/create'),
-            'edit'   => EditKupon::route('/{record}/edit'),
+            'index' => ListKupons::route('/'),
         ];
     }
 }

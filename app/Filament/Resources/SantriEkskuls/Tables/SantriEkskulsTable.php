@@ -2,9 +2,14 @@
 
 namespace App\Filament\Resources\SantriEkskuls\Tables;
 
+use App\Filament\Resources\SantriEkskuls\SantriEkskulResource;
+use App\Models\SantriEkskul;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -29,17 +34,12 @@ class SantriEkskulsTable
                     ->label('Level')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'pemula'   => 'warning',
+                        'pemula' => 'warning',
                         'menengah' => 'info',
-                        'mahir'    => 'success',
-                        default    => 'gray',
+                        'mahir' => 'success',
+                        default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'pemula'   => 'Pemula',
-                        'menengah' => 'Menengah',
-                        'mahir'    => 'Mahir',
-                        default    => ucfirst($state),
-                    }),
+                    ->formatStateUsing(fn (SantriEkskul $record): string => $record->labelLevel()),
                 TextColumn::make('tanggal_mulai')
                     ->label('Mulai')
                     ->date('d M Y')
@@ -62,9 +62,9 @@ class SantriEkskulsTable
                 SelectFilter::make('level')
                     ->label('Level')
                     ->options([
-                        'pemula'   => 'Pemula',
+                        'pemula' => 'Pemula',
                         'menengah' => 'Menengah',
-                        'mahir'    => 'Mahir',
+                        'mahir' => 'Mahir',
                     ]),
                 TernaryFilter::make('aktif')
                     ->label('Status Aktif')
@@ -72,7 +72,11 @@ class SantriEkskulsTable
                     ->falseLabel('Tidak Aktif'),
             ])
             ->recordActions([
-                EditAction::make(),
+                ViewAction::make(),
+                EditAction::make()
+                    ->modalWidth(Width::TwoExtraLarge)
+                    ->before(SantriEkskulResource::guardDuplikat()),
+                DeleteAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

@@ -6,11 +6,14 @@
 
 namespace App\Filament\Resources\KesantrianInventaris\Tables;
 
+use App\Filament\Resources\KesantrianInventaris\KesantrianInventarisResource;
 use App\Filament\Support\SantriOptions;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -42,7 +45,19 @@ class KesantrianInventarisTable
                     ->options(fn () => SantriOptions::aktifUntukPengguna())
                     ->searchable(),
             ])
-            ->recordActions([ViewAction::make(), EditAction::make()])
-            ->toolbarActions([BulkActionGroup::make([DeleteBulkAction::make()])]);
+            // Filament v4 hanya membaca policy untuk mengunci action, dan aplikasi
+            // ini tidak punya policy — jadi aturan "hapus khusus admin" dari
+            // HasAdminUstadzAccess dipasang manual di sini.
+            ->recordActions([
+                ViewAction::make(),
+                EditAction::make()->modalWidth(Width::FourExtraLarge),
+                DeleteAction::make()
+                    ->visible(fn ($record): bool => KesantrianInventarisResource::canDelete($record)),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()->visible(fn (): bool => KesantrianInventarisResource::canDeleteAny()),
+                ]),
+            ]);
     }
 }

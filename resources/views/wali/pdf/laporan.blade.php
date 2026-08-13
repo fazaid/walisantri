@@ -119,6 +119,13 @@
             padding-top: 4px;
         }
 
+        .periode-title {
+            font-size: 10px;
+            font-weight: bold;
+            color: #166534;
+            margin: 8px 0 3px;
+        }
+
         .no-data { color: #9ca3af; font-style: italic; font-size: 10px; }
     </style>
 </head>
@@ -152,8 +159,8 @@
         <tr>
             <td>NIS</td>
             <td>: {{ $santri->nis }}</td>
-            <td>Periode</td>
-            <td>: {{ str_replace('_', ' ', $periode) }}</td>
+            <td>Cakupan</td>
+            <td>: Satu Tahun Ajaran</td>
         </tr>
         <tr>
             <td>Kelas</td>
@@ -166,7 +173,8 @@
 
 {{-- ── Rapor Tahfidz ───────────────────────────────────────────────────── --}}
 <div class="section-title">📖 Rapor Tahfidz</div>
-@if($raporTahfidz)
+@forelse($raporTahfidz as $rapor)
+<div class="periode-title">{{ \App\Services\TahunAjaranOptions::labelPeriode($rapor->periode, $rapor->bulan, $tahunAjaran) }}</div>
 <table class="data-table">
     <tr>
         <th style="width:30%">Aspek Penilaian</th>
@@ -175,7 +183,7 @@
     </tr>
     <tr>
         <td>Hafalan</td>
-        <td><span class="badge" style="background:#f3f4f6;color:#1a1a1a;">{{ $raporTahfidz->nilai_hafalan }}</span></td>
+        <td><span class="badge" style="background:#f3f4f6;color:#1a1a1a;">{{ $rapor->nilai_hafalan }}</span></td>
         <td>Estimasi pencapaian hafalan</td>
     </tr>
     @foreach([
@@ -183,7 +191,7 @@
         'nilai_makhraj' => 'Makhraj Huruf',
         'nilai_tajwid'  => 'Tajwid',
     ] as $field => $label)
-    @php $val = $raporTahfidz->$field; $cls = match($val) {'A'=>'badge-a','B'=>'badge-b','C'=>'badge-c',default=>'badge-d'}; @endphp
+    @php $val = $rapor->$field; $cls = match($val) {'A'=>'badge-a','B'=>'badge-b','C'=>'badge-c',default=>'badge-d'}; @endphp
     <tr>
         <td>{{ $label }}</td>
         <td><span class="badge {{ $cls }}">{{ $val }}</span></td>
@@ -191,26 +199,27 @@
     </tr>
     @endforeach
 </table>
-@if($raporTahfidz->rekomendasi_pembimbing)
+@if($rapor->rekomendasi_pembimbing)
 <div style="font-size:10px;color:#374151;margin-top:4px;">
     <strong>Rekomendasi Pembimbing:</strong><br>
-    <em>{{ $raporTahfidz->rekomendasi_pembimbing }}</em>
+    <em>{{ $rapor->rekomendasi_pembimbing }}</em>
 </div>
 @endif
-@else
-<p class="no-data">Belum ada data rapor tahfidz untuk periode ini.</p>
-@endif
+@empty
+<p class="no-data">Belum ada data rapor tahfidz untuk tahun ajaran ini.</p>
+@endforelse
 
 {{-- ── Rapor Akademik ───────────────────────────────────────────────────── --}}
 <div class="section-title">📚 Rapor Akademik</div>
-@if($raporAkademik->isNotEmpty())
+@forelse($raporAkademik as $periodeKey => $nilaiList)
+<div class="periode-title">{{ \App\Services\TahunAjaranOptions::labelPeriode($periodeKey, $nilaiList->first()?->bulan, $tahunAjaran) }}</div>
 <table class="data-table">
     <tr>
         <th style="width:40%">Mata Pelajaran</th>
         <th style="width:15%">Nilai</th>
         <th>Catatan</th>
     </tr>
-    @foreach($raporAkademik as $nilai)
+    @foreach($nilaiList as $nilai)
     <tr>
         <td>{{ $nilai->mataPelajaran?->nama_mapel ?? '—' }}</td>
         <td><span class="badge" style="background:#f3f4f6;color:#1a1a1a;">{{ $nilai->nilai }}</span></td>
@@ -219,33 +228,26 @@
     @endforeach
     <tr>
         <td><strong>Rata-rata</strong></td>
-        <td><strong>{{ round($raporAkademik->avg('nilai'), 1) }}</strong></td>
+        <td><strong>{{ round($nilaiList->avg('nilai'), 1) }}</strong></td>
         <td></td>
     </tr>
 </table>
-@else
-<p class="no-data">Belum ada data rapor akademik untuk periode ini.</p>
-@endif
+@empty
+<p class="no-data">Belum ada data rapor akademik untuk tahun ajaran ini.</p>
+@endforelse
 
 {{-- ── Rapor Karakter ──────────────────────────────────────────────────── --}}
 <div class="section-title">🌱 Rapor Karakter</div>
-@if($raporKarakter)
+@forelse($raporKarakter as $karakter)
+<div class="periode-title">{{ \App\Services\TahunAjaranOptions::labelPeriode($karakter->periode, $karakter->bulan, $tahunAjaran) }}</div>
 
 {{-- Adab --}}
 <table class="data-table">
     <tr>
         <th colspan="2" style="background:#065f46;">Adab</th>
     </tr>
-    @foreach([
-        'adab_ustadz' => 'Adab kepada Ustadz',
-        'adab_tamu'   => 'Adab kepada Tamu',
-        'adab_asrama' => 'Adab di Asrama',
-        'adab_kelas'  => 'Adab di Kelas',
-        'adab_sholat' => 'Adab Sholat',
-        'adab_quran'  => 'Adab Al-Quran',
-        'adab_minum'  => 'Adab Minum',
-    ] as $field => $label)
-    @php $val = $raporKarakter->$field; $cls = match($val) {'A'=>'badge-a','B'=>'badge-b','C'=>'badge-c',default=>'badge-d'}; @endphp
+    @foreach(\App\Services\Rapor\RaporKarakterData::adabFields() as $field => $label)
+    @php $val = $karakter->$field; $cls = match($val) {'A'=>'badge-a','B'=>'badge-b','C'=>'badge-c',default=>'badge-d'}; @endphp
     <tr>
         <td>{{ $label }}</td>
         <td style="width:60px;"><span class="badge {{ $cls }}">{{ $val }}</span></td>
@@ -258,18 +260,8 @@
     <tr>
         <th colspan="2" style="background:#065f46;">Kepribadian</th>
     </tr>
-    @foreach([
-        'kepribadian_tanggungjawab' => 'Tanggung Jawab',
-        'kepribadian_kemandirian'   => 'Kemandirian',
-        'kepribadian_kepatuhan'     => 'Kepatuhan',
-        'kepribadian_kebersihan'    => 'Kebersihan',
-        'kepribadian_mengelola'     => 'Mengelola Diri',
-        'kepribadian_kepedulian'    => 'Kepedulian',
-        'kepribadian_empati'        => 'Empati',
-        'kepribadian_kebersamaan'   => 'Kebersamaan',
-        'kepribadian_kedisiplinan'  => 'Kedisiplinan',
-    ] as $field => $label)
-    @php $val = $raporKarakter->$field; $cls = match($val) {'A'=>'badge-a','B'=>'badge-b','C'=>'badge-c',default=>'badge-d'}; @endphp
+    @foreach(\App\Services\Rapor\RaporKarakterData::kepribadianFields() as $field => $label)
+    @php $val = $karakter->$field; $cls = match($val) {'A'=>'badge-a','B'=>'badge-b','C'=>'badge-c',default=>'badge-d'}; @endphp
     <tr>
         <td>{{ $label }}</td>
         <td style="width:60px;"><span class="badge {{ $cls }}">{{ $val }}</span></td>
@@ -277,16 +269,16 @@
     @endforeach
 </table>
 
-@if($raporKarakter->log_kasus_khusus)
+@if($karakter->log_kasus_khusus)
 <div class="note-box">
     <strong>⚠ Catatan Khusus:</strong><br>
-    {{ $raporKarakter->log_kasus_khusus }}
+    {{ $karakter->log_kasus_khusus }}
 </div>
 @endif
 
-@else
-<p class="no-data">Belum ada data rapor karakter untuk periode ini.</p>
-@endif
+@empty
+<p class="no-data">Belum ada data rapor karakter untuk tahun ajaran ini.</p>
+@endforelse
 
 {{-- ── Riwayat Setoran Tahfidz ─────────────────────────────────────────── --}}
 <div class="section-title">📝 Riwayat Setoran Tahfidz (10 Terakhir)</div>

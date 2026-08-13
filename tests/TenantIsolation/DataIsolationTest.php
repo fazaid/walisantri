@@ -10,8 +10,8 @@ use App\Models\TagihanSpp;
 use App\Models\UangSakuSantri;
 use App\Models\User;
 use App\Traits\Multitenantable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
@@ -28,7 +28,7 @@ class DataIsolationTest extends TestCase
 
         if (config('database.default') !== 'pgsql') {
             $this->markTestSkipped(
-                'DataIsolationTest wajib pakai PostgreSQL. ' .
+                'DataIsolationTest wajib pakai PostgreSQL. '.
                 'Jalankan dengan DB_CONNECTION=pgsql.'
             );
         }
@@ -68,11 +68,11 @@ class DataIsolationTest extends TestCase
 
         $waliB = User::factory()->create([
             'pesantren_id' => $pesantren->id,
-            'role'         => 'wali_santri',
+            'role' => 'wali_santri',
         ]);
         $santriB = Santri::factory()->create([
-            'pesantren_id'    => $pesantren->id,
-            'wali_santri_id'  => $waliB->id,
+            'pesantren_id' => $pesantren->id,
+            'wali_santri_id' => $waliB->id,
             'pembimbing_ustadz_id' => $admin->id,
         ]);
 
@@ -92,10 +92,10 @@ class DataIsolationTest extends TestCase
         $this->actingAs($admin);
 
         $santri = Santri::create([
-            'wali_santri_id'       => $admin->id,
+            'wali_santri_id' => $admin->id,
             'pembimbing_ustadz_id' => $admin->id,
-            'nis'                  => 'TEST001',
-            'nama_lengkap'         => 'Santri Test',
+            'nis' => 'TEST001',
+            'nama_lengkap' => 'Santri Test',
         ]);
 
         $this->assertEquals($pesantren->id, $santri->pesantren_id,
@@ -110,18 +110,18 @@ class DataIsolationTest extends TestCase
 
         UangSakuSantri::create([
             'pesantren_id' => $pesantrenA->id,
-            'santri_id'    => $santriA->id,
-            'jenis'        => 'setoran',
-            'nominal'      => 50000,
-            'tanggal'      => now(),
+            'santri_id' => $santriA->id,
+            'jenis' => 'setoran',
+            'nominal' => 50000,
+            'tanggal' => now(),
         ]);
 
         UangSakuSantri::create([
             'pesantren_id' => $pesantrenB->id,
-            'santri_id'    => $santriB->id,
-            'jenis'        => 'setoran',
-            'nominal'      => 100000,
-            'tanggal'      => now(),
+            'santri_id' => $santriB->id,
+            'jenis' => 'setoran',
+            'nominal' => 100000,
+            'tanggal' => now(),
         ]);
 
         // Login sebagai admin A, lalu coba ambil saldo santri B lewat ID lintas tenant
@@ -142,17 +142,17 @@ class DataIsolationTest extends TestCase
 
         $tagihanA = TagihanSpp::create([
             'pesantren_id' => $pesantrenA->id,
-            'santri_id'    => $santriA->id,
-            'bulan'        => now()->month,
-            'tahun'        => now()->year,
-            'nominal'      => 300000,
+            'santri_id' => $santriA->id,
+            'bulan' => now()->month,
+            'tahun' => now()->year,
+            'nominal' => 300000,
         ]);
         $tagihanB = TagihanSpp::create([
             'pesantren_id' => $pesantrenB->id,
-            'santri_id'    => $santriB->id,
-            'bulan'        => now()->month,
-            'tahun'        => now()->year,
-            'nominal'      => 500000,
+            'santri_id' => $santriB->id,
+            'bulan' => now()->month,
+            'tahun' => now()->year,
+            'nominal' => 500000,
         ]);
 
         $this->actingAs($adminA);
@@ -169,20 +169,20 @@ class DataIsolationTest extends TestCase
         [$pesantrenB, , $santriB] = $this->createTenantWithSantri('pesantren-kesehatan-b');
 
         $rekamA = KesantrianKesehatan::create([
-            'pesantren_id'      => $pesantrenA->id,
-            'santri_id'         => $santriA->id,
-            'tanggal_periksa'   => now(),
-            'kategori_keluhan'  => 'Demam',
+            'pesantren_id' => $pesantrenA->id,
+            'santri_id' => $santriA->id,
+            'tanggal_periksa' => now(),
+            'kategori_keluhan' => 'Demam',
             'tindakan_dan_obat' => 'Paracetamol',
-            'status_pemulihan'  => 'Rawat_Mandiri',
+            'status_pemulihan' => 'Rawat_Mandiri',
         ]);
         $rekamB = KesantrianKesehatan::create([
-            'pesantren_id'      => $pesantrenB->id,
-            'santri_id'         => $santriB->id,
-            'tanggal_periksa'   => now(),
-            'kategori_keluhan'  => 'Batuk_Pilek',
+            'pesantren_id' => $pesantrenB->id,
+            'santri_id' => $santriB->id,
+            'tanggal_periksa' => now(),
+            'kategori_keluhan' => 'Batuk_Pilek',
             'tindakan_dan_obat' => 'OBH',
-            'status_pemulihan'  => 'Rawat_Mandiri',
+            'status_pemulihan' => 'Rawat_Mandiri',
         ]);
 
         $this->actingAs($adminA);
@@ -200,19 +200,19 @@ class DataIsolationTest extends TestCase
 
         $prestasiA = PrestasiSantri::create([
             'pesantren_id' => $pesantrenA->id,
-            'santri_id'    => $santriA->id,
-            'judul'        => 'Juara 1 MTQ',
-            'kategori'     => 'Tahfidz',
-            'tingkat'      => 'kabupaten',
-            'tanggal'      => now(),
+            'santri_id' => $santriA->id,
+            'judul' => 'Juara 1 MTQ',
+            'kategori' => 'Tahfidz',
+            'tingkat' => 'kabupaten',
+            'tanggal' => now(),
         ]);
         $prestasiB = PrestasiSantri::create([
             'pesantren_id' => $pesantrenB->id,
-            'santri_id'    => $santriB->id,
-            'judul'        => 'Juara 2 Kaligrafi',
-            'kategori'     => 'Seni',
-            'tingkat'      => 'provinsi',
-            'tanggal'      => now(),
+            'santri_id' => $santriB->id,
+            'judul' => 'Juara 2 Kaligrafi',
+            'kategori' => 'Seni',
+            'tingkat' => 'provinsi',
+            'tanggal' => now(),
         ]);
 
         $this->actingAs($adminA);
@@ -251,13 +251,13 @@ class DataIsolationTest extends TestCase
 
     // ------------------------------------------------------------------
 
-    /** @return class-string<\Illuminate\Database\Eloquent\Model>[] */
+    /** @return class-string<Model>[] */
     private function multitenantableModelClasses(): array
     {
         $classes = [];
 
         foreach (glob(app_path('Models/*.php')) as $file) {
-            $class = 'App\\Models\\' . basename($file, '.php');
+            $class = 'App\\Models\\'.basename($file, '.php');
 
             if (class_exists($class) && in_array(Multitenantable::class, class_uses_recursive($class), true)) {
                 $classes[] = $class;
@@ -272,8 +272,8 @@ class DataIsolationTest extends TestCase
         [$pesantren, $admin] = $this->createTenantWithUser($slug);
 
         $santri = Santri::factory()->create([
-            'pesantren_id'         => $pesantren->id,
-            'wali_santri_id'       => $admin->id,
+            'pesantren_id' => $pesantren->id,
+            'wali_santri_id' => $admin->id,
             'pembimbing_ustadz_id' => $admin->id,
         ]);
 
@@ -286,7 +286,7 @@ class DataIsolationTest extends TestCase
 
         $admin = User::factory()->create([
             'pesantren_id' => $pesantren->id,
-            'role'         => 'admin_pesantren',
+            'role' => 'admin_pesantren',
         ]);
 
         return [$pesantren, $admin];

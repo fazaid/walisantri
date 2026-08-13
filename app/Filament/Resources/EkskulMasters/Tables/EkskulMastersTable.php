@@ -3,8 +3,11 @@
 namespace App\Filament\Resources\EkskulMasters\Tables;
 
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
@@ -20,11 +23,14 @@ class EkskulMastersTable
                     ->label('Nama Ekskul')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('pengajar')
+                TextColumn::make('pembina')
                     ->label('Pembina')
-                    ->placeholder('— belum diisi —')
-                    ->searchable(),
-                TextColumn::make('santriEkskuls_count')
+                    ->state(fn ($record): ?string => $record->namaPembina())
+                    ->placeholder('— belum diisi —'),
+                // Nama kolom WAJIB sama dengan atribut hasil withCount, yaitu
+                // Str::snake(namaRelasi).'_count' — 'santriEkskuls_count' (camelCase)
+                // tidak pernah ada isinya sehingga kolom Peserta selalu kosong.
+                TextColumn::make('santri_ekskuls_count')
                     ->label('Peserta')
                     ->counts('santriEkskuls')
                     ->badge()
@@ -47,7 +53,9 @@ class EkskulMastersTable
                     ->falseLabel('Tidak Aktif'),
             ])
             ->recordActions([
-                EditAction::make(),
+                ViewAction::make(),
+                EditAction::make()->modalWidth(Width::Medium),
+                DeleteAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

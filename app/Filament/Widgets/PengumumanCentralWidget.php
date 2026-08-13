@@ -35,9 +35,9 @@ class PengumumanCentralWidget extends Widget
             ->limit(3)
             ->get()
             ->map(fn ($item) => [
-                'judul'   => $item->judul_maklumat,
+                'judul' => $item->judul_maklumat,
                 'tanggal' => $item->created_at->format('d M Y'),
-                'isi'     => $item->isi_maklumat,
+                'isi' => $item->isi_maklumat,
             ]);
 
         return ['pengumuman' => $pengumuman];

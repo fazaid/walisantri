@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -20,7 +20,7 @@ return new class extends Migration
             ['key' => 'harga_rintisan',          'value' => 150000,  'keterangan' => 'Harga paket Rintisan per bulan (Rp)',              'created_at' => now(), 'updated_at' => now()],
             ['key' => 'harga_berkembang',         'value' => 350000,  'keterangan' => 'Harga paket Berkembang per bulan (Rp)',             'created_at' => now(), 'updated_at' => now()],
             ['key' => 'harga_maju_base',          'value' => 750000,  'keterangan' => 'Harga dasar paket Maju per bulan (Rp)',             'created_at' => now(), 'updated_at' => now()],
-            ['key' => 'harga_maju_per_100_santri','value' => 100000,  'keterangan' => 'Biaya tambahan per 100 santri di atas 1.000',      'created_at' => now(), 'updated_at' => now()],
+            ['key' => 'harga_maju_per_100_santri', 'value' => 100000,  'keterangan' => 'Biaya tambahan per 100 santri di atas 1.000',      'created_at' => now(), 'updated_at' => now()],
             ['key' => 'kuota_gratis',             'value' => 5,       'keterangan' => 'Kuota santri paket Gratis',                        'created_at' => now(), 'updated_at' => now()],
             ['key' => 'kuota_rintisan',           'value' => 100,     'keterangan' => 'Kuota santri paket Rintisan',                      'created_at' => now(), 'updated_at' => now()],
             ['key' => 'kuota_berkembang',         'value' => 500,     'keterangan' => 'Kuota santri paket Berkembang',                    'created_at' => now(), 'updated_at' => now()],

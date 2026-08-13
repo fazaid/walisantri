@@ -18,15 +18,15 @@ class DataSantriExportTest extends TestCase
     public function test_export_menyertakan_kolom_yang_bisa_diimpor_ulang(): void
     {
         $pesantren = Pesantren::factory()->create();
-        $santri    = Santri::factory()->create([
-            'pesantren_id'   => $pesantren->id,
+        $santri = Santri::factory()->create([
+            'pesantren_id' => $pesantren->id,
             'alamat_lengkap' => 'Jl. Merpati No. 5',
             'jumlah_saudara' => 3,
-            'cita_cita'      => 'Ulama',
+            'cita_cita' => 'Ulama',
         ]);
 
         $export = new DataSantriExport($pesantren->id);
-        $row    = array_combine($export->headings(), $export->map($santri->fresh()));
+        $row = array_combine($export->headings(), $export->map($santri->fresh()));
 
         $this->assertSame('Jl. Merpati No. 5', $row['Alamat Lengkap']);
         $this->assertSame(3, $row['Jumlah Saudara']);
@@ -36,9 +36,9 @@ class DataSantriExportTest extends TestCase
     public function test_heading_hasil_export_slug_sama_dengan_key_yang_dibaca_santri_import(): void
     {
         $pesantren = Pesantren::factory()->create();
-        $santri    = Santri::factory()->create(['pesantren_id' => $pesantren->id]);
+        $santri = Santri::factory()->create(['pesantren_id' => $pesantren->id]);
 
-        $export  = new DataSantriExport($pesantren->id);
+        $export = new DataSantriExport($pesantren->id);
         $sluggedHeadings = array_map(fn (string $h) => Str::slug($h, '_'), $export->headings());
 
         // Kolom yang didukung SantriImport (App\Imports\SantriImport::collection())
@@ -63,9 +63,9 @@ class DataSantriExportTest extends TestCase
             'status_aktif' => false,
         ]);
 
-        $export  = new DataSantriExport($pesantren->id);
+        $export = new DataSantriExport($pesantren->id);
         $sluggedHeadings = array_map(fn (string $h) => Str::slug($h, '_'), $export->headings());
-        $row     = array_combine($sluggedHeadings, $export->map($santriNonAktif->fresh()));
+        $row = array_combine($sluggedHeadings, $export->map($santriNonAktif->fresh()));
 
         $this->assertSame('Non-Aktif', $row['status']);
 

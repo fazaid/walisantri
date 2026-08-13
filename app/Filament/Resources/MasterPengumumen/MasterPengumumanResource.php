@@ -3,8 +3,6 @@
 namespace App\Filament\Resources\MasterPengumumen;
 
 use App\Enums\UserRole;
-use App\Filament\Resources\MasterPengumumen\Pages\CreateMasterPengumuman;
-use App\Filament\Resources\MasterPengumumen\Pages\EditMasterPengumuman;
 use App\Filament\Resources\MasterPengumumen\Pages\ListMasterPengumumen;
 use App\Filament\Resources\MasterPengumumen\Pages\ViewMasterPengumuman;
 use App\Filament\Resources\MasterPengumumen\Schemas\MasterPengumumanForm;
@@ -12,11 +10,13 @@ use App\Filament\Resources\MasterPengumumen\Schemas\MasterPengumumanInfolist;
 use App\Filament\Resources\MasterPengumumen\Tables\MasterPengumumenTable;
 use App\Models\MasterPengumuman;
 use BackedEnum;
+use Closure;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use UnitEnum;
 
@@ -31,8 +31,11 @@ class MasterPengumumanResource extends Resource
     protected static ?int $navigationSort = 3;
 
     protected static ?string $recordTitleAttribute = 'judul_maklumat';
+
     protected static ?string $navigationLabel = 'Pengumuman';
+
     protected static ?string $modelLabel = 'Pengumuman';
+
     protected static ?string $pluralModelLabel = 'Pengumuman';
 
     public static function canAccess(): bool
@@ -65,19 +68,29 @@ class MasterPengumumanResource extends Resource
         ]);
     }
 
-    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canEdit(Model $record): bool
     {
         $role = auth()->user()?->role;
-        if ($role === UserRole::SuperAdmin->value) return true;
-        if ($role === UserRole::AdminPesantren->value) return $record->pesantren_id === auth()->user()->pesantren_id;
+        if ($role === UserRole::SuperAdmin->value) {
+            return true;
+        }
+        if ($role === UserRole::AdminPesantren->value) {
+            return $record->pesantren_id === auth()->user()->pesantren_id;
+        }
+
         return false;
     }
 
-    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canDelete(Model $record): bool
     {
         $role = auth()->user()?->role;
-        if ($role === UserRole::SuperAdmin->value) return true;
-        if ($role === UserRole::AdminPesantren->value) return $record->pesantren_id === auth()->user()->pesantren_id;
+        if ($role === UserRole::SuperAdmin->value) {
+            return true;
+        }
+        if ($role === UserRole::AdminPesantren->value) {
+            return $record->pesantren_id === auth()->user()->pesantren_id;
+        }
+
         return false;
     }
 
@@ -108,6 +121,22 @@ class MasterPengumumanResource extends Resource
             });
     }
 
+    // Super Admin menyimpan dengan pesantren_id = null (pengumuman global).
+    // Admin menyimpan dengan pesantren_id miliknya sendiri. Dulu dijaga di
+    // halaman CreateMasterPengumuman, sekarang menempel di aksi modalnya.
+    public static function tetapkanPemilik(): Closure
+    {
+        return function (array $data): array {
+            $user = Auth::user();
+
+            $data['pesantren_id'] = $user->role === UserRole::SuperAdmin->value
+                ? null
+                : $user->pesantren_id;
+
+            return $data;
+        };
+    }
+
     public static function form(Schema $schema): Schema
     {
         return MasterPengumumanForm::configure($schema);
@@ -131,10 +160,8 @@ class MasterPengumumanResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListMasterPengumumen::route('/'),
-            'create' => CreateMasterPengumuman::route('/create'),
-            'view'   => ViewMasterPengumuman::route('/{record}'),
-            'edit'   => EditMasterPengumuman::route('/{record}/edit'),
+            'index' => ListMasterPengumumen::route('/'),
+            'view' => ViewMasterPengumuman::route('/{record}'),
         ];
     }
 }

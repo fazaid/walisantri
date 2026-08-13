@@ -4,8 +4,6 @@ namespace App\Filament\Resources\PrestasiSantris;
 
 use App\Enums\UserRole;
 use App\Filament\Clusters\Santri;
-use App\Filament\Resources\PrestasiSantris\Pages\CreatePrestasiSantri;
-use App\Filament\Resources\PrestasiSantris\Pages\EditPrestasiSantri;
 use App\Filament\Resources\PrestasiSantris\Pages\ListPrestasiSantris;
 use App\Filament\Resources\PrestasiSantris\Pages\ViewPrestasiSantri;
 use App\Filament\Resources\PrestasiSantris\Schemas\PrestasiSantriForm;
@@ -17,6 +15,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class PrestasiSantriResource extends Resource
 {
@@ -28,8 +27,10 @@ class PrestasiSantriResource extends Resource
 
     protected static ?int $navigationSort = 4;
 
-    protected static ?string $navigationLabel  = 'Prestasi';
-    protected static ?string $modelLabel       = 'Prestasi';
+    protected static ?string $navigationLabel = 'Prestasi';
+
+    protected static ?string $modelLabel = 'Prestasi';
+
     protected static ?string $pluralModelLabel = 'Prestasi Santri';
 
     protected static ?string $slug = 'prestasi';
@@ -37,6 +38,7 @@ class PrestasiSantriResource extends Resource
     public static function canAccess(): bool
     {
         $role = auth()->user()?->role;
+
         return in_array($role, [
             UserRole::AdminPesantren->value,
             UserRole::Ustadz->value,
@@ -56,7 +58,7 @@ class PrestasiSantriResource extends Resource
         ]);
     }
 
-    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canEdit(Model $record): bool
     {
         return in_array(auth()->user()?->role, [
             UserRole::AdminPesantren->value,
@@ -64,7 +66,7 @@ class PrestasiSantriResource extends Resource
         ]);
     }
 
-    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canDelete(Model $record): bool
     {
         return auth()->user()?->role === UserRole::AdminPesantren->value;
     }
@@ -97,10 +99,8 @@ class PrestasiSantriResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListPrestasiSantris::route('/'),
-            'create' => CreatePrestasiSantri::route('/create'),
-            'view'   => ViewPrestasiSantri::route('/{record}'),
-            'edit'   => EditPrestasiSantri::route('/{record}/edit'),
+            'index' => ListPrestasiSantris::route('/'),
+            'view' => ViewPrestasiSantri::route('/{record}'),
         ];
     }
 }

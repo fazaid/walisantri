@@ -28,7 +28,7 @@ return new class extends Migration
             $table->string('nilai_hafalan', 10);         // hasil kalkulasi otomatis sistem
             $table->enum('nilai_tilawah', ['A', 'B', 'C', 'D']);
             $table->enum('nilai_makhraj', ['A', 'B', 'C', 'D']);
-            $table->enum('nilai_tajwid',  ['A', 'B', 'C', 'D']);
+            $table->enum('nilai_tajwid', ['A', 'B', 'C', 'D']);
             $table->text('rekomendasi_pembimbing');
             $table->timestamps();
 

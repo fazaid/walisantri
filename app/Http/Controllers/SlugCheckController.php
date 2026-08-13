@@ -21,7 +21,7 @@ class SlugCheckController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'available' => false,
-                'message'   => $validator->errors()->first('slug'),
+                'message' => $validator->errors()->first('slug'),
             ]);
         }
 
@@ -29,7 +29,7 @@ class SlugCheckController extends Controller
 
         return response()->json([
             'available' => ! $taken,
-            'message'   => $taken ? 'Slug sudah digunakan.' : 'Slug tersedia.',
+            'message' => $taken ? 'Slug sudah digunakan.' : 'Slug tersedia.',
         ]);
     }
 }

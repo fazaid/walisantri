@@ -26,9 +26,9 @@ class UstadzStatsOverview extends StatsOverviewWidget
 
     protected function getStats(): array
     {
-        $ustadzId    = Auth::id();
+        $ustadzId = Auth::id();
         $pesantrenId = Auth::user()?->pesantren_id;
-        $today       = Waktu::sekarang()->toDateString();
+        $today = Waktu::sekarang()->toDateString();
 
         // Santri halaqah milik ustadz ini
         $santriHalaqah = Santri::where('pesantren_id', $pesantrenId)
@@ -72,7 +72,7 @@ class UstadzStatsOverview extends StatsOverviewWidget
                 ->color($setoranHariIni > 0 ? 'success' : 'warning'),
 
             Stat::make('Belum Input Mutaba\'ah', $belumInput)
-                ->description('Dari ' . $totalHalaqah . ' santri')
+                ->description('Dari '.$totalHalaqah.' santri')
                 ->descriptionIcon('heroicon-m-clipboard-document-list')
                 ->color($belumInput === 0 ? 'success' : ($belumInput <= 3 ? 'warning' : 'danger')),
 

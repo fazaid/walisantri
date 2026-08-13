@@ -21,12 +21,12 @@ class BackfillOnboardingSteps extends Command
         $isDryRun = $this->option('dry-run');
 
         $pesantrens = Pesantren::all();
-        $rows       = [];
+        $rows = [];
 
         foreach ($pesantrens as $pesantren) {
             $before = $pesantren->onboarding_completed_steps ?? [];
-            $steps  = $this->detectCompletedSteps($pesantren);
-            $baru   = array_values(array_diff($steps, $before));
+            $steps = $this->detectCompletedSteps($pesantren);
+            $baru = array_values(array_diff($steps, $before));
 
             if (empty($baru)) {
                 continue;
@@ -51,7 +51,7 @@ class BackfillOnboardingSteps extends Command
             return self::SUCCESS;
         }
 
-        $this->warn('Ditemukan ' . count($rows) . ' tenant dengan step onboarding yang perlu di-backfill:');
+        $this->warn('Ditemukan '.count($rows).' tenant dengan step onboarding yang perlu di-backfill:');
         $this->newLine();
         $this->table(['ID', 'Nama Pesantren', 'Step Baru'], $rows);
 
@@ -60,7 +60,7 @@ class BackfillOnboardingSteps extends Command
             $this->warn('Mode dry-run: tidak ada perubahan yang disimpan.');
         } else {
             $this->newLine();
-            $this->info('Selesai: ' . count($rows) . ' tenant berhasil di-backfill.');
+            $this->info('Selesai: '.count($rows).' tenant berhasil di-backfill.');
         }
 
         return self::SUCCESS;
@@ -69,7 +69,7 @@ class BackfillOnboardingSteps extends Command
     /** @return string[] */
     private function detectCompletedSteps(Pesantren $pesantren): array
     {
-        $steps  = [];
+        $steps = [];
         $profil = $pesantren->profil ?? [];
 
         if (! empty($profil['alamat']) && ! empty($profil['logo'])) {

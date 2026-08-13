@@ -2,7 +2,7 @@
 
 namespace App\Filament\Pages;
 
-use App\Filament\Clusters\Mutabaah;
+use App\Filament\Clusters\Kesantrian;
 use App\Models\KesantrianAmalMaster;
 use App\Models\KesantrianMutabaah;
 use App\Models\Santri;
@@ -27,6 +27,8 @@ use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class MutabaahHarianPage extends Page implements HasForms
 {
@@ -34,13 +36,21 @@ class MutabaahHarianPage extends Page implements HasForms
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCheckBadge;
 
-    protected static ?string $cluster = Mutabaah::class;
+    protected static ?string $cluster = Kesantrian::class;
 
     protected static ?string $navigationLabel = 'Isi Harian';
 
     protected static ?string $title = 'Isi Mutabaah Harian';
 
     protected static ?int $navigationSort = 2;
+
+    /**
+     * Bukan tab tersendiri di cluster Mutabaah — halaman ini hanyalah cara lain
+     * mengisi data yang sama dengan daftar Mutabaah, jadi masuknya lewat tombol
+     * di header ListKesantrianMutabaahs. canAccess() tetap menjaga akses URL
+     * langsung.
+     */
+    protected static bool $shouldRegisterNavigation = false;
 
     protected static ?string $slug = 'isi-harian';
 
@@ -51,10 +61,10 @@ class MutabaahHarianPage extends Page implements HasForms
     public array $rows = [];
 
     public const STATUS_UDZUR_OPTIONS = [
-        'Tidak'        => 'Tidak',
-        'Sakit'        => 'Sakit',
-        'Haid'         => 'Haid',
-        'Izin_Pulang'  => 'Izin Pulang',
+        'Tidak' => 'Tidak',
+        'Sakit' => 'Sakit',
+        'Haid' => 'Haid',
+        'Izin_Pulang' => 'Izin Pulang',
         'Tugas_Pondok' => 'Tugas Pondok',
     ];
 
@@ -73,7 +83,7 @@ class MutabaahHarianPage extends Page implements HasForms
 
         $this->form->fill([
             'tanggal' => $tanggal,
-            'rows'    => $this->buildRows($tanggal),
+            'rows' => $this->buildRows($tanggal),
         ]);
     }
 
@@ -112,7 +122,7 @@ class MutabaahHarianPage extends Page implements HasForms
         $masterList = $this->amalMasterList();
 
         return $santriList->map(function (Santri $santri) use ($existing, $masterList) {
-            $rec    = $existing->get($santri->id);
+            $rec = $existing->get($santri->id);
             $amalan = $rec?->amalan ?? [];
 
             $defaultAmalan = $masterList->mapWithKeys(function (KesantrianAmalMaster $item) use ($amalan) {
@@ -122,9 +132,9 @@ class MutabaahHarianPage extends Page implements HasForms
             })->all();
 
             return [
-                'santri_id'    => $santri->id,
-                'nama'         => $santri->nama_lengkap,
-                'amalan'       => $defaultAmalan,
+                'santri_id' => $santri->id,
+                'nama' => $santri->nama_lengkap,
+                'amalan' => $defaultAmalan,
                 'status_udzur' => $rec?->status_udzur ?? 'Tidak',
             ];
         })->values()->toArray();
@@ -139,6 +149,10 @@ class MutabaahHarianPage extends Page implements HasForms
                     ->required()
                     ->maxDate(Waktu::akhirHariIni())
                     ->native(false)
+                    // Kalender Filament (native(false)) bawaannya tetap terbuka
+                    // setelah tanggal diklik; di sini tidak ada bagian jam yang
+                    // perlu diisi lagi, jadi ditutup begitu tanggal dipilih.
+                    ->closeOnDateSelection()
                     ->live()
                     ->afterStateUpdated(function ($state, callable $set) {
                         $set('rows', $this->buildRows($state));
@@ -207,20 +221,24 @@ class MutabaahHarianPage extends Page implements HasForms
         $rows = $data['rows'] ?? [];
 
         try {
-            foreach ($rows as $row) {
-                KesantrianMutabaah::updateOrCreate(
-                    [
-                        'santri_id' => $row['santri_id'],
-                        'tanggal'   => $data['tanggal'],
-                    ],
-                    [
-                        'amalan'       => $row['amalan'] ?? [],
-                        'status_udzur' => $row['status_udzur'],
-                    ]
-                );
-            }
+            // Satu tombol menyimpan seluruh santri, jadi kegagalan di tengah
+            // tidak boleh meninggalkan separuh data tersimpan tanpa penanda.
+            DB::transaction(function () use ($rows, $data): void {
+                foreach ($rows as $row) {
+                    KesantrianMutabaah::updateOrCreate(
+                        [
+                            'santri_id' => $row['santri_id'],
+                            'tanggal' => $data['tanggal'],
+                        ],
+                        [
+                            'amalan' => $row['amalan'] ?? [],
+                            'status_udzur' => $row['status_udzur'],
+                        ]
+                    );
+                }
+            });
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('mutabaah_harian_save_failed', ['message' => $e->getMessage()]);
+            Log::error('mutabaah_harian_save_failed', ['message' => $e->getMessage()]);
 
             Notification::make()
                 ->title('Gagal menyimpan mutaba\'ah')

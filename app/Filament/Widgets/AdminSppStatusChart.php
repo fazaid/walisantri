@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Filament\Resources\TagihanSpps\TagihanSppResource;
 use App\Support\Waktu;
+use Filament\Support\RawJs;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Auth;
@@ -45,13 +46,13 @@ class AdminSppStatusChart extends ChartWidget
         }
 
         $tertunggak = $rows['nominal_belum_bayar'] + $rows['nominal_menunggu_konfirmasi'];
-        $url        = TagihanSppResource::getUrl('index', [
+        $url = TagihanSppResource::getUrl('index', [
             'tableFilters' => ['status' => ['value' => 'belum_bayar']],
         ]);
 
         return new HtmlString(
-            'Tertunggak: <strong>' . $this->formatRupiah($tertunggak) . '</strong> · '
-            . '<a href="' . e($url) . '" class="underline hover:no-underline">Lihat daftar &rarr;</a>'
+            'Tertunggak: <strong>'.$this->formatRupiah($tertunggak).'</strong> · '
+            .'<a href="'.e($url).'" class="underline hover:no-underline">Lihat daftar &rarr;</a>'
         );
     }
 
@@ -80,16 +81,16 @@ class AdminSppStatusChart extends ChartWidget
             ->get()
             ->keyBy('status');
 
-        $belum     = (int) ($rows['belum_bayar']->total ?? 0);
-        $menunggu  = (int) ($rows['menunggu_konfirmasi']->total ?? 0);
-        $lunas     = (int) ($rows['lunas']->total ?? 0);
+        $belum = (int) ($rows['belum_bayar']->total ?? 0);
+        $menunggu = (int) ($rows['menunggu_konfirmasi']->total ?? 0);
+        $lunas = (int) ($rows['lunas']->total ?? 0);
 
         return $this->rekapStatusCache = [
-            'belum'                       => $belum,
-            'menunggu'                    => $menunggu,
-            'lunas'                       => $lunas,
-            'total'                       => $belum + $menunggu + $lunas,
-            'nominal_belum_bayar'         => (int) ($rows['belum_bayar']->total_nominal ?? 0),
+            'belum' => $belum,
+            'menunggu' => $menunggu,
+            'lunas' => $lunas,
+            'total' => $belum + $menunggu + $lunas,
+            'nominal_belum_bayar' => (int) ($rows['belum_bayar']->total_nominal ?? 0),
             'nominal_menunggu_konfirmasi' => (int) ($rows['menunggu_konfirmasi']->total_nominal ?? 0),
         ];
     }
@@ -97,37 +98,38 @@ class AdminSppStatusChart extends ChartWidget
     private function formatRupiah(int $amount): string
     {
         if ($amount >= 1_000_000_000) {
-            return 'Rp ' . number_format($amount / 1_000_000_000, 1) . 'M';
+            return 'Rp '.number_format($amount / 1_000_000_000, 1).'M';
         }
         if ($amount >= 1_000_000) {
-            return 'Rp ' . number_format($amount / 1_000_000, 1) . 'Jt';
+            return 'Rp '.number_format($amount / 1_000_000, 1).'Jt';
         }
         if ($amount >= 1_000) {
-            return 'Rp ' . number_format($amount / 1_000, 0) . 'Rb';
+            return 'Rp '.number_format($amount / 1_000, 0).'Rb';
         }
-        return 'Rp ' . $amount;
+
+        return 'Rp '.$amount;
     }
 
     protected function getData(): array
     {
         $rows = $this->rekapStatus();
-        $belum     = $rows['belum'];
-        $menunggu  = $rows['menunggu'];
-        $lunas     = $rows['lunas'];
+        $belum = $rows['belum'];
+        $menunggu = $rows['menunggu'];
+        $lunas = $rows['lunas'];
 
         return [
             'datasets' => [
                 [
-                    'data'            => [$belum, $menunggu, $lunas],
+                    'data' => [$belum, $menunggu, $lunas],
                     'backgroundColor' => ['#ef4444', '#f59e0b', '#10b981'],
-                    'hoverOffset'     => 6,
+                    'hoverOffset' => 6,
                 ],
             ],
             'labels' => ['Belum Bayar', 'Menunggu Konfirmasi', 'Lunas'],
         ];
     }
 
-    protected function getOptions(): array|\Filament\Support\RawJs|null
+    protected function getOptions(): array|RawJs|null
     {
         return [
             'plugins' => [

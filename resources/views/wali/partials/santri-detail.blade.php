@@ -322,8 +322,8 @@
                         {{ $item->ekskulMaster?->nama ?? '—' }}
                         @if(!$item->aktif)<span class="text-xs text-gray-400 ml-1">(tidak aktif)</span>@endif
                     </p>
-                    @if($item->ekskulMaster?->pengajar)
-                    <p class="text-xs text-gray-400 mt-0.5">Pembina: {{ $item->ekskulMaster->pengajar }}</p>
+                    @if($item->ekskulMaster?->namaPembina())
+                    <p class="text-xs text-gray-400 mt-0.5">Pembina: {{ $item->ekskulMaster->namaPembina() }}</p>
                     @endif
                 </div>
                 <span class="text-xs px-2 py-0.5 rounded-full font-medium

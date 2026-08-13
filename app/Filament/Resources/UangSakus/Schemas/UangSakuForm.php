@@ -7,15 +7,17 @@ use App\Models\Santri;
 use App\Support\Waktu;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 
 class UangSakuForm
 {
     public static function configure(Schema $schema): Schema
     {
-        return $schema->components([
+        // ->columns(1) wajib: ListRecords memaksa schema modal jadi 2 kolom,
+        // tanpa ini field-field pendek berjejer setengah lebar.
+        return $schema->columns(1)->components([
             Select::make('santri_id')
                 ->label('Santri')
                 ->options(function () {

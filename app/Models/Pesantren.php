@@ -32,10 +32,10 @@ class Pesantren extends Model
     protected function casts(): array
     {
         return [
-            'expired_at'                 => 'datetime',
-            'santri_count_cache'         => 'integer',
+            'expired_at' => 'datetime',
+            'santri_count_cache' => 'integer',
             'onboarding_completed_steps' => 'array',
-            'profil'                     => 'array',
+            'profil' => 'array',
         ];
     }
 

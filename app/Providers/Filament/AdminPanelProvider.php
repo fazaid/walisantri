@@ -95,6 +95,11 @@ class AdminPanelProvider extends PanelProvider
                 PanelsRenderHook::BODY_END,
                 fn (): string => view('filament.admin.session-expired-handler')->render(),
             )
+            // Fallback clipboard untuk kolom/entry copyable() di luar secure context.
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn (): string => view('filament.admin.clipboard-fallback')->render(),
+            )
             // Google Tag Manager / GA4 — dikelola dari Pengaturan Analytics (super admin).
             // Partial merender kosong bila tracking nonaktif / ID belum diisi.
             ->renderHook(

@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Models\Santri;
 use App\Support\Waktu;
+use Filament\Support\RawJs;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -37,7 +38,7 @@ class UstadzNilaiSetoranChart extends ChartWidget
 
     protected function getData(): array
     {
-        $ustadzId    = Auth::id();
+        $ustadzId = Auth::id();
         $pesantrenId = Auth::user()?->pesantren_id;
 
         $santriIds = Santri::where('pesantren_id', $pesantrenId)
@@ -58,7 +59,7 @@ class UstadzNilaiSetoranChart extends ChartWidget
             ->pluck('total', 'nilai_kelancaran');
 
         // Urutan tetap dari terbaik ke cukup
-        $order  = ['Mumtaz', 'Jayyid Jiddan', 'Jayyid', 'Maqbul'];
+        $order = ['Mumtaz', 'Jayyid Jiddan', 'Jayyid', 'Maqbul'];
         $colors = ['#10b981', '#14b8a6', '#3b82f6', '#f59e0b'];
 
         $data = array_map(fn ($label) => (int) ($rows[$label] ?? 0), $order);
@@ -66,23 +67,23 @@ class UstadzNilaiSetoranChart extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label'           => 'Jumlah Setoran',
-                    'data'            => $data,
+                    'label' => 'Jumlah Setoran',
+                    'data' => $data,
                     'backgroundColor' => $colors,
-                    'borderRadius'    => 6,
+                    'borderRadius' => 6,
                 ],
             ],
             'labels' => $order,
         ];
     }
 
-    protected function getOptions(): array|\Filament\Support\RawJs|null
+    protected function getOptions(): array|RawJs|null
     {
         return [
             'scales' => [
                 'y' => [
                     'beginAtZero' => true,
-                    'ticks'       => ['stepSize' => 1],
+                    'ticks' => ['stepSize' => 1],
                 ],
             ],
             'plugins' => [

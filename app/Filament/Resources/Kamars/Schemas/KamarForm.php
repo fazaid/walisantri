@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Kamars\Schemas;
 
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
+use Illuminate\Validation\Rules\Unique;
 
 class KamarForm
 {
@@ -18,8 +19,7 @@ class KamarForm
                     table: 'kamar',
                     column: 'nama_kamar',
                     ignoreRecord: true,
-                    modifyRuleUsing: fn (\Illuminate\Validation\Rules\Unique $rule) =>
-                        $rule->where('pesantren_id', auth()->user()?->pesantren_id)
+                    modifyRuleUsing: fn (Unique $rule) => $rule->where('pesantren_id', auth()->user()?->pesantren_id)
                 ),
             TextInput::make('kapasitas')
                 ->label('Kapasitas')

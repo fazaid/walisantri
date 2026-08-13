@@ -43,7 +43,7 @@ class TagihanSppsTable
 
                 TextColumn::make('nominal')
                     ->label('Nominal')
-                    ->formatStateUsing(fn (int $state): string => 'Rp ' . number_format($state, 0, ',', '.'))
+                    ->formatStateUsing(fn (int $state): string => 'Rp '.number_format($state, 0, ',', '.'))
                     ->sortable(),
 
                 TextColumn::make('status')
@@ -114,9 +114,9 @@ class TagihanSppsTable
                             ->where('status_aktif', true)
                             ->get();
 
-                        $created  = 0;
-                        $skipped  = 0;
-                        $noTarif  = 0;
+                        $created = 0;
+                        $skipped = 0;
+                        $noTarif = 0;
 
                         foreach ($santris as $santri) {
                             $exists = TagihanSpp::withoutGlobalScope('pesantren')
@@ -127,34 +127,40 @@ class TagihanSppsTable
 
                             if ($exists) {
                                 $skipped++;
+
                                 continue;
                             }
 
                             if (! $santri->kelas_id || ! isset($tarifMap[$santri->kelas_id])) {
                                 $noTarif++;
+
                                 continue;
                             }
 
                             TagihanSpp::create([
                                 'pesantren_id' => $pesantrenId,
-                                'santri_id'    => $santri->id,
-                                'bulan'        => $data['bulan'],
-                                'tahun'        => $data['tahun'],
-                                'nominal'      => $tarifMap[$santri->kelas_id],
-                                'jatuh_tempo'  => $data['jatuh_tempo'] ?? null,
-                                'keterangan'   => $data['keterangan'],
-                                'status'       => StatusTagihanSpp::BelumBayar,
+                                'santri_id' => $santri->id,
+                                'bulan' => $data['bulan'],
+                                'tahun' => $data['tahun'],
+                                'nominal' => $tarifMap[$santri->kelas_id],
+                                'jatuh_tempo' => $data['jatuh_tempo'] ?? null,
+                                'keterangan' => $data['keterangan'],
+                                'status' => StatusTagihanSpp::BelumBayar,
                             ]);
 
                             $created++;
                         }
 
                         $msg = "{$created} tagihan dibuat";
-                        if ($skipped) $msg .= ", {$skipped} dilewati (sudah ada)";
-                        if ($noTarif) $msg .= ", {$noTarif} dilewati (tarif belum diatur)";
+                        if ($skipped) {
+                            $msg .= ", {$skipped} dilewati (sudah ada)";
+                        }
+                        if ($noTarif) {
+                            $msg .= ", {$noTarif} dilewati (tarif belum diatur)";
+                        }
 
                         Notification::make()
-                            ->title($msg . '.')
+                            ->title($msg.'.')
                             ->success()
                             ->send();
                     }),
@@ -185,13 +191,13 @@ class TagihanSppsTable
                     ->action(function (TagihanSpp $record, array $data): void {
                         if (! $record->pembayaran()->exists()) {
                             PembayaranSpp::create([
-                                'pesantren_id'   => $record->pesantren_id,
+                                'pesantren_id' => $record->pesantren_id,
                                 'tagihan_spp_id' => $record->id,
-                                'jumlah'         => $record->nominal,
-                                'tanggal_bayar'  => $data['tanggal_bayar'],
-                                'metode_bayar'   => $data['metode_bayar'],
-                                'catatan'        => $data['catatan'] ?? null,
-                                'dicatat_oleh'   => auth()->id(),
+                                'jumlah' => $record->nominal,
+                                'tanggal_bayar' => $data['tanggal_bayar'],
+                                'metode_bayar' => $data['metode_bayar'],
+                                'catatan' => $data['catatan'] ?? null,
+                                'dicatat_oleh' => auth()->id(),
                             ]);
                         }
 
@@ -217,9 +223,9 @@ class TagihanSppsTable
                         }
 
                         $record->update([
-                            'bukti_transfer'       => null,
+                            'bukti_transfer' => null,
                             'dikonfirmasi_wali_at' => null,
-                            'status'               => StatusTagihanSpp::BelumBayar,
+                            'status' => StatusTagihanSpp::BelumBayar,
                         ]);
 
                         Notification::make()

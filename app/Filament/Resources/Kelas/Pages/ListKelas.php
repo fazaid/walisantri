@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Kelas\Pages;
 use App\Filament\Resources\Kelas\KelasResource;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Support\Enums\Width;
 
 class ListKelas extends ListRecords
 {
@@ -12,6 +13,6 @@ class ListKelas extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        return [CreateAction::make()];
+        return [CreateAction::make()->modalWidth(Width::Medium)];
     }
 }

@@ -32,12 +32,12 @@ class KesantrianMutabaahInfolist
                         ->formatStateUsing(fn ($state) => str_replace('_', ' ', $state))
                         ->badge()
                         ->color(fn (string $state): string => match ($state) {
-                            'Tidak'        => 'success',
-                            'Sakit'        => 'danger',
-                            'Haid'         => 'warning',
-                            'Izin_Pulang'  => 'info',
+                            'Tidak' => 'success',
+                            'Sakit' => 'danger',
+                            'Haid' => 'warning',
+                            'Izin_Pulang' => 'info',
                             'Tugas_Pondok' => 'info',
-                            default        => 'gray',
+                            default => 'gray',
                         }),
                 ]),
                 Section::make('Amalan Harian')->columns(3)->schema(self::amalanEntries()),

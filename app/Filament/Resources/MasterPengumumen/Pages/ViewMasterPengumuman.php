@@ -5,6 +5,7 @@ namespace App\Filament\Resources\MasterPengumumen\Pages;
 use App\Filament\Resources\MasterPengumumen\MasterPengumumanResource;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
+use Filament\Support\Enums\Width;
 
 class ViewMasterPengumuman extends ViewRecord
 {
@@ -13,7 +14,9 @@ class ViewMasterPengumuman extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            EditAction::make(),
+            EditAction::make()
+                ->visible(fn (): bool => MasterPengumumanResource::canEdit($this->getRecord()))
+                ->modalWidth(Width::TwoExtraLarge),
         ];
     }
 }

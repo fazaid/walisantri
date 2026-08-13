@@ -25,9 +25,11 @@ class OrderResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
-    protected static ?string $navigationLabel   = 'Pesanan Upgrade';
-    protected static ?string $modelLabel        = 'Pesanan';
-    protected static ?string $pluralModelLabel  = 'Pesanan Upgrade';
+    protected static ?string $navigationLabel = 'Pesanan Upgrade';
+
+    protected static ?string $modelLabel = 'Pesanan';
+
+    protected static ?string $pluralModelLabel = 'Pesanan Upgrade';
 
     public static function canAccess(): bool
     {
@@ -76,7 +78,7 @@ class OrderResource extends Resource
     {
         return [
             'index' => ListOrders::route('/'),
-            'view'  => ViewOrder::route('/{record}'),
+            'view' => ViewOrder::route('/{record}'),
         ];
     }
 }

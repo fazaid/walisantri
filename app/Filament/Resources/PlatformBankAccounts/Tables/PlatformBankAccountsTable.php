@@ -3,8 +3,10 @@
 namespace App\Filament\Resources\PlatformBankAccounts\Tables;
 
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
@@ -38,7 +40,8 @@ class PlatformBankAccountsTable
             ])
             ->defaultSort('urutan', 'asc')
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()->modalWidth(Width::Medium),
+                DeleteAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

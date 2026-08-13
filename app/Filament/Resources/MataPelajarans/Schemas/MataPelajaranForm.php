@@ -2,12 +2,12 @@
 
 namespace App\Filament\Resources\MataPelajarans\Schemas;
 
-use App\Models\Kelas;
-use App\Models\User;
+use App\Enums\UserRole;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rules\Unique;
 
 class MataPelajaranForm
@@ -15,22 +15,29 @@ class MataPelajaranForm
     public static function configure(Schema $schema): Schema
     {
         return $schema->components([
+            // relationship() sudah tersaring global scope Multitenantable,
+            // jadi filter pesantren_id manual tidak diperlukan lagi.
             Select::make('kelas_id')
                 ->label('Kelas')
-                ->options(
-                    Kelas::where('pesantren_id', auth()->user()?->pesantren_id)
-                        ->pluck('nama_kelas', 'id')
+                ->relationship(
+                    'kelas',
+                    'nama_kelas',
+                    fn (Builder $query) => $query->orderBy('nama_kelas'),
                 )
                 ->searchable()
+                ->preload()
                 ->required(),
             Select::make('ustadz_id')
                 ->label('Ustadz Pengampu')
-                ->options(
-                    User::where('role', 'ustadz')
-                        ->where('pesantren_id', auth()->user()?->pesantren_id)
-                        ->pluck('name', 'id')
+                ->relationship(
+                    'ustadz',
+                    'name',
+                    fn (Builder $query) => $query
+                        ->where('role', UserRole::Ustadz->value)
+                        ->orderBy('name'),
                 )
                 ->searchable()
+                ->preload()
                 ->nullable(),
             TextInput::make('nama_mapel')
                 ->label('Nama Mata Pelajaran')
