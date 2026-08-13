@@ -2,10 +2,13 @@
 
 namespace Database\Seeders;
 
+use App\Models\Kamar;
+use App\Models\Kelas;
 use App\Models\Pesantren;
 use App\Models\Santri;
 use App\Models\TenantDomain;
 use App\Models\User;
+use App\Support\AmalanDefault;
 use Illuminate\Database\Seeder;
 
 class TenantDummySeeder extends Seeder
@@ -15,6 +18,35 @@ class TenantDummySeeder extends Seeder
         $this->seedPesantrenAlFatah();
         $this->seedPesantrenIbnuHajar();
         $this->seedPesantrenDarulIlmi();
+    }
+
+    /**
+     * Kelas & kamar semula ditulis sebagai teks langsung di kolom santri. Sejak
+     * migrasi 2026_06_05_000003 keduanya jadi entitas master ber-FK, jadi nama di
+     * $santriData harus dibuatkan barisnya dulu lalu ditukar jadi id.
+     *
+     * @param  list<array<string, mixed>>  $santriData
+     * @return array{0: array<string, int>, 1: array<string, int>} [petaKelas, petaKamar]
+     */
+    private function petaKelasKamar(Pesantren $pesantren, array $santriData): array
+    {
+        $petaKelas = [];
+        foreach (array_unique(array_column($santriData, 'kelas')) as $nama) {
+            $petaKelas[$nama] = Kelas::updateOrCreate(
+                ['pesantren_id' => $pesantren->id, 'nama_kelas' => $nama],
+                ['pesantren_id' => $pesantren->id, 'nama_kelas' => $nama],
+            )->id;
+        }
+
+        $petaKamar = [];
+        foreach (array_unique(array_column($santriData, 'kamar')) as $nama) {
+            $petaKamar[$nama] = Kamar::updateOrCreate(
+                ['pesantren_id' => $pesantren->id, 'nama_kamar' => $nama],
+                ['pesantren_id' => $pesantren->id, 'nama_kamar' => $nama, 'kapasitas' => 8],
+            )->id;
+        }
+
+        return [$petaKelas, $petaKamar];
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -95,6 +127,13 @@ class TenantDummySeeder extends Seeder
             ['nis' => 'ALF-010', 'nama' => 'Hasan Noorani Fahmi',    'kelas' => 'Kelas 2 Tsanawi', 'kamar' => 'Kamar Abu Bakar', 'wali' => 4, 'ustadz' => $ustadz2->id],
         ];
 
+        // Pesantren dummy dibuat langsung, tidak lewat OnboardPesantren, jadi
+        // amalan bawaannya harus diisi sendiri — kalau tidak, modul Mutaba'ah
+        // di data dev tampil kosong tanpa kolom apa pun.
+        AmalanDefault::untukPesantren($pesantren->id);
+
+        [$petaKelas, $petaKamar] = $this->petaKelasKamar($pesantren, $santriData);
+
         foreach ($santriData as $s) {
             Santri::updateOrCreate(
                 ['nis' => $s['nis'], 'pesantren_id' => $pesantren->id],
@@ -103,8 +142,8 @@ class TenantDummySeeder extends Seeder
                     'wali_santri_id' => $waliIds[$s['wali']],
                     'pembimbing_ustadz_id' => $s['ustadz'],
                     'nama_lengkap' => $s['nama'],
-                    'kelas' => $s['kelas'],
-                    'kamar' => $s['kamar'],
+                    'kelas_id' => $petaKelas[$s['kelas']],
+                    'kamar_id' => $petaKamar[$s['kamar']],
                     'status_aktif' => true,
                 ]
             );
@@ -218,6 +257,13 @@ class TenantDummySeeder extends Seeder
             ['nis' => 'IH-015', 'nama' => 'Anas bin Malik Hidayat',     'kelas' => 'Kelas 2 Wustho', 'kamar' => 'Kamar Bilal',     'wali' => 7, 'ust' => $ust3->id],
         ];
 
+        // Pesantren dummy dibuat langsung, tidak lewat OnboardPesantren, jadi
+        // amalan bawaannya harus diisi sendiri — kalau tidak, modul Mutaba'ah
+        // di data dev tampil kosong tanpa kolom apa pun.
+        AmalanDefault::untukPesantren($pesantren->id);
+
+        [$petaKelas, $petaKamar] = $this->petaKelasKamar($pesantren, $santriData);
+
         foreach ($santriData as $s) {
             Santri::updateOrCreate(
                 ['nis' => $s['nis'], 'pesantren_id' => $pesantren->id],
@@ -226,8 +272,8 @@ class TenantDummySeeder extends Seeder
                     'wali_santri_id' => $waliIds[$s['wali']],
                     'pembimbing_ustadz_id' => $s['ust'],
                     'nama_lengkap' => $s['nama'],
-                    'kelas' => $s['kelas'],
-                    'kamar' => $s['kamar'],
+                    'kelas_id' => $petaKelas[$s['kelas']],
+                    'kamar_id' => $petaKamar[$s['kamar']],
                     'status_aktif' => true,
                 ]
             );
@@ -310,6 +356,13 @@ class TenantDummySeeder extends Seeder
             ['nis' => 'DI-005', 'nama' => 'Hamdani Al-Faqih Santun',  'kelas' => 'Halaqah 2', 'kamar' => 'Kamar Hunain', 'wali' => 2],
         ];
 
+        // Pesantren dummy dibuat langsung, tidak lewat OnboardPesantren, jadi
+        // amalan bawaannya harus diisi sendiri — kalau tidak, modul Mutaba'ah
+        // di data dev tampil kosong tanpa kolom apa pun.
+        AmalanDefault::untukPesantren($pesantren->id);
+
+        [$petaKelas, $petaKamar] = $this->petaKelasKamar($pesantren, $santriData);
+
         foreach ($santriData as $s) {
             Santri::updateOrCreate(
                 ['nis' => $s['nis'], 'pesantren_id' => $pesantren->id],
@@ -318,8 +371,8 @@ class TenantDummySeeder extends Seeder
                     'wali_santri_id' => $waliIds[$s['wali']],
                     'pembimbing_ustadz_id' => $ustadz->id,
                     'nama_lengkap' => $s['nama'],
-                    'kelas' => $s['kelas'],
-                    'kamar' => $s['kamar'],
+                    'kelas_id' => $petaKelas[$s['kelas']],
+                    'kamar_id' => $petaKamar[$s['kamar']],
                     'status_aktif' => true,
                 ]
             );
