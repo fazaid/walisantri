@@ -6,6 +6,7 @@
 namespace App\Providers;
 
 use App\Models\DemoRequest;
+use App\Models\EmailGatewaySetting;
 use App\Models\Kelas;
 use App\Models\MasterPengumuman;
 use App\Models\Pesantren;
@@ -23,6 +24,7 @@ use Filament\Support\Facades\FilamentTimezone;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -40,6 +42,11 @@ class AppServiceProvider extends ServiceProvider
         // & entry datetime Filament jatuh ke config('app.timezone') alias UTC,
         // sehingga terlihat mundur 7 jam bagi pengguna.
         FilamentTimezone::set(config('app.display_timezone'));
+
+        // Kredensial SMTP disimpan di database, bukan .env (§3.1) — disuntikkan
+        // ke config di sini. Aman dipanggil sebelum tabelnya ada: method-nya
+        // menelan kegagalan dan membiarkan nilai .env yang berlaku.
+        EmailGatewaySetting::applyToConfig();
 
         $this->registerRateLimiters();
         $this->registerObservers();
@@ -72,6 +79,14 @@ class AppServiceProvider extends ServiceProvider
         );
 
         RateLimiter::for('demo', fn ($request) => Limit::perHour(5)->by($request->ip())
+        );
+
+        // Dikunci ke email+IP, bukan IP saja, dengan alasan yang sama seperti login:
+        // satu pesantren di balik satu IP publik tidak boleh saling mengunci.
+        // Melengkapi throttle broker (config/auth.php) yang hanya menahan
+        // permintaan berulang per alamat, bukan penyisiran banyak alamat dari satu IP.
+        RateLimiter::for('password-reset', fn ($request) => Limit::perHour(5)
+            ->by(Str::lower((string) $request->input('email')).'|'.$request->ip())
         );
     }
 }
