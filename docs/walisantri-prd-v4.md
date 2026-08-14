@@ -1096,10 +1096,10 @@ Pendekatan **Feature test** sebagai tulang punggung, ditopang unit test untuk ka
 
 **Konfigurasi:** unit test pakai PostgreSQL ephemeral (mis. service container `postgres` di GitHub Actions) atau SQLite in-memory untuk test yang tidak bergantung fitur PostgreSQL; `CACHE_DRIVER=array`, `QUEUE_CONNECTION=sync`. Test isolasi tenant & RLS **wajib** pakai PostgreSQL (bukan SQLite) agar policy ikut teruji.
 
-**Sebaran nyata (v4.22):** 380 tes / 1.196 asersi (terhadap PostgreSQL; di SQLite 10 tes isolasi tenant di-skip).
+**Sebaran nyata (v4.23):** 419 tes / 1.273 asersi (terhadap PostgreSQL; di SQLite 10 tes isolasi tenant di-skip).
 
 ```
-tests/Feature/                                48 berkas  ← tulang punggung: alur panel Filament,
+tests/Feature/                                52 berkas  ← tulang punggung: alur panel Filament,
                                                             controller portal wali, cakupan per role
 tests/Feature/{Jobs,Services}/                 4 berkas  ← job terjadwal & service layer
                                                             (CheckExpiredTenants, PurgeAuditLogs,
