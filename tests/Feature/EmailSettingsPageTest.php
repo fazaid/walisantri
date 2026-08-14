@@ -7,10 +7,13 @@ use App\Mail\EmailUji;
 use App\Models\EmailGatewaySetting;
 use App\Models\EmailSetting;
 use App\Models\User;
+use Illuminate\Contracts\Queue\Job;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
+use Mockery;
 use Tests\TestCase;
 
 class EmailSettingsPageTest extends TestCase
@@ -194,5 +197,42 @@ class EmailSettingsPageTest extends TestCase
         EmailGatewaySetting::applyToConfig();
 
         $this->assertSame($sebelum, config('mail.reply_to'));
+    }
+
+    /**
+     * Regresi 2026-08-14: super admin mengubah alamat pengirim, tombol "Kirim
+     * Email Uji" langsung memakai nilai baru (sinkron, di dalam request), tapi
+     * email sambutan tetap keluar dengan alamat LAMA tanpa Reply-To.
+     *
+     * Sebabnya AppServiceProvider::boot() hanya jalan sekali per proses. Worker
+     * Supervisor hidup berhari-hari dan memegang config sejak ia dinyalakan —
+     * di production waktu itu worker mulai 7 menit sebelum pengaturan diubah.
+     *
+     * Penyembuhnya Queue::before yang menyegarkan config sebelum tiap job. Tes ini
+     * meniru worker basi: config sengaja diisi nilai lama, lalu event pemrosesan
+     * job dipicu, dan config harus sudah ikut nilai terbaru.
+     */
+    public function test_config_email_disegarkan_sebelum_tiap_job_antrean(): void
+    {
+        EmailGatewaySetting::set('from_address', 'lama@contoh.test');
+        EmailGatewaySetting::applyToConfig();
+
+        // Super admin mengubah pengaturan SETELAH worker menyala.
+        EmailGatewaySetting::set('from_address', 'baru@contoh.test');
+        EmailGatewaySetting::set('reply_to_address', 'cs@contoh.test');
+
+        // Worker yang naif akan tetap memakai nilai lama.
+        $this->assertSame('lama@contoh.test', config('mail.from.address'));
+
+        $this->jalankanHookSebelumJob();
+
+        $this->assertSame('baru@contoh.test', config('mail.from.address'));
+        $this->assertSame('cs@contoh.test', config('mail.reply_to.address'));
+    }
+
+    /** Memicu event yang sama seperti saat worker mengambil satu job. */
+    private function jalankanHookSebelumJob(): void
+    {
+        app('events')->dispatch(new JobProcessing('database', Mockery::mock(Job::class)->shouldIgnoreMissing()));
     }
 }
