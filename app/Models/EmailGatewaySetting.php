@@ -39,6 +39,8 @@ class EmailGatewaySetting extends Model
     public const KUNCI_PENGIRIM = [
         'from_address',
         'from_name',
+        'reply_to_address',
+        'reply_to_name',
     ];
 
     private const CACHE_KEY = 'email_gateway_settings:semua';
@@ -133,6 +135,21 @@ class EmailGatewaySetting extends Model
 
         if (isset($nilai['from_name'])) {
             Config::set('mail.from.name', $nilai['from_name']);
+        }
+
+        // Reply-To global. Laravel sendiri yang menempelkannya ke setiap email
+        // (MailManager::setGlobalAddresses membaca 'from', 'reply_to', 'to',
+        // 'return_path'), jadi tidak ada satu pun Mailable yang perlu diubah.
+        //
+        // Alasannya operasional: `from_address` ada di domain yang terverifikasi
+        // di Brevo tapi domain itu tidak punya MX — balasan ke sana lenyap tanpa
+        // jejak. Reply-To mengarahkan balasan ke kotak surat yang benar-benar
+        // dibaca manusia, dan tidak perlu satu domain dengan pengirimnya.
+        if (isset($nilai['reply_to_address'])) {
+            Config::set('mail.reply_to', [
+                'address' => $nilai['reply_to_address'],
+                'name' => $nilai['reply_to_name'] ?? $nilai['from_name'] ?? config('app.name'),
+            ]);
         }
     }
 }
