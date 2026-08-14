@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\PaketLangganan;
 use App\Models\BillingSetting;
 use App\Models\Pesantren;
 use Illuminate\Console\Command;
@@ -16,10 +17,19 @@ class FixKuotaSantriCommand extends Command
     {
         $isDryRun = $this->option('dry-run');
 
-        $kuotaPerPaket = [
-            'rintisan' => BillingSetting::get('kuota_rintisan', 100),
-            'berkembang' => BillingSetting::get('kuota_berkembang', 500),
-        ];
+        // Diturunkan dari enum, bukan daftar tulis-tangan: versi lama hanya memuat
+        // rintisan & berkembang, sehingga pesantren paket Tumbuh dilewati diam-diam
+        // sejak paket itu ditambahkan.
+        //
+        // Paket Maju sengaja dikecualikan — kuotanya dihitung per-tenant lewat
+        // formula §5.3, jadi max_santri_kuota yang menyimpang dari angka dasar di
+        // sana justru kapasitas yang memang dibeli, bukan data rusak.
+        $kuotaPerPaket = collect(PaketLangganan::cases())
+            ->reject(fn (PaketLangganan $paket) => $paket === PaketLangganan::Maju)
+            ->mapWithKeys(fn (PaketLangganan $paket) => [
+                $paket->value => BillingSetting::get("kuota_{$paket->value}", $paket->maxSantri()),
+            ])
+            ->all();
 
         $this->info('Kuota dari BillingSetting:');
         foreach ($kuotaPerPaket as $paket => $kuota) {
