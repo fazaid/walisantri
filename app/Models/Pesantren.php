@@ -5,6 +5,7 @@
 namespace App\Models;
 
 use App\Enums\OnboardingStep;
+use App\Enums\StatusBerlangganan;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -74,7 +75,7 @@ class Pesantren extends Model
     // Helper: cek apakah tenant masih aktif
     public function isActive(): bool
     {
-        return in_array($this->status_berlangganan, ['trial', 'active'])
+        return in_array($this->status_berlangganan, StatusBerlangganan::berjalan(), true)
             && ($this->expired_at === null || $this->expired_at->isFuture());
     }
 

@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\Pesantrens\Pages;
 
 use App\Filament\Resources\Pesantrens\PesantrenResource;
+use App\Models\Pesantren;
+use App\Services\ProvisionTenant;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Support\Enums\Width;
@@ -14,7 +16,14 @@ class ListPesantrens extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()->modalWidth(Width::TwoExtraLarge),
+            CreateAction::make()
+                ->modalWidth(Width::TwoExtraLarge)
+                // Tanpa ini pesantren yang dibuat dari panel lahir setengah jadi:
+                // tidak punya baris tenant_domains (subdomainnya 404 selamanya) dan
+                // tidak punya amalan bawaan (modul Mutaba'ah lumpuh diam-diam).
+                // Langkah yang sama dipakai jalur pendaftaran publik lewat
+                // OnboardPesantren, jadi kedua jalur menghasilkan tenant yang setara.
+                ->after(fn (Pesantren $record) => app(ProvisionTenant::class)->jalankan($record)),
         ];
     }
 }

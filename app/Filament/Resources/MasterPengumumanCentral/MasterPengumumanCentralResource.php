@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\MasterPengumumanCentral;
 
+use App\Enums\NavigationGroup;
 use App\Enums\UserRole;
 use App\Filament\Resources\MasterPengumumanCentral\Pages\ListMasterPengumumanCentral;
 use App\Filament\Resources\MasterPengumumanCentral\Pages\ViewMasterPengumumanCentral;
@@ -23,9 +24,9 @@ class MasterPengumumanCentralResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMegaphone;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Manajemen';
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::Platform;
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 3;
 
     protected static ?string $recordTitleAttribute = 'judul_maklumat';
 

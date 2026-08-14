@@ -13,6 +13,10 @@ class SystemStatsWidget extends StatsOverviewWidget
     // dan request polling latar jadi sumber toast error saat wake-from-sleep.
     protected ?string $pollingInterval = null;
 
+    // Tanpa $sort eksplisit, Filament memakai default -1 (Widget::getSort()), sehingga
+    // widget ini justru terender DI ATAS SuperAdminStatsOverview yang ber-sort 1.
+    protected static ?int $sort = 2;
+
     public static function canView(): bool
     {
         return auth()->user()?->role === UserRole::SuperAdmin->value;

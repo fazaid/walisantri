@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Enums\UserRole;
 use App\Models\EkskulMaster;
 use App\Models\Kelas;
 use App\Models\MataPelajaran;
@@ -71,6 +72,15 @@ class PenugasanUstadz
      */
     public static function ringkasan(User $user): array
     {
+        // Empat query per pemanggilan, dan pemanggilnya adalah kolom tabel yang jalan
+        // SEKALI PER BARIS. Wali santri (baris terbanyak — satu per keluarga) dan super
+        // admin tidak pernah bisa jadi pembimbing/wali kelas/pengampu/pembina, jadi
+        // keluar lebih awal: halaman Pengguna dengan 25 baris tidak lagi menembak
+        // ~100 query hanya demi satu kolom.
+        if (in_array($user->role, [UserRole::WaliSantri->value, UserRole::SuperAdmin->value], true)) {
+            return [];
+        }
+
         $ringkasan = [];
 
         $jumlahBimbingan = Santri::where('pembimbing_ustadz_id', $user->id)

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\DemoRequests;
 
+use App\Enums\NavigationGroup;
 use App\Enums\UserRole;
 use App\Filament\Resources\DemoRequests\Pages\ListDemoRequests;
 use App\Filament\Resources\DemoRequests\Pages\ViewDemoRequest;
@@ -13,6 +14,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use UnitEnum;
 
 class DemoRequestResource extends Resource
 {
@@ -20,7 +22,9 @@ class DemoRequestResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
 
-    protected static ?int $navigationSort = 5;
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::Platform;
+
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $navigationLabel = 'Antrean Demo';
 

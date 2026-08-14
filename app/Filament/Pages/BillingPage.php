@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Enums\NavigationGroup;
 use App\Models\Order;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -18,7 +19,7 @@ class BillingPage extends Page
     // dengan menu "Keuangan" bikin rancu (Keuangan = uang santri ke pesantren,
     // Langganan = pesantren bayar platform). Di luar cluster, slug-nya kembali jadi
     // "admin/billing-page" — persis URL yang dipakai notifikasi WA & email expired.
-    protected static string|UnitEnum|null $navigationGroup = 'Manajemen';
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::Manajemen;
 
     protected static ?string $navigationLabel = 'Langganan';
 

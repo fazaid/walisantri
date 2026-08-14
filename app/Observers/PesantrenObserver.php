@@ -19,9 +19,12 @@ class PesantrenObserver
                 ActivityLogger::log('pesantren.suspended', $pesantren,
                     ['status' => $old], ['status' => $new],
                 );
-            } elseif ($old === 'suspended') {
+            } elseif ($new === 'active' && in_array($old, ['suspended', 'expired'], true)) {
+                // Dulu hanya suspended -> active yang tercatat, padahal tombol "Aktifkan"
+                // di dashboard super admin juga menyasar tenant expired.
                 ActivityLogger::log('pesantren.activated', $pesantren,
-                    ['status' => $old], ['status' => $new],
+                    ['status' => $old, 'expired_at' => $pesantren->getOriginal('expired_at')?->toDateTimeString()],
+                    ['status' => $new, 'expired_at' => $pesantren->expired_at?->toDateTimeString()],
                 );
             }
         }

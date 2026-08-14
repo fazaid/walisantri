@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Enums\NavigationGroup;
 use App\Enums\UserRole;
 use App\Models\PlatformBrandingSetting;
 use BackedEnum;
@@ -26,9 +27,9 @@ class PlatformLogoSettingsPage extends Page implements HasForms
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedPhoto;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Langganan';
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::PengaturanPlatform;
 
-    protected static ?int $navigationSort = 13;
+    protected static ?int $navigationSort = 5;
 
     protected static ?string $navigationLabel = 'Logo & Favicon';
 

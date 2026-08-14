@@ -11,10 +11,12 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Notifications\Notification;
 use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Collection;
 
 class UsersTable
 {
@@ -62,11 +64,56 @@ class UsersTable
                 EditAction::make()
                     ->modalWidth(Width::TwoExtraLarge)
                     ->mutateDataUsing(UserResource::paksaTenantSaatUbah()),
-                DeleteAction::make(),
+                DeleteAction::make()
+                    // Kasus struktural (akun sendiri, super admin terakhir) tidak bisa
+                    // diselesaikan pengguna, jadi tombolnya disembunyikan sekalian.
+                    // Keterkaitan santri BISA diselesaikan, jadi tombolnya tetap tampil
+                    // dan alasannya disampaikan lewat notifikasi di ->before().
+                    ->visible(fn (User $record): bool => UserResource::alasanSembunyikanHapus($record) === null)
+                    ->before(function (User $record, DeleteAction $action) {
+                        $alasan = UserResource::alasanTidakBisaDihapus($record);
+
+                        if ($alasan === null) {
+                            return;
+                        }
+
+                        Notification::make()
+                            ->danger()
+                            ->title('Pengguna tidak bisa dihapus')
+                            ->body($alasan)
+                            ->persistent()
+                            ->send();
+
+                        $action->cancel();
+                    }),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    // Satu pengguna yang tertaut santri sudah cukup membuat seluruh
+                    // batch gagal dengan SQLSTATE 23503, jadi batch diperiksa lebih
+                    // dulu dan dibatalkan utuh — lebih jelas daripada terhapus separuh.
+                    DeleteBulkAction::make()
+                        ->before(function (Collection $records, DeleteBulkAction $action) {
+                            $terhalang = $records
+                                ->map(fn (User $user): ?string => ($alasan = UserResource::alasanTidakBisaDihapus($user))
+                                    ? "{$user->name}: {$alasan}"
+                                    : null)
+                                ->filter()
+                                ->values();
+
+                            if ($terhalang->isEmpty()) {
+                                return;
+                            }
+
+                            Notification::make()
+                                ->danger()
+                                ->title($terhalang->count().' pengguna tidak bisa dihapus')
+                                ->body($terhalang->implode(' '))
+                                ->persistent()
+                                ->send();
+
+                            $action->cancel();
+                        }),
                 ]),
             ]);
     }

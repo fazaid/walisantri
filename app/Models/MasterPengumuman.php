@@ -20,6 +20,18 @@ class MasterPengumuman extends Model
 {
     use BelongsToPesantren, Multitenantable;
 
+    /**
+     * pesantren_id nullable sejak tenant/2026_05_21_000002 — NULL berarti pengumuman
+     * global yang ditulis super admin dan berlaku untuk semua pesantren. Tanpa ini,
+     * guard di Multitenantable memblokir super admin membuat pengumuman global sama
+     * sekali (ValidationException ke key pesantren_id yang tak ada di form, sehingga
+     * modal gagal simpan tanpa pesan yang terlihat).
+     */
+    public static function bolehTanpaPesantren(): bool
+    {
+        return true;
+    }
+
     protected function casts(): array
     {
         return [

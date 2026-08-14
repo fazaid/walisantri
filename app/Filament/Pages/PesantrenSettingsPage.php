@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Enums\NavigationGroup;
 use App\Rules\SlugNotReserved;
 use App\Rules\ValidTenantSlug;
 use BackedEnum;
@@ -33,7 +34,7 @@ class PesantrenSettingsPage extends Page implements HasForms
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Manajemen';
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::Manajemen;
 
     protected static ?string $navigationLabel = 'Pengaturan';
 

@@ -5,9 +5,7 @@ namespace App\Services;
 use App\Models\ActivityLog;
 use App\Models\BillingSetting;
 use App\Models\Pesantren;
-use App\Models\TenantDomain;
 use App\Models\User;
-use App\Support\AmalanDefault;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
@@ -44,17 +42,10 @@ class OnboardPesantren
                 'onboarding_completed_steps' => [],
             ]);
 
-            TenantDomain::create([
-                'pesantren_id' => $pesantren->id,
-                'hostname' => "{$slug}.walisantri.com",
-                'type' => 'subdomain',
-                'is_primary' => true,
-                'ssl_status' => 'pending',
-            ]);
-
-            // Tanpa ini modul Mutaba'ah lumpuh diam-diam: tidak ada kolom di grid
-            // Isi Harian, tidak ada checkbox di form, dan skor selalu 0%.
-            AmalanDefault::untukPesantren($pesantren->id);
+            // Subdomain + amalan bawaan. Dipisah ke ProvisionTenant supaya jalur
+            // pembuatan lain (panel super admin) bisa memakai langkah yang sama
+            // dan tidak lagi melahirkan tenant setengah jadi.
+            app(ProvisionTenant::class)->jalankan($pesantren);
 
             $admin = User::create([
                 'pesantren_id' => $pesantren->id,

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Enums\StatusBerlangganan;
 use App\Models\Pesantren;
 use App\Models\Santri;
 use Filament\Widgets\StatsOverviewWidget;
@@ -23,28 +24,36 @@ class SuperAdminStatsOverview extends StatsOverviewWidget
 
     protected function getStats(): array
     {
-        $totalAktif = Pesantren::withoutGlobalScopes()
+        $totalAktif = Pesantren::withoutGlobalScope('pesantren')
             ->where('status_berlangganan', 'active')
             ->count();
 
-        $totalTrial = Pesantren::withoutGlobalScopes()
+        $totalTrial = Pesantren::withoutGlobalScope('pesantren')
             ->where('status_berlangganan', 'trial')
             ->count();
 
-        $totalSantri = Santri::withoutGlobalScopes()
+        // withoutGlobalScope('pesantren'), BUKAN withoutGlobalScopes(): yang terakhir
+        // ikut mencopot SoftDeletingScope, sehingga santri yang sudah dihapus (dan
+        // status_aktif-nya tidak pernah diubah SantriObserver) ikut terhitung.
+        $totalSantri = Santri::withoutGlobalScope('pesantren')
             ->where('status_aktif', true)
             ->count();
 
-        $pesantrenExpired = Pesantren::withoutGlobalScopes()
+        $pesantrenExpired = Pesantren::withoutGlobalScope('pesantren')
             ->where('status_berlangganan', 'expired')
             ->count();
 
-        $pesantrenSuspended = Pesantren::withoutGlobalScopes()
+        $pesantrenSuspended = Pesantren::withoutGlobalScope('pesantren')
             ->where('status_berlangganan', 'suspended')
             ->count();
 
-        $expiringSoon = Pesantren::withoutGlobalScopes()
-            ->where('status_berlangganan', 'active')
+        // Patokan status mengikuti kedua job latar yang benar-benar bertindak atas
+        // tenant ini (WarnExpiringTenants & CheckExpiredTenants): trial DAN active.
+        // Dulu hanya 'active', sehingga kartu ini melewatkan justru mayoritasnya —
+        // pendaftar baru berstatus trial — dan angkanya tidak cocok dengan tabel
+        // "Pesantren Akan Expired" tepat di bawahnya.
+        $expiringSoon = Pesantren::withoutGlobalScope('pesantren')
+            ->whereIn('status_berlangganan', StatusBerlangganan::berjalan())
             ->whereBetween('expired_at', [now(), now()->addDays(7)])
             ->count();
 
@@ -55,7 +64,7 @@ class SuperAdminStatsOverview extends StatsOverviewWidget
                 ->color('success'),
 
             Stat::make('Total Santri', $totalSantri)
-                ->description('Di seluruh pesantren aktif')
+                ->description('Aktif di seluruh pesantren')
                 ->descriptionIcon('heroicon-m-users')
                 ->color('info'),
 

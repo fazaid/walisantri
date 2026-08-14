@@ -14,6 +14,8 @@ class ExpiringTenantsWidget extends TableWidget
 {
     protected int|string|array $columnSpan = 'full';
 
+    protected static ?int $sort = 3;
+
     public static function canView(): bool
     {
         return auth()->user()?->role === UserRole::SuperAdmin->value;
@@ -25,6 +27,10 @@ class ExpiringTenantsWidget extends TableWidget
             ->heading('Pesantren Akan Expired (7 Hari)')
             ->query(
                 Pesantren::withoutGlobalScope('pesantren')
+                    // Filter status disamakan dengan kartu "Akan Expired" di atasnya —
+                    // dulu tabel ini tanpa filter status sama sekali, sehingga angka
+                    // kartu dan jumlah baris tabel bisa berbeda di layar yang sama.
+                    ->whereIn('status_berlangganan', StatusBerlangganan::berjalan())
                     ->whereBetween('expired_at', [now(), now()->addDays(7)])
                     ->orderBy('expired_at')
             )

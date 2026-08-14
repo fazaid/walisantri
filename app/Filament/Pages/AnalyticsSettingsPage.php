@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Enums\NavigationGroup;
 use App\Enums\UserRole;
 use App\Models\AnalyticsSetting;
 use BackedEnum;
@@ -29,11 +30,11 @@ class AnalyticsSettingsPage extends Page implements HasForms
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartBar;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Langganan';
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::PengaturanPlatform;
 
-    protected static ?int $navigationSort = 12;
+    protected static ?int $navigationSort = 4;
 
-    protected static ?string $navigationLabel = 'Pengaturan Analytics';
+    protected static ?string $navigationLabel = 'Analytics';
 
     protected static ?string $title = 'Pengaturan Analytics';
 

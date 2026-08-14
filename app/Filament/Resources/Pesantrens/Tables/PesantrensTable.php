@@ -5,11 +5,13 @@ namespace App\Filament\Resources\Pesantrens\Tables;
 use App\Enums\PaketLangganan;
 use App\Enums\StatusBerlangganan;
 use App\Enums\UserRole;
-use Filament\Actions\BulkActionGroup;
+use App\Models\ActivityLog;
+use App\Models\Pesantren;
+use Closure;
 use Filament\Actions\DeleteAction;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\TextInput;
 use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
@@ -96,12 +98,59 @@ class PesantrensTable
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make()->modalWidth(Width::TwoExtraLarge),
-                DeleteAction::make(),
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
+
+                // Menghapus pesantren TIDAK bisa dibatalkan: Pesantren tidak memakai
+                // SoftDeletes, dan seluruh tabel tenant ber-FK cascadeOnDelete (santri
+                // dan semua turunannya: nilai, tahfidz, mutabaah, tagihan SPP, uang saku,
+                // prestasi, order, invoice). Akun penggunanya justru nullOnDelete —
+                // selamat sebagai yatim dengan pesantren_id NULL, permanen kena 403 di
+                // SaaSLifecycleLock, dan emailnya yang unik global tetap memblokir
+                // pendaftaran ulang. Karena itu konfirmasi generik "Yakin?" tidak cukup:
+                // super admin harus mengetik ulang nama pesantrennya.
+                DeleteAction::make()
+                    ->modalHeading(fn (Pesantren $record): string => "Hapus {$record->nama_pesantren}?")
+                    ->modalDescription(fn (Pesantren $record): string => 'Tindakan ini permanen dan tidak bisa dibatalkan. Seluruh data pesantren ini akan ikut terhapus: '
+                        .$record->santri_count_cache.' santri beserta nilai, hafalan, mutaba\'ah, tagihan SPP, dan uang sakunya, termasuk riwayat pesanan & invoice. '
+                        .'Akun penggunanya tidak ikut terhapus, tetapi akan kehilangan akses selamanya.')
+                    ->schema([
+                        TextInput::make('konfirmasi_nama')
+                            ->label('Ketik nama pesantren untuk mengonfirmasi')
+                            ->required()
+                            ->autocomplete(false)
+                            ->helperText(fn (Pesantren $record): string => $record->nama_pesantren)
+                            ->rule(fn (Pesantren $record): Closure => function (string $attribute, $value, Closure $fail) use ($record) {
+                                if (trim((string) $value) !== $record->nama_pesantren) {
+                                    $fail('Nama pesantren tidak cocok.');
+                                }
+                            }),
+                    ])
+                    ->modalSubmitActionLabel('Hapus permanen')
+                    // activity_logs.pesantren_id ber-FK nullOnDelete, jadi kolom itu PASTI
+                    // jadi NULL begitu pesantrennya terhapus. Identitas tenant karena itu
+                    // disimpan di auditable_id (bigInteger biasa, bukan FK) dan di dalam
+                    // old_values — keduanya selamat dari cascade.
+                    ->before(function (Pesantren $record): void {
+                        ActivityLog::create([
+                            'pesantren_id' => $record->id,
+                            'user_id' => auth()->id(),
+                            'event' => 'pesantren.deleted',
+                            'auditable_type' => Pesantren::class,
+                            'auditable_id' => $record->id,
+                            'old_values' => [
+                                'id' => $record->id,
+                                'nama_pesantren' => $record->nama_pesantren,
+                                'slug' => $record->slug,
+                                'paket_langganan' => $record->paket_langganan,
+                                'santri_count_cache' => $record->santri_count_cache,
+                            ],
+                            'ip_address' => request()?->ip(),
+                            'user_agent' => request()?->userAgent(),
+                            'created_at' => now(),
+                        ]);
+                    }),
             ]);
+        // Sengaja tanpa toolbarActions: DeleteBulkAction dibuang karena menghapus
+        // banyak tenant sekaligus tidak punya kasus pakai yang sah, sementara satu
+        // salah-centang berarti kehilangan data beberapa pesantren sekaligus.
     }
 }
