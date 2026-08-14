@@ -15,10 +15,16 @@ class PurgeAuditLogs implements ShouldQueue
 
     private const BILLING_YEARS = 5;
 
+    // §10.3 menjanjikan 5 tahun untuk peristiwa billing. Jejak order ikut ke sini
+    // karena ia bukti pembayaran, bukan log operasional — sempat terlewat sampai
+    // v4.22 sehingga riwayat upgrade terhapus di tahun kedua.
     private const BILLING_EVENTS = [
         'pesantren.paket_changed',
         'pesantren.activated',
         'pesantren.suspended',
+        'order.bukti_uploaded',
+        'order.confirmed',
+        'order.rejected',
     ];
 
     public int $timeout = 300;

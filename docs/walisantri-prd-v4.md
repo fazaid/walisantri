@@ -4,7 +4,9 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Agustus 2026 — v4.21
+**Last Updated:** Agustus 2026 — v4.22
+
+**Changelog v4.22:** **Daftar bug terbuka §22 dikosongkan, plus satu cacat yang tidak pernah tercatat di sini.** (1) **`orders.paket_target` menolak paket Tumbuh** — CHECK constraint tabel `orders` masih memakai daftar era lama (`gratis`/`rintisan`/`berkembang`/`maju`). `pesantrens` sudah diluruskan lewat `central/2026_06_28_000001` saat paket Gratis dihapus & Tumbuh ditambahkan, `orders` terlewat. Akibatnya `UpgradePage` menawarkan Tumbuh (pilihannya dibangun dari `PaketLangganan::cases()`) lalu `UpgradeOrderService::createOrder()` selalu ditolak database — **paket yang menurut §5.1 paling populer justru satu-satunya yang mustahil dibeli**. Diperbaiki `central/2026_08_14_000001`, sekalian membuang nilai mati `gratis`; karena membuang nilai berarti PostgreSQL memvalidasi seluruh baris saat `ADD CONSTRAINT`, `deploy:preflight` dapat pemeriksaan `periksaPaketTargetOrder()` yang mem-BLOCK deploy bila masih ada order berpaket `gratis`. (2) **Index `(pesantren_id, kelas_id)` & `(pesantren_id, kamar_id)` di `santri`** akhirnya dibuat (`tenant/2026_08_14_000002`) — versi lamanya di-drop `tenant/2026_06_05_000003` saat kolom teks berubah jadi FK dan hanya dibangun kembali di `down()`; mudah terlewat karena MySQL membuat index FK otomatis sedangkan PostgreSQL tidak. (3) **Ketiga event `order.*` masuk `PurgeAuditLogs::BILLING_EVENTS`** sehingga jejak pembayaran benar-benar bertahan 5 tahun seperti janji §10.3, bukan 2 tahun. (4) **`billing:fix-kuota` melewati paket Tumbuh & Maju** — map kuota tulis-tangan yang hanya memuat rintisan & berkembang sekaligus dipakai sebagai filter `whereIn`, jadi tenant paket lain dilewati tanpa pesan apa pun; kini diturunkan dari `PaketLangganan`, dengan paket Maju dikecualikan **eksplisit** karena kuotanya kustom per-tenant (§5.3). (5) Sebagai temuan susulan: cabang SQLite di `central/2026_06_28_000001` dulu sekadar `return`, sehingga **seluruh suite lokal tidak bisa membuat pesantren paket Tumbuh sama sekali** — celah yang ikut menjelaskan kenapa bug (1) hidup selama itu. Kini basis data test ikut ditulis ulang. Tabel `orders` & `invoices` akhirnya didokumentasikan di §3.1, dan §22 mendapat catatan tentang sebabnya (lihat di sana).
 
 **Changelog v4.21:** **Setup checklist onboarding turun dari 6 ke 5 langkah.** Step "lihat/salin Magic Link wali pertama" **dihapus** dari `OnboardingStep` (§14): membuka modal link wali bukan penanda setup selesai, tapi karena statusnya wajib, widget onboarding tetap menggantung di dashboard tenant yang sebenarnya sudah siap pakai. Ikut dihapus: penandaan step di `KirimMagicLinkAction` dan deteksinya di perintah `onboarding:backfill`. Audit event `magic_link.viewed` (§10.2) **tetap** dicatat — hanya kaitannya ke onboarding yang putus. Kini 4 langkah wajib (profil, ustadz, kelas, santri) + 1 opsional (pengumuman perdana).
 
@@ -431,6 +433,10 @@ erDiagram
 **`master_pengumuman_central`** — pengumuman dari platform ke seluruh tenant (`central/2026_05_21_000001`, model `MasterPengumumanCentral`), CRUD `super_admin`, ditampilkan `PengumumanCentralWidget` di dashboard admin pesantren. Berbeda dari `master_pengumuman` yang per-tenant (§3.2).
 
 **`demo_requests`** — `id` PK · `nama_pesantren` · `nama_kontak` · `email` · `no_hp` · `jumlah_santri` null · `kota` null · `catatan` text null · `contacted_at` ts null (diisi admin saat pesantren dihubungi) · timestamps. *Tabel central, diisi dari halaman `/demo` di landing page; dikelola `DemoRequestResource` hanya `super_admin`.*
+
+**`orders`** *(v4.22 — sebelumnya hanya alurnya yang tertulis, di §16.1)* — `id` PK · `pesantren_id` FK · `kupon_id` FK null · `nomor_order` unique · `paket_target` enum(`rintisan`/`tumbuh`/`berkembang`/`maju`) · `durasi_bulan` int · `max_santri_kuota_target` int · `harga_per_bulan`/`harga_total_sebelum_diskon`/`diskon_nominal`/`harga_total` bigint · `bonus_bulan` int default 0 · `durasi_total_bulan` int · `kode_kupon_snapshot` null · `status` enum(`pending_payment`/`awaiting_confirmation`/`confirmed`/`rejected`/`expired`) default `pending_payment` · `catatan_admin` text null · `confirmed_at` ts null · `confirmed_by` FK→users null · `expired_at_baru` ts null · timestamps. *Index: `pesantren_id`, `status`.* Pesanan upgrade/perpanjangan langganan; alurnya di §16.1. **`paket_target` wajib sinkron dengan enum `PaketLangganan`** — ketidaksinkronan itulah bug v4.22 (§22).
+
+**`invoices`** *(v4.22)* — `id` PK · `order_id` FK unique · `nomor_invoice` unique · `bukti_transfer_path` string null (disk `local`, bukan `public` — bukti transfer tidak boleh bisa diakses publik) · `bukti_transfer_uploaded_at` ts null · timestamps. Satu invoice per order; nomor digenerate `UpgradeOrderService::generateNomor()` dengan prefix dari `config('billing.nomor_invoice_prefix')`.
 
 **`platform_bank_accounts`** *(v4.11)* — `id` PK · `bank` string · `nomor_rekening` string · `atas_nama` string · `logo` string null (path disk `public`, directory `bank-logos`) · `urutan` smallint default 0 · `aktif` bool default true · timestamps. Rekening bank **platform** Walisantri untuk pembayaran manual upgrade/perpanjang langganan (lihat §16.1) — berbeda dari `pesantrens.profil['rekening']` yang merupakan rekening **pesantren** untuk SPP wali santri. Dikelola `PlatformBankAccountResource` hanya `super_admin`; hanya baris `aktif=true` yang tampil di halaman invoice, terurut `urutan`. Menggantikan `config('billing.bank_transfer')` (dihapus di v4.11 — sebelumnya hardcode 2 slot dari `.env`, tanpa logo, tanpa UI pengelolaan).
 
@@ -897,7 +903,7 @@ Event `export.generated` yang pernah didaftar di sini **tidak ada di kode** — 
 
 Log operasional 2 tahun · log billing/paket 5 tahun · purge otomatis via `PurgeAuditLogs` tiap tanggal 1 pukul 03:30.
 
-> **Celah yang diketahui:** `PurgeAuditLogs::BILLING_EVENTS` hanya memuat `pesantren.paket_changed`, `pesantren.activated`, `pesantren.suspended`. Ketiga event `order.*` — jejak pembayaran upgrade — **tidak** termasuk, jadi kena retensi operasional 2 tahun, bukan 5 tahun seperti yang dijanjikan di atas (§22).
+`PurgeAuditLogs::BILLING_EVENTS` memuat enam event: `pesantren.paket_changed`, `pesantren.activated`, `pesantren.suspended`, plus ketiga `order.*` (§10.2). Ketiga yang terakhir baru ditambahkan di v4.22 — sebelumnya jejak pembayaran upgrade diam-diam kena retensi operasional 2 tahun. Sisanya kena retensi 2 tahun lewat `whereNotIn` atas konstanta yang sama, jadi **event billing baru harus didaftarkan ke sana**, bukan cuma ditulis kodenya.
 
 ---
 
@@ -1036,11 +1042,14 @@ Pendekatan **Feature test** sebagai tulang punggung, ditopang unit test untuk ka
 
 **Konfigurasi:** unit test pakai PostgreSQL ephemeral (mis. service container `postgres` di GitHub Actions) atau SQLite in-memory untuk test yang tidak bergantung fitur PostgreSQL; `CACHE_DRIVER=array`, `QUEUE_CONNECTION=sync`. Test isolasi tenant & RLS **wajib** pakai PostgreSQL (bukan SQLite) agar policy ikut teruji.
 
-**Sebaran nyata (v4.19):** 354 tes / 1.072 asersi.
+**Sebaran nyata (v4.22):** 380 tes / 1.196 asersi (terhadap PostgreSQL; di SQLite 10 tes isolasi tenant di-skip).
 
 ```
-tests/Feature/                                47 berkas  ← tulang punggung: alur panel Filament,
+tests/Feature/                                48 berkas  ← tulang punggung: alur panel Filament,
                                                             controller portal wali, cakupan per role
+tests/Feature/{Jobs,Services}/                 4 berkas  ← job terjadwal & service layer
+                                                            (CheckExpiredTenants, PurgeAuditLogs,
+                                                            WarnExpiringTenantsWhatsApp, UpgradeOrder)
 tests/Unit/{Services,Rules}/                     3 berkas  ← kalkulasi & unit murni tanpa DB
                                                             (BillingCalculator, FonnteWhatsApp, SlugRules)
 tests/TenantIsolation/                         2 berkas  ← DataIsolationTest + OnboardingIsolationTest,
@@ -1134,7 +1143,7 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 
 # 22. Catatan Implementasi Aktual
 
-**PRD ini v4.20.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali. PRD ini adalah v4.17 (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
+**PRD ini v4.22.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
 
 **Bug & fix:** `HasUuids` isi `id` jika tak di-override → `uniqueIds(): ['uuid']` · `$navigationGroup` `?string` error → `string|UnitEnum|null` · index name >63 char (batas PostgreSQL) → nama eksplisit pendek · ingat PostgreSQL tak punya unsigned int (kolom unsigned → signed bigint) · (v4.7) `tahun_ajaran` di form Nilai Akademik/Rapor Tahfidz semula `TextInput` bebas → mismatch format antar input & filter rapor bikin data tidak muncul → diganti `Select` dropdown seragam (service `TahunAjaranOptions`) · (v4.7) Filament cluster default merender sub-navigation tab di bawah header & dropdown khusus mobile → di-override via render hook + CSS agar tab tampil di atas breadcrumbs, konsisten desktop/mobile (detail di §7).
 
@@ -1142,15 +1151,19 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 
 **Catatan skema periode (v4.9, pelajaran v4.19):** kolom `bulan` kini konsisten ditambahkan ke tiga tabel berbasis periode — `nilai_akademik`, `kesantrian_karakter_rapor`, `tahfidz_rapor` — mendampingi `tahun_ajaran`/`periode` yang sudah ada. **Pelajaran v4.19:** menambah kolom identitas periode saja tidak cukup — setiap pembaca lama yang menebak periode dari tanggal harus ikut diubah. Halaman rapor wali luput dan baru ketahuan salah setahun kemudian (§8), dan seeder dummy juga tidak ikut diperbarui sehingga data demo tak terlihat di panel admin maupun portal wali. Saat menambah kolom identitas ke tabel yang sudah dipakai, telusuri dulu **semua** pembacanya, bukan hanya form penulisnya. Pola ini jadi referensi saat modul periode lain ditambah ke depan.
 
-**Bug terbuka yang sudah diketahui (v4.20 — ditemukan saat audit PRD↔kode, sengaja belum diperbaiki):**
+**Bug terbuka: nihil (per v4.22).**
 
-Ini **bukan** keputusan desain seperti tabel di bawahnya, melainkan cacat yang menunggu giliran. Dicatat di sini supaya tidak hilang.
+Daftar tiga cacat yang dicatat v4.20 sudah habis dikerjakan, dan dua lagi ditemukan di luar daftar itu. Disimpan sebagai jejak keputusan, bukan pekerjaan tersisa:
 
-| Bug | Dampak | Perbaikannya |
+| Bug | Ditutup di | Catatan |
 |---|---|---|
-| **Amal master tidak ter-seed untuk tenant baru** | Ketujuh amalan default hanya di-`insert` sekali di dalam migrasi `tenant/2026_06_23_000007`, untuk pesantren yang sudah ada saat migrasi jalan. `OnboardPesantren::execute()` tidak membuatnya → **pesantren yang mendaftar setelah itu punya 0 amalan**, sehingga modul Mutaba'ah tidak bisa dipakai sama sekali. Menunggu pendaftar berikutnya untuk terlihat. | Pindahkan daftar 7 amalan default ke satu tempat (mis. `App\Support\AmalanDefault`), panggil dari `OnboardPesantren::execute()` **dan** dari migrasi lama. |
-| **Index `(pesantren_id, kelas_id)` & `(pesantren_id, kamar_id)` hilang** | Composite index lama di-drop `tenant/2026_06_05_000003` saat `kelas`/`kamar` string diganti FK, tapi tidak pernah dibuat ulang pada kolom `_id` yang baru. Melanggar pola wajib §1.7 poin 3 yang ditulis PRD sendiri. Belum terasa di volume sekarang. | Satu migrasi tambahan. |
-| **`order.*` tidak masuk retensi billing** | `PurgeAuditLogs::BILLING_EVENTS` hanya memuat tiga event `pesantren.*`. Jejak audit `order.bukti_uploaded`/`confirmed`/`rejected` kena retensi operasional **2 tahun**, padahal §10.3 menjanjikan 5 tahun untuk peristiwa billing. | Tambahkan ketiganya ke konstanta `BILLING_EVENTS`. |
+| Amal master tidak ter-seed untuk tenant baru | v4.21 | Daftar 7 amalan pindah ke `App\Support\AmalanDefault`, dipanggil `OnboardPesantren::execute()`; `tenant/2026_08_13_000003` menambal pesantren yang telanjur kosong. |
+| Index `(pesantren_id, kelas_id)` & `(pesantren_id, kamar_id)` hilang | v4.22 | `tenant/2026_08_14_000002`, dikunci `SantriIndexTest`. |
+| `order.*` tidak masuk retensi billing | v4.22 | Ketiganya ditambahkan ke `PurgeAuditLogs::BILLING_EVENTS`; job itu juga akhirnya punya tes (sebelumnya nol coverage). |
+| **`orders.paket_target` menolak paket Tumbuh** *(tidak pernah masuk daftar ini)* | v4.22 | `central/2026_08_14_000001` + guard `deploy:preflight`. Lihat changelog v4.22. |
+| `billing:fix-kuota` melewati paket Tumbuh & Maju *(temuan susulan)* | v4.22 | Map kuota diturunkan dari `PaketLangganan`; Maju dikecualikan eksplisit. |
+
+> **Pelajaran v4.22 — tabel yang tidak ada di §3 tidak ikut terperiksa.** `orders` lolos audit v4.19 *dan* v4.20 bukan karena auditnya ceroboh, melainkan karena §3.1 tidak pernah memuat tabel itu: yang diperiksa adalah kesesuaian PRD dengan kode, sehingga apa yang tak tertulis otomatis tak punya pembanding. Bug-nya baru terlihat saat seseorang membaca CHECK constraint langsung dari database. Konsekuensinya: **setiap tabel baru wajib punya entri §3**, sependek apa pun — entri itu bukan dokumentasi untuk pembaca, melainkan pengait supaya audit berikutnya menemukannya. Celah pendamping yang senada: cabang SQLite yang sekadar `return` di migrasi CHECK constraint membuat suite lokal tidak pernah bisa menyentuh nilai enum yang baru (lihat `central/2026_06_28_000001`).
 
 **Batas yang Diketahui (keputusan sadar yang ditunda, dengan pemicu peninjauan):**
 
@@ -1184,4 +1197,4 @@ Ini **bukan** keputusan desain seperti tabel di bawahnya, melainkan cacat yang m
 
 ---
 
-*Confidential — Internal Document | Walisantri.com v4.20 | Agustus 2026*
+*Confidential — Internal Document | Walisantri.com v4.22 | Agustus 2026*
