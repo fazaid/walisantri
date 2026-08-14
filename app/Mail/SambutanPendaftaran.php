@@ -4,6 +4,7 @@ namespace App\Mail;
 
 use App\Models\Pesantren;
 use App\Models\User;
+use App\Support\TautanVerifikasiEmail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -33,6 +34,14 @@ class SambutanPendaftaran extends Mailable implements ShouldQueue
 
     public function content(): Content
     {
-        return new Content(view: 'mail.sambutan');
+        return new Content(
+            view: 'mail.sambutan',
+            with: [
+                // Tautan verifikasi menumpang di email sambutan, bukan dikirim
+                // sebagai email kedua — dua pesan beruntun saat mendaftar hanya
+                // menaikkan peluang keduanya diabaikan.
+                'urlVerifikasi' => TautanVerifikasiEmail::untuk($this->admin),
+            ],
+        );
     }
 }

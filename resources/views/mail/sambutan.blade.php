@@ -1,8 +1,8 @@
 @extends('mail.layout', [
     'judul' => 'Selamat datang, '.$pesantren->nama_pesantren,
-    'aksiUrl' => 'https://'.config('app.domain').'/admin',
-    'aksiLabel' => 'Buka Panel Admin',
-    'penutup' => 'Ada pertanyaan? Balas lewat kontak yang tercantum di panel — tim kami siap membantu.',
+    'aksiUrl' => $urlVerifikasi,
+    'aksiLabel' => 'Konfirmasi Alamat Email',
+    'penutup' => 'Akun Anda sudah bisa dipakai sekarang juga — konfirmasi di atas hanya memastikan tagihan dan peringatan masa aktif benar-benar sampai ke alamat ini.',
 ])
 
 @section('isi')
@@ -36,7 +36,12 @@
         </tr>
     </table>
 
-    <p style="margin:0 0 8px;"><strong>Tiga langkah pertama yang kami sarankan:</strong></p>
+    <p style="margin:0 0 8px;">
+        Panel admin ada di
+        <a href="https://{{ config('app.domain') }}/admin" style="color:#0f766e;">{{ config('app.domain') }}/admin</a>.
+    </p>
+
+    <p style="margin:16px 0 8px;"><strong>Tiga langkah pertama yang kami sarankan:</strong></p>
     <ol style="margin:0;padding-left:20px;line-height:1.8;">
         <li>Lengkapi profil pesantren agar situs publiknya siap dilihat calon wali.</li>
         <li>Tambahkan ustadz dan kelas, lalu masukkan data santri (bisa impor massal dari Excel).</li>

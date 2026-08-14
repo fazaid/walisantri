@@ -88,5 +88,12 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('password-reset', fn ($request) => Limit::perHour(5)
             ->by(Str::lower((string) $request->input('email')).'|'.$request->ip())
         );
+
+        // Menahan dua hal sekaligus: penyalahgunaan tombol "kirim ulang" yang bisa
+        // menghabiskan kuota harian Brevo, dan penebakan tanda tangan pada tautan
+        // verifikasi. Dikunci ke user bila ada sesi, selebihnya ke IP.
+        RateLimiter::for('verifikasi-email', fn ($request) => Limit::perHour(6)
+            ->by($request->user()?->id ?: $request->ip())
+        );
     }
 }

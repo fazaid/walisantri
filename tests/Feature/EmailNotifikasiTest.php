@@ -269,6 +269,23 @@ class EmailNotifikasiTest extends TestCase
     }
 
     /**
+     * Tautan verifikasi menumpang di email sambutan (§12.2). Kalau tombolnya
+     * hilang, tidak ada satu pun pendaftar baru yang bisa mengonfirmasi
+     * alamatnya — dan tidak ada tes lain yang akan menyadarinya, karena
+     * Mail::fake() tidak pernah merender badan email.
+     */
+    public function test_email_sambutan_memuat_tautan_verifikasi(): void
+    {
+        $pesantren = $this->makePesantren();
+        $admin = $this->makeAdmin($pesantren);
+
+        $html = (new SambutanPendaftaran($pesantren, $admin))->render();
+
+        $this->assertStringContainsString('/verifikasi-email/'.$admin->id.'/', $html);
+        $this->assertStringContainsString('Konfirmasi Alamat Email', $html);
+    }
+
+    /**
      * Lampiran PDF dirakit lewat closure, jadi kegagalannya baru muncul saat
      * benar-benar dipanggil — bukan saat mailable dibuat.
      */

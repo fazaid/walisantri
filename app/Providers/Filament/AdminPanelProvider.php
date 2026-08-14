@@ -87,6 +87,13 @@ class AdminPanelProvider extends PanelProvider
                     ])->render();
                 },
             )
+            // Spanduk konfirmasi email — merender kosong kecuali untuk admin
+            // pesantren yang alamatnya belum dikonfirmasi (§12.2). Tidak memblokir
+            // apa pun; hook yang sama sudah dipakai di atas untuk tab sub-navigasi.
+            ->renderHook(
+                PanelsRenderHook::PAGE_START,
+                fn (): string => view('filament.admin.verifikasi-email-banner')->render(),
+            )
             ->renderHook(
                 PanelsRenderHook::BODY_END,
                 fn (): string => view('filament.admin.bottom-nav')->render(),
