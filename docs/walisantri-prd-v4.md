@@ -4,7 +4,9 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Agustus 2026 — v4.22
+**Last Updated:** Agustus 2026 — v4.23
+
+**Changelog v4.23:** **Email transaksional lewat Brevo — kanal pemberitahuan akhirnya benar-benar hidup.** Latar belakangnya keputusan menghentikan Fonnte (nomor WhatsApp berisiko diblokir): keempat kill-switch WA di production disetel `0`, sementara `MAIL_MAILER` masih `log` — sehingga **tidak ada satu pun kanal yang benar-benar mengirim apa pun**. `WarnExpiringTenants` tetap berjalan tiap 09:00 WIB tapi hasilnya hanya ditulis ke berkas log; pesantren yang langganannya habis tidak pernah diberi tahu lewat jalur mana pun. Lima peristiwa kini berkirim email: **pendaftaran baru · reset password · pengajuan upgrade + invoice · pembayaran dikonfirmasi · peringatan langganan akan berakhir** (§12.2 baru). Transport memakai **SMTP relay Brevo** lewat mailer `smtp` bawaan Laravel — nol paket baru. Kredensialnya disimpan **terenkripsi di database** (`email_gateway_settings`, §3.1) mengikuti pola `whatsapp_gateway_settings`, bukan di `.env`, supaya super admin bisa berganti provider tanpa menyentuh server; kill-switch per-jenis-email di `email_settings`. **§9.1 Password Reset ditulis ulang total** dari "belum ada sama sekali" jadi spesifikasi nyata — penyisiran kode menemukan fondasinya justru sudah setengah jadi (tabel `password_reset_tokens`, broker `passwords.users`, trait `CanResetPassword` warisan base `Authenticatable` semuanya sudah ada), yang hilang hanya route, controller, notification, dan view. Reset password sengaja **hanya untuk `admin_pesantren`/`ustadz`/`super_admin`**; wali santri tetap passwordless lewat Magic Link karena `users.email` mereka boleh null. Konsekuensinya "Reset password mandiri" keluar dari daftar di-skip §22 (OTP WhatsApp untuk wali tetap tinggal di sana). Tiga cacat pada `ExpiringTenantWarning` yang selama ini tersembunyi karena `MAIL_MAILER=log` ikut dibereskan: tanpa kill-switch, tanpa penjaga duplikasi, dan tanggal berbahasa Inggris. Satu bug laten yang paling berbahaya: **`Mail::to($admin->email)` dipanggil tanpa menjaga `blank()`** padahal `users.email` nullable sejak `central/2026_07_09_100001` — ia akan meledak tepat pada pengiriman sungguhan yang pertama. §12.2 kini mewajibkan penjagaan itu di setiap titik kirim.
 
 **Changelog v4.22:** **Daftar bug terbuka §22 dikosongkan, plus satu cacat yang tidak pernah tercatat di sini.** (1) **`orders.paket_target` menolak paket Tumbuh** — CHECK constraint tabel `orders` masih memakai daftar era lama (`gratis`/`rintisan`/`berkembang`/`maju`). `pesantrens` sudah diluruskan lewat `central/2026_06_28_000001` saat paket Gratis dihapus & Tumbuh ditambahkan, `orders` terlewat. Akibatnya `UpgradePage` menawarkan Tumbuh (pilihannya dibangun dari `PaketLangganan::cases()`) lalu `UpgradeOrderService::createOrder()` selalu ditolak database — **paket yang menurut §5.1 paling populer justru satu-satunya yang mustahil dibeli**. Diperbaiki `central/2026_08_14_000001`, sekalian membuang nilai mati `gratis`; karena membuang nilai berarti PostgreSQL memvalidasi seluruh baris saat `ADD CONSTRAINT`, `deploy:preflight` dapat pemeriksaan `periksaPaketTargetOrder()` yang mem-BLOCK deploy bila masih ada order berpaket `gratis`. (2) **Index `(pesantren_id, kelas_id)` & `(pesantren_id, kamar_id)` di `santri`** akhirnya dibuat (`tenant/2026_08_14_000002`) — versi lamanya di-drop `tenant/2026_06_05_000003` saat kolom teks berubah jadi FK dan hanya dibangun kembali di `down()`; mudah terlewat karena MySQL membuat index FK otomatis sedangkan PostgreSQL tidak. (3) **Ketiga event `order.*` masuk `PurgeAuditLogs::BILLING_EVENTS`** sehingga jejak pembayaran benar-benar bertahan 5 tahun seperti janji §10.3, bukan 2 tahun. (4) **`billing:fix-kuota` melewati paket Tumbuh & Maju** — map kuota tulis-tangan yang hanya memuat rintisan & berkembang sekaligus dipakai sebagai filter `whereIn`, jadi tenant paket lain dilewati tanpa pesan apa pun; kini diturunkan dari `PaketLangganan`, dengan paket Maju dikecualikan **eksplisit** karena kuotanya kustom per-tenant (§5.3). (5) Sebagai temuan susulan: cabang SQLite di `central/2026_06_28_000001` dulu sekadar `return`, sehingga **seluruh suite lokal tidak bisa membuat pesantren paket Tumbuh sama sekali** — celah yang ikut menjelaskan kenapa bug (1) hidup selama itu. Kini basis data test ikut ditulis ulang. Tabel `orders` & `invoices` akhirnya didokumentasikan di §3.1, dan §22 mendapat catatan tentang sebabnya (lihat di sana).
 
@@ -438,6 +440,10 @@ erDiagram
 
 **`invoices`** *(v4.22)* — `id` PK · `order_id` FK unique · `nomor_invoice` unique · `bukti_transfer_path` string null (disk `local`, bukan `public` — bukti transfer tidak boleh bisa diakses publik) · `bukti_transfer_uploaded_at` ts null · timestamps. Satu invoice per order; nomor digenerate `UpgradeOrderService::generateNomor()` dengan prefix dari `config('billing.nomor_invoice_prefix')`.
 
+**`email_gateway_settings`** *(v4.23)* — `key` PK string · `value` text **terenkripsi** (cast `encrypted`) · timestamps. Kredensial SMTP Brevo: `smtp_host`, `smtp_port`, `smtp_scheme`, `smtp_username`, `smtp_password`, `from_address`, `from_name`. Pola identik `whatsapp_gateway_settings` (§3.1) — disimpan di DB, bukan `.env`, supaya super admin bisa berganti provider tanpa akses server; disuntikkan ke `config('mail.mailers.smtp')` saat boot. Bila tabel kosong, nilai `.env` yang berlaku (itulah yang membuat CI & tes lokal tetap memakai mailer `log`/`array` tanpa konfigurasi tambahan). ⚠️ Pembacaan **wajib** lewat `static::find($key)?->value`, bukan query builder `->value('value')` — jalur kedua melewati hydration Eloquent sehingga mengembalikan ciphertext mentah.
+
+**`email_settings`** *(v4.23)* — `key` PK string · `value` boolean · `keterangan` · timestamps. Lima kill-switch, satu per jenis email (§12.2): `email_sambutan_enabled`, `email_reset_password_enabled`, `email_invoice_enabled`, `email_pembayaran_enabled`, `email_reminder_expired_enabled`. Pola identik `whatsapp_settings`; default `true`, di-seed lewat migrasi. Dikelola `EmailSettingsPage` hanya `super_admin`.
+
 **`platform_bank_accounts`** *(v4.11)* — `id` PK · `bank` string · `nomor_rekening` string · `atas_nama` string · `logo` string null (path disk `public`, directory `bank-logos`) · `urutan` smallint default 0 · `aktif` bool default true · timestamps. Rekening bank **platform** Walisantri untuk pembayaran manual upgrade/perpanjang langganan (lihat §16.1) — berbeda dari `pesantrens.profil['rekening']` yang merupakan rekening **pesantren** untuk SPP wali santri. Dikelola `PlatformBankAccountResource` hanya `super_admin`; hanya baris `aktif=true` yang tampil di halaman invoice, terurut `urutan`. Menggantikan `config('billing.bank_transfer')` (dihapus di v4.11 — sebelumnya hardcode 2 slot dari `.env`, tanpa logo, tanpa UI pengelolaan).
 
 ## 3.2 DB Tenant
@@ -504,7 +510,7 @@ erDiagram
 
 ## 4.1 Onboarding & Registrasi
 
-Via `walisantri.com/register`. Sistem otomatis: (1) validasi slug (format, unik, reserved, cooldown) real-time; (2) buat baris `pesantrens` di central; (3) buat baris `tenant_domains` (`type=subdomain`, `{slug}.walisantri.com`); (4) **aktifkan situs profil publik** di subdomain itu (template minimal); (5) buat user pertama role `admin_pesantren`; (6) aktifkan **trial Rintisan 14 hari** (`paket_langganan='rintisan'`, `status_berlangganan='trial'`, `max_santri_kuota=100`, `expired_at=+14 hari`, durasi dibaca dari `BillingSetting::trial_days`, diatur lewat halaman Pengaturan Harga) — fitur penuh Rintisan tersedia selama trial; (7) redirect ke `app.walisantri.com/admin`.
+Via `walisantri.com/register`. Sistem otomatis: (1) validasi slug (format, unik, reserved, cooldown) real-time; (2) buat baris `pesantrens` di central; (3) buat baris `tenant_domains` (`type=subdomain`, `{slug}.walisantri.com`); (4) **aktifkan situs profil publik** di subdomain itu (template minimal); (5) buat user pertama role `admin_pesantren`; (6) aktifkan **trial Rintisan 14 hari** (`paket_langganan='rintisan'`, `status_berlangganan='trial'`, `max_santri_kuota=100`, `expired_at=+14 hari`, durasi dibaca dari `BillingSetting::trial_days`, diatur lewat halaman Pengaturan Harga) — fitur penuh Rintisan tersedia selama trial; (7) **kirim email sambutan** ke admin pertama — di luar transaksi, setelah commit (§12.2); (8) redirect ke `app.walisantri.com/admin`.
 
 > **Zero-Self Registration:** Santri/Ustadz/Wali tidak bisa daftar mandiri. **Multi-Anak Logic:** jika nomor WhatsApp wali sudah terdaftar, santri baru dikaitkan ke `wali_santri_id` yang ada.
 
@@ -695,7 +701,7 @@ Satu ustadz hanya dapat membimbing **maks 20 santri aktif** (`status_aktif = tru
 
 ## 6.1 Stack Server
 
-VPS Debian 12 (~1GB RAM) · Nginx wildcard vhost `*.walisantri.com` · PHP 8.4-FPM · PostgreSQL 17 · Redis (≤512MB, Supervisor queue worker) · Let's Encrypt wildcard (Certbot + Cloudflare DNS-01) · Cloudflare Free (WAF/DDoS/wildcard A record) · Cloudflare R2 (zero egress) · UptimeRobot Free.
+VPS Debian 12 (~1GB RAM) · Nginx wildcard vhost `*.walisantri.com` · PHP 8.4-FPM · PostgreSQL 17 · Redis (≤512MB, Supervisor queue worker) · Let's Encrypt wildcard (Certbot + Cloudflare DNS-01) · Cloudflare Free (WAF/DDoS/wildcard A record) · Cloudflare R2 (zero egress) · **Brevo** (SMTP relay `smtp-relay.brevo.com:587`, paket gratis 300 email/hari, §12.2) · UptimeRobot Free.
 
 **Model deploy: host-langsung (bukan kontainer).** Nginx/PHP-FPM/PostgreSQL/Redis berjalan langsung di host — dipilih demi efisiensi resource di VPS ~1GB (Coolify & Docker ditolak karena overhead idle). Environment dijaga reproducible lewat PHP 8.4 di server (Herd lokal pin `^8.3` sesuai `composer.json`, kompatibel). *Rencana `setup-server.sh` idempotent yang di-version-control belum dibuat* — `scripts/` saat ini hanya berisi `backup.sh` dan `restore.sh`, jadi provisioning server masih manual (§22). Pemicu pindah ke Docker Compose dicatat di §22.
 
@@ -849,13 +855,22 @@ Blade + TailwindCSS murni (tanpa Flux UI), mobile-first. Akses via Magic Link (�
 
 # 9. Keamanan Aplikasi
 
-## 9.1 Password Reset
+## 9.1 Password Reset *(v4.23 — dibangun; sebelumnya seksi ini berbunyi "belum ada sama sekali")*
 
-**Belum ada sama sekali.** Panel Filament tidak mendaftarkan `->login()` maupun `->passwordReset()` (login semua role lewat `WaliLoginController` di `/login`), dan tidak ada route, controller, notifikasi, maupun jejak OTP di repo. Reset password saat ini dilakukan manual oleh admin lewat halaman Pengguna.
+**Berlaku untuk `admin_pesantren`, `ustadz`, `super_admin` saja.** Wali santri **tidak** diikutkan: mereka memang passwordless (Magic Link, §4.3) dan `users.email` mereka boleh null sejak `central/2026_07_09_100001` — banyak wali didaftarkan hanya dengan nomor WhatsApp lewat impor massal. Wali yang mencoba jalur ini dijawab dengan pengarahan eksplisit ("akun wali santri masuk lewat tautan dari pesantren"), bukan galat generik, supaya tidak terjebak diam-diam.
 
-Rancangan yang belum dibangun — dicatat di §22:
-- **Admin & Ustadz (email):** link reset token 60 menit single-use.
-- **Wali Santri (WhatsApp OTP):** OTP 6 digit, cache `otp:{phone_number}` TTL 10 menit, rate limit 3/nomor/jam.
+Alur: `GET /lupa-password` → `POST /lupa-password` (kirim tautan) → `GET /reset-password/{token}` → `POST /reset-password`. Token 60 menit sekali pakai lewat broker bawaan Laravel (`config/auth.php`, `passwords.users`). Tautan **"Lupa password?"** ada di bawah kolom sandi pada `resources/views/auth/login.blade.php`.
+
+> **Fondasi yang ternyata sudah ada sejak awal** — jangan dibangun ulang. Tabel `password_reset_tokens` sudah dibuat di `central/2026_05_20_093934_create_users_table.php`, broker `passwords.users` sudah terkonfigurasi (expire 60 menit, throttle 60 detik), dan model `User` sudah mewarisi `CanResetPassword` dari base `Illuminate\Foundation\Auth\User`. Yang benar-benar hilang sampai v4.23 hanyalah route, controller, notification, dan view.
+
+Dua keputusan keamanan yang mengikat:
+
+- **Balasan seragam.** Email terdaftar maupun tidak menerima jawaban yang sama ("bila terdaftar, tautan sudah dikirim") — mencegah enumerasi alamat.
+- **Route sendiri, bukan `->passwordReset()` Filament.** `AdminPanelProvider` sengaja tidak memanggil `->login()` karena login dipusatkan di `/login` non-Filament; mendaftarkan auth Filament akan memunculkan halaman kedua yang bersaing dengan `WaliLoginController`.
+
+Audit tercatat otomatis: `UserObserver` sudah mencatat `user.password_reset` setiap kali `$user->wasChanged('password')` (§10.2), jadi reset lewat broker terlog tanpa kode tambahan.
+
+**Rancangan yang tetap belum dibangun** (§22): OTP WhatsApp 6 digit untuk wali santri (cache `otp:{phone_number}` TTL 10 menit, rate limit 3/nomor/jam). Sekarang punya alasan tambahan untuk ditunda — integrasi WhatsApp sengaja dimatikan, lihat §12.1.
 
 ## 9.2 Rate Limit & Brute Force
 
@@ -865,9 +880,13 @@ Rancangan yang belum dibangun — dicatat di §22:
 | `/check-slug/{slug}` | 30/menit/IP | HTTP 429 (JSON) | Aktif |
 | `/register` | 5/jam/IP | HTTP 429 | Aktif |
 | `/demo` (permintaan demo) | 5/jam/IP | HTTP 429 | Aktif |
+| `POST /lupa-password` *(v4.23)* | 5/jam per kunci `email\|ip` | HTTP 429 | Aktif |
+| `POST /reset-password` *(v4.23)* | 5/jam/IP | HTTP 429 | Aktif |
 | `app.../admin` | IP whitelist Nginx | Ditolak di server | Konfigurasi server, di luar repo |
 
-> Kunci throttle login sengaja `email|ip`, bukan IP saja — supaya satu pesantren di balik satu IP publik tidak saling mengunci.
+> Kunci throttle login sengaja `email|ip`, bukan IP saja — supaya satu pesantren di balik satu IP publik tidak saling mengunci. Alasan yang sama dipakai untuk `POST /lupa-password`.
+
+> `config/auth.php` `passwords.users.throttle = 60` hanya menahan permintaan berulang **per alamat email** di level broker. Itu tidak menghalangi satu IP mencoba ratusan alamat berbeda untuk menebak siapa yang terdaftar, jadi limiter `password-reset` di atas bukan duplikasi — keduanya menjaga hal yang berbeda.
 
 ## 9.3 Custom Error Pages (`resources/views/errors/`)
 
@@ -914,7 +933,7 @@ Didefinisikan dengan `Schedule::job(...)` di **`routes/console.php`** (Laravel 1
 | Job | Jadwal | Keterangan |
 |---|---|---|
 | `CheckExpiredTenants` | Harian 00.01 | Update `status_berlangganan` lewat `expired_at`; saat transisi trial/active → expired, kirim WA notifikasi sekali (channel tambahan, pengecualian sempit — lihat §12) |
-| `WarnExpiringTenants` | Harian 09.00 | Email peringatan admin 7 & 3 hari sebelum expired |
+| `WarnExpiringTenants` | Harian 09.00 | Email peringatan admin 7 & 3 hari sebelum expired. Kill-switch `email_reminder_expired_enabled` (§12.2); melewati admin tanpa email; punya penjaga duplikasi supaya `schedule:run` yang kebetulan jalan dua kali sehari tidak mengirim dobel |
 | `WarnExpiringTenantsWhatsApp` | Harian 09.05 | WhatsApp peringatan admin 3 & 1 hari sebelum expired (channel tambahan, pengecualian sempit — lihat §12) |
 | `PurgeAuditLogs` | Tanggal 1, 03.30 | Hapus log sesuai retention |
 | `WarmDashboardCache` | Tiap 25 menit | Pre-generate cache dashboard wali (santri aktif) |
@@ -926,7 +945,11 @@ Didefinisikan dengan `Schedule::job(...)` di **`routes/console.php`** (Laravel 1
 
 ---
 
-# 12. Notifikasi WhatsApp
+# 12. Notifikasi (WhatsApp & Email)
+
+## 12.1 Notifikasi WhatsApp
+
+> ⚠️ **Keadaan sekarang (v4.23): seluruh integrasi WhatsApp DIMATIKAN.** Keempat kill-switch di bawah disetel `0` di production atas keputusan pemilik produk — nomor WhatsApp yang dipakai gateway berisiko diblokir. Spesifikasi di seksi ini tetap berlaku sebagai rancangan yang kodenya utuh dan siap dihidupkan, tapi jangan menghitungnya sebagai kanal aktif. Kanal yang benar-benar mengirim hari ini hanya email (§12.2). Sisa `failed_jobs` dari era Fonnte aktif adalah jejak historis, bukan kegagalan yang sedang berlangsung.
 
 On-demand penuh — tidak ada pengiriman terjadwal otomatis, **KECUALI empat pengecualian sempit**:
 
@@ -955,6 +978,35 @@ Notifikasi order dikonfirmasi punya kill-switch & template terpisah di halaman y
 | Terima kasih pendaftar demo | System (observer, pengecualian §12) | Ucapan terima kasih + link grup support |
 
 **Belum dibangun** (tidak ada dispatch WhatsApp untuk keempatnya — dicatat di §22): Magic Link per santri/massal per kamar (hari ini admin menyalin link dari modal dan mengirim sendiri, §4.3) · notifikasi rapor baru · notifikasi santri `Rujukan_Luar` · siaran pengumuman penting.
+
+---
+
+## 12.2 Notifikasi Email *(v4.23 — baru)*
+
+**Provider: Brevo, lewat SMTP relay** (`smtp-relay.brevo.com:587`) memakai mailer `smtp` bawaan Laravel — tidak ada paket pihak ketiga yang ditambahkan. Kredensial disimpan terenkripsi di `email_gateway_settings` (§3.1) dan disuntikkan ke `config('mail.mailers.smtp')` saat boot; `.env` hanya jadi cadangan bila tabel kosong. Kuota paket gratis Brevo 300 email/hari.
+
+Berbeda dari §12.1 yang templatnya bisa diedit dari panel, **isi email ditulis sebagai Blade di kode** — email transaksional punya struktur (tombol, tabel invoice, lampiran) yang tidak nyaman diedit lewat textarea dan sulit diuji. Semua memakai satu layout bersama `resources/views/mail/layout.blade.php`.
+
+| Peristiwa | Penerima | Isi | Kill-switch |
+|---|---|---|---|
+| Pendaftaran pesantren baru | Admin pertama | Sambutan, ringkasan trial & tanggal berakhirnya, tautan ke panel | `email_sambutan_enabled` |
+| Permintaan reset password | User yang meminta (staf saja, §9.1) | Tautan reset berlaku 60 menit | `email_reset_password_enabled` |
+| Order upgrade/perpanjangan dibuat | Admin pesantren | Rincian order, cara pembayaran, **lampiran PDF invoice** | `email_invoice_enabled` |
+| Order dikonfirmasi Super Admin | Admin pesantren | Paket baru, durasi, tanggal berakhir baru, nomor order | `email_pembayaran_enabled` |
+| Langganan akan berakhir (H-7 & H-3) | Admin pesantren | Sisa hari, tanggal berakhir, tautan billing | `email_reminder_expired_enabled` |
+
+Kelima kill-switch ada di `email_settings` (§3.1), dikelola Super Admin lewat halaman **Pengaturan Email** (`EmailSettingsPage`, grup nav "Langganan") yang juga menyediakan aksi **kirim email uji** ke alamat Super Admin yang sedang login.
+
+**Aturan yang mengikat setiap titik kirim:**
+
+1. **Wajib menjaga `blank($user->email)` sebelum memanggil `Mail::to()`.** `users.email` nullable sejak `central/2026_07_09_100001` (wali yang didaftarkan hanya dengan nomor WhatsApp). Sampai v4.22 `WarnExpiringTenants` melanggar ini dan tidak ketahuan justru karena `MAIL_MAILER=log` menelan segalanya. Penentuan penerima dipusatkan supaya penjagaannya tidak disalin-tempel lalu terlewat di satu tempat.
+2. **Dikirim di luar transaksi database.** Email yang terlanjur keluar tidak bisa di-rollback; pemicunya diletakkan setelah commit, sama seperti `notifyOrderConfirmed()` di §16.1.
+3. **`$tries = 1`.** Email lebih baik hilang daripada dobel — alasan yang sama sudah tertulis di `WarnExpiringTenants`.
+4. Tanggal selalu `->locale('id')->translatedFormat('d F Y')`, seperti §12.1.
+
+**Bukan verifikasi alamat.** Kolom `email_verified_at` ada di tabel tapi `MustVerifyEmail` tidak di-implement dan **sengaja tidak diaktifkan** — seluruh user yang sudah ada bernilai null, jadi menyalakannya akan mengunci mereka semua. Email sambutan murni sambutan.
+
+**Prasyarat operasional di luar repo:** domain harus terverifikasi di Brevo dengan rekaman SPF & DKIM terpasang di Cloudflare, dan `from_address` harus alamat pada domain itu (mis. `noreply@walisantri.com`). Tanpa itu email masuk folder spam atau ditolak penerima.
 
 ---
 
@@ -1012,7 +1064,7 @@ Ekspor yang **belum ada**: Rekap Inventaris (pernah didaftar di tabel ini, tapi 
 
 ## 16.1 Alur Pembayaran Manual (Order & Invoice) *(v4.11 — sebelumnya belum terdokumentasi)*
 
-Admin pilih paket & durasi di `UpgradePage` → `UpgradeOrderService::createOrder()` hitung harga via `BillingCalculatorService`, buat baris `orders` (status `pending_payment`) + `invoices` terkait → redirect ke `OrderInvoicePage` (`/admin/order-invoice-page?order={id}`). Halaman ini menampilkan detail order (tabel harga/kuota/durasi) dan section **"Cara Pembayaran"**: daftar rekening bank platform aktif dari `platform_bank_accounts` (§3.1), masing-masing dengan logo (bila diunggah) dan tombol **"Salin"** nomor rekening. Admin transfer manual lalu upload bukti transfer (disk `local`, validasi mime server-side) → status order berubah `awaiting_confirmation`. Super Admin review bukti di `OrderResource` → konfirmasi (`UpgradeOrderService::confirmOrder()`, update `pesantrens.paket_langganan`/`max_santri_kuota`/`expired_at`) atau tolak (`rejectOrder()`, dengan catatan). Tidak ada payment gateway otomatis — seluruh alur manual by design (konsisten dengan alur SPP wali santri di §3.2, sama-sama transfer manual + verifikasi admin).
+Admin pilih paket & durasi di `UpgradePage` → `UpgradeOrderService::createOrder()` hitung harga via `BillingCalculatorService`, buat baris `orders` (status `pending_payment`) + `invoices` terkait → **kirim email invoice ke admin pesantren dengan lampiran PDF** (§12.2, di luar transaksi) → redirect ke `OrderInvoicePage` (`/admin/order-invoice-page?order={id}`). Halaman ini menampilkan detail order (tabel harga/kuota/durasi) dan section **"Cara Pembayaran"**: daftar rekening bank platform aktif dari `platform_bank_accounts` (§3.1), masing-masing dengan logo (bila diunggah) dan tombol **"Salin"** nomor rekening. Admin transfer manual lalu upload bukti transfer (disk `local`, validasi mime server-side) → status order berubah `awaiting_confirmation`. Super Admin review bukti di `OrderResource` → konfirmasi (`UpgradeOrderService::confirmOrder()`, update `pesantrens.paket_langganan`/`max_santri_kuota`/`expired_at`, lalu **kirim email konfirmasi pembayaran** ke admin pesantren — §12.2, dipicu di titik yang sama dengan `notifyOrderConfirmed()`) atau tolak (`rejectOrder()`, dengan catatan; belum ada email penolakan). PDF invoice yang dilampirkan ke email dan yang diunduh dari `OrderInvoicePage` dirakit dari satu sumber yang sama (`filament.pdf.invoice`), mengikuti pola `App\Services\Rapor\*` di v4.19 — halaman dan email tidak boleh punya versi sendiri-sendiri. Tidak ada payment gateway otomatis — seluruh alur manual by design (konsisten dengan alur SPP wali santri di §3.2, sama-sama transfer manual + verifikasi admin).
 
 **Upgrade:** Admin ajukan di `/billing` → Super Admin verifikasi bayar, update `paket_langganan` & `max_santri_kuota` di panel admin → Gate otomatis update, modul baru langsung aktif tanpa logout.
 
@@ -1039,6 +1091,8 @@ Pendekatan **Feature test** sebagai tulang punggung, ditopang unit test untuk ka
 - *Middleware:* `CheckTenantQuota` (422 saat penuh) · `SaaSLifecycleLock` (redirect/blokir) · `VerifyMagicToken` (read-only UUID valid, 404 invalid, 403 non-GET) · `PublicTenantResolver` (resolve host ke `tenant_domains`, 404 invalid) · resolusi tenant dari akun saat login (email → `pesantren_id`).
 - *Service & rules:* `BillingCalculatorService` (formula kuota custom Maju, X=0 di-cover) · `SlugNotReserved` · `ValidTenantSlug` (format/panjang/unik) · `OnboardPesantren` (buat pesantren+admin, paket rintisan, trial `BillingSetting::trial_days` hari, default 14).
 - *Model & observer:* `HasUuids` isi `uuid` saja · `SoftDeletes` Santri · Observer Kesehatan auto-udzur · Multi-Anak Logic.
+
+**Email (v4.23):** `Mail::fake()` + `Mail::assertQueued()` jadi pola baru — sebelum v4.23 tidak ada satu pun tes email di repo. Tiap jenis email diuji empat serangkai, meniru tes notifikasi WhatsApp di `UpgradeOrderServiceTest`: terkirim ke alamat yang benar · **tidak** terkirim saat penerima tanpa email (`blank()`) · tidak terkirim saat kill-switch dimatikan · tidak terkirim saat pesantren tanpa admin. Berkas: `EmailNotifikasiTest`, `ResetPasswordTest`, `EmailSettingsPageTest`, `WarnExpiringTenantsTest`.
 
 **Konfigurasi:** unit test pakai PostgreSQL ephemeral (mis. service container `postgres` di GitHub Actions) atau SQLite in-memory untuk test yang tidak bergantung fitur PostgreSQL; `CACHE_DRIVER=array`, `QUEUE_CONNECTION=sync`. Test isolasi tenant & RLS **wajib** pakai PostgreSQL (bukan SQLite) agar policy ikut teruji.
 
@@ -1069,6 +1123,7 @@ tests/TenantIsolation/                         2 berkas  ← DataIsolationTest +
 | Domain | `walisantri.com` (landing) · `app.walisantri.com` (app) · `*.walisantri.com` (profil publik tenant) |
 | VPS / DB | `157.20.159.70` (Debian 12, 4GB/3vCPU) · Postgres 15 `walisantri_db` |
 | `APP_DEBUG` / Deploy | `false` / auto-deploy saat push ke `main` |
+| Email *(v4.23)* | `MAIL_MAILER=smtp` · kredensial Brevo **di database** (`email_gateway_settings`), bukan `.env` |
 
 **Branch flow:** `dev` (kerja & push bebas — CI hanya menjalankan job `test`, tidak deploy ke mana pun) → buka PR ke `main` (wajib status check `Test` lolos + branch protection, lihat §6.4) → merge → auto-deploy production.
 
@@ -1080,7 +1135,7 @@ tests/TenantIsolation/                         2 berkas  ← DataIsolationTest +
 
 Peredam tambahan: jaga `.env` lokal semirip mungkin dengan production untuk hal yang perilakunya berbeda antar-environment, dan perlakukan migrasi berat dengan ekstra hati-hati karena tidak ada gladi bersih.
 
-> ⚠️ Kalau suatu saat staging dihidupkan lagi: **wajib** kredensial WhatsApp & email terpisah, dan DB-nya jangan diisi snapshot production mentah. Staging lama melanggar keduanya — tabel `whatsapp_gateway_settings` di sana ikut membawa token Fonnte production asli, sehingga scheduler-nya berpotensi mengirim WA sungguhan ke nomor wali.
+> ⚠️ Kalau suatu saat staging dihidupkan lagi: **wajib** kredensial WhatsApp & email terpisah, dan DB-nya jangan diisi snapshot production mentah. Staging lama melanggar keduanya — tabel `whatsapp_gateway_settings` di sana ikut membawa token Fonnte production asli, sehingga scheduler-nya berpotensi mengirim WA sungguhan ke nomor wali. **Sejak v4.23 taruhannya naik**: `email_gateway_settings` bekerja persis sama, dan email — tidak seperti WhatsApp yang sedang dimatikan — benar-benar terkirim. Snapshot production di environment kedua berarti pesantren sungguhan menerima tagihan dan peringatan expired dari mesin uji.
 
 ---
 
@@ -1143,11 +1198,11 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 
 # 22. Catatan Implementasi Aktual
 
-**PRD ini v4.22.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
+**PRD ini v4.23.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
 
 **Bug & fix:** `HasUuids` isi `id` jika tak di-override → `uniqueIds(): ['uuid']` · `$navigationGroup` `?string` error → `string|UnitEnum|null` · index name >63 char (batas PostgreSQL) → nama eksplisit pendek · ingat PostgreSQL tak punya unsigned int (kolom unsigned → signed bigint) · (v4.7) `tahun_ajaran` di form Nilai Akademik/Rapor Tahfidz semula `TextInput` bebas → mismatch format antar input & filter rapor bikin data tidak muncul → diganti `Select` dropdown seragam (service `TahunAjaranOptions`) · (v4.7) Filament cluster default merender sub-navigation tab di bawah header & dropdown khusus mobile → di-override via render hook + CSS agar tab tampil di atas breadcrumbs, konsisten desktop/mobile (detail di §7).
 
-**Di-skip (post v1.0):** PostgreSQL RLS policy per tabel · zero-downtime deploy · migrasi schema-per-tenant (setelah >50 tenant) · Kalender Amalan Harian interaktif (warna) · **Reset password mandiri** (email untuk admin/ustadz, OTP WhatsApp untuk wali — §9.1) · **Routing queue terpusat** ke queue terpisah di Redis, termasuk impor santri & kalkulasi rapor asinkron (§4.4) · **Export asinkron** ke object storage dengan notifikasi & auto-hapus (§15) · **Object storage R2** (§6.2) · **UI Riwayat Aktivitas** untuk `activity_logs` (§10.1) · **Notifikasi WhatsApp otomatis** untuk Magic Link, rapor baru, `Rujukan_Luar`, dan pengumuman (§12) · **Skrip provisioning server** idempotent (§6.1) · **Feature lock berbasis paket** (§5.1) · filter per kamar & toggle amalan kolektif di halaman Isi Harian (§4.2) · modul presensi/absensi (fondasi `kelas.wali_kelas_id` sudah ada, §5.4). *(v4.9: "Excel Importer massal" dan "Daftar Inventaris santri" dipindah keluar dari daftar ini — sudah selesai, lihat §3.2/§22 changelog dan §8. v4.19: **"WhatsApp Gateway + Queue Job"** dan **"Feature test isolasi & middleware"** juga dikeluarkan — keduanya sudah jalan sejak v4.17 (Fonnte + reminder H-3/H-1, §12) dan `tests/TenantIsolation/` + `tests/Feature/` (§17), tapi luput dihapus dari daftar ini.)*
+**Di-skip (post v1.0):** PostgreSQL RLS policy per tabel · zero-downtime deploy · migrasi schema-per-tenant (setelah >50 tenant) · Kalender Amalan Harian interaktif (warna) · **OTP WhatsApp untuk reset password wali santri** (§9.1 — reset lewat email untuk admin/ustadz/super admin **sudah dibangun** di v4.23 dan keluar dari daftar ini; yang tersisa hanya jalur OTP untuk wali, kini punya alasan tambahan untuk ditunda karena integrasi WhatsApp sengaja dimatikan, §12.1) · **Routing queue terpusat** ke queue terpisah di Redis, termasuk impor santri & kalkulasi rapor asinkron (§4.4) · **Export asinkron** ke object storage dengan notifikasi & auto-hapus (§15) · **Object storage R2** (§6.2) · **UI Riwayat Aktivitas** untuk `activity_logs` (§10.1) · **Notifikasi WhatsApp otomatis** untuk Magic Link, rapor baru, `Rujukan_Luar`, dan pengumuman (§12) · **Skrip provisioning server** idempotent (§6.1) · **Feature lock berbasis paket** (§5.1) · filter per kamar & toggle amalan kolektif di halaman Isi Harian (§4.2) · modul presensi/absensi (fondasi `kelas.wali_kelas_id` sudah ada, §5.4). *(v4.23: **"Reset password mandiri"** dipersempit jadi OTP-wali-saja — jalur emailnya sudah jalan, lihat §9.1. v4.9: "Excel Importer massal" dan "Daftar Inventaris santri" dipindah keluar dari daftar ini — sudah selesai, lihat §3.2/§22 changelog dan §8. v4.19: **"WhatsApp Gateway + Queue Job"** dan **"Feature test isolasi & middleware"** juga dikeluarkan — keduanya sudah jalan sejak v4.17 (Fonnte + reminder H-3/H-1, §12) dan `tests/TenantIsolation/` + `tests/Feature/` (§17), tapi luput dihapus dari daftar ini.)*
 
 **Catatan skema periode (v4.9, pelajaran v4.19):** kolom `bulan` kini konsisten ditambahkan ke tiga tabel berbasis periode — `nilai_akademik`, `kesantrian_karakter_rapor`, `tahfidz_rapor` — mendampingi `tahun_ajaran`/`periode` yang sudah ada. **Pelajaran v4.19:** menambah kolom identitas periode saja tidak cukup — setiap pembaca lama yang menebak periode dari tanggal harus ikut diubah. Halaman rapor wali luput dan baru ketahuan salah setahun kemudian (§8), dan seeder dummy juga tidak ikut diperbarui sehingga data demo tak terlihat di panel admin maupun portal wali. Saat menambah kolom identitas ke tabel yang sudah dipakai, telusuri dulu **semua** pembacanya, bukan hanya form penulisnya. Pola ini jadi referensi saat modul periode lain ditambah ke depan.
 
@@ -1197,4 +1252,4 @@ Daftar tiga cacat yang dicatat v4.20 sudah habis dikerjakan, dan dua lagi ditemu
 
 ---
 
-*Confidential — Internal Document | Walisantri.com v4.22 | Agustus 2026*
+*Confidential — Internal Document | Walisantri.com v4.23 | Agustus 2026*
