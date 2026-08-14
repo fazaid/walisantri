@@ -144,4 +144,55 @@ class EmailSettingsPageTest extends TestCase
         $this->assertSame($sebelum, config('mail.default'));
         $this->assertSame('Walisantri.com', config('mail.from.name'));
     }
+
+    /**
+     * Domain pengirim terverifikasi di Brevo tapi tidak punya MX, jadi balasan ke
+     * `from_address` lenyap tanpa jejak. Reply-To yang menyelamatkannya — dan
+     * Laravel menempelkannya sendiri ke setiap email lewat
+     * MailManager::setGlobalAddresses, jadi tidak ada Mailable yang perlu diubah.
+     */
+    public function test_reply_to_disuntikkan_ke_config_secara_global(): void
+    {
+        EmailGatewaySetting::set('reply_to_address', 'cs@contoh.test');
+        EmailGatewaySetting::set('reply_to_name', 'Tim Dukungan');
+
+        EmailGatewaySetting::applyToConfig();
+
+        $this->assertSame('cs@contoh.test', config('mail.reply_to.address'));
+        $this->assertSame('Tim Dukungan', config('mail.reply_to.name'));
+    }
+
+    /**
+     * Sengaja lewat transport `array`, bukan Mail::fake(): alamat global
+     * (from/reply_to) ditempelkan MailManager saat mailer di-resolve, dan
+     * MailFake melewati jalur itu sama sekali — asersi terhadap Mailable palsu
+     * akan lulus/gagal karena alasan yang tidak ada hubungannya dengan produksi.
+     */
+    public function test_reply_to_benar_benar_menempel_di_email_yang_dikirim(): void
+    {
+        EmailGatewaySetting::set('reply_to_address', 'cs@contoh.test');
+        EmailGatewaySetting::set('reply_to_name', 'Tim Dukungan');
+        EmailGatewaySetting::applyToConfig();
+
+        // Mailer yang sudah terlanjur di-resolve memegang alamat global lama.
+        Mail::forgetMailers();
+
+        Mail::mailer('array')->to('penerima@contoh.test')->send(new EmailUji);
+
+        $pesan = Mail::mailer('array')->getSymfonyTransport()->messages()[0]->getOriginalMessage();
+        $replyTo = $pesan->getReplyTo()[0];
+
+        $this->assertSame('cs@contoh.test', $replyTo->getAddress());
+        $this->assertSame('Tim Dukungan', $replyTo->getName());
+    }
+
+    public function test_tanpa_reply_to_config_tidak_disentuh(): void
+    {
+        EmailGatewaySetting::set('from_address', 'noreply@contoh.test');
+        $sebelum = config('mail.reply_to');
+
+        EmailGatewaySetting::applyToConfig();
+
+        $this->assertSame($sebelum, config('mail.reply_to'));
+    }
 }

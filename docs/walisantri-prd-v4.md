@@ -440,7 +440,7 @@ erDiagram
 
 **`invoices`** *(v4.22)* — `id` PK · `order_id` FK unique · `nomor_invoice` unique · `bukti_transfer_path` string null (disk `local`, bukan `public` — bukti transfer tidak boleh bisa diakses publik) · `bukti_transfer_uploaded_at` ts null · timestamps. Satu invoice per order; nomor digenerate `UpgradeOrderService::generateNomor()` dengan prefix dari `config('billing.nomor_invoice_prefix')`.
 
-**`email_gateway_settings`** *(v4.23)* — `key` PK string · `value` text **terenkripsi** (cast `encrypted`) · timestamps. Kredensial SMTP Brevo: `smtp_host`, `smtp_port`, `smtp_scheme`, `smtp_username`, `smtp_password`, `from_address`, `from_name`. Pola identik `whatsapp_gateway_settings` (§3.1) — disimpan di DB, bukan `.env`, supaya super admin bisa berganti provider tanpa akses server; disuntikkan ke `config('mail.mailers.smtp')` saat boot. Bila tabel kosong, nilai `.env` yang berlaku (itulah yang membuat CI & tes lokal tetap memakai mailer `log`/`array` tanpa konfigurasi tambahan). ⚠️ Pembacaan **wajib** lewat `static::find($key)?->value`, bukan query builder `->value('value')` — jalur kedua melewati hydration Eloquent sehingga mengembalikan ciphertext mentah.
+**`email_gateway_settings`** *(v4.23)* — `key` PK string · `value` text **terenkripsi** (cast `encrypted`) · timestamps. Kredensial SMTP Brevo: `smtp_host`, `smtp_port`, `smtp_scheme`, `smtp_username`, `smtp_password`, `from_address`, `from_name`, `reply_to_address`, `reply_to_name`. Pola identik `whatsapp_gateway_settings` (§3.1) — disimpan di DB, bukan `.env`, supaya super admin bisa berganti provider tanpa akses server; disuntikkan ke `config('mail.mailers.smtp')` saat boot. Bila tabel kosong, nilai `.env` yang berlaku (itulah yang membuat CI & tes lokal tetap memakai mailer `log`/`array` tanpa konfigurasi tambahan). ⚠️ Pembacaan **wajib** lewat `static::find($key)?->value`, bukan query builder `->value('value')` — jalur kedua melewati hydration Eloquent sehingga mengembalikan ciphertext mentah.
 
 **`email_settings`** *(v4.23)* — `key` PK string · `value` boolean · `keterangan` · timestamps. Lima kill-switch, satu per jenis email (§12.2): `email_sambutan_enabled`, `email_reset_password_enabled`, `email_invoice_enabled`, `email_pembayaran_enabled`, `email_reminder_expired_enabled`. Pola identik `whatsapp_settings`; default `true`, di-seed lewat migrasi. Dikelola `EmailSettingsPage` hanya `super_admin`.
 
@@ -1019,6 +1019,8 @@ Staf yang sudah ada saat fitur ini masuk ditandai terverifikasi lewat migrasi ta
 
 **Bukan gerbang pendaftaran.** Pembersihan otomatis trial yang tak pernah diverifikasi **sengaja ditunda** (§22): menghapus data tenant adalah keputusan bisnis tersendiri, dan `email_verified_at` baru prasyaratnya.
 
+**Alamat balasan (Reply-To).** `from_address` wajib berada di domain yang terverifikasi di Brevo, tapi domain itu **tidak punya MX** — balasan ke sana lenyap tanpa jejak. Karena itu `email_gateway_settings` juga menyimpan `reply_to_address`/`reply_to_name`, disuntikkan ke `config('mail.reply_to')`; Laravel sendiri yang menempelkannya ke setiap email lewat `MailManager::setGlobalAddresses`, jadi **tidak ada satu pun Mailable yang perlu tahu soal ini**. Alamat balasan boleh berada di domain lain — termasuk Gmail — dan tidak perlu diverifikasi di Brevo. Bila dikosongkan, balasan mengarah ke `from_address` dan praktis hilang.
+
 **Prasyarat operasional di luar repo:** domain harus terverifikasi di Brevo dengan rekaman SPF & DKIM terpasang di Cloudflare, dan `from_address` harus alamat pada domain itu (mis. `noreply@walisantri.com`). Tanpa itu email masuk folder spam atau ditolak penerima.
 
 ---
@@ -1109,7 +1111,7 @@ Pendekatan **Feature test** sebagai tulang punggung, ditopang unit test untuk ka
 
 **Konfigurasi:** unit test pakai PostgreSQL ephemeral (mis. service container `postgres` di GitHub Actions) atau SQLite in-memory untuk test yang tidak bergantung fitur PostgreSQL; `CACHE_DRIVER=array`, `QUEUE_CONNECTION=sync`. Test isolasi tenant & RLS **wajib** pakai PostgreSQL (bukan SQLite) agar policy ikut teruji.
 
-**Sebaran nyata (v4.23):** 435 tes / 1.314 asersi (terhadap PostgreSQL; di SQLite 10 tes isolasi tenant di-skip).
+**Sebaran nyata (v4.23):** 438 tes / 1.319 asersi (terhadap PostgreSQL; di SQLite 10 tes isolasi tenant di-skip).
 
 ```
 tests/Feature/                                52 berkas  ← tulang punggung: alur panel Filament,

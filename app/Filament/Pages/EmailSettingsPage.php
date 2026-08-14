@@ -69,6 +69,10 @@ class EmailSettingsPage extends Page implements HasForms
 
     public ?string $from_name = null;
 
+    public ?string $reply_to_address = null;
+
+    public ?string $reply_to_name = null;
+
     public static function canAccess(): bool
     {
         return auth()->user()?->role === UserRole::SuperAdmin->value;
@@ -90,6 +94,8 @@ class EmailSettingsPage extends Page implements HasForms
             'smtp_username' => EmailGatewaySetting::get('smtp_username'),
             'from_address' => EmailGatewaySetting::get('from_address'),
             'from_name' => EmailGatewaySetting::get('from_name'),
+            'reply_to_address' => EmailGatewaySetting::get('reply_to_address'),
+            'reply_to_name' => EmailGatewaySetting::get('reply_to_name'),
         ]);
     }
 
@@ -151,6 +157,16 @@ class EmailSettingsPage extends Page implements HasForms
                     TextInput::make('from_name')
                         ->label('Nama pengirim')
                         ->placeholder('Walisantri.com')
+                        ->maxLength(100),
+                    TextInput::make('reply_to_address')
+                        ->label('Alamat balasan (Reply-To)')
+                        ->email()
+                        ->placeholder('cs@walisantri.com')
+                        ->maxLength(191)
+                        ->helperText('Ke mana balasan pesantren dikirim saat mereka menekan "Reply". Boleh alamat di domain lain — termasuk Gmail — dan tidak perlu terverifikasi di Brevo. Kosongkan bila balasan memang ingin diarahkan ke alamat pengirim di atas.'),
+                    TextInput::make('reply_to_name')
+                        ->label('Nama pada alamat balasan')
+                        ->placeholder('Tim Dukungan Walisantri')
                         ->maxLength(100),
                 ]),
             Section::make('Jenis Email yang Dikirim')
@@ -258,7 +274,7 @@ class EmailSettingsPage extends Page implements HasForms
                 EmailSetting::set($kunci, (bool) $state[$kunci]);
             }
 
-            foreach (['smtp_host', 'smtp_port', 'smtp_scheme', 'smtp_username', 'from_address', 'from_name'] as $kunci) {
+            foreach ([...EmailGatewaySetting::KUNCI_PENGIRIM, 'smtp_host', 'smtp_port', 'smtp_scheme', 'smtp_username'] as $kunci) {
                 filled($state[$kunci] ?? null)
                     ? EmailGatewaySetting::set($kunci, (string) $state[$kunci])
                     : EmailGatewaySetting::lupakan($kunci);
