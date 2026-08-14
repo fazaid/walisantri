@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Services;
 
+use App\Enums\PaketLangganan;
 use App\Enums\StatusOrder;
 use App\Jobs\KirimNotifikasiWhatsapp;
 use App\Models\Kupon;
@@ -12,7 +13,9 @@ use App\Models\WhatsAppMessageTemplate;
 use App\Models\WhatsAppSetting;
 use App\Services\UpgradeOrderService;
 use Carbon\Carbon;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
@@ -278,5 +281,64 @@ class UpgradeOrderServiceTest extends TestCase
 
         $this->assertNull($result['order']->kupon_id);
         $this->assertSame(0, $result['order']->diskon_nominal);
+    }
+
+    /**
+     * Regresi: CHECK constraint `orders.paket_target` tertinggal di daftar paket
+     * era lama (gratis/rintisan/berkembang/maju) saat model bisnis berganti.
+     * Tabel `pesantrens` ikut diperbarui, `orders` tidak — jadi paket Tumbuh yang
+     * justru paling populer adalah satu-satunya yang mustahil dipesan: pilihannya
+     * muncul di UpgradePage, lalu penyimpanannya ditolak database.
+     */
+    public function test_order_ke_paket_tumbuh_bisa_dibuat(): void
+    {
+        $pesantren = $this->makePesantren();
+
+        $result = app(UpgradeOrderService::class)->createOrder(
+            pesantren: $pesantren,
+            paketTarget: 'tumbuh',
+            durasibulan: 12,
+            maxSantriKuota: 250,
+        );
+
+        $order = $result['order'];
+
+        $this->assertSame(PaketLangganan::Tumbuh, $order->paket_target);
+        $this->assertSame(250, $order->max_santri_kuota_target);
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'paket_target' => 'tumbuh',
+        ]);
+    }
+
+    /**
+     * Sisi lain dari perbaikan yang sama: paket Gratis dihapus dari model bisnis
+     * sejak v4.6, jadi database harus ikut menolaknya. Tanpa tes ini, nilai mati
+     * itu bisa diam-diam kembali lewat migrasi atau seeder di kemudian hari.
+     *
+     * Sengaja lewat query builder, bukan `Order::create()` — cast enum di model
+     * sudah menolak 'gratis' lebih dulu, sehingga constraint database-nya sendiri
+     * tidak pernah teruji kalau lewat Eloquent.
+     */
+    public function test_paket_gratis_ditolak_database(): void
+    {
+        $pesantren = $this->makePesantren();
+
+        $this->expectException(QueryException::class);
+
+        DB::table('orders')->insert([
+            'pesantren_id' => $pesantren->id,
+            'nomor_order' => 'WS-'.uniqid(),
+            'paket_target' => 'gratis',
+            'durasi_bulan' => 1,
+            'max_santri_kuota_target' => 100,
+            'harga_per_bulan' => 0,
+            'harga_total_sebelum_diskon' => 0,
+            'harga_total' => 0,
+            'durasi_total_bulan' => 1,
+            'status' => 'pending_payment',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 }

@@ -37,6 +37,11 @@ class PesantrenFactory extends Factory
         return $this->state(['paket_langganan' => 'rintisan', 'max_santri_kuota' => 100]);
     }
 
+    public function tumbuh(): static
+    {
+        return $this->state(['paket_langganan' => 'tumbuh', 'max_santri_kuota' => 250]);
+    }
+
     public function berkembang(): static
     {
         return $this->state(['paket_langganan' => 'berkembang', 'max_santri_kuota' => 500]);

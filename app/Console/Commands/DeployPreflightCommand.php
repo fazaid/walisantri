@@ -54,6 +54,7 @@ class DeployPreflightCommand extends Command
         $this->periksaPeriodeKarakter($tertunda);
         $this->periksaUniqueInventaris($tertunda);
         $this->periksaAmalMaster($tertunda);
+        $this->periksaPaketTargetOrder($tertunda);
 
         return $this->laporkan();
     }
@@ -225,6 +226,40 @@ class DeployPreflightCommand extends Command
             "%d pesantren akan diisikan 7 amalan bawaan oleh migrasi tambalan.\n".
             '      Pastikan tidak ada yang SENGAJA mengosongkan daftarnya.',
             $kosong,
+        ));
+    }
+
+    /**
+     * Migrasi itu MEMBUANG nilai 'gratis' dari daftar yang diterima, dan
+     * PostgreSQL memvalidasi seluruh baris yang ada saat ADD CONSTRAINT CHECK.
+     * Order sisa era paket Gratis (tabel ini dibuat sebelum paket itu dihapus)
+     * akan membuat `migrate --force` gagal di tengah deploy.
+     *
+     * @param  list<string>  $tertunda
+     */
+    private function periksaPaketTargetOrder(array $tertunda): void
+    {
+        $migrasi = '2026_08_14_000001_update_paket_target_check_on_orders_table';
+
+        if (! in_array($migrasi, $tertunda, true) || ! Schema::hasTable('orders')) {
+            return;
+        }
+
+        $jumlah = DB::table('orders')->where('paket_target', 'gratis')->count();
+
+        if ($jumlah === 0) {
+            $this->catat(self::OK, 'Paket target order', "Tidak ada order berpaket 'gratis'.");
+
+            return;
+        }
+
+        $this->catat(self::BLOCK, 'Paket target order', sprintf(
+            "%d baris orders masih berpaket_target 'gratis'.\n".
+            "      CHECK baru hanya menerima rintisan/tumbuh/berkembang/maju,\n".
+            "      sehingga `migrate --force` akan gagal di migrasi ke-%d.\n".
+            '      Tentukan manual mau diapakan — ini riwayat pembayaran, bukan data sepele.',
+            $jumlah,
+            array_search($migrasi, $tertunda, true) + 1,
         ));
     }
 
