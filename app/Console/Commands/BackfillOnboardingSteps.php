@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use App\Enums\OnboardingStep;
 use App\Enums\UserRole;
-use App\Models\ActivityLog;
 use App\Models\Kelas;
 use App\Models\MasterPengumuman;
 use App\Models\Pesantren;
@@ -88,10 +87,6 @@ class BackfillOnboardingSteps extends Command
 
         if ($pesantren->santri()->exists()) {
             $steps[] = OnboardingStep::Santri->value;
-        }
-
-        if (ActivityLog::where('pesantren_id', $pesantren->id)->where('event', 'magic_link.viewed')->exists()) {
-            $steps[] = OnboardingStep::MagicLink->value;
         }
 
         if (MasterPengumuman::where('pesantren_id', $pesantren->id)->exists()) {

@@ -56,7 +56,6 @@ class OnboardingChecklistWidget extends Widget
             OnboardingStep::Ustadz => UserResource::getUrl('index', ['action' => 'create', 'role' => UserRole::Ustadz->value]),
             OnboardingStep::Kelas => KelasResource::getUrl('index', ['action' => 'create']),
             OnboardingStep::Santri => SantriResource::getUrl('index', ['action' => 'create']),
-            OnboardingStep::MagicLink => SantriResource::getUrl('index'),
             OnboardingStep::Pengumuman => MasterPengumumanResource::getUrl('index', ['action' => 'create']),
         };
     }
