@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Enums\OnboardingStep;
 use App\Filament\Widgets\OnboardingChecklistWidget;
-use App\Models\ActivityLog;
 use App\Models\Kelas;
 use App\Models\MasterPengumuman;
 use App\Models\Pesantren;
@@ -38,10 +37,9 @@ class OnboardingChecklistTest extends TestCase
         $pesantren->completeOnboardingStep(OnboardingStep::Profil);
         $pesantren->completeOnboardingStep(OnboardingStep::Ustadz);
         $pesantren->completeOnboardingStep(OnboardingStep::Kelas);
-        $pesantren->completeOnboardingStep(OnboardingStep::Santri);
         $this->assertFalse($pesantren->fresh()->isOnboardingComplete());
 
-        $pesantren->completeOnboardingStep(OnboardingStep::MagicLink);
+        $pesantren->completeOnboardingStep(OnboardingStep::Santri);
         $this->assertTrue($pesantren->fresh()->isOnboardingComplete());
 
         // Pengumuman opsional — tidak wajib untuk status "complete", dan menambahkannya
@@ -89,14 +87,13 @@ class OnboardingChecklistTest extends TestCase
 
     public function test_tanpa_kelas_onboarding_belum_selesai(): void
     {
-        // Empat step wajib lama saja tidak cukup — mengunci sifat "wajib" milik
-        // step kelas supaya tidak diam-diam berubah jadi opsional.
+        // Semua step lain (termasuk yang opsional) saja tidak cukup — mengunci sifat
+        // "wajib" milik step kelas supaya tidak diam-diam berubah jadi opsional.
         $pesantren = Pesantren::factory()->create();
 
         $pesantren->completeOnboardingStep(OnboardingStep::Profil);
         $pesantren->completeOnboardingStep(OnboardingStep::Ustadz);
         $pesantren->completeOnboardingStep(OnboardingStep::Santri);
-        $pesantren->completeOnboardingStep(OnboardingStep::MagicLink);
         $pesantren->completeOnboardingStep(OnboardingStep::Pengumuman);
 
         $this->assertFalse($pesantren->fresh()->isOnboardingComplete());
@@ -156,7 +153,7 @@ class OnboardingChecklistTest extends TestCase
         $this->assertTrue(OnboardingChecklistWidget::canView());
     }
 
-    public function test_widget_hilang_setelah_5_step_wajib_selesai_meski_pengumuman_belum(): void
+    public function test_widget_hilang_setelah_4_step_wajib_selesai_meski_pengumuman_belum(): void
     {
         $pesantren = Pesantren::factory()->create();
         $admin = User::factory()->adminPesantren()->create(['pesantren_id' => $pesantren->id]);
@@ -165,7 +162,6 @@ class OnboardingChecklistTest extends TestCase
         $pesantren->completeOnboardingStep(OnboardingStep::Ustadz);
         $pesantren->completeOnboardingStep(OnboardingStep::Kelas);
         $pesantren->completeOnboardingStep(OnboardingStep::Santri);
-        $pesantren->completeOnboardingStep(OnboardingStep::MagicLink);
 
         $this->actingAs($admin);
 
@@ -211,15 +207,7 @@ class OnboardingChecklistTest extends TestCase
 
         User::factory()->ustadz()->create(['pesantren_id' => $pesantren->id]);
         Kelas::factory()->create(['pesantren_id' => $pesantren->id]);
-        $santri = Santri::factory()->create(['pesantren_id' => $pesantren->id]);
-
-        ActivityLog::create([
-            'pesantren_id' => $pesantren->id,
-            'event' => 'magic_link.viewed',
-            'auditable_type' => Santri::class,
-            'auditable_id' => $santri->id,
-            'created_at' => now(),
-        ]);
+        Santri::factory()->create(['pesantren_id' => $pesantren->id]);
 
         // Create santri/ustadz di atas sudah men-trigger Observer secara live. Reset ke []
         // supaya benar-benar mensimulasikan tenant lama yang datanya sudah lengkap TAPI
@@ -233,8 +221,28 @@ class OnboardingChecklistTest extends TestCase
         $this->assertTrue($pesantren->hasCompletedOnboardingStep(OnboardingStep::Ustadz));
         $this->assertTrue($pesantren->hasCompletedOnboardingStep(OnboardingStep::Kelas));
         $this->assertTrue($pesantren->hasCompletedOnboardingStep(OnboardingStep::Santri));
-        $this->assertTrue($pesantren->hasCompletedOnboardingStep(OnboardingStep::MagicLink));
         $this->assertTrue($pesantren->isOnboardingComplete());
+    }
+
+    public function test_step_magic_link_lama_di_data_existing_tidak_bikin_error(): void
+    {
+        // Tenant yang sempat mencatat step 'magic_link' sebelum step itu dihapus:
+        // nilainya tetap tersimpan di kolom, harus diabaikan diam-diam — bukan
+        // memicu ValueError dari OnboardingStep::from().
+        $pesantren = Pesantren::factory()->create();
+        $admin = User::factory()->adminPesantren()->create(['pesantren_id' => $pesantren->id]);
+
+        $pesantren->forceFill(['onboarding_completed_steps' => ['magic_link', 'profil']])->saveQuietly();
+
+        $this->assertFalse($pesantren->fresh()->isOnboardingComplete());
+
+        Livewire::actingAs($admin)
+            ->test(OnboardingChecklistWidget::class)
+            ->assertOk()
+            ->assertDontSee('Magic Link');
+
+        Artisan::call('onboarding:backfill');
+        $this->assertSame(['magic_link', 'profil'], $pesantren->fresh()->onboarding_completed_steps);
     }
 
     public function test_backfill_command_dry_run_tidak_mengubah_data(): void

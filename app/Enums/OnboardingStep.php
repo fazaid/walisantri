@@ -9,7 +9,6 @@ enum OnboardingStep: string
     case Ustadz = 'ustadz';
     case Kelas = 'kelas';
     case Santri = 'santri';
-    case MagicLink = 'magic_link';
     case Pengumuman = 'pengumuman';
 
     public function label(): string
@@ -19,7 +18,6 @@ enum OnboardingStep: string
             self::Ustadz => 'Tambah ustadz pertama',
             self::Kelas => 'Buat kelas pertama',
             self::Santri => 'Tambah santri pertama',
-            self::MagicLink => 'Lihat/salin Magic Link wali pertama',
             self::Pengumuman => 'Buat pengumuman perdana',
         };
     }
