@@ -7,9 +7,9 @@ use App\Models\Order;
 use App\Models\PlatformBankAccount;
 use App\Models\PlatformContactSetting;
 use App\Models\WhatsAppMessageTemplate;
+use App\Services\InvoicePdf;
 use App\Services\UpgradeOrderService;
 use BackedEnum;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -260,12 +260,9 @@ class OrderInvoicePage extends Page implements HasForms
                 ->icon(Heroicon::OutlinedArrowDownTray)
                 ->color('gray')
                 ->action(function () {
-                    $pdf = Pdf::loadView('filament.pdf.invoice', [
-                        'order' => $this->order,
-                        'invoice' => $this->invoice,
-                        'pesantren' => $this->order->pesantren,
-                        'bankAccounts' => $this->getBankAccounts(),
-                    ])->setPaper('A4', 'portrait');
+                    // Perakitannya dipusatkan di InvoicePdf supaya berkas yang
+                    // diunduh di sini identik dengan yang dilampirkan ke email.
+                    $pdf = app(InvoicePdf::class)->untuk($this->order, $this->invoice);
 
                     return response()->streamDownload(
                         fn () => print ($pdf->output()),

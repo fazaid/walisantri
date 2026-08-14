@@ -3,8 +3,12 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Mail\SambutanPendaftaran;
 use App\Models\BillingSetting;
+use App\Models\EmailSetting;
+use App\Models\Pesantren;
 use App\Models\PlatformSetting;
+use App\Models\User;
 use App\Rules\SlugNotReserved;
 use App\Rules\ValidTenantSlug;
 use App\Services\OnboardPesantren;
@@ -12,6 +16,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rules\Password;
 
 class RegisterController extends Controller
@@ -64,6 +69,8 @@ class RegisterController extends Controller
             ]);
         }
 
+        $this->kirimEmailSambutan($result);
+
         Auth::login($result['admin']);
 
         return redirect($this->adminUrl());
@@ -81,5 +88,29 @@ class RegisterController extends Controller
     private function adminUrl(): string
     {
         return request()->getScheme().'://'.config('app.domain').'/admin';
+    }
+
+    /**
+     * Dikirim di sini, bukan di dalam OnboardPesantren.
+     *
+     * Seluruh isi service itu dibungkus DB::transaction, dan email yang terlanjur
+     * keluar tidak bisa ikut di-rollback — pesantren akan menerima ucapan selamat
+     * datang untuk akun yang batal dibuat.
+     *
+     * @param  array{pesantren: Pesantren, admin: User}  $result
+     */
+    private function kirimEmailSambutan(array $result): void
+    {
+        if (! EmailSetting::get('email_sambutan_enabled')) {
+            return;
+        }
+
+        if (blank($result['admin']->email)) {
+            return;
+        }
+
+        Mail::to($result['admin']->email)->queue(
+            new SambutanPendaftaran($result['pesantren'], $result['admin'])
+        );
     }
 }
