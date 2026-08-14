@@ -22,6 +22,7 @@ use App\Observers\SantriObserver;
 use App\Observers\UserObserver;
 use Filament\Support\Facades\FilamentTimezone;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
@@ -47,6 +48,23 @@ class AppServiceProvider extends ServiceProvider
         // ke config di sini. Aman dipanggil sebelum tabelnya ada: method-nya
         // menelan kegagalan dan membiarkan nilai .env yang berlaku.
         EmailGatewaySetting::applyToConfig();
+
+        // ...dan disegarkan lagi sebelum SETIAP job antrean.
+        //
+        // boot() hanya jalan sekali per proses. Permintaan web berumur pendek jadi
+        // selalu membaca nilai terbaru, tapi worker Supervisor hidup berhari-hari:
+        // ia memegang config dari saat ia dinyalakan dan tidak pernah melihat
+        // perubahan yang dibuat super admin sesudahnya.
+        //
+        // Akibatnya nyata dan membingungkan: tombol "Kirim Email Uji" (sinkron,
+        // di dalam request) memakai alamat pengirim baru dan terlihat benar,
+        // sementara email sambutan (antre, dikerjakan worker lama) tetap keluar
+        // dengan alamat lama tanpa Reply-To. Persis itu yang terjadi 2026-08-14.
+        //
+        // Murah: nilainya di-cache satu jam dalam satu key, dan `set()` sudah
+        // menghapus cache itu — worker berbagi cache store yang sama, jadi
+        // perubahan langsung terlihat tanpa perlu restart.
+        Queue::before(fn () => EmailGatewaySetting::applyToConfig());
 
         $this->registerRateLimiters();
         $this->registerObservers();
