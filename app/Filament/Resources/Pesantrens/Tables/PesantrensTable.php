@@ -4,15 +4,19 @@ namespace App\Filament\Resources\Pesantrens\Tables;
 
 use App\Enums\PaketLangganan;
 use App\Enums\StatusBerlangganan;
+use App\Enums\UserRole;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Support\Enums\Width;
+use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class PesantrensTable
 {
@@ -53,7 +57,31 @@ class PesantrensTable
                     ->dateTime('d M Y')
                     ->sortable()
                     ->placeholder('-'),
+
+                // Menjawab "pesantren mana yang tidak terjangkau", bukan "user mana
+                // yang belum menekan tautan" — karena itu ditaruh di sini, bukan di
+                // tabel Pengguna. Sejak WhatsApp dimatikan, alamat email yang keliru
+                // berarti tagihan & peringatan expired tidak pernah sampai (§12.2).
+                IconColumn::make('admin_terverifikasi')
+                    ->label('Email Admin')
+                    ->boolean()
+                    ->trueIcon(Heroicon::OutlinedCheckBadge)
+                    ->falseIcon(Heroicon::OutlinedExclamationTriangle)
+                    ->trueColor('success')
+                    ->falseColor('warning')
+                    ->tooltip(fn (bool $state): string => $state
+                        ? 'Alamat email admin sudah dikonfirmasi'
+                        : 'Belum dikonfirmasi — pesantren ini berisiko tidak menerima tagihan & peringatan expired')
+                    ->toggleable(),
             ])
+            // withExists, bukan eager load relasi utuh: tabel ini sebelumnya tidak
+            // punya eager loading sama sekali, dan memuat seluruh users hanya untuk
+            // satu ikon akan melahirkan N+1 di setiap baris.
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->withExists([
+                'users as admin_terverifikasi' => fn (Builder $q): Builder => $q
+                    ->where('role', UserRole::AdminPesantren->value)
+                    ->whereNotNull('email_verified_at'),
+            ]))
             ->filters([
                 SelectFilter::make('paket_langganan')
                     ->label('Paket')

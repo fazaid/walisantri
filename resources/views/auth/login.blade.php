@@ -49,6 +49,12 @@
         {{-- Card Form --}}
         <div class="bg-white rounded-2xl shadow-xl p-6">
 
+            @if(session('status'))
+                <div class="bg-teal-50 border border-teal-200 text-teal-800 text-sm rounded-xl px-4 py-3 mb-4">
+                    {{ session('status') }}
+                </div>
+            @endif
+
             @if($errors->any())
                 <div class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-4">
                     {{ $errors->first() }}
@@ -75,9 +81,15 @@
                            placeholder="••••••••">
                 </div>
 
-                <div class="flex items-center gap-2">
-                    <input type="checkbox" name="remember" id="remember" class="rounded">
-                    <label for="remember" class="text-sm text-gray-600">Ingat saya</label>
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" name="remember" id="remember" class="rounded">
+                        <label for="remember" class="text-sm text-gray-600">Ingat saya</label>
+                    </div>
+                    <a href="{{ route('password.request') }}"
+                       class="text-sm {{ $pesantren ? 'text-blue-700' : 'text-teal-700' }} hover:underline">
+                        Lupa password?
+                    </a>
                 </div>
 
                 <button type="submit"

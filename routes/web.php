@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Admin\ExportController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\Auth\VerifikasiEmailController;
 use App\Http\Controllers\Auth\WaliLoginController;
 use App\Http\Controllers\DemoController;
 use App\Http\Controllers\PublicProfileController;
@@ -96,6 +98,26 @@ Route::domain($appDomain)->group(function () use ($sameDomain) {
     Route::get('/login', [WaliLoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [WaliLoginController::class, 'login'])->name('wali.login.submit');
     Route::post('/logout', [WaliLoginController::class, 'logout'])->middleware('auth')->name('logout');
+
+    // --- Reset kata sandi lewat email (§9.1) — staf saja; wali santri passwordless ---
+    Route::get('/lupa-password', [ResetPasswordController::class, 'showLinkRequestForm'])->name('password.request');
+    Route::post('/lupa-password', [ResetPasswordController::class, 'sendResetLink'])
+        ->middleware('throttle:password-reset')
+        ->name('password.email');
+    Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
+    Route::post('/reset-password', [ResetPasswordController::class, 'reset'])
+        ->middleware('throttle:password-reset')
+        ->name('password.update');
+
+    // --- Verifikasi email (§12.2) — lunak, tidak memblokir akses apa pun ---
+    // Tautan verifikasi tidak mewajibkan sesi: lumrah dibuka di perangkat lain,
+    // dan tanda tangan URL sudah jadi buktinya.
+    Route::get('/verifikasi-email/{id}/{hash}', [VerifikasiEmailController::class, 'verify'])
+        ->middleware(['signed', 'throttle:verifikasi-email'])
+        ->name('verification.verify');
+    Route::post('/verifikasi-email/kirim-ulang', [VerifikasiEmailController::class, 'resend'])
+        ->middleware(['auth', 'throttle:verifikasi-email'])
+        ->name('verification.send');
 
     // --- Panduan penggunaan untuk Admin Pesantren & Ustadz — statis, tanpa login ---
     Route::view('/panduan', 'panduan')->name('panduan');

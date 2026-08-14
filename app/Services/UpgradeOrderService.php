@@ -5,7 +5,10 @@ namespace App\Services;
 use App\Enums\DurasiLangganan;
 use App\Enums\StatusOrder;
 use App\Jobs\KirimNotifikasiWhatsapp;
+use App\Mail\InvoiceDibuat;
+use App\Mail\PembayaranDiterima;
 use App\Models\ActivityLog;
+use App\Models\EmailSetting;
 use App\Models\Invoice;
 use App\Models\Kupon;
 use App\Models\Order;
@@ -13,11 +16,13 @@ use App\Models\Pesantren;
 use App\Models\User;
 use App\Models\WhatsAppMessageTemplate;
 use App\Models\WhatsAppSetting;
+use App\Support\PenerimaEmail;
 use App\Support\Waktu;
 use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class UpgradeOrderService
 {
@@ -42,7 +47,7 @@ class UpgradeOrderService
         $totalBulan = $durasi->totalBulan();   // total aktif = durasi yang dipilih (12)
         $hargaTotalSebelumDiskon = $hargaPerBulan * $bulanBayar;
 
-        return DB::transaction(function () use (
+        $hasil = DB::transaction(function () use (
             $pesantren, $paketTarget, $durasibulan, $maxSantriKuota,
             $hargaPerBulan, $effectiveKuota, $hargaTotalSebelumDiskon,
             $bonusBulan, $totalBulan, $kodeKupon
@@ -100,6 +105,26 @@ class UpgradeOrderService
 
             return compact('order', 'invoice');
         });
+
+        // Di luar closure: email yang terlanjur keluar tidak bisa ikut di-rollback.
+        $this->kirimEmailInvoice($hasil['order'], $hasil['invoice']);
+
+        return $hasil;
+    }
+
+    private function kirimEmailInvoice(Order $order, Invoice $invoice): void
+    {
+        if (! EmailSetting::get('email_invoice_enabled')) {
+            return;
+        }
+
+        $admin = PenerimaEmail::adminPesantren($order->pesantren);
+
+        if (! $admin) {
+            return;
+        }
+
+        Mail::to($admin->email)->queue(new InvoiceDibuat($order, $invoice));
     }
 
     public function uploadBuktiTransfer(Invoice $invoice, UploadedFile $file): void
@@ -187,11 +212,27 @@ class UpgradeOrderService
         });
 
         $this->notifyOrderConfirmed($order, $hasil['pesantren'], $hasil['expiredAtBaru']);
+        $this->kirimEmailPembayaran($order, $hasil['pesantren'], $hasil['expiredAtBaru']);
     }
 
     // Pengecualian SEMPIT ketiga terhadap kebijakan "WA selalu manual" (PRD §12) —
     // notifikasi otomatis saat Super Admin mengonfirmasi order, di samping reminder
     // H-3/H-1 (WarnExpiringTenantsWhatsApp) dan notifikasi trial habis (CheckExpiredTenants).
+    private function kirimEmailPembayaran(Order $order, Pesantren $pesantren, Carbon $expiredAtBaru): void
+    {
+        if (! EmailSetting::get('email_pembayaran_enabled')) {
+            return;
+        }
+
+        $admin = PenerimaEmail::adminPesantren($pesantren);
+
+        if (! $admin) {
+            return;
+        }
+
+        Mail::to($admin->email)->queue(new PembayaranDiterima($order, $expiredAtBaru));
+    }
+
     private function notifyOrderConfirmed(Order $order, Pesantren $pesantren, Carbon $expiredAtBaru): void
     {
         if (! WhatsAppSetting::get('notif_order_dikonfirmasi_enabled')) {

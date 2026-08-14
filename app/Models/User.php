@@ -6,9 +6,12 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToPesantren;
+use App\Notifications\ResetPasswordNotification;
+use App\Notifications\VerifikasiEmailNotification;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasAvatar;
 use Filament\Panel;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -29,7 +32,15 @@ use Illuminate\Support\Facades\Storage;
     'role',
 ])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable implements FilamentUser, HasAvatar
+/**
+ * Catatan soal MustVerifyEmail: kontrak ini dipasang HANYA untuk helper
+ * `hasVerifiedEmail()` / `markEmailAsVerified()`. Verifikasi email di platform ini
+ * bersifat LUNAK — middleware `verified` tidak didaftarkan di mana pun dan
+ * `AdminPanelProvider` tidak memanggil `->emailVerification()`, jadi tidak ada
+ * satu pun akses yang terhalang karenanya (§12.2). Jangan simpulkan dari kontrak
+ * ini bahwa gating sudah aktif.
+ */
+class User extends Authenticatable implements FilamentUser, HasAvatar, MustVerifyEmail
 {
     use BelongsToPesantren, HasFactory, Notifiable;
 
@@ -60,6 +71,27 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
     }
 
     // --- Role helpers ---
+
+    /**
+     * Pakai notification sendiri, bukan bawaan Laravel (§9.1).
+     *
+     * Bawaannya berbahasa Inggris dan merender lewat template `x-mail::message`
+     * yang tidak dipublish di proyek ini — hasilnya email tanpa gaya sama sekali.
+     */
+    /**
+     * Pakai notification sendiri, dengan alasan yang sama seperti reset kata
+     * sandi: bawaan Laravel berbahasa Inggris dan merender lewat template
+     * `x-mail::message` yang tidak dipublish di proyek ini.
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new VerifikasiEmailNotification);
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new ResetPasswordNotification($token));
+    }
 
     public function isSuperAdmin(): bool
     {
