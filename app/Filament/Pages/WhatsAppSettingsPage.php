@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Enums\NavigationGroup;
 use App\Enums\UserRole;
 use App\Models\PlatformContactSetting;
 use App\Models\WhatsAppGatewaySetting;
@@ -33,11 +34,11 @@ class WhatsAppSettingsPage extends Page implements HasForms
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChatBubbleLeftRight;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Langganan';
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::PengaturanPlatform;
 
-    protected static ?int $navigationSort = 11;
+    protected static ?int $navigationSort = 3;
 
-    protected static ?string $navigationLabel = 'Pengaturan WhatsApp';
+    protected static ?string $navigationLabel = 'WhatsApp';
 
     protected static ?string $title = 'Pengaturan WhatsApp';
 

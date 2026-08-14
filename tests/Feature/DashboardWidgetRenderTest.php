@@ -8,6 +8,10 @@ use App\Filament\Widgets\AdminSppStatusChart;
 use App\Filament\Widgets\AdminStatsOverview;
 use App\Filament\Widgets\AdminTrendAmalanChart;
 use App\Filament\Widgets\AdminTrendSetoranChart;
+use App\Filament\Widgets\ExpiringTenantsWidget;
+use App\Filament\Widgets\SuperAdminStatsOverview;
+use App\Filament\Widgets\SystemStatsWidget;
+use App\Filament\Widgets\TenantListWidget;
 use App\Filament\Widgets\UstadzAmalanChart;
 use App\Filament\Widgets\UstadzNilaiAkademikChart;
 use App\Filament\Widgets\UstadzNilaiSetoranChart;
@@ -37,6 +41,13 @@ class DashboardWidgetRenderTest extends TestCase
         UstadzNilaiSetoranChart::class,
         UstadzProgressHafalanChart::class,
         UstadzNilaiAkademikChart::class,
+    ];
+
+    private const WIDGET_SUPER_ADMIN = [
+        SuperAdminStatsOverview::class,
+        SystemStatsWidget::class,
+        ExpiringTenantsWidget::class,
+        TenantListWidget::class,
     ];
 
     private const WIDGET_ADMIN = [
@@ -81,5 +92,38 @@ class DashboardWidgetRenderTest extends TestCase
                 ->test($widget)
                 ->assertOk();
         }
+    }
+
+    public function test_semua_widget_super_admin_bisa_dirender(): void
+    {
+        $superAdmin = User::factory()->superAdmin()->create(['pesantren_id' => null]);
+
+        // Perlu data nyata di setiap status supaya jalur pengambilan data benar-benar
+        // dieksekusi, bukan berhenti di hitungan nol.
+        Pesantren::factory()->create(['status_berlangganan' => 'active', 'expired_at' => now()->addDays(3)]);
+        Pesantren::factory()->create(['status_berlangganan' => 'trial', 'expired_at' => now()->addDays(5)]);
+        Pesantren::factory()->create(['status_berlangganan' => 'suspended', 'expired_at' => now()->subDay()]);
+
+        $this->actingAs($superAdmin);
+
+        foreach (self::WIDGET_SUPER_ADMIN as $widget) {
+            Livewire::test($widget)->assertOk();
+        }
+    }
+
+    /**
+     * Tiga widget super admin dulu tidak menyetel $sort sehingga jatuh ke default -1
+     * (Widget::getSort()) dan terender DI ATAS ringkasan utama yang ber-sort 1.
+     */
+    public function test_urutan_widget_super_admin_menempatkan_ringkasan_lebih_dulu(): void
+    {
+        $urutan = collect(self::WIDGET_SUPER_ADMIN)
+            ->mapWithKeys(fn (string $widget): array => [$widget => $widget::getSort()]);
+
+        $this->assertSame(
+            self::WIDGET_SUPER_ADMIN,
+            $urutan->sort()->keys()->all(),
+            'Urutan render widget super admin tidak sesuai: ringkasan harus lebih dulu, daftar tenant terakhir.',
+        );
     }
 }

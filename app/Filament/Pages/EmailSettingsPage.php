@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Enums\NavigationGroup;
 use App\Enums\UserRole;
 use App\Mail\EmailUji;
 use App\Models\EmailGatewaySetting;
@@ -31,11 +32,11 @@ class EmailSettingsPage extends Page implements HasForms
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedEnvelope;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Langganan';
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::PengaturanPlatform;
 
-    protected static ?int $navigationSort = 12;
+    protected static ?int $navigationSort = 2;
 
-    protected static ?string $navigationLabel = 'Pengaturan Email';
+    protected static ?string $navigationLabel = 'Email';
 
     protected static ?string $title = 'Pengaturan Email';
 

@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\StatusBerlangganan;
 use App\Models\Pesantren;
 use App\Models\WhatsAppMessageTemplate;
 use App\Models\WhatsAppSetting;
@@ -39,7 +40,7 @@ class WarnExpiringTenantsWhatsApp implements ShouldQueue
             $from = Waktu::awalHari($patokan);
             $to = Waktu::akhirHari($patokan);
 
-            Pesantren::whereIn('status_berlangganan', ['trial', 'active'])
+            Pesantren::whereIn('status_berlangganan', StatusBerlangganan::berjalan())
                 ->whereBetween('expired_at', [$from, $to])
                 ->with('users')
                 ->eachById(function (Pesantren $pesantren) use ($days) {

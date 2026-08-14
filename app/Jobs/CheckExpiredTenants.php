@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\StatusBerlangganan;
 use App\Models\Pesantren;
 use App\Models\WhatsAppMessageTemplate;
 use App\Models\WhatsAppSetting;
@@ -24,7 +25,7 @@ class CheckExpiredTenants implements ShouldQueue
     public function handle(): void
     {
         // 1. trial/active → expired saat expired_at terlewat
-        Pesantren::whereIn('status_berlangganan', ['trial', 'active'])
+        Pesantren::whereIn('status_berlangganan', StatusBerlangganan::berjalan())
             ->whereNotNull('expired_at')
             ->where('expired_at', '<', now())
             ->with('users')

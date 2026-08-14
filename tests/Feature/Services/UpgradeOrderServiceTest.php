@@ -341,4 +341,39 @@ class UpgradeOrderServiceTest extends TestCase
             'updated_at' => now(),
         ]);
     }
+
+    public function test_kupon_dikembalikan_saat_order_ditolak(): void
+    {
+        $pesantren = $this->makePesantren();
+        $kupon = $this->makeKupon(['max_penggunaan' => 1]);
+
+        $result = app(UpgradeOrderService::class)->createOrder(
+            pesantren: $pesantren,
+            paketTarget: 'rintisan',
+            durasibulan: 1,
+            maxSantriKuota: 100,
+            kodeKupon: 'testkupon',
+        );
+
+        $this->assertSame(1, $kupon->refresh()->jumlah_dipakai);
+
+        $order = $result['order'];
+        $order->update(['status' => StatusOrder::AwaitingConfirmation]);
+
+        app(UpgradeOrderService::class)->rejectOrder($order, $this->makeConfirmer(), 'Bukti transfer tidak jelas.');
+
+        // Tanpa pengembalian ini, kupon ber-max_penggunaan 1 langsung mati padahal
+        // tidak ada satu pun transaksi yang berhasil.
+        $this->assertSame(0, $kupon->refresh()->jumlah_dipakai);
+    }
+
+    public function test_kupon_tidak_turun_di_bawah_nol_saat_order_tanpa_kupon_ditolak(): void
+    {
+        $pesantren = $this->makePesantren();
+        $order = $this->makeOrder($pesantren);
+
+        app(UpgradeOrderService::class)->rejectOrder($order, $this->makeConfirmer(), 'Ditolak.');
+
+        $this->assertSame(StatusOrder::Rejected, $order->refresh()->status);
+    }
 }

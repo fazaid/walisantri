@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Kupons;
 
+use App\Enums\NavigationGroup;
 use App\Enums\UserRole;
 use App\Filament\Resources\Kupons\Pages\ListKupons;
 use App\Filament\Resources\Kupons\Schemas\KuponForm;
@@ -20,7 +21,7 @@ class KuponResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTicket;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Langganan';
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::Langganan;
 
     protected static ?int $navigationSort = 2;
 

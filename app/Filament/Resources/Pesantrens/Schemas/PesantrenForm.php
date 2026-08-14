@@ -4,6 +4,9 @@ namespace App\Filament\Resources\Pesantrens\Schemas;
 
 use App\Enums\PaketLangganan;
 use App\Enums\StatusBerlangganan;
+use App\Models\Pesantren;
+use App\Rules\SlugNotReserved;
+use App\Rules\ValidTenantSlug;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -24,12 +27,27 @@ class PesantrenForm
                     ->live(onBlur: true)
                     ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug($state ?? ''))),
 
+                // Aturan yang sama persis dengan jalur pendaftaran publik
+                // (RegisterController). Tanpa ini super admin bisa membuat slug
+                // "admin" (bentrok dengan path panel), slug berspasi (hostname tidak
+                // valid), atau slug yang baru dilepas tenant lain — menembus cooldown
+                // 90 hari sehingga tautan lama mengarah ke tenant yang keliru.
+                //
+                // Tapi HANYA saat slug benar-benar dibuat/diubah. Panel dulu
+                // mengizinkan sampai 255 karakter, jadi kalau aturan ini dipasang
+                // tanpa syarat, pesantren lama yang slug-nya terlanjur panjang tidak
+                // bisa diedit sama sekali — paket, kuota, dan tanggal expired-nya ikut
+                // tersandera oleh field yang bahkan tidak disentuh.
                 TextInput::make('slug')
                     ->label('Slug')
                     ->required()
                     ->unique(ignoreRecord: true)
                     ->maxLength(255)
-                    ->helperText('Auto-generate dari nama pesantren, atau isi manual.'),
+                    ->rules(
+                        [new ValidTenantSlug, new SlugNotReserved],
+                        condition: fn (?Pesantren $record, ?string $state): bool => $record === null || $state !== $record->slug,
+                    )
+                    ->helperText('3-30 karakter, huruf kecil dan angka. Auto-generate dari nama pesantren, atau isi manual.'),
 
                 Select::make('paket_langganan')
                     ->label('Paket Langganan')

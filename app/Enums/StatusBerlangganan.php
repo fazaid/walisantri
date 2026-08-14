@@ -29,6 +29,22 @@ enum StatusBerlangganan: string
         };
     }
 
+    /**
+     * Status yang masih "berjalan" dan karenanya bisa kedaluwarsa.
+     *
+     * Satu daftar untuk semua pemakainya — kartu & tabel "Akan Expired" di dashboard
+     * super admin, WarnExpiringTenants(WhatsApp), CheckExpiredTenants, dan
+     * Pesantren::isActive(). Dulu daftar ini di-hardcode terpisah di lima tempat;
+     * begitu satu bergeser, angka dashboard berhenti cocok dengan tenant yang
+     * sebenarnya ditindak job.
+     *
+     * @return list<string>
+     */
+    public static function berjalan(): array
+    {
+        return [self::Trial->value, self::Active->value];
+    }
+
     public static function options(): array
     {
         return collect(self::cases())

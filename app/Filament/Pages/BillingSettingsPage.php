@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Enums\NavigationGroup;
 use App\Enums\UserRole;
 use App\Models\BillingSetting;
 use BackedEnum;
@@ -25,9 +26,9 @@ class BillingSettingsPage extends Page implements HasForms
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Langganan';
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::Langganan;
 
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = 4;
 
     protected static ?string $navigationLabel = 'Pengaturan Harga';
 

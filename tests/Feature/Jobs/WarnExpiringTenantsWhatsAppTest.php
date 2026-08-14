@@ -8,10 +8,21 @@ use App\Models\Pesantren;
 use App\Models\User;
 use App\Models\WhatsAppMessageTemplate;
 use App\Models\WhatsAppSetting;
+use App\Support\Waktu;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
+/**
+ * Patokan waktu di sini WAJIB Waktu::sekarang() (WIB), bukan now() (UTC).
+ *
+ * Job yang diuji menghitung jendela H-3/H-1 menurut kalender WIB lewat
+ * Waktu::awalHari()/akhirHari(). Dengan now() yang berzona UTC, `->setTime(10, 0)`
+ * berarti 10:00 UTC = 17:00 WIB hari yang sama — tapi saat tes dijalankan antara
+ * 00.00-07.00 WIB, tanggalnya sendiri sudah bergeser satu hari relatif terhadap UTC,
+ * sehingga nilai itu jatuh di hari WIB SEBELUM jendela yang dicari dan tidak ada
+ * notifikasi yang terkirim. Tes lolos di siang hari lalu merah dini hari.
+ */
 class WarnExpiringTenantsWhatsAppTest extends TestCase
 {
     use RefreshDatabase;
@@ -24,7 +35,7 @@ class WarnExpiringTenantsWhatsAppTest extends TestCase
             'paket_langganan' => 'rintisan',
             'max_santri_kuota' => 100,
             'status_berlangganan' => 'active',
-            'expired_at' => now()->addDays(3),
+            'expired_at' => Waktu::sekarang()->addDays(3),
         ], $override));
     }
 
@@ -47,7 +58,7 @@ class WarnExpiringTenantsWhatsAppTest extends TestCase
     {
         Queue::fake();
 
-        $pesantren = $this->makePesantren(['expired_at' => now()->addDays(3)->setTime(10, 0)]);
+        $pesantren = $this->makePesantren(['expired_at' => Waktu::sekarang()->addDays(3)->setTime(10, 0)]);
         $this->makeAdmin($pesantren);
 
         (new WarnExpiringTenantsWhatsApp)->handle();
@@ -61,7 +72,7 @@ class WarnExpiringTenantsWhatsAppTest extends TestCase
     {
         Queue::fake();
 
-        $pesantren = $this->makePesantren(['expired_at' => now()->addDays(1)->setTime(10, 0)]);
+        $pesantren = $this->makePesantren(['expired_at' => Waktu::sekarang()->addDays(1)->setTime(10, 0)]);
         $this->makeAdmin($pesantren);
 
         (new WarnExpiringTenantsWhatsApp)->handle();
@@ -73,7 +84,7 @@ class WarnExpiringTenantsWhatsAppTest extends TestCase
     {
         Queue::fake();
 
-        $pesantren = $this->makePesantren(['expired_at' => now()->addDays(3)->setTime(10, 0)]);
+        $pesantren = $this->makePesantren(['expired_at' => Waktu::sekarang()->addDays(3)->setTime(10, 0)]);
         $this->makeAdmin($pesantren, null);
 
         (new WarnExpiringTenantsWhatsApp)->handle();
@@ -85,7 +96,7 @@ class WarnExpiringTenantsWhatsAppTest extends TestCase
     {
         Queue::fake();
 
-        $pesantren = $this->makePesantren(['expired_at' => now()->addDays(10)]);
+        $pesantren = $this->makePesantren(['expired_at' => Waktu::sekarang()->addDays(10)]);
         $this->makeAdmin($pesantren);
 
         (new WarnExpiringTenantsWhatsApp)->handle();
@@ -99,7 +110,7 @@ class WarnExpiringTenantsWhatsAppTest extends TestCase
 
         $pesantren = $this->makePesantren([
             'status_berlangganan' => 'expired',
-            'expired_at' => now()->addDays(3)->setTime(10, 0),
+            'expired_at' => Waktu::sekarang()->addDays(3)->setTime(10, 0),
         ]);
         $this->makeAdmin($pesantren);
 
@@ -114,7 +125,7 @@ class WarnExpiringTenantsWhatsAppTest extends TestCase
 
         WhatsAppSetting::set('reminder_expired_enabled', false);
 
-        $pesantren = $this->makePesantren(['expired_at' => now()->addDays(3)->setTime(10, 0)]);
+        $pesantren = $this->makePesantren(['expired_at' => Waktu::sekarang()->addDays(3)->setTime(10, 0)]);
         $this->makeAdmin($pesantren);
 
         (new WarnExpiringTenantsWhatsApp)->handle();
@@ -126,7 +137,7 @@ class WarnExpiringTenantsWhatsAppTest extends TestCase
     {
         Queue::fake();
 
-        $pesantren = $this->makePesantren(['expired_at' => now()->addDays(3)->setTime(10, 0)]);
+        $pesantren = $this->makePesantren(['expired_at' => Waktu::sekarang()->addDays(3)->setTime(10, 0)]);
         $this->makeAdmin($pesantren);
 
         (new WarnExpiringTenantsWhatsApp)->handle();
@@ -146,7 +157,7 @@ class WarnExpiringTenantsWhatsAppTest extends TestCase
             'Halo {nama_pesantren}, sisa {sisa_hari} hari, expired {tanggal_expired}, bayar di {link_billing}.',
         );
 
-        $pesantren = $this->makePesantren(['expired_at' => now()->addDays(3)->setTime(10, 0)]);
+        $pesantren = $this->makePesantren(['expired_at' => Waktu::sekarang()->addDays(3)->setTime(10, 0)]);
         $this->makeAdmin($pesantren);
 
         (new WarnExpiringTenantsWhatsApp)->handle();

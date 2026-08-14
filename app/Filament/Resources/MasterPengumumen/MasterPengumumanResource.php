@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\MasterPengumumen;
 
+use App\Enums\NavigationGroup;
 use App\Enums\UserRole;
 use App\Filament\Resources\MasterPengumumen\Pages\ListMasterPengumumen;
 use App\Filament\Resources\MasterPengumumen\Pages\ViewMasterPengumuman;
@@ -26,7 +27,7 @@ class MasterPengumumanResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSpeakerWave;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Manajemen';
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::Manajemen;
 
     protected static ?int $navigationSort = 3;
 

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Pesantrens;
 
+use App\Enums\NavigationGroup;
 use App\Enums\UserRole;
 use App\Filament\Resources\Pesantrens\Pages\ListPesantrens;
 use App\Filament\Resources\Pesantrens\Pages\ViewPesantren;
@@ -22,7 +23,7 @@ class PesantrenResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingOffice2;
 
-    protected static string|UnitEnum|null $navigationGroup = null;
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::Platform;
 
     protected static ?int $navigationSort = 1;
 

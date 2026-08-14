@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Enums\NavigationGroup;
 use App\Enums\UserRole;
 use App\Models\BillingSetting;
 use App\Models\PlatformSetting;
@@ -26,11 +27,11 @@ class RegistrationSettingsPage extends Page implements HasForms
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserPlus;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Langganan';
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::PengaturanPlatform;
 
-    protected static ?int $navigationSort = 12;
+    protected static ?int $navigationSort = 1;
 
-    protected static ?string $navigationLabel = 'Pengaturan Registrasi';
+    protected static ?string $navigationLabel = 'Registrasi';
 
     protected static ?string $title = 'Pengaturan Registrasi';
 

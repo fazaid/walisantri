@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\PlatformBankAccounts;
 
+use App\Enums\NavigationGroup;
 use App\Enums\UserRole;
 use App\Filament\Resources\PlatformBankAccounts\Pages\ListPlatformBankAccounts;
 use App\Filament\Resources\PlatformBankAccounts\Schemas\PlatformBankAccountForm;
@@ -20,9 +21,9 @@ class PlatformBankAccountResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingLibrary;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Langganan';
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::Langganan;
 
-    protected static ?int $navigationSort = 11;
+    protected static ?int $navigationSort = 3;
 
     protected static ?string $recordTitleAttribute = 'bank';
 

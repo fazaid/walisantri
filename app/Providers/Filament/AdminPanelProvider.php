@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Enums\NavigationGroup;
 use App\Filament\Pages\EditProfile;
 use App\Http\Middleware\CheckTenantQuota;
 use App\Http\Middleware\FilamentAuthenticate;
@@ -52,11 +53,9 @@ class AdminPanelProvider extends PanelProvider
             // yang diam untuk kegagalan jaringan tapi tetap memberi tahu error server asli.
             ->errorNotifications(false)
             ->sidebarFullyCollapsibleOnDesktop()
-            ->navigationGroups([
-                'Kesantrian',
-                'Langganan',
-                'Manajemen',
-            ])
+            // Nama & urutan grup berasal dari App\Enums\NavigationGroup.
+            // Filament menerima class-string enum dan meng-enumerasi cases() sendiri.
+            ->navigationGroups(NavigationGroup::class)
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->discoverClusters(in: app_path('Filament/Clusters'), for: 'App\Filament\Clusters')

@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\StatusBerlangganan;
 use App\Mail\ExpiringTenantWarning;
 use App\Models\EmailSetting;
 use App\Models\Pesantren;
@@ -40,7 +41,7 @@ class WarnExpiringTenants implements ShouldQueue
             $from = Waktu::awalHari($patokan);
             $to = Waktu::akhirHari($patokan);
 
-            Pesantren::whereIn('status_berlangganan', ['trial', 'active'])
+            Pesantren::whereIn('status_berlangganan', StatusBerlangganan::berjalan())
                 ->whereBetween('expired_at', [$from, $to])
                 ->with('users')
                 ->eachById(function (Pesantren $pesantren) use ($days) {

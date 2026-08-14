@@ -289,12 +289,26 @@ class UpgradeOrderService
     {
         abort_unless($order->isAwaitingConfirmation(), 422, 'Order tidak dalam status menunggu konfirmasi.');
 
-        $order->update([
-            'status' => StatusOrder::Rejected,
-            'catatan_admin' => $catatanAdmin,
-            'confirmed_at' => now(),
-            'confirmed_by' => $rejectedBy->id,
-        ]);
+        DB::transaction(function () use ($order, $rejectedBy, $catatanAdmin) {
+            $order->update([
+                'status' => StatusOrder::Rejected,
+                'catatan_admin' => $catatanAdmin,
+                'confirmed_at' => now(),
+                'confirmed_by' => $rejectedBy->id,
+            ]);
+
+            // Kuota kupon dinaikkan saat order DIBUAT (lihat createOrder), jadi order
+            // yang ditolak harus mengembalikannya. Tanpa ini kupon dengan max_penggunaan
+            // 10 bisa tampil "Dipakai 10/10" dan mati padahal nol transaksi berhasil.
+            // Catatan: jalur order kedaluwarsa (StatusOrder::Expired) belum ada
+            // implementasinya di mana pun; bila kelak dibuat, ia perlu pengembalian
+            // yang sama.
+            $kupon = $order->kupon()->lockForUpdate()->first();
+
+            if ($kupon && $kupon->jumlah_dipakai > 0) {
+                $kupon->decrement('jumlah_dipakai');
+            }
+        });
 
         ActivityLog::create([
             'pesantren_id' => $order->pesantren_id,
