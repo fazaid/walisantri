@@ -6,6 +6,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToPesantren;
+use App\Notifications\ResetPasswordNotification;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasAvatar;
 use Filament\Panel;
@@ -60,6 +61,17 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
     }
 
     // --- Role helpers ---
+
+    /**
+     * Pakai notification sendiri, bukan bawaan Laravel (§9.1).
+     *
+     * Bawaannya berbahasa Inggris dan merender lewat template `x-mail::message`
+     * yang tidak dipublish di proyek ini — hasilnya email tanpa gaya sama sekali.
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new ResetPasswordNotification($token));
+    }
 
     public function isSuperAdmin(): bool
     {
