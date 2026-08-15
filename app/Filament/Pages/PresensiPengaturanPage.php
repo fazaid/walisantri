@@ -4,12 +4,14 @@ namespace App\Filament\Pages;
 
 use App\Enums\UserRole;
 use App\Filament\Clusters\Presensi as ClusterPresensi;
+use App\Filament\Resources\PresensiJamPelajarans\PresensiJamPelajaranResource;
 use App\Models\PresensiPengaturan;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\TimePicker;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
@@ -47,6 +49,16 @@ class PresensiPengaturanPage extends Page implements HasForms
     public ?int $batas_edit_ustadz_hari = null;
 
     /**
+     * Nullable meski maknanya boolean.
+     *
+     * Properti Livewire bertipe `bool` polos pernah memecahkan render halaman ini:
+     * state Toggle bisa kembali sebagai null (mis. saat komponennya disabled atau
+     * belum terisi), dan "Cannot assign null to property of type bool" terjadi
+     * SEBELUM satu pun pesan validasi sempat muncul.
+     */
+    public ?bool $presensi_per_jam_aktif = null;
+
+    /**
      * Penomoran Carbon::dayOfWeek — 0 = Minggu, BUKAN ISO-8601 (1 = Senin … 7 = Minggu).
      * Salah membacanya tidak akan terlihat sampai ada pesantren yang liburnya bukan
      * Minggu, dan gejalanya cuma "hari efektif meleset satu hari" tanpa error apa pun.
@@ -75,7 +87,28 @@ class PresensiPengaturanPage extends Page implements HasForms
             'toleransi_terlambat_menit' => $pengaturan->toleransi_terlambat_menit,
             'hari_libur_mingguan' => $pengaturan->hari_libur_mingguan ?? [],
             'batas_edit_ustadz_hari' => $pengaturan->batas_edit_ustadz_hari,
+            'presensi_per_jam_aktif' => (bool) $pengaturan->presensi_per_jam_aktif,
         ]);
+    }
+
+    /**
+     * Master jam pelajaran adalah Resource tersendiri, bukan Repeater di halaman ini.
+     *
+     * Alasannya bukan gaya: jam pelajaran punya riwayat — jam ke-8 yang dihapus
+     * tahun ini tidak boleh menghapus catatan presensi jam ke-8 tahun lalu — dan
+     * Repeater yang menyinkronkan seluruh koleksi tiap simpan adalah cara paling
+     * mudah menghapus baris tanpa sengaja.
+     */
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('jamPelajaran')
+                ->label('Atur Jam Pelajaran')
+                ->icon(Heroicon::OutlinedClock)
+                ->color('gray')
+                ->url(PresensiJamPelajaranResource::getUrl())
+                ->visible(fn (): bool => PresensiJamPelajaranResource::canViewAny()),
+        ];
     }
 
     public function form(Schema $schema): Schema
@@ -107,6 +140,14 @@ class PresensiPengaturanPage extends Page implements HasForms
                             ->hiddenLabel()
                             ->options(self::HARI)
                             ->columns(4),
+                    ]),
+
+                Section::make('Presensi per Jam Pelajaran')
+                    ->description('Selain presensi harian, absen juga diambil tiap jam pelajaran oleh pengampu mapel.')
+                    ->schema([
+                        Toggle::make('presensi_per_jam_aktif')
+                            ->label('Aktifkan presensi per jam pelajaran')
+                            ->helperText('Saat aktif, muncul halaman Isi Presensi per Jam. Presensi harian tetap berjalan seperti biasa — keduanya tersimpan terpisah dan tidak saling menimpa. Atur pembagian jamnya lewat tombol "Atur Jam Pelajaran" di atas.'),
                     ]),
 
                 Section::make('Batas Edit')
@@ -151,6 +192,7 @@ class PresensiPengaturanPage extends Page implements HasForms
             // perbandingan dengan Carbon::dayOfWeek nanti tidak bergantung tipe.
             'hari_libur_mingguan' => array_values(array_map('intval', $data['hari_libur_mingguan'] ?? [])),
             'batas_edit_ustadz_hari' => $data['batas_edit_ustadz_hari'],
+            'presensi_per_jam_aktif' => (bool) ($data['presensi_per_jam_aktif'] ?? false),
         ]);
 
         Notification::make()

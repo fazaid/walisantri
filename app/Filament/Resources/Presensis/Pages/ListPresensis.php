@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Presensis\Pages;
 
 use App\Enums\UserRole;
 use App\Filament\Pages\PresensiHarianPage;
+use App\Filament\Pages\PresensiJamPage;
 use App\Filament\Pages\PresensiPengaturanPage;
 use App\Filament\Pages\PresensiScannerPage;
 use App\Filament\Resources\Presensis\PresensiResource;
@@ -32,6 +33,16 @@ class ListPresensis extends ListRecords
                 ->url(PresensiHarianPage::getUrl())
                 ->color('gray')
                 ->visible(fn (): bool => PresensiHarianPage::canAccess()),
+
+            // Hanya muncul saat mode per jam pelajaran dinyalakan admin. Bawaannya
+            // mati, jadi pesantren yang tidak memakainya tidak melihat perubahan
+            // apa pun di header ini.
+            Action::make('isiPresensiJam')
+                ->label('Isi per Jam')
+                ->icon(Heroicon::OutlinedClock)
+                ->url(PresensiJamPage::getUrl())
+                ->color('gray')
+                ->visible(fn (): bool => PresensiJamPage::aktifUntukPengguna()),
 
             Action::make('scanQr')
                 ->label('Scan QR')

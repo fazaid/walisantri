@@ -7,6 +7,7 @@ use App\Enums\SumberPresensi;
 use App\Filament\Resources\Presensis\PresensiResource;
 use App\Filament\Support\SantriOptions;
 use App\Models\Kelas;
+use App\Models\Presensi;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -31,6 +32,21 @@ class PresensisTable
                     ->label('Kelas')
                     ->placeholder('—')
                     ->toggleable(),
+                // Tanpa kolom ini, presensi harian dan presensi jam pelajaran
+                // tampak identik di tabel — dua baris "Hadir" untuk santri dan
+                // tanggal yang sama, tanpa petunjuk apa pun bahwa yang satu jam
+                // ke-3 Fiqih. Ikut tampil meski mode per jam mati: data lama tidak
+                // hilang saat admin mematikannya kembali.
+                TextColumn::make('jam_ke')
+                    ->label('Jam')
+                    ->formatStateUsing(fn (int $state): string => $state === Presensi::HARIAN
+                        ? 'Harian'
+                        : 'Jam ke-'.$state)
+                    ->description(fn ($record) => $record->jam_ke === Presensi::HARIAN
+                        ? null
+                        : $record->mataPelajaran?->nama_mapel)
+                    ->toggleable(),
+
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
@@ -47,6 +63,21 @@ class PresensisTable
             ->defaultSort('tanggal', 'desc')
             ->filters([
                 SelectFilter::make('status')->label('Status')->options(StatusKehadiran::options()),
+
+                SelectFilter::make('jenis')
+                    ->label('Jenis')
+                    ->options([
+                        'harian' => 'Presensi harian',
+                        'jam' => 'Jam pelajaran',
+                    ])
+                    // Bukan SelectFilter pada kolom jam_ke langsung: yang ingin
+                    // dipisahkan orang adalah "harian" versus "jam pelajaran",
+                    // bukan jam ke-1 versus jam ke-2.
+                    ->query(fn (Builder $query, array $data): Builder => match ($data['value'] ?? null) {
+                        'harian' => $query->where('jam_ke', Presensi::HARIAN),
+                        'jam' => $query->where('jam_ke', '>', Presensi::HARIAN),
+                        default => $query,
+                    }),
 
                 SelectFilter::make('santri_id')
                     ->label('Santri')

@@ -6,12 +6,14 @@ use App\Enums\StatusKehadiran;
 use App\Models\KesantrianKesehatan;
 use App\Models\Pesantren;
 use App\Models\Presensi;
+use App\Models\PresensiJamPelajaran;
 use App\Models\PresensiPengaturan;
 use App\Models\PrestasiSantri;
 use App\Models\Santri;
 use App\Models\TagihanSpp;
 use App\Models\UangSakuSantri;
 use App\Models\User;
+use App\Support\PresensiDefault;
 use App\Traits\Multitenantable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -268,6 +270,24 @@ class DataIsolationTest extends TestCase
 
         $this->assertCount(1, $terlihat);
         $this->assertSame($pesantrenA->id, $terlihat->first()->pesantren_id);
+    }
+
+    public function test_jam_pelajaran_tidak_bocor_lintas_tenant(): void
+    {
+        [$pesantrenA, $adminA] = $this->createTenantWithUser('pesantren-jam-a');
+        [$pesantrenB] = $this->createTenantWithUser('pesantren-jam-b');
+
+        PresensiDefault::untukPesantren($pesantrenA->id);
+        PresensiDefault::untukPesantren($pesantrenB->id);
+
+        $this->actingAs($adminA);
+
+        $terlihat = PresensiJamPelajaran::all();
+
+        // Delapan jam bawaan milik A saja — B punya delapan jam ke-1..8 yang sama
+        // nomornya, dan itu sah: uniknya (pesantren_id, jam_ke).
+        $this->assertCount(8, $terlihat);
+        $this->assertTrue($terlihat->every(fn ($jam) => $jam->pesantren_id === $pesantrenA->id));
     }
 
     /**
