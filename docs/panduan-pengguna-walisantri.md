@@ -14,14 +14,15 @@ Panduan ini ditulis untuk **Admin Pesantren** dan **Ustadz** yang menggunakan ap
 5. [Modul Mutaba'ah](#5-modul-mutabaah)
 6. [Modul Kesantrian](#6-modul-kesantrian)
 7. [Modul Akademik](#7-modul-akademik)
-8. [Rapor](#8-rapor)
-9. [Keuangan](#9-keuangan)
-10. [Pengumuman](#10-pengumuman)
-11. [Magic Link — Akses Portal Wali](#11-magic-link--akses-portal-wali)
-12. [Preview Portal Wali](#12-preview-portal-wali)
-13. [Pengaturan Pesantren & Langganan](#13-pengaturan-pesantren--langganan)
-14. [Troubleshooting Umum](#14-troubleshooting-umum)
-15. [Lampiran: Apa yang Dilihat Wali Santri](#15-lampiran-apa-yang-dilihat-wali-santri)
+8. [Modul Presensi](#8-modul-presensi)
+9. [Rapor](#9-rapor)
+10. [Keuangan](#10-keuangan)
+11. [Pengumuman](#11-pengumuman)
+12. [Magic Link — Akses Portal Wali](#12-magic-link--akses-portal-wali)
+13. [Preview Portal Wali](#13-preview-portal-wali)
+14. [Pengaturan Pesantren & Langganan](#14-pengaturan-pesantren--langganan)
+15. [Troubleshooting Umum](#15-troubleshooting-umum)
+16. [Lampiran: Apa yang Dilihat Wali Santri](#16-lampiran-apa-yang-dilihat-wali-santri)
 
 ---
 
@@ -38,7 +39,7 @@ Buka `app.walisantri.com/admin`, lalu login dengan email/password yang diberikan
 | Peran | Ruang lingkup akses |
 |---|---|
 | **Admin Pesantren** | Akses hampir penuh atas seluruh data pesantrennya sendiri: kelola santri, kelas, kamar, semua modul pencatatan, keuangan, pengguna, pengumuman, dan pengaturan langganan. |
-| **Ustadz** | Akses ke santri **bimbingannya sendiri** (halaqah) saja untuk sebagian besar modul. Tidak bisa menghapus data, tidak bisa mengakses menu Keuangan, Kelas/Kamar, dan Pengaturan. |
+| **Ustadz** | Akses ke santri **bimbingannya sendiri** (halaqah) saja untuk sebagian besar modul. Tidak bisa menghapus data, tidak bisa mengakses menu Keuangan, Kelas/Kamar, dan Pengaturan. **Modul Presensi punya aturan tersendiri:** yang dipakai bukan halaqah, melainkan penugasan **wali kelas** (untuk presensi harian) dan **pengampu mapel** (untuk presensi per jam) — lihat bagian 8. |
 
 Aturan pentingnya sederhana: **Admin bisa apa saja di pesantrennya. Ustadz hanya bisa lihat/isi data untuk santri yang dibimbingnya, dan tidak pernah bisa menghapus data.**
 
@@ -86,8 +87,8 @@ Menu: **Santri** (di sidebar, cluster paling atas)
 **Cara mengubah data santri (Admin & Ustadz):** klik ikon pensil (Edit) pada baris santri di tabel. Ustadz hanya akan melihat tombol Edit untuk santri bimbingannya sendiri.
 
 **Aksi cepat lain yang tersedia per baris santri:**
-- **Link Wali** — buka/salin link portal wali (lihat [bagian 11](#11-magic-link--akses-portal-wali))
-- **Preview sebagai Wali** — lihat tampilan portal wali santri tersebut tanpa perlu login sebagai wali (lihat [bagian 12](#12-preview-portal-wali))
+- **Link Wali** — buka/salin link portal wali (lihat [bagian 12](#12-magic-link--akses-portal-wali))
+- **Preview sebagai Wali** — lihat tampilan portal wali santri tersebut tanpa perlu login sebagai wali (lihat [bagian 13](#13-preview-portal-wali))
 - **Regenerasi Link** (admin-only) — buat ulang link portal wali kalau link lama bocor/perlu diganti
 
 **Aksi massal (pilih beberapa santri dengan centang, lalu):**
@@ -164,7 +165,7 @@ Catat hasil ujian kenaikan juz. Menu: **Tahfidz → Ujian**.
 
 ### 4.3 Rapor Tahfidz
 
-Menu: **Tahfidz → Rapor** — ringkasan capaian tahfidz per santri, per periode (bisa juga diakses lewat Cluster Rapor, lihat [bagian 8](#8-rapor)). Pilih santri dan periode, sistem menampilkan total setoran, total juz tercapai, hari aktif setor, distribusi nilai, dan hasil ujian. Tersedia tombol **Unduh PDF**.
+Menu: **Tahfidz → Rapor** — ringkasan capaian tahfidz per santri, per periode (bisa juga diakses lewat Cluster Rapor, lihat [bagian 9](#9-rapor)). Pilih santri dan periode, sistem menampilkan total setoran, total juz tercapai, hari aktif setor, distribusi nilai, dan hasil ujian. Tersedia tombol **Unduh PDF**.
 
 ---
 
@@ -255,7 +256,7 @@ Menu: **Akademik** — sebagian **Admin saja**, sebagian **Admin & Ustadz**
 1. Klik **+ New**. Pilih **Mata Pelajaran** dulu — daftar Santri di dropdown berikutnya otomatis menyesuaikan kelas dari mapel yang dipilih.
 2. Pilih Santri, Tahun Ajaran, Periode, Bulan (kalau Bulanan).
 3. Isi Nilai (0–100) dan Catatan (opsional).
-4. Simpan. Rapor akademik dihitung otomatis dari kumpulan nilai ini (tidak perlu direkap manual), lihat [bagian 8](#8-rapor).
+4. Simpan. Rapor akademik dihitung otomatis dari kumpulan nilai ini (tidak perlu direkap manual), lihat [bagian 9](#9-rapor).
 
 ### 7.3 Ekstrakurikuler
 
@@ -270,7 +271,101 @@ Menu: **Akademik** — sebagian **Admin saja**, sebagian **Admin & Ustadz**
 
 ---
 
-## 8. Rapor
+## 8. Modul Presensi
+
+Menu: **Presensi** — **Admin & Ustadz** (ustadz dibatasi ke kelas yang ia walikan; untuk presensi per jam pelajaran, ke mapel yang ia ampu)
+
+Modul ini mencatat kehadiran santri dengan tujuh status: **Hadir · Sakit · Izin · Alpa · Terlambat · Pulang · Dispensasi**. "Pulang" untuk izin pulang bermalam, "Dispensasi" untuk santri yang sedang bertugas atau mengikuti lomba.
+
+> **Siapa boleh mengisi apa.** Presensi harian diisi **wali kelas** (kelas yang ia walikan) atau admin. Presensi per jam pelajaran diisi **ustadz pengampu** mapel tersebut atau admin. Pembimbing halaqah tidak punya akses ke modul ini — kalau seorang ustadz perlu mengabsen, jadikan ia wali kelas lewat menu **Santri → Kelas**.
+
+### 8.1 Pengaturan Presensi (lakukan sekali di awal)
+
+**Admin saja.** Dari daftar **Presensi → Kehadiran**, klik tombol **Pengaturan** di kanan atas.
+
+1. **Jam masuk** — patokan jam untuk menentukan keterlambatan (mis. 07:00).
+2. **Toleransi terlambat (menit)** — santri yang tercatat setelah jam masuk + toleransi otomatis berstatus **Terlambat** (mis. 15 menit).
+3. **Hari libur mingguan** — centang hari yang memang tidak ada kegiatan (mis. Jumat, atau Minggu). Hari ini tidak akan dihitung sebagai hari efektif di rekap.
+4. **Aktifkan presensi per jam pelajaran** — biarkan mati kalau pesantren hanya butuh absen harian. Menyalakannya memunculkan menu tambahan; lihat bagian 8.6.
+5. **Aktifkan pengajuan izin oleh wali** — kalau dimatikan, hanya admin/ustadz yang bisa mencatat izin.
+
+### 8.2 Kehadiran (isi presensi harian)
+
+Menu: **Presensi → Kehadiran**, lalu klik tombol **Isi Presensi** di kanan atas.
+
+1. Pilih **Tanggal** dan **Kelas**. Semua santri aktif di kelas itu langsung tampil.
+2. Semua santri **sudah tercentang Hadir**. Anda hanya perlu mengubah yang tidak hadir — itu jauh lebih cepat daripada mencentang satu per satu.
+3. Ubah status santri yang perlu, isi **Catatan** bila ada (mis. "menyusul, ke poliklinik").
+4. Klik **Simpan**. Menyimpan ulang untuk tanggal yang sama akan **memperbarui**, bukan membuat data ganda.
+
+Kalau tanggal yang dipilih terdaftar sebagai hari libur, akan muncul peringatan kuning — halaman tetap bisa diisi (kadang ada kegiatan di hari libur), peringatan itu hanya supaya Anda tidak salah tanggal.
+
+> **Kenapa tidak ada "otomatis Alpa" di akhir hari?** Karena sistem tidak bisa membedakan santri yang benar-benar bolos dari ustadz yang lupa mengisi. Kalau ditandai otomatis, satu ustadz yang sakit bisa membuat seluruh kelas tercatat Alpa — dan wali santri melihatnya. Karena itu hari yang tidak diisi muncul di rekap sebagai **"Tanpa Keterangan"**, bukan Alpa. Kalau Anda memang ingin menutup hari itu, gunakan tombol **Tutup Hari** di halaman Kehadiran: sisa santri yang belum punya catatan akan ditandai Alpa atas nama Anda.
+
+### 8.3 Hari Libur (kalender satu tahun ajaran)
+
+**Admin saja.** Menu: **Presensi → Hari Libur**.
+
+1. Klik **+ New**. Pilih **Tahun Ajaran**.
+2. Isi **Tanggal Mulai** dan **Tanggal Selesai** — untuk libur satu hari, isi tanggal yang sama di keduanya.
+3. Isi **Keterangan** (mis. "Maulid Nabi", "Libur Akhir Semester Ganjil").
+4. Simpan. Rentang tanggal otomatis dipecah menjadi baris per hari.
+
+Hari libur dan hari libur mingguan sama-sama dikeluarkan dari perhitungan **hari efektif** di rekap — jadi persentase kehadiran tidak turun hanya karena pondok sedang libur.
+
+### 8.4 Kartu QR & Absen dengan Pemindai
+
+Cara tercepat mengabsen banyak santri: cetak kartu ber-QR sekali, lalu tinggal dipindai tiap pagi. Santri tidak perlu membawa ponsel.
+
+**Mencetak kartu.** Dari **Presensi → Kehadiran**, klik **Cetak Kartu**, pilih kelas, lalu unduh PDF-nya dan cetak. Setiap kartu memuat nama, NIS, dan kode QR santri.
+
+**Memindai.** Klik **Scan QR** dari halaman yang sama.
+
+1. Kolom pemindaian langsung aktif. Kalau Anda memakai **alat pemindai (scanner) USB atau Bluetooth**, cukup arahkan dan tembak — alat itu bekerja seperti papan ketik, jadi tidak perlu pengaturan apa pun.
+2. Setiap pemindaian langsung tercatat **Hadir**, atau **Terlambat** bila sudah lewat jam masuk + toleransi. Nama santri dan jamnya muncul di layar sebagai konfirmasi.
+3. Kartu tertinggal? Ketik saja **NIS** santri di kolom yang sama, lalu tekan Enter.
+4. Memindai kartu yang sama dua kali tidak membuat data ganda — akan muncul keterangan "sudah tercatat", lengkap dengan jam pencatatan pertamanya.
+
+> **Kartu hilang atau terlanjur difoto orang lain?** Buka detail santri, klik **Regenerasi Kode Presensi**, lalu cetak ulang kartunya. Kode lama langsung tidak berlaku.
+
+> **Kode QR di kartu ini bukan link portal wali.** Keduanya sengaja dipisah: kode presensi tidak bisa dipakai membuka data santri, hanya bisa dipindai oleh petugas yang sudah login. Jadi kartu yang terjatuh atau terfoto tidak membocorkan nilai, rekam medis, atau tagihan SPP.
+
+### 8.5 Pengajuan Izin
+
+Menu: **Presensi → Pengajuan Izin**. Angka di sebelah menu menunjukkan jumlah pengajuan yang belum diproses.
+
+**Wali mengajukan sendiri.** Wali santri mengisi dari portal: memilih anak, jenis izin (Sakit / Izin / Pulang / Dispensasi), rentang tanggal, alasan, dan lampiran seperti foto surat dokter. Pengajuan masuk dengan status **Menunggu Persetujuan**.
+
+1. Buka pengajuan, baca alasan dan lihat lampirannya.
+2. Klik **Setujui** atau **Tolak**, tambahkan catatan bila perlu.
+3. Begitu disetujui, presensi untuk tanggal-tanggal tersebut **terisi otomatis** — tidak perlu dicatat ulang di menu Kehadiran. Hari libur di dalam rentang dilewati.
+
+**Admin mencatat langsung.** Kalau santri melapor lisan, klik **+ New** di menu yang sama. Izin yang dibuat admin langsung berstatus disetujui dan langsung mengisi presensi.
+
+### 8.6 Presensi per Jam Pelajaran (opsional)
+
+Muncul hanya bila diaktifkan di Pengaturan (bagian 8.1). Berguna untuk pesantren yang punya kelas formal dan ingin tahu di jam ke berapa santri mulai tidak masuk.
+
+**Atur jam pelajaran dulu.** Dari halaman Kehadiran, klik **Jam Pelajaran** (**Admin saja**). Isi jam ke-1 sampai jam terakhir beserta jam mulai dan selesainya. Delapan jam pelajaran standar sudah tersedia dan tinggal disesuaikan.
+
+**Mengisi.** Klik **Isi per Jam** dari halaman Kehadiran, pilih Tanggal, Kelas, Mata Pelajaran, dan Jam ke berapa. Cara pengisiannya sama persis dengan presensi harian.
+
+### 8.7 Rekap & Ekspor
+
+Menu: **Presensi → Rekap**.
+
+1. Pilih **Tahun Ajaran** dan **Periode** (Bulanan / Semester Ganjil / Semester Genap).
+2. Pilih tampilan: **per kelas**, **per santri**, atau **per jam pelajaran**.
+3. Tabel menampilkan jumlah tiap status, **Hari Efektif**, kolom **Tanpa Keterangan**, dan **% Kehadiran** (Hadir + Terlambat + Dispensasi dihitung hadir).
+4. Klik **Ekspor Excel** untuk mengunduh.
+
+Kolom **Tanpa Keterangan** yang besar di satu kelas biasanya bukan berarti santrinya bolos — melainkan presensi kelas itu belum diisi. Gunakan kolom ini untuk memantau kedisiplinan pencatatan.
+
+Presensi juga bisa disertakan di **Rapor** (bagian 9) sebagai salah satu modul yang dicentang, sehingga ikut tercetak di PDF rapor santri.
+
+---
+
+## 9. Rapor
 
 Menu: **Rapor** — **Admin & Ustadz**
 
@@ -289,18 +384,18 @@ Ustadz hanya bisa memilih santri bimbingannya sendiri di dropdown Santri.
 
 ---
 
-## 9. Keuangan
+## 10. Keuangan
 
 Menu: **Keuangan** — **Admin saja** (ustadz tidak punya akses sama sekali ke modul ini)
 
-### 9.1 Tarif SPP
+### 10.1 Tarif SPP
 
 Menu: **Keuangan → Tarif SPP**. Tentukan nominal SPP bulanan per kelas.
 
 1. Klik **+ New**. Pilih Kelas, isi Nominal SPP (Rp), dan Keterangan (opsional).
 2. Simpan. Nominal ini akan dipakai sebagai acuan saat generate tagihan.
 
-### 9.2 Tagihan SPP
+### 10.2 Tagihan SPP
 
 Menu: **Keuangan → Tagihan SPP**.
 
@@ -317,7 +412,7 @@ Menu: **Keuangan → Tagihan SPP**.
 
 Filter tabel tersedia berdasarkan Status, Bulan, dan Tahun.
 
-### 9.3 Uang Saku Santri
+### 10.3 Uang Saku Santri
 
 Menu: **Keuangan → Uang Saku**. Ledger setoran/pengambilan uang saku per santri.
 
@@ -328,7 +423,7 @@ Menu: **Keuangan → Uang Saku**. Ledger setoran/pengambilan uang saku per santr
 
 ---
 
-## 10. Pengumuman
+## 11. Pengumuman
 
 Menu: **Pengumuman** (grup Manajemen)
 
@@ -340,7 +435,7 @@ Menu: **Pengumuman** (grup Manajemen)
 
 ---
 
-## 11. Magic Link — Akses Portal Wali
+## 12. Magic Link — Akses Portal Wali
 
 **Siapa yang bisa akses:** tombol "Link Wali" tersedia untuk Admin & Ustadz; tombol "Regenerasi Link" khusus Admin.
 
@@ -356,7 +451,7 @@ Wali santri tidak login dengan email/password — mereka mengakses laporan anakn
 
 ---
 
-## 12. Preview Portal Wali
+## 13. Preview Portal Wali
 
 **Siapa yang bisa akses:** Admin & Ustadz
 
@@ -366,11 +461,11 @@ Berguna untuk QA sebelum mengirim link ke wali, atau untuk membantu wali yang bi
 
 ---
 
-## 13. Pengaturan Pesantren & Langganan
+## 14. Pengaturan Pesantren & Langganan
 
 Menu: **Pengaturan** (grup Manajemen) — **Admin saja**
 
-### 13.1 Pengaturan Profil Pesantren
+### 14.1 Pengaturan Profil Pesantren
 
 Menu: **Pengaturan → Pengaturan**. Kelola identitas dan profil publik pesantren (tampil di halaman profil publik `{slug}.walisantri.com`):
 
@@ -383,11 +478,11 @@ Menu: **Pengaturan → Pengaturan**. Kelola identitas dan profil publik pesantre
 
 Klik **Simpan Perubahan** di bagian bawah setelah selesai mengubah.
 
-### 13.2 Billing (Informasi Langganan)
+### 14.2 Billing (Informasi Langganan)
 
 Menu: **Pengaturan → Billing**. Menampilkan status langganan pesantren saat ini (paket, kuota santri, tanggal berakhir) dan detail order aktif kalau sedang dalam proses upgrade. Tombol **Upgrade / Perpanjang Paket** membawa Anda ke halaman Upgrade.
 
-### 13.3 Upgrade / Perpanjang Paket
+### 14.3 Upgrade / Perpanjang Paket
 
 1. Dari halaman Billing, klik **Upgrade / Perpanjang Paket**.
 2. Pilih **Paket Tujuan**. Untuk paket Maju, atur juga **Kuota Santri** (minimum 1.000, kelipatan 100).
@@ -401,7 +496,7 @@ Menu: **Pengaturan → Billing**. Menampilkan status langganan pesantren saat in
 
 ---
 
-## 14. Troubleshooting Umum
+## 15. Troubleshooting Umum
 
 **"Langganan pesantren telah berakhir" / diarahkan paksa ke halaman Billing.**
 Paket langganan pesantren sudah kadaluwarsa. Hanya Admin Pesantren yang bisa membuka halaman Billing untuk memperpanjang — kalau Anda login sebagai Ustadz dan mendapat pesan ini, hubungi admin pesantren Anda untuk memperpanjang langganan.
@@ -426,19 +521,23 @@ Cek apakah santri tersebut sudah diset sebagai bimbingan ustadz itu (`Ustadz Pem
 
 ---
 
-## 15. Lampiran: Apa yang Dilihat Wali Santri
+## 16. Lampiran: Apa yang Dilihat Wali Santri
 
 Wali santri mengakses portal terpisah lewat Magic Link, tampilannya read-only (tanpa bisa mengubah data), berisi:
 
 - **Beranda**: sapaan, ringkasan singkat, alert kalau anaknya sedang sakit atau ada tunggakan SPP
 - **Detail Santri**: biodata, capaian tahfidz, statistik kesehatan, prestasi, ekstrakurikuler aktif
 - **Mutaba'ah**: tabel amalan harian anaknya dengan filter tanggal
+- **Presensi**: rekap kehadiran bulan berjalan (Hadir, Sakit, Izin, Alpa, Terlambat, Pulang, Dispensasi), jumlah hari efektif, persentase kehadiran, dan daftar hariannya
+- **Pengajuan Izin**: form mengajukan izin untuk anaknya (jenis, rentang tanggal, alasan, lampiran surat dokter) beserta status tiap pengajuan
 - **Rapor**: tab Tahfidz, Akademik, Karakter, Mutabaah per periode + tombol unduh PDF
 - **SPP**: daftar tagihan, info rekening bank pesantren, tombol "Saya Sudah Transfer" untuk mengunggah bukti pembayaran
 - **Uang Saku**: saldo dan riwayat setoran/pengambilan
 - **Inventaris**: daftar barang titipan anaknya (kalau paket Maju)
 - **Pengumuman**: daftar pengumuman yang ditujukan ke wali/semua pengguna
 
-Bottom navigation di portal wali: **Beranda · SPP · Pengumuman · Uang Saku · Rapor**.
+Bottom navigation di portal wali: **Beranda · SPP · Pengumuman · Uang Saku · Rapor**. Presensi dan Pengajuan Izin dicapai dari halaman detail santri, bukan dari bottom navigation.
 
-Memahami tampilan ini membantu Anda menjelaskan ke wali santri apa yang akan mereka lihat setelah Anda menginput data — atau gunakan [Preview sebagai Wali](#12-preview-portal-wali) untuk melihat langsung dari akun Anda sendiri.
+> ⚠️ **Wali yang masuk lewat Magic Link tidak bisa mengajukan izin.** Sesi Magic Link sengaja dibuat baca-saja demi keamanan. Untuk mengajukan izin, wali harus masuk lewat halaman login dengan akunnya sendiri — form pengajuan otomatis diganti keterangan ini kalau wali datang dari Magic Link. Sampaikan ini bila ada wali yang bertanya kenapa tombolnya tidak muncul.
+
+Memahami tampilan ini membantu Anda menjelaskan ke wali santri apa yang akan mereka lihat setelah Anda menginput data — atau gunakan [Preview sebagai Wali](#13-preview-portal-wali) untuk melihat langsung dari akun Anda sendiri.

@@ -130,7 +130,10 @@ Bisa — setoran dan pengambilan, dengan saldo yang dapat dilihat wali.
 Sebagian besar bisa diatur sendiri melalui menu pengaturan: nama kelas, kamar, mata pelajaran, jenis amalan, dan ekstrakurikuler.
 
 **Apakah ada absensi kehadiran kelas?**
-Saat ini tersedia pencatatan amalan harian dan status udzur. Absensi kelas formal belum tersedia, dan kami mencatatnya sebagai masukan pengembangan.
+Ada. Tersedia presensi harian dengan tujuh status (Hadir, Sakit, Izin, Alpa, Terlambat, Pulang, dan Dispensasi), kalender hari libur satu tahun ajaran, serta rekap dan ekspor Excel. Setiap santri juga bisa dicetakkan kartu ber-QR yang tinggal dipindai petugas saat masuk — santri tidak perlu membawa ponsel. Presensi per jam pelajaran tersedia sebagai mode tambahan yang bisa diaktifkan bila pesantren membutuhkannya.
+
+**Bisakah wali santri mengajukan izin lewat aplikasi?**
+Bisa. Wali mengajukan izin dari portal (memilih anak, jenis izin, rentang tanggal, alasan, dan lampiran seperti surat dokter), lalu admin atau wali kelas menyetujui atau menolaknya. Izin yang disetujui langsung mengisi presensi pada tanggal-tanggal tersebut, jadi tidak perlu dicatat dua kali. Admin juga tetap bisa mencatat izin secara langsung bila santri melapor lisan.
 
 **Bisakah digunakan untuk pesantren putra dan putri sekaligus?**
 Bisa. Data jenis kelamin santri tersedia dan dapat difilter.

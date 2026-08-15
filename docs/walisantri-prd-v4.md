@@ -4,7 +4,20 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Agustus 2026 — v4.24
+**Last Updated:** Agustus 2026 — v4.25
+
+**Changelog v4.25:** **Modul Presensi — janji tiga rilis yang akhirnya ditepati.** `kelas.wali_kelas_id` ditambahkan di v4.17 sebagai "fondasi modul absensi" lalu diam selama tujuh rilis; §2 masih berbunyi *"Presensi belum ada modulnya"*, §22 masih mendaftarkannya sebagai Di-skip, dan `docs/faq-walisantri.md` masih menjawab calon pelanggan bahwa absensi kelas formal belum tersedia. Rilis ini menutup ketiganya sekaligus dengan modul penuh: presensi harian, kalender hari libur, pengajuan izin dua pintu, kartu QR santri, rekap & ekspor, dan presensi per jam pelajaran sebagai mode opsional (§3.2 Modul Presensi, §7 Cluster Presensi sort 3).
+
+Enam keputusan rancangan yang sengaja dicatat karena masing-masing menolak jalan yang lebih jelas:
+
+- **Kartu QR memakai kolom `kode_presensi` baru, BUKAN `santri.uuid`.** Ini temuan keamanan, bukan selera. `uuid` adalah token bearer Magic Link: `VerifyMagicToken` menukarnya jadi `Auth::login($wali)`, sehingga siapa pun yang memotret kartu memperoleh sesi read-only ke **seluruh** portal wali keluarga itu — semua anaknya, SPP, uang saku, rapor (§13.2). Kartu presensi berpindah tangan, difotokopi, dan tergeletak di asrama; kredensial tidak boleh ikut di dalamnya. Isi QR juga bukan URL, melainkan string opaque `WSP1.{kode}` — kamera HP bawaan tidak menawarkan "buka tautan", jadi kartu tidak mengundang eksperimen.
+- **Satu tabel `presensi` dengan `jam_ke` NOT NULL DEFAULT 0**, bukan dua tabel dan bukan `jam_pelajaran_id` nullable. Kolom diskriminator nullable akan meruntuhkan jaminan "satu presensi harian per santri per hari" secara diam-diam, karena `NULL != NULL` di dalam UNIQUE — di PostgreSQL **maupun** SQLite, jadi tidak ada perbedaan engine yang akan membongkarnya di CI. `0` = presensi harian, `1..N` = jam pelajaran ke-N.
+- **Tidak ada job terjadwal yang menandai Alpa.** Job malam tidak bisa membedakan "ustadz lupa mengisi" dari "santri bolos"; menulis Alpa satu pesantren penuh karena satu ustadz sakit adalah data yang aktif merusak — dan wali melihatnya. Sebagai gantinya rekap memunculkan kategori **"Tanpa Keterangan"** yang jujur, dan ada aksi manual "Tutup Hari" bertanda tangan `dicatat_oleh`.
+- **Hari libur disimpan satu baris per tanggal**, bukan rentang. Form tetap menerima rentang lalu mengembangkannya. Libur Ramadan ≈30 baris — murah — dan sebagai gantinya rekap cukup `whereIn('tanggal', …)` alih-alih logika tumpang-tindih rentang yang selalu salah di kasus tepi.
+- **Lampiran izin di disk `local`, bukan `public`.** Surat keterangan dokter adalah data kesehatan anak (§13.2); disk `public` menghasilkan URL yang bisa ditebak. Disajikan lewat rute terotorisasi, pola `orders.bukti-transfer`.
+- **Pembimbing halaqah sengaja nol akses presensi.** Presensi dipegang wali kelas (harian) dan pengampu mapel (per jam) saja — §5.4 mengunci "penugasan di satu modul tidak membuka modul lain", dan dikunci tes `PresensiCakupanUstadzTest`.
+
+**Koreksi drift yang ditemukan saat merancang (bukan bagian modul presensi).** §3.0, §3.2, dan §17 sama-sama mengklaim ada Observer yang menyetel `status_udzur = Sakit` di mutaba'ah saat rekam kesehatan berstatus `Istirahat_Total`/`Rujukan_Luar`. **Observer itu tidak pernah ada** — `app/Observers/` hanya memuat Santri, User, Pesantren, PlatformBankAccount, MasterPengumuman, DemoRequest, dan Kelas, dan tidak ada satu pun penulisan `status_udzur` dari jalur kesehatan di seluruh `app/`. Ketiga klaim dikoreksi di rilis ini. Judul "Statistik Kehadiran" di `resources/views/filament/pdf/rapor/mutabaah.blade.php` juga diganti jadi "Ringkasan Mutaba'ah" — ia merender statistik udzur, dan membiarkannya akan membuat satu PDF memuat dua bagian "Kehadiran" dengan angka berbeda.
 
 **Changelog v4.24:** **Perapian menu super admin + tambal 13 bug di permukaannya.** Sidebar super admin sebelumnya menumpang pada struktur yang dirancang untuk tenant: grup **Langganan** jadi tempat buangan yang mencampur data transaksional dengan enam halaman pengaturan platform, `navigationSort` bertabrakan (sort 11 dipakai dua item, sort 12 dipakai **tiga**) sehingga urutannya tidak deterministik, dan **Pesantren** + **Antrean Demo** menggantung tanpa grup sambil berebut ruang sort dengan Cluster milik tenant. Sekarang jadi empat grup rapi — **Platform · Langganan · Pengaturan Platform · Manajemen** — dengan nama grup bersumber tunggal dari `App\Enums\NavigationGroup` (lihat catatan di §7). Tampilan admin pesantren & ustadz **tidak berubah sama sekali**, dan seluruh rute identik sebelum-sesudah.
 
@@ -194,7 +207,7 @@ Setelah autentikasi, `role` dibaca lalu di-redirect — dilakukan di `WaliLoginC
 |---|---|---|
 | `super_admin` | `app.../admin` | Kelola semua tenant, billing, kuota (lintas tenant via `withoutGlobalScope` / role `BYPASSRLS`) |
 | `admin_pesantren` | `app.../admin` | Kontrol penuh data lembaga, user, impor, pemetaan kelas/kamar, profil publik, billing |
-| `ustadz` | `app.../admin` | Input mutaba'ah, tahfidz, nilai mapel yang diampu, rekam medis santri binaan (§5.4). *Presensi belum ada modulnya* |
+| `ustadz` | `app.../admin` | Input mutaba'ah, tahfidz, nilai mapel yang diampu, rekam medis santri binaan; **presensi harian kelas yang ia walikan** dan **presensi jam pelajaran mapel yang ia ampu** (§5.4, v4.25) |
 | `wali_santri` | `app.../wali/dashboard` | Portal read-only perkembangan santri |
 
 ---
@@ -277,6 +290,11 @@ erDiagram
   kelas ||--o{ tarif_spp : tarif
   santri ||--o{ prestasi_santri : prestasi
   tagihan_spp ||--o{ pembayaran_spp : bayar
+  santri ||--o{ presensi : hadir
+  santri ||--o{ presensi_izin : izin
+  presensi_izin ||--o{ presensi : mengisi
+  kelas ||--o{ presensi : "snapshot kelas"
+  mata_pelajaran ||--o{ presensi : "saat jam_ke > 0"
   kelas {
     bigint id PK
     bigint pesantren_id FK
@@ -294,7 +312,8 @@ erDiagram
     bigint pembimbing_ustadz_id FK "ke users, null"
     bigint kelas_id FK "ke kelas"
     bigint kamar_id FK "ke kamar"
-    uuid uuid UK "token Magic Link"
+    uuid uuid UK "token Magic Link — JANGAN dicetak di kartu QR"
+    string kode_presensi UK "kode kartu QR, terpisah dari uuid"
     string nis "unik per pesantren"
     string nama_lengkap
     enum jenis_kelamin "laki_laki/perempuan, null"
@@ -374,7 +393,7 @@ erDiagram
     date tanggal_periksa
     enum jenis_rekam "keluhan/rutin"
     enum kategori_keluhan "null saat rutin"
-    enum status_pemulihan "auto-udzur, + Sembuh"
+    enum status_pemulihan "Rawat_Mandiri/Istirahat_Total/Rujukan_Luar/Sembuh"
     date tanggal_sembuh "null"
   }
   kesantrian_inventaris {
@@ -431,6 +450,44 @@ erDiagram
     string penyelenggara
     string dokumen "path sertifikat"
   }
+  presensi_pengaturan {
+    bigint pesantren_id FK UK "satu baris per pesantren"
+    boolean presensi_per_jam_aktif "default false"
+    time jam_masuk
+    smallint toleransi_terlambat_menit
+    jsonb hari_libur_mingguan "Carbon dayOfWeek, 0=Minggu"
+  }
+  presensi_jam_pelajaran {
+    bigint pesantren_id FK
+    smallint jam_ke UK "unik per pesantren"
+    time jam_mulai
+    time jam_selesai
+  }
+  presensi_hari_libur {
+    bigint pesantren_id FK
+    date tanggal UK "unik per pesantren, satu baris per hari"
+    string keterangan
+    string tahun_ajaran
+  }
+  presensi {
+    bigint santri_id FK
+    date tanggal
+    smallint jam_ke "NOT NULL, 0=harian, 1..N=jam ke-N"
+    bigint mata_pelajaran_id FK "null, saat jam_ke > 0"
+    bigint kelas_id FK "snapshot kelas saat dicatat"
+    enum status "Hadir/Sakit/Izin/Alpa/Terlambat/Pulang/Dispensasi"
+    enum sumber "manual/qr/izin"
+    bigint dicatat_oleh "FK logis ke users"
+  }
+  presensi_izin {
+    bigint santri_id FK
+    enum jenis "sakit/izin/pulang/dispensasi"
+    date tanggal_mulai
+    date tanggal_selesai
+    string lampiran "disk local, bukan public"
+    enum status "diajukan/disetujui/ditolak/dibatalkan"
+    bigint diajukan_oleh "null = dibuat admin langsung"
+  }
   master_pengumuman {
     bigint id PK
     bigint pesantren_id FK "scoped, bukan per-santri"
@@ -464,11 +521,11 @@ erDiagram
 
 ## 3.2 DB Tenant
 
-**`kelas`** — `id` PK · `pesantren_id` FK cascadeOnDelete · `nama_kelas` string · `wali_kelas_id` FK→users nullOnDelete, null (v4.17) · timestamps. *Unique: `(pesantren_id, nama_kelas)`; Index: `wali_kelas_id`.* Hanya `admin_pesantren` yang bisa CRUD. **v4.17:** `wali_kelas_id` ditambah sebagai penugasan wali kelas (§5.4) — satu kelas satu wali, satu ustadz boleh mewalikan beberapa kelas, tanpa batas kuota seperti aturan 20 santri pembimbing. Belum melebarkan cakupan data apa pun; disiapkan sebagai pijakan modul absensi masuk kelas (§22).
+**`kelas`** — `id` PK · `pesantren_id` FK cascadeOnDelete · `nama_kelas` string · `wali_kelas_id` FK→users nullOnDelete, null (v4.17) · timestamps. *Unique: `(pesantren_id, nama_kelas)`; Index: `wali_kelas_id`.* Hanya `admin_pesantren` yang bisa CRUD. **v4.17:** `wali_kelas_id` ditambah sebagai penugasan wali kelas (§5.4) — satu kelas satu wali, satu ustadz boleh mewalikan beberapa kelas, tanpa batas kuota seperti aturan 20 santri pembimbing. **v4.25:** kolom ini akhirnya dipakai — ia menjadi cakupan presensi harian (§3.2 Modul Presensi, §5.4); sebelumnya ia menganggur tujuh rilis sebagai "fondasi modul absensi".
 
 **`kamar`** — `id` PK · `pesantren_id` FK cascadeOnDelete · `nama_kamar` string · `kapasitas` unsignedSmallInteger default 0 · timestamps. *Unique: `(pesantren_id, nama_kamar)`.* Hanya `admin_pesantren` yang bisa CRUD.
 
-**`santri`** — `id` PK · `pesantren_id` FK cascadeOnDelete · `wali_santri_id` FK→users restrictOnDelete, **nullable (v4.9)** · `pembimbing_ustadz_id` FK→users restrictOnDelete, **nullable (v4.9)** · `kelas_id` FK→kelas nullOnDelete · `kamar_id` FK→kamar nullOnDelete · `uuid` unique (token Magic Link) · `nis` (unique per pesantren) · `nama_lengkap` · `nama_panggilan` null · `tanggal_lahir` date null · `jenis_kelamin` enum(`laki_laki`/`perempuan`) null (v4.12) · `nama_ayah` null · `nama_ibu` null · `alamat_lengkap` text null · `jumlah_saudara` smallint null · `ciri_fisik` text null (ciri fisik yang mudah dikenali) · `cita_cita` null · `foto_profil` string null (path file, v4.9) · `status_aktif` bool default true · `deleted_at` (SoftDeletes) · timestamps. *Index: `(pesantren_id, status_aktif)`, `pembimbing_ustadz_id`, `wali_santri_id`; Unique: `(pesantren_id, nis)`.* Kolom `kelas`/`kamar` string dihapus (migrasi ke FK di v4.3). Kolom biodata (`nama_panggilan` s.d. `cita_cita`) ditambah di v4.7 — semua nullable, diisi opsional oleh admin/ustadz. `tanggal_lahir` ditambah di v4.8. **v4.9:** `wali_santri_id`/`pembimbing_ustadz_id` dibuat nullable agar bulk import Excel bisa membuat baris santri sebelum akun wali/ustadz terkait dibuat; `foto_profil` ditambah (FileUpload validasi magic-bytes, `SantriObserver` membersihkan file lama saat diganti/dihapus). **v4.12:** `jenis_kelamin` ditambah — enum PHP `App\Enums\JenisKelamin`, nullable (data lama tidak punya nilai), diisi opsional lewat form/import Excel (parser `SantriImport` toleran variasi teks "L"/"Laki-laki"/"P"/"Perempuan", case-insensitive).
+**`santri`** — `id` PK · `pesantren_id` FK cascadeOnDelete · `wali_santri_id` FK→users restrictOnDelete, **nullable (v4.9)** · `pembimbing_ustadz_id` FK→users restrictOnDelete, **nullable (v4.9)** · `kelas_id` FK→kelas nullOnDelete · `kamar_id` FK→kamar nullOnDelete · `uuid` unique (token Magic Link) · `nis` (unique per pesantren) · `nama_lengkap` · `nama_panggilan` null · `tanggal_lahir` date null · `jenis_kelamin` enum(`laki_laki`/`perempuan`) null (v4.12) · `nama_ayah` null · `nama_ibu` null · `alamat_lengkap` text null · `jumlah_saudara` smallint null · `ciri_fisik` text null (ciri fisik yang mudah dikenali) · `cita_cita` null · `foto_profil` string null (path file, v4.9) · `status_aktif` bool default true · `deleted_at` (SoftDeletes) · timestamps. *Index: `(pesantren_id, status_aktif)`, `pembimbing_ustadz_id`, `wali_santri_id`; Unique: `(pesantren_id, nis)`.* Kolom `kelas`/`kamar` string dihapus (migrasi ke FK di v4.3). Kolom biodata (`nama_panggilan` s.d. `cita_cita`) ditambah di v4.7 — semua nullable, diisi opsional oleh admin/ustadz. `tanggal_lahir` ditambah di v4.8. **v4.9:** `wali_santri_id`/`pembimbing_ustadz_id` dibuat nullable agar bulk import Excel bisa membuat baris santri sebelum akun wali/ustadz terkait dibuat; `foto_profil` ditambah (FileUpload validasi magic-bytes, `SantriObserver` membersihkan file lama saat diganti/dihapus). **v4.12:** `jenis_kelamin` ditambah — enum PHP `App\Enums\JenisKelamin`, nullable (data lama tidak punya nilai), diisi opsional lewat form/import Excel (parser `SantriImport` toleran variasi teks "L"/"Laki-laki"/"P"/"Perempuan", case-insensitive). **v4.25:** dua kolom kartu presensi ditambah — `kode_presensi` string(16) null **unique global** (nama index `santri_kode_presensi_unik`) dan `kode_presensi_diperbarui_at` ts null. Isinya 12 karakter Crockford Base32 (alfabet tanpa I/L/O/U supaya tetap terbaca manusia bila QR rusak), digenerate `App\Support\KodePresensi::buat()` di `SantriObserver::creating()` dan di-backfill migrasi `tenant/2026_08_15_000006` lewat `DB::table('santri')` — bukan Eloquent, karena global scope `pesantren` menyaring habis saat migrasi jalan tanpa sesi auth, dan baris ber-`deleted_at` juga wajib kebagian kode agar unique tidak menabrak saat santri di-restore. ⚠️ **Kolom ini sengaja BUKAN `uuid`** — lihat §13.2.
 
 ### Modul Akademik & Tahfidz
 
@@ -496,11 +553,33 @@ erDiagram
 
 **`kesantrian_karakter_rapor`** — `periode` enum **NOT NULL** (`Bulanan`/`Semester_Ganjil`/`Semester_Genap` — CHECK diperlebar `tenant/2026_07_25_000001`; insert tanpa kolom ini gagal 23502) · `tanggal_input` date · `tahun_ajaran` string(9) null (v4.9) · `bulan` string(10) null (v4.9, diisi saat periode bulanan) · 7 kolom Adab (`adab_ustadz`/`adab_tamu`/`adab_asrama`/`adab_kelas`/`adab_sholat`/`adab_quran`/`adab_minum`) + 9 kolom Kepribadian, semua enum A/B/C/D default B · `log_kasus_khusus` text null. *Index eksplisit `idx_karakter_ps_tgl` pada `(pesantren_id, santri_id, tanggal_input)` — nama eksplisit wajib (batas identifier PostgreSQL 63 char).* **v4.9:** `tahun_ajaran`/`bulan` ditambah sebagai identitas periode utama (selaras pola `nilai_akademik`/`tahfidz_rapor`); validasi mencegah satu santri diinput dua kali untuk periode yang sama.
 
-**`kesantrian_kesehatan`** — `tanggal_periksa` · `jenis_rekam` **`string(10)` default `'keluhan'` tanpa CHECK** (nilai yang dipakai: `keluhan`/`rutin` — menyimpang dari aturan enum-berCHECK di §3) default `keluhan` (v4.9) · `berat_badan`/`tinggi_badan` float null · `kategori_keluhan` enum(`Demam`/`Batuk_Pilek`/`Sakit_Perut`/`Pusing`/`Kulit_Gatal`/`Luka_Fisik`/`Lainnya`), **nullable saat `jenis_rekam='rutin'`** (v4.9) · `detail_keluhan_teks` text null · `tindakan_dan_obat` text, nullable saat `rutin` (v4.9) · `status_pemulihan` enum(`Rawat_Mandiri`/`Istirahat_Total`/`Rujukan_Luar`/`Sembuh`), nullable saat `rutin` (v4.9) · `tanggal_sembuh` date null (v4.9). *Observer: `Istirahat_Total`/`Rujukan_Luar` → auto-set `status_udzur = Sakit` di mutaba'ah harian.* **v4.9:** rekam kesehatan kini bisa dicatat sebagai `rutin` (pemeriksaan berkala tanpa keluhan) selain `keluhan` (sakit) — form menyembunyikan section Keluhan otomatis saat `rutin`; nilai `Sembuh` ditambah ke `status_pemulihan` + kolom `tanggal_sembuh` untuk menandai pemulihan penuh.
+**`kesantrian_kesehatan`** — `tanggal_periksa` · `jenis_rekam` **`string(10)` default `'keluhan'` tanpa CHECK** (nilai yang dipakai: `keluhan`/`rutin` — menyimpang dari aturan enum-berCHECK di §3) default `keluhan` (v4.9) · `berat_badan`/`tinggi_badan` float null · `kategori_keluhan` enum(`Demam`/`Batuk_Pilek`/`Sakit_Perut`/`Pusing`/`Kulit_Gatal`/`Luka_Fisik`/`Lainnya`), **nullable saat `jenis_rekam='rutin'`** (v4.9) · `detail_keluhan_teks` text null · `tindakan_dan_obat` text, nullable saat `rutin` (v4.9) · `status_pemulihan` enum(`Rawat_Mandiri`/`Istirahat_Total`/`Rujukan_Luar`/`Sembuh`), nullable saat `rutin` (v4.9) · `tanggal_sembuh` date null (v4.9). ⚠️ **v4.25 — koreksi:** seksi ini sejak lama menyatakan *"Observer: `Istirahat_Total`/`Rujukan_Luar` → auto-set `status_udzur = Sakit` di mutaba'ah harian"*. **Observer itu tidak pernah ada.** `app/Observers/` hanya memuat Santri, User, Pesantren, PlatformBankAccount, MasterPengumuman, DemoRequest, dan Kelas (`AppServiceProvider::registerObservers()`), dan tidak ada satu pun penulisan `status_udzur` dari jalur kesehatan di seluruh `app/` — status udzur mutaba'ah **selalu** diisi manual. Modul Presensi (§3.2) yang justru membangun turunan lintas-modul semacam itu untuk pertama kalinya, lewat `PresensiIzinService`. **v4.9:** rekam kesehatan kini bisa dicatat sebagai `rutin` (pemeriksaan berkala tanpa keluhan) selain `keluhan` (sakit) — form menyembunyikan section Keluhan otomatis saat `rutin`; nilai `Sembuh` ditambah ke `status_pemulihan` + kolom `tanggal_sembuh` untuk menandai pemulihan penuh.
 
 **`kesantrian_inventaris`** — `nama_barang_umum` · `kode_unik_fisik` unique **per-tenant** `(pesantren_id, kode_unik_fisik)` (`[Inisial]-[Barang]-[Nomor]`, mis. `FZ-SRG-01`) — v4.9: `tenant/2026_07_22_000002` mengubahnya dari unique global, yang sempat bikin pesantren B gagal menyimpan kode yang sudah dipakai pesantren A (SQLSTATE 23505) · `kuota_regulasi_maksimal` smallint · `kondisi_barang` enum(`Baik`/`Layak_Rusak`/`Hilang`) · `tanggal_sidak_terakhir` date null.
 
 **`master_pengumuman`** — `pesantren_id` FK **nullable** + `nullOnDelete` (`tenant/2026_05_21_000002`, null = pengumuman lintas-platform) · `judul_maklumat` · `isi_maklumat` text · `target_audience` enum(`admin`/`wali`/`semua`, default `semua`) — kontrol visibilitas feed dashboard wali; hanya `wali`/`semua` yang tampil. **Catatan:** feed pengumuman publik di `{slug}.walisantri.com` sudah dihapus (lihat §1.4) — `PublicProfileController` tidak membaca tabel ini sama sekali · timestamps. *Index: `(pesantren_id, created_at)`.*
+
+### Modul Presensi *(v4.25)*
+
+**`presensi_pengaturan`** — `id` PK · `pesantren_id` FK→pesantrens cascadeOnDelete · `presensi_per_jam_aktif` bool default `false` · `jam_masuk` time default `'07:00:00'` · `toleransi_terlambat_menit` smallint default 15 · `hari_libur_mingguan` jsonb default `'[0]'` (angka `Carbon::dayOfWeek` — **0 = Minggu … 6 = Sabtu**; konvensi ini wajib ditulis di komentar migrasi, ISO-8601 memakai penomoran berbeda dan itu sumber bug klasik) · `izin_wali_aktif` bool default `true` · `qr_aktif` bool default `true` · timestamps. *Unique: `(pesantren_id)` nama `presensi_pengaturan_ps_unik`.* Satu baris per pesantren, hanya `admin_pesantren` yang bisa mengubah. Dibuat `ProvisionTenant::jalankan()` untuk tenant baru, ditambal migrasi `tenant/2026_08_15_000007` untuk tenant lama, **dan tetap menyembuhkan diri** lewat `PresensiPengaturan::untuk($pesantrenId)` yang memakai `firstOrCreate` — tiga lapis sengaja, sebagai pagar terhadap bug kelas v4.21 (amal master tidak ter-seed untuk tenant baru selama berbulan-bulan). `toleransi_terlambat_menit` disimpan sebagai satu angka menit, bukan jam absolut `batas_terlambat`: angka yang sama berlaku untuk `jam_masuk` (presensi harian) **dan** untuk `jam_mulai` tiap jam pelajaran, sehingga tidak ada dua nilai yang bisa saling menyimpang.
+
+**`presensi_jam_pelajaran`** — `id` PK · `pesantren_id` FK→pesantrens cascadeOnDelete · `jam_ke` smallint · `jam_mulai` time · `jam_selesai` time · `label` string(50) null (mis. "Istirahat") · `aktif` bool default `true` · timestamps. *Unique: `(pesantren_id, jam_ke)` nama `presensi_jam_unik_ps_ke`.* Master jam pelajaran per pesantren — tabel master, bukan CHECK constraint, karena pembagian jam berbeda antar pesantren (§1.7 poin 10). **Bukan jadwal mingguan:** tidak ada kolom hari; kombinasi (kelas, mapel, jam ke-N, tanggal) ditentukan saat pengisian, bukan disimpan sebagai jadwal. Delapan jam bawaan diisi `App\Support\PresensiDefault` lewat `ProvisionTenant` (pola `AmalanDefault`). Hanya `admin_pesantren`.
+
+**`presensi_hari_libur`** — `id` PK · `pesantren_id` FK→pesantrens cascadeOnDelete · `tanggal` date · `keterangan` string(150) · `tahun_ajaran` string(10) (`"2026/2027"`) · timestamps. *Unique: `(pesantren_id, tanggal)` nama `presensi_libur_unik_ps_tgl`; Index: `(pesantren_id, tahun_ajaran)` nama `idx_libur_ps_ta`.* **Satu baris per hari, bukan rentang.** Form tetap menerima rentang tanggal lalu mengembangkannya jadi N baris dalam satu `DB::transaction` + `updateOrCreate` (pola `MutabaahHarianPage::save()`). Libur Ramadan ≈30 baris — murah — dan sebagai imbalannya rekap cukup `whereIn('tanggal', …)` alih-alih logika tumpang-tindih rentang yang selalu salah di kasus tepi. Hanya `admin_pesantren`.
+
+**`presensi`** — `id` PK · `pesantren_id` FK→pesantrens cascadeOnDelete · `santri_id` FK→santri cascadeOnDelete · `tanggal` date · `jam_ke` smallint **NOT NULL** default 0 (**0 = presensi harian**, 1..N = jam pelajaran ke-N) · `mata_pelajaran_id` FK→mata_pelajaran nullOnDelete null (diisi hanya saat `jam_ke > 0`) · `kelas_id` FK→kelas nullOnDelete null (**snapshot** kelas saat presensi dicatat — santri bisa pindah kelas di tengah tahun ajaran, dan rekap per kelas harus mencerminkan kelas saat itu, bukan kelas hari ini) · `status` enum(`Hadir`/`Sakit`/`Izin`/`Alpa`/`Terlambat`/`Pulang`/`Dispensasi`) default `Hadir` · `menit_terlambat` smallint null · `catatan` string(255) null · `sumber` enum(`manual`/`qr`/`izin`) default `manual` · `presensi_izin_id` FK→presensi_izin nullOnDelete null · `dicatat_oleh` bigint null (FK **logis** ke `users.id` di DB central — tidak di-enforce FK fisik, pola `uang_saku_santri`/`pembayaran_spp`) · `dicatat_at` ts null · timestamps. *Unique: `(santri_id, tanggal, jam_ke)` nama `presensi_unik_santri_tgl_jam`; Index: `(pesantren_id, tanggal, jam_ke)` nama `idx_presensi_ps_tgl_jam`, `(pesantren_id, santri_id, tanggal)` nama `idx_presensi_ps_santri_tgl`, `(pesantren_id, kelas_id, tanggal)` nama `idx_presensi_ps_kelas_tgl`.*
+
+> **Kenapa `jam_ke` NOT NULL dan bukan `jam_pelajaran_id` nullable.** Kolom diskriminator yang nullable akan meruntuhkan jaminan "satu presensi harian per santri per hari" secara diam-diam: di dalam UNIQUE, `NULL` tidak pernah sama dengan `NULL` — sehingga `(santri_id, tanggal, NULL)` bisa disisipkan tak terbatas. Ini berlaku di **PostgreSQL maupun SQLite**, jadi tidak ada perbedaan engine yang akan membongkarnya di CI (berbeda dari kelas bug CHECK-constraint di §22). `UNIQUE NULLS NOT DISTINCT` ada sejak PostgreSQL 15 tapi tidak dipancarkan schema builder Laravel dan tidak ada padanannya di SQLite. Nilai `0` juga bermakna, bukan sekadar sentinel: satu santri memang hanya punya satu presensi "harian" per hari.
+
+> **Kenapa tidak ada FK ke `presensi_jam_pelajaran`.** Admin yang menghapus "jam ke-8" dari master jadwal tidak boleh ikut menghapus riwayat presensi jam ke-8 tahun lalu. `jam_ke` sengaja jadi angka lepas; rekap tetap menampilkannya sebagai "Jam 8" meski masternya sudah tidak ada.
+
+> **Tabel ini tidak diaudit ke `activity_logs`.** Volume ±250.000 baris/tahun/tenant akan menenggelamkan tabel append-only itu dan membuat retensi §10.3 tidak ada artinya. Jejak per baris sudah cukup: `dicatat_oleh` + `sumber` + `updated_at`. Yang diaudit hanyalah keputusan, bukan pencatatan rutin — lihat §10.2.
+
+**`presensi_izin`** — `id` PK · `pesantren_id` FK→pesantrens cascadeOnDelete · `santri_id` FK→santri cascadeOnDelete · `jenis` enum(`sakit`/`izin`/`pulang`/`dispensasi`) · `tanggal_mulai` date · `tanggal_selesai` date · `alasan` text · `lampiran` string null (path disk **`local`**, folder `izin-santri`) · `status` enum(`diajukan`/`disetujui`/`ditolak`/`dibatalkan`) default `diajukan` · `diajukan_oleh` bigint null (FK logis `users.id`; **null = dibuat langsung oleh admin**) · `diproses_oleh` bigint null · `diproses_at` ts null · `catatan_petugas` text null · timestamps. *Index: `(pesantren_id, status)` nama `idx_izin_ps_status`, `(pesantren_id, santri_id, tanggal_mulai)` nama `idx_izin_ps_santri_tgl`.* Tanpa unique — satu santri boleh punya beberapa pengajuan. **Dua pintu masuk:** wali mengajukan lewat portal (`status='diajukan'`, menunggu persetujuan admin/wali kelas), admin membuat langsung (`status='disetujui'`, `diajukan_oleh=null`). Persetujuan menulis baris `presensi` untuk tiap tanggal dalam rentang lewat `App\Services\PresensiIzinService::setujui()` — **hari libur dilewati**, dan service memegang transisi status + efek sampingnya (pola `UpgradeOrderService`, bukan logika di dalam aksi Filament). ⚠️ `lampiran` **wajib** di disk `local`: surat keterangan dokter adalah data kesehatan anak (§13.2) dan disk `public` menghasilkan URL yang bisa ditebak; disajikan lewat rute terotorisasi `wali.izin.lampiran`, pola `orders.bukti-transfer`.
+
+**Enum PHP baru:** `App\Enums\StatusKehadiran` (tujuh nilai; + `hadirEfektif(): bool` — Hadir, Terlambat, dan Dispensasi dihitung hadir, supaya definisi "% kehadiran" hidup di satu tempat alih-alih tersebar di rekap, ekspor, dan PDF) · `StatusPengajuanIzin` · `JenisIzin` (+ `keStatusKehadiran(): StatusKehadiran`, satu titik pemetaan izin→status) · `SumberPresensi`. Keempatnya berbentuk seragam `label()`/`color()`/`options()` seperti dua belas enum yang sudah ada.
+
+**Urutan migrasi** (`database/migrations/tenant/`, suffix 6 digit berurut): `..._000001_create_presensi_pengaturan_table` → `000002_create_presensi_jam_pelajaran_table` → `000003_create_presensi_hari_libur_table` → `000004_create_presensi_izin_table` → `000005_create_presensi_table` (harus **setelah** `presensi_izin` karena FK-nya) → `000006_add_kode_presensi_to_santri_table` → `000007_seed_presensi_default_untuk_pesantren_lama`.
 
 ### Modul Keuangan
 
@@ -537,6 +616,8 @@ UI grid Livewire untuk mengisi mutaba'ah banyak santri dalam satu layar — `App
 Satu-satunya filter adalah **tanggal**. Barisnya seluruh santri aktif pesantren, atau santri bimbingan saja untuk ustadz (`getSantriQuery()`). *Rencana awal "filter visual per kamar" dan "toggle amalan kolektif" belum dibangun — lihat §22.*
 
 Untuk akademik ada padanannya: `App\Filament\Pages\NilaiMassalPage` (slug `/admin/akademik/input-nilai-massal`, v4.19), grid nilai satu kelas sekaligus.
+
+Grid ketiga sejak v4.25: `App\Filament\Pages\PresensiHarianPage` (slug `/admin/presensi/isi-presensi`), presensi satu kelas dalam satu layar. Filternya **tanggal + kelas**, dan barisnya di-*prefill* `Hadir` untuk semua santri — bukan kosong. Ini keputusan sadar, bukan kenyamanan: menekan satu tombol simpan berarti hari itu **ditutup oleh manusia** dengan `dicatat_oleh` yang jelas, sehingga status `Alpa` yang tersimpan selalu berarti "seseorang menyatakannya", bukan "sistem menebak" (§11). Slug-nya sengaja `isi-presensi`, bukan `isi-harian` — nama itu sudah dipakai `MutabaahHarianPage`, dan nama route Filament diturunkan dari slug.
 
 ## 4.3 Magic Link (Passwordless, On-Demand)
 
@@ -616,6 +697,7 @@ Matriks fitur — paket di kolom, fitur/kuota/modul di baris (✓ = termasuk, �
 | Modul Kesehatan | ✓ | ✓ | ✓ | ✓ |
 | Modul Ekstrakurikuler *(v4.9)* | ✓ | ✓ | ✓ | ✓ |
 | Modul Uang Saku & Tarif SPP *(v4.9)* | ✓ | ✓ | ✓ | ✓ |
+| Modul Presensi *(v4.25)* | ✓ | ✓ | ✓ | ✓ |
 | Modul Inventaris *(niat: Maju saja — belum ditegakkan, lihat catatan)* | ✓ | ✓ | ✓ | ✓ |
 | Fitur AI *(post v1.0 — belum ada kodenya)* | — | — | — | ✓ |
 | Custom domain *(roadmap, add-on)* | — | — | — | ✓ (add-on) |
@@ -665,7 +747,7 @@ Istilah pembimbing, pengampu, pencatat, penguji, pembina, dan wali kelas adalah 
 | Pencatat setoran | `tahfidz_progress.ustadz_id` (jejak audit, terisi otomatis) |
 | Penguji | `tahfidz_rapor.penguji_id` |
 | Pembina ekskul | `ekskul_masters.pembina_id` (v4.17) — atau `pengajar` untuk pelatih luar tanpa akun |
-| Wali kelas | `kelas.wali_kelas_id` (v4.17) — fondasi modul absensi |
+| Wali kelas | `kelas.wali_kelas_id` (v4.17) — sejak v4.25 menjadi cakupan **presensi harian** kelasnya + kewenangan menyetujui pengajuan izin santri kelasnya (§3.2 Modul Presensi) |
 
 Alasan `role` tidak dipecah jadi `ustadz_pengampu`, `ustadz_penguji`, dan seterusnya:
 
@@ -675,6 +757,21 @@ Alasan `role` tidak dipecah jadi `ustadz_pengampu`, `ustadz_penguji`, dan seteru
 4. **`role` itu struktural** — mengunci ERD (§3.2), index `(pesantren_id, role)`, rencana RLS, dan redirect pasca-login (§5.1).
 
 **Cakupan sengaja terpisah per modul.** Pengampu hanya menjangkau nilai mapel yang ia ampu; pembimbing hanya santri binaannya (tahfidz/mutaba'ah/karakter/kesehatan); wali kelas hanya kelasnya. Penugasan di satu modul **tidak** membuka modul lain — dikunci tes `PenugasanUstadzTest::test_pengampu_mapel_tidak_bisa_melihat_mutabaah_santri_di_kelasnya`.
+
+**Cakupan presensi (v4.25)** mengikuti aturan yang sama, dan sengaja dibedakan per jenis baris:
+
+| Penugasan | Presensi harian (`jam_ke = 0`) | Presensi per jam (`jam_ke > 0`) | Setujui pengajuan izin |
+|---|---|---|---|
+| `admin_pesantren` | Semua | Semua | Ya |
+| Wali kelas | **Isi & lihat** santri kelasnya | — | Ya, santri kelasnya |
+| Pengampu mapel | — | **Isi & lihat** baris mapel yang ia ampu | — |
+| Pembimbing halaqah | — | — | — |
+| Pembina ekskul | — | — | — |
+| `super_admin` | — | — | — |
+
+**Pembimbing halaqah sengaja nol akses presensi.** Halaqah adalah relasi pembinaan hafalan dan adab, bukan kehadiran kelas; memberinya presensi berarti mencampur dua cakupan yang §5.4 justru dibuat untuk memisahkan. Bila seorang pembimbing memang perlu mengabsen, admin cukup menjadikannya wali kelas — satu klik, dan jejaknya terbaca di `PenugasanUstadz::ringkasan()`. Dikunci tes `PresensiCakupanUstadzTest`, sekelas dengan `PenugasanUstadzTest`.
+
+Dua method turunan ditambahkan ke `App\Support\PenugasanUstadz`: `santriIdsPerwalianKelas()` dan `santriIdsKelasDiampu()` — keduanya murni turunan dari `kelasIdsPerwalian()`/`kelasIdsDiampu()` yang sudah ada, tanpa kolom baru, jadi tidak bisa basi. Scoping-nya **tidak** memakai `ScopesQueryToUstadzSantri`: trait itu menyaring satu kolom, sedangkan aturan presensi bercabang berdasarkan **isi baris** (`jam_ke`), sehingga dipakai trait tersendiri `ScopesQueryToPresensiUstadz` yang juga meng-override route-model binding. Memaksakan trait lama dengan `ustadzScopedIds()` gabungan perwalian ∪ kelas-diampu akan membuat pengampu Fiqih melihat presensi harian seluruh kelas — pelebaran cakupan diam-diam yang persis dilarang seksi ini.
 
 Definisi keenam jalur itu dipusatkan di `App\Support\PenugasanUstadz` (v4.17) supaya tidak lagi dihitung ad-hoc di tiap resource; `PenugasanUstadz::ringkasan()` menurunkan daftar penugasan per ustadz untuk ditampilkan di halaman Pengguna (dihitung, tidak disimpan).
 
@@ -787,6 +884,12 @@ Dashboard                        ← semua role
 [Cluster Tahfidz] BookOpen ← top-level sidebar, tanpa group (v4.7, sort 2) → tab: Setoran · Ujian
   (v4.19: tab "Nilai" hilang — Rapor Tahfidz melebur ke halaman Rapor gabungan)
 ──
+[Cluster Presensi] ClipboardDocumentCheck ← top-level sidebar, tanpa group (v4.25, sort 3 — slot yang kosong sejak v4.19)
+  Kehadiran (1) · Rekap (2) · Hari Libur (3) [admin_pesantren] · Pengajuan Izin (4, + badge jumlah status `diajukan`)
+  ┊ Isi Presensi (/admin/presensi/isi-presensi) · Scan QR (/admin/presensi/scan) · Isi per Jam (/admin/presensi/isi-jam)
+  ┊ Jam Pelajaran [admin_pesantren] · Pengaturan Presensi [admin_pesantren]
+  ┊ — kelimanya di dalam cluster tapi tanpa entri navigasi, dicapai dari tombol header ListPresensis
+──
 [Cluster Kesantrian] ShieldCheck ← top-level sidebar, tanpa group (v4.8, sort 4)
   Mutabaah ClipboardDocumentList · Karakter Star · Kesehatan Heart [Rintisan+] · Inventaris ArchiveBox [Maju]
   ┊ Isi Harian (URL /admin/kesantrian/isi-harian) & Amal Master — di dalam cluster tanpa entri navigasi (v4.19)
@@ -826,7 +929,7 @@ Rapor DocumentChartBar ← halaman top-level, BUKAN cluster (v4.19, slug /admin/
 > **URL halaman di dalam cluster selalu berprefix slug cluster.** Filament menggabungkan `Cluster::getSlug()` dengan `$slug` milik halaman, jadi `$slug = 'isi-harian'` di dalam Cluster Kesantrian menghasilkan `/admin/kesantrian/isi-harian`, bukan `/admin/isi-harian`. Hanya halaman **di luar** cluster yang memakai slug apa adanya (`/admin/rapor`, `/admin/pengaturan`, `/admin/billing-page`). Saat menulis URL di dokumen ini, ambil dari `php artisan route:list --path=admin` — jangan disimpulkan dari nilai `$slug` saja.
 
 
-> **v4.9 — restrukturisasi navigasi total.** Grup top-level lama "Santri", "Akademik", dan "Keuangan" dibubarkan; semuanya jadi Filament Cluster. `AdminPanelProvider::navigationGroups()` kini hanya mendaftarkan `['Kesantrian', 'Langganan', 'Manajemen']` — nama `Kesantrian` di daftar ini adalah sisa registrasi lama yang sudah tidak dipakai cluster manapun (Cluster Kesantrian sendiri berjalan tanpa group, `$navigationGroup = null`) namun belum dibersihkan dari kode; ini observasi kecil, bukan gap fungsional. **Selesai di v4.24** — pendaftaran grup pindah ke `App\Enums\NavigationGroup` yang tidak memuat `Kesantrian`. Enam Cluster kini top-level tanpa group — urutan render mengikuti `navigationSort` masing-masing: Santri(0) → Akademik(1) → Tahfidz(2) → Mutabaah(3) → Kesantrian(4) → Rapor(5). Grup **Manajemen** berisi campuran Resource biasa (Pengguna, Pengumuman) dan dua Cluster baru (Keuangan sort 2, Pengaturan sort 4). **Sudah berubah di v4.19** — lihat peta di atas: cluster top-level tinggal **lima** (Santri 0 → Akademik 1 → Tahfidz 2 → Kesantrian 4 → Keuangan 6; sort 3 kosong setelah Mutabaah dibubarkan, sort 5 tetap terpakai halaman Rapor yang kini bukan cluster), Keuangan naik jadi cluster top-level di luar grup Manajemen, dan Cluster Pengaturan tidak ada lagi.
+> **v4.9 — restrukturisasi navigasi total.** Grup top-level lama "Santri", "Akademik", dan "Keuangan" dibubarkan; semuanya jadi Filament Cluster. `AdminPanelProvider::navigationGroups()` kini hanya mendaftarkan `['Kesantrian', 'Langganan', 'Manajemen']` — nama `Kesantrian` di daftar ini adalah sisa registrasi lama yang sudah tidak dipakai cluster manapun (Cluster Kesantrian sendiri berjalan tanpa group, `$navigationGroup = null`) namun belum dibersihkan dari kode; ini observasi kecil, bukan gap fungsional. **Selesai di v4.24** — pendaftaran grup pindah ke `App\Enums\NavigationGroup` yang tidak memuat `Kesantrian`. Enam Cluster kini top-level tanpa group — urutan render mengikuti `navigationSort` masing-masing: Santri(0) → Akademik(1) → Tahfidz(2) → Mutabaah(3) → Kesantrian(4) → Rapor(5). Grup **Manajemen** berisi campuran Resource biasa (Pengguna, Pengumuman) dan dua Cluster baru (Keuangan sort 2, Pengaturan sort 4). **Sudah berubah di v4.19** — lihat peta di atas: cluster top-level tinggal **lima** (Santri 0 → Akademik 1 → Tahfidz 2 → Kesantrian 4 → Keuangan 6; sort 3 kosong setelah Mutabaah dibubarkan, sort 5 tetap terpakai halaman Rapor yang kini bukan cluster), Keuangan naik jadi cluster top-level di luar grup Manajemen, dan Cluster Pengaturan tidak ada lagi. **v4.25:** slot sort 3 yang menganggur itu diisi **Cluster Presensi**, sehingga urutannya kembali rapat: Santri(0) → Akademik(1) → Tahfidz(2) → **Presensi(3)** → Kesantrian(4) → Rapor(5) → Keuangan(6). Urutannya juga benar secara alur kerja — presensi duduk di antara pengajaran (Tahfidz/Akademik) dan pembinaan (Kesantrian). `App\Enums\NavigationGroup` **tidak disentuh**: cluster ini top-level tanpa group seperti lima lainnya, dan menyunting enum itu akan mengubah urutan grup sidebar tanpa alasan.
 
 > **Cluster Tahfidz (v4.7, menyusut v4.19):** 3 resource (Setoran/Ujian/Nilai — sebelumnya `Setoran Tahfidz`/`Ujian Tahfidz`/`Rapor Tahfidz` flat di grup Akademik) digabung jadi satu menu sidebar via `App\Filament\Clusters\Tahfidz`; navigasi antar-resource berupa tab. Filament default merender tab cluster (`SubNavigationPosition::Top`) di bawah header & sebagai dropdown di mobile — di-override via `renderHook(PanelsRenderHook::PAGE_START, …)` di `AdminPanelProvider` (render tab di atas breadcrumbs, ambil halaman aktif via `Livewire::current()`) + CSS (`width:fit-content` agar `margin-inline:auto` bawaan Filament benar-benar men-tengahkan tab, dan sembunyikan dropdown/tab versi default) supaya tampilan konsisten desktop & mobile.
 
@@ -870,6 +973,13 @@ Blade + TailwindCSS murni (tanpa Flux UI), mobile-first. Akses via Magic Link (�
   4. **Dropdown tahun ajaran** hanya bersumber dari `TahfidzUjian`, jadi santri yang punya nilai akademik/karakter tapi belum pernah ujian tahfidz tidak bisa menjangkau tahun lain. Kini digabung dari tiga sumber.
 
   Label adab/kepribadian di halaman & PDF wali kini diambil dari `RaporKarakterData::adabFields()`/`kepribadianFields()` — satu sumber dengan panel admin. Dikunci `tests/Feature/WaliRaporTest.php` (10 kasus); sebelumnya `Wali\RaporController` dan `Wali\LaporanController` sama sekali tidak punya tes.
+
+- **Presensi santri** *(v4.25)*: `/wali/santri/{santri}/presensi` — rekap bulan berjalan (tujuh status + hari efektif + % kehadiran) dan daftar harian, dengan filter bulan. Baca-saja.
+- **Pengajuan Izin** *(v4.25)*: `/wali/izin` (daftar pengajuan semua anak + statusnya) dan `POST /wali/izin` (pilih anak, jenis, rentang tanggal, alasan, lampiran opsional). Izin yang disetujui admin/wali kelas langsung mengisi presensi tanggal terkait (§3.2). Lampiran disajikan lewat rute terotorisasi `wali.izin.lampiran` karena disimpan di disk `local`, bukan `public`.
+
+> **Tidak ada item bottom nav ke-6.** Kelima tab (Beranda · SPP · Pengumuman · Uang Saku · Rapor) dipertahankan; presensi dicapai dari detail santri, persis seperti Tahfidz, Kesehatan, Mutaba'ah, dan Inventaris yang juga sudah jadi halaman anak sejak awal. `wali/layouts/app.blade.php` membagi lebar `flex-1` per item, dan item keenam akan memotong label di layar sempit.
+
+> ⚠️ **Sesi Magic Link tidak bisa mengajukan izin.** `VerifyMagicToken` melakukan `abort(403)` untuk **setiap** request non-GET, dan `BlockMagicLinkSession` menjaga jalur lain — jadi form pengajuan wajib disembunyikan saat `session('magic_link_session')` aktif (dan saat mode pratinjau admin), diganti ajakan "masuk lewat halaman login untuk mengajukan izin". Membiarkannya tampil berarti wali menulis alasan panjang lalu ditolak 403 tanpa penjelasan. Kepemilikan santri **wajib** lewat `ResolvesSantriMilikWali::pastikanSantriMilikWali()` — global scope hanya menyaring `pesantren_id`, dan mengandalkannya adalah persis bug §8 #1 yang sudah pernah terjadi.
 
 **Fitur roadmap (post v1.0):**
 - Kalender Amalan Harian (warna: hijau lengkap / kuning sebagian / abu udzur / merah alpa) — tampilan kalender interaktif.
@@ -939,8 +1049,13 @@ Yang benar-benar ditulis kode (diverifikasi `grep "'event' =>"`):
 | `magic_link.viewed` | `KirimMagicLinkAction` (v4.9, koreksi dari `magic_link.sent` — dicatat saat modal dibuka, bukan saat pesan terkirim) |
 | `wali_preview.viewed` | `Wali\ReportController` (admin melihat pratinjau portal wali) |
 | `order.bukti_uploaded` · `order.confirmed` · `order.rejected` | `UpgradeOrderService` |
+| `presensi.izin_diajukan` *(v4.25)* | `Wali\IzinController::store()` |
+| `presensi.izin_disetujui` · `presensi.izin_ditolak` *(v4.25)* | `PresensiIzinService` |
+| `presensi.kode_diregenerasi` *(v4.25)* | `RegenerasiKodePresensiAction` |
 
 Event `export.generated` yang pernah didaftar di sini **tidak ada di kode** — `ExportController` tidak mencatat audit sama sekali.
+
+> **Baris `presensi` sengaja TIDAK diaudit.** Yang dicatat hanyalah keputusan (izin disetujui/ditolak, kode kartu diregenerasi), bukan pencatatan rutin. Presensi menghasilkan ±250.000 baris/tahun/tenant; mengauditnya akan menenggelamkan tabel append-only ini dan membuat retensi §10.3 kehilangan arti. Jejak per baris sudah memadai lewat `dicatat_oleh` + `sumber` + `updated_at` di baris presensi itu sendiri. Keempat event `presensi.*` kena **retensi operasional 2 tahun** — jangan ditambahkan ke `PurgeAuditLogs::BILLING_EVENTS`.
 
 ## 10.3 Retention
 
@@ -966,6 +1081,12 @@ Didefinisikan dengan `Schedule::job(...)` di **`routes/console.php`** (Laravel 1
 > **Backup DB bukan job Laravel.** Backup harian 02:00 ditangani cron OS langsung ke `scripts/backup.sh` (§6.2) — job `DatabaseBackup` lama dihapus karena menulis ke disk `r2-backup` yang tidak pernah dikonfigurasi. Catatan itu ada persis di `routes/console.php` supaya tidak dijadwalkan ulang tanpa sengaja.
 
 > `CheckExpiredTenants`, `WarnExpiringTenants` & `WarnExpiringTenantsWhatsApp` hanya query DB central, tidak melewati koneksi tenant — tidak boleh terpengaruh `SaaSLifecycleLock`.
+
+> **Modul Presensi sengaja tidak menambah satu pun job terjadwal (v4.25).** Godaan yang jelas adalah job akhir-hari yang menandai santri tanpa catatan sebagai `Alpa`. Itu ditolak karena alasan **kebenaran data**, bukan biaya: job tidak bisa membedakan *"ustadz lupa mengisi"* dari *"santri benar-benar bolos"*, sehingga satu ustadz yang sakit akan menghasilkan Alpa untuk satu pesantren penuh — dan wali melihatnya di portal. Itu jenis kesalahan yang menghancurkan kepercayaan pada seluruh modul, dan menghapusnya kembali tidak menghapus percakapan yang sudah terjadi. Biayanya juga nyata (±250.000 baris/tahun/tenant, disapu per tenant × per santri sambil membaca kalender libur masing-masing, di VPS 4GB dengan tiga worker), tapi itu argumen kedua.
+>
+> Sebagai gantinya: grid harian mem-*prefill* `Hadir` sehingga satu tombol simpan menutup hari itu atas nama manusia (§4.2); ada aksi manual **"Tutup Hari"** per kelas yang menandai sisanya `Alpa` dengan `dicatat_oleh`; dan rekap **tidak** menyamakan "tidak ada baris" dengan Alpa — hari efektif tanpa baris muncul sebagai kategori tersendiri **"Tanpa Keterangan"**. Itu jujur kepada wali sekaligus jadi alat manajemen: admin langsung melihat kelas mana yang ustadznya tidak mengisi.
+>
+> Satu-satunya kandidat job yang masuk akal di kemudian hari adalah pengingat "N kelas belum mengisi presensi hari ini" pukul 12.00. Bila dibuat, tempatnya di `routes/console.php`, koneksi `database`, queue `default`, dengan `->timezone(config('app.display_timezone'))` — dan **tanpa** `Queue::route()` (§23.5).
 
 ---
 
@@ -1002,6 +1123,10 @@ Notifikasi order dikonfirmasi punya kill-switch & template terpisah di halaman y
 | Terima kasih pendaftar demo | System (observer, pengecualian §12) | Ucapan terima kasih + link grup support |
 
 **Belum dibangun** (tidak ada dispatch WhatsApp untuk keempatnya — dicatat di §22): Magic Link per santri/massal per kamar (hari ini admin menyalin link dari modal dan mengirim sendiri, §4.3) · notifikasi rapor baru · notifikasi santri `Rujukan_Luar` · siaran pengumuman penting.
+
+**Modul Presensi (v4.25) TIDAK menambah dispatch WhatsApp kelima.** Klaim "hanya keempat tempat itulah yang men-`dispatch` `KirimNotifikasiWhatsapp`" di atas tetap utuh dan boleh dipercaya. Pemberitahuan status pengajuan izin memakai jalur yang benar-benar hidup: notifikasi in-app Filament (`->sendToDatabase()` ke admin pesantren + wali kelas santri, pola `DemoRequestObserver`; `->databaseNotifications()` sudah aktif dengan polling 5 menit), badge jumlah `diajukan` di tab Pengajuan Izin, dan status yang terbaca wali di portal. Email juga tidak ditambahkan di v4.25 — jenis email baru berarti satu baris kill-switch di `email_settings`, satu Mailable, dan empat-serangkai tes (§17); tunda sampai benar-benar diminta.
+
+Sebagai rancangan siap-nyala bila integrasi WhatsApp dihidupkan kembali: key template `notif_izin_disetujui` dengan placeholder `{nama_santri}`, `{jenis_izin}`, `{tanggal_mulai}`, `{tanggal_selesai}`, `{nama_pesantren}` — dan kill-switch `notif_izin_disetujui_enabled`. Ditulis di sini supaya penyambungannya nanti tinggal satu dispatch, bukan perancangan ulang.
 
 ---
 
@@ -1063,6 +1188,16 @@ Staf yang sudah ada saat fitur ini masuk ditandai terverifikasi lewat migrasi ta
 
 Rekam medis & karakter hanya untuk pesantren + wali terkait, tidak pernah lintas tenant (dijamin `pesantren_id` + Global Scope + RLS). Audit log mencatat akses/perubahan. Backup R2 enkripsi at-rest otomatis.
 
+**Kartu QR presensi memakai `kode_presensi`, bukan `santri.uuid` (v4.25).** Ini pembatas keamanan, bukan preferensi penamaan, dan alasannya harus tetap terbaca oleh siapa pun yang tergoda "menyederhanakan" nanti:
+
+- `santri.uuid` adalah **token bearer** portal wali. `Santri::linkWali()` merangkainya jadi `https://app.walisantri.com/report/{uuid}`, dan `VerifyMagicToken` menukarnya menjadi `Auth::login($santri->wali)` — bukan sekadar tampilan satu santri, melainkan **sesi wali yang utuh**. Sesinya read-only (non-GET → 403), tapi cakupannya seluruh portal: semua anak wali tersebut, tagihan SPP, uang saku, dan rapor.
+- Kartu presensi adalah benda fisik yang dipegang anak, difotokopi, dipotret untuk grup WhatsApp, dan tergeletak di asrama. Mencetak `uuid` di atasnya sama dengan mencetak kredensial. Satu foto kartu cukup untuk membuka rekam medis dan tagihan satu keluarga.
+- `kode_presensi` tidak membuka data apa pun sendirian: ia hanya bisa ditukar menjadi baris presensi **di dalam sesi ustadz/admin yang sudah terautentikasi dan sudah ter-scope tenant**. Yang dicegah oleh keacakannya bukan pembocoran data, melainkan santri memalsukan kartu temannya dengan menebak — itu sebabnya `nis` juga ditolak sebagai isi QR (berurutan dan sudah tercetak di banyak berkas lain).
+- Isi QR adalah string opaque `WSP1.{kode}` (prefiks versi skema), **bukan URL**. Konsekuensinya disengaja: kamera bawaan ponsel yang memindai kartu ini tidak menawarkan "buka tautan" — hasilnya teks tak bermakna, sehingga kartu tidak mengundang eksperimen.
+- Kartu hilang ditangani `RegenerasiKodePresensiAction` (audit `presensi.kode_diregenerasi`, mengisi `kode_presensi_diperbarui_at` sehingga admin punya jawaban atas "kartu siapa yang harus dicetak ulang").
+
+**Lampiran pengajuan izin disimpan di disk `local`, bukan `public` (v4.25).** Surat keterangan dokter adalah data kesehatan anak; disk `public` menghasilkan URL yang bisa ditebak dan tidak pernah melewati otorisasi. Berkasnya disajikan lewat rute terotorisasi (`abort_unless` + `Storage::disk('local')->response()`), pola `orders.bukti-transfer` yang sudah dipakai untuk bukti transfer.
+
 ## 13.3 Hak Penghapusan
 
 Admin ajukan penghapusan permanen ke Super Admin via email → diproses ≤7 hari kerja → data dihapus dari DB & R2.
@@ -1087,10 +1222,13 @@ Step **"lihat/salin Magic Link wali pertama" dihapus di v4.21** — membuka moda
 | Rapor Akademik / Tahfidz / Mutabaah / Karakter | PDF | Admin/Ustadz | Satu dokumen gabungan per santri, modul dipilih lewat checkbox di `RaporPage` (v4.19, lihat §7) |
 | Data Santri | Excel | Admin | **Semua santri** — aktif & non-aktif, dengan kolom status (tidak difilter `status_aktif`) |
 | Rekam Medis Periode | Excel | Admin/Ustadz | Filter tanggal, semua paket (v4.9: batasan "Berkembang+" dikoreksi — tidak ada Gate paket di kode) |
+| Rekap Presensi *(v4.25)* | Excel | Admin/Ustadz | Filter tahun ajaran + periode + kelas; ustadz hanya cakupannya (§5.4) |
 
 **Alur (sinkron):** klik Export + filter → `Admin\ExportController` memanggil `Excel::download()` → berkas langsung terunduh di request yang sama. Tidak ada job, tidak ada queue, tidak ada penyimpanan di server, jadi tidak ada berkas yang perlu dibersihkan. Route: `admin.export.santri` · `admin.export.mutabaah` · `admin.export.rekam-medis`.
 
-Untuk PDF rapor, `RaporPage` merender `filament.pdf.rapor-gabungan` lewat DomPDF, juga sinkron.
+Untuk PDF rapor, `RaporPage` merender `filament.pdf.rapor-gabungan` lewat DomPDF, juga sinkron. **v4.25:** rute keempat `admin.export.presensi` ditambahkan dengan pola yang sama persis, dan modul **Presensi** menjadi checkbox kelima di `RaporPage` (`RaporPresensiData` + view `filament.pdf.rapor.presensi`). Agregasinya hidup di satu tempat, `App\Services\PresensiRekap`, yang dipakai bersama oleh halaman Rekap, ekspor Excel, dan PDF rapor — pelajaran v4.19 (halaman dan PDF yang punya versi query sendiri akan menyimpang, dan menyimpangnya baru ketahuan setahun kemudian).
+
+> ⚠️ **Judul di `resources/views/filament/pdf/rapor/mutabaah.blade.php` diganti dari "Statistik Kehadiran" menjadi "Ringkasan Mutaba'ah" (v4.25).** Bagian itu merender `total_hari`/`total_udzur`/rata-rata skor amalan — statistik udzur, bukan kehadiran. Dibiarkan, satu PDF rapor akan memuat dua bagian berjudul "Kehadiran" dengan angka yang berbeda dan sama-sama benar; itu pabrik pertanyaan dari wali. Perubahan satu baris, tapi wajib dikerjakan di fase yang sama dengan modul presensi, bukan dijadwalkan menyusul.
 
 > Rancangan lama (job `ExportData` → queue `bulk-import` → simpan R2 → notifikasi + link, auto-hapus 24 jam) tidak dibangun; dengan volume data satu pesantren, unduhan sinkron sudah memadai. Dicatat di §22 kalau suatu saat perlu ditinjau — pemicunya: export mulai timeout.
 
@@ -1128,9 +1266,20 @@ Pendekatan **Feature test** sebagai tulang punggung, ditopang unit test untuk ka
 - *Tenant isolation:* santri/tahfidz/mutaba'ah/kesehatan/inventaris terisolasi per `pesantren_id`; Super Admin bisa lintas tenant via `withoutGlobalScope`; wali hanya akses anaknya. (Bila RLS aktif, tambahkan test policy di level DB.)
 - *Middleware:* `CheckTenantQuota` (422 saat penuh) · `SaaSLifecycleLock` (redirect/blokir) · `VerifyMagicToken` (read-only UUID valid, 404 invalid, 403 non-GET) · `PublicTenantResolver` (resolve host ke `tenant_domains`, 404 invalid) · resolusi tenant dari akun saat login (email → `pesantren_id`).
 - *Service & rules:* `BillingCalculatorService` (formula kuota custom Maju, X=0 di-cover) · `SlugNotReserved` · `ValidTenantSlug` (format/panjang/unik) · `OnboardPesantren` (buat pesantren+admin, paket rintisan, trial `BillingSetting::trial_days` hari, default 14).
-- *Model & observer:* `HasUuids` isi `uuid` saja · `SoftDeletes` Santri · Observer Kesehatan auto-udzur · Multi-Anak Logic.
+- *Model & observer:* `HasUuids` isi `uuid` saja · `SoftDeletes` Santri · Multi-Anak Logic. *(v4.25: butir "Observer Kesehatan auto-udzur" dihapus — observernya tidak pernah ada, lihat koreksi di §3.2.)*
 
 **Email (v4.23):** `Mail::fake()` + `Mail::assertQueued()` jadi pola baru — sebelum v4.23 tidak ada satu pun tes email di repo. Tiap jenis email diuji empat serangkai, meniru tes notifikasi WhatsApp di `UpgradeOrderServiceTest`: terkirim ke alamat yang benar · **tidak** terkirim saat penerima tanpa email (`blank()`) · tidak terkirim saat kill-switch dimatikan · tidak terkirim saat pesantren tanpa admin. Berkas: `EmailNotifikasiTest`, `ResetPasswordTest`, `EmailSettingsPageTest`, `WarnExpiringTenantsTest`.
+
+**Presensi (v4.25):** modul ini menambah dua belas berkas tes dan menyunting dua yang sudah ada. Yang wajib disebut namanya karena mengunci keputusan, bukan sekadar menutup jalur:
+
+- `PresensiCakupanUstadzTest` — **pembimbing halaqah nol akses presensi** di seluruh permukaan (aksi tersembunyi, halaman 403, route-model binding ditolak), pengampu mapel tidak bisa mengisi presensi harian, wali kelas tidak bisa mengisi presensi jam pelajaran. Sekelas dengan `PenugasanUstadzTest` dan `WaliRaporTest`: tugasnya membuat pelebaran cakupan di masa depan harus jadi keputusan sadar, bukan efek samping refactor.
+- `KartuPresensiTest` — memuat asersi `assertStringNotContainsString($santri->uuid, $pdf)`. Ini penjaga temuan §13.2: kalau suatu saat seseorang "menyederhanakan" kartu QR kembali ke `uuid`, tes inilah yang menolaknya.
+- `WaliPresensiTest` — wali tidak bisa membaca presensi anak keluarga lain dengan mengubah `santri_id` di URL (regresi atas bug §8 #1), dan form pengajuan izin tersembunyi di sesi Magic Link.
+- `PresensiHarianPageTest` — tanggal WIB via `Waktu` diuji eksplisit pada pukul 01.00 WIB (18.00 UTC hari sebelumnya), simpan ulang **memperbarui** alih-alih menduplikasi, dan simpan transaksional (gagal di tengah → nol baris tersisa).
+- `PresensiScannerPageTest` — scan setelah `jam_masuk + toleransi` menghasilkan `Terlambat` dengan `menit_terlambat` yang benar; scan kedua memperbarui + memberi notifikasi peringatan, bukan membuat baris kedua; kode milik tenant lain tidak resolve.
+- `PresensiKalenderTest` & `KodePresensiTest` — unit murni (hari efektif, libur mingguan `[0]` vs `[5,6]`, alfabet Crockford tanpa I/L/O/U, keunikan pada 10.000 iterasi).
+
+Sisanya: `PresensiIzinTest`, `PresensiHariLiburTest`, `PresensiRekapPageTest`, `PresensiExportTest`, `PresensiPengaturanTest`. Disunting: `DataIsolationTest` (+ `presensi` & `presensi_izin`, + `kode_presensi` tenant A tidak resolve di sesi tenant B) dan `RaporPageTest` (modul naik dari empat jadi lima). **Tanpa factory baru** — enam factory yang ada sudah cukup, sesuai konvensi `Model::create([...])` untuk sisanya.
 
 **Konfigurasi:** unit test pakai PostgreSQL ephemeral (mis. service container `postgres` di GitHub Actions) atau SQLite in-memory untuk test yang tidak bergantung fitur PostgreSQL; `CACHE_DRIVER=array`, `QUEUE_CONNECTION=sync`. Test isolasi tenant & RLS **wajib** pakai PostgreSQL (bukan SQLite) agar policy ikut teruji.
 
@@ -1236,11 +1385,11 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 
 # 22. Catatan Implementasi Aktual
 
-**PRD ini v4.23.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
+**PRD ini v4.25.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
 
 **Bug & fix:** `HasUuids` isi `id` jika tak di-override → `uniqueIds(): ['uuid']` · `$navigationGroup` `?string` error → `string|UnitEnum|null` · index name >63 char (batas PostgreSQL) → nama eksplisit pendek · ingat PostgreSQL tak punya unsigned int (kolom unsigned → signed bigint) · (v4.7) `tahun_ajaran` di form Nilai Akademik/Rapor Tahfidz semula `TextInput` bebas → mismatch format antar input & filter rapor bikin data tidak muncul → diganti `Select` dropdown seragam (service `TahunAjaranOptions`) · (v4.7) Filament cluster default merender sub-navigation tab di bawah header & dropdown khusus mobile → di-override via render hook + CSS agar tab tampil di atas breadcrumbs, konsisten desktop/mobile (detail di §7).
 
-**Di-skip (post v1.0):** PostgreSQL RLS policy per tabel · zero-downtime deploy · migrasi schema-per-tenant (setelah >50 tenant) · Kalender Amalan Harian interaktif (warna) · **OTP WhatsApp untuk reset password wali santri** (§9.1 — reset lewat email untuk admin/ustadz/super admin **sudah dibangun** di v4.23 dan keluar dari daftar ini; yang tersisa hanya jalur OTP untuk wali, kini punya alasan tambahan untuk ditunda karena integrasi WhatsApp sengaja dimatikan, §12.1) · **Routing queue terpusat** ke queue terpisah di Redis, termasuk impor santri & kalkulasi rapor asinkron (§4.4) · **Export asinkron** ke object storage dengan notifikasi & auto-hapus (§15) · **Object storage R2** (§6.2) · **UI Riwayat Aktivitas** untuk `activity_logs` (§10.1) · **Notifikasi WhatsApp otomatis** untuk Magic Link, rapor baru, `Rujukan_Luar`, dan pengumuman (§12) · **Skrip provisioning server** idempotent (§6.1) · **Feature lock berbasis paket** (§5.1) · filter per kamar & toggle amalan kolektif di halaman Isi Harian (§4.2) · modul presensi/absensi (fondasi `kelas.wali_kelas_id` sudah ada, §5.4) · **pembersihan otomatis pendaftaran yang tak pernah diverifikasi** (v4.23 — penandanya sudah ada lewat `email_verified_at`, tapi menghapus data tenant secara otomatis adalah keputusan bisnis tersendiri; sementara ini slug pendaftaran sampah tetap tersandera cooldown 90 hari, §12.2). *(v4.23: **"Reset password mandiri"** dipersempit jadi OTP-wali-saja — jalur emailnya sudah jalan, lihat §9.1. v4.9: "Excel Importer massal" dan "Daftar Inventaris santri" dipindah keluar dari daftar ini — sudah selesai, lihat §3.2/§22 changelog dan §8. v4.19: **"WhatsApp Gateway + Queue Job"** dan **"Feature test isolasi & middleware"** juga dikeluarkan — keduanya sudah jalan sejak v4.17 (Fonnte + reminder H-3/H-1, §12) dan `tests/TenantIsolation/` + `tests/Feature/` (§17), tapi luput dihapus dari daftar ini.)*
+**Di-skip (post v1.0):** PostgreSQL RLS policy per tabel · zero-downtime deploy · migrasi schema-per-tenant (setelah >50 tenant) · Kalender Amalan Harian interaktif (warna) · **OTP WhatsApp untuk reset password wali santri** (§9.1 — reset lewat email untuk admin/ustadz/super admin **sudah dibangun** di v4.23 dan keluar dari daftar ini; yang tersisa hanya jalur OTP untuk wali, kini punya alasan tambahan untuk ditunda karena integrasi WhatsApp sengaja dimatikan, §12.1) · **Routing queue terpusat** ke queue terpisah di Redis, termasuk impor santri & kalkulasi rapor asinkron (§4.4) · **Export asinkron** ke object storage dengan notifikasi & auto-hapus (§15) · **Object storage R2** (§6.2) · **UI Riwayat Aktivitas** untuk `activity_logs` (§10.1) · **Notifikasi WhatsApp otomatis** untuk Magic Link, rapor baru, `Rujukan_Luar`, dan pengumuman (§12) · **Skrip provisioning server** idempotent (§6.1) · **Feature lock berbasis paket** (§5.1) · filter per kamar & toggle amalan kolektif di halaman Isi Harian (§4.2) · **pembersihan otomatis pendaftaran yang tak pernah diverifikasi** (v4.23 — penandanya sudah ada lewat `email_verified_at`, tapi menghapus data tenant secara otomatis adalah keputusan bisnis tersendiri; sementara ini slug pendaftaran sampah tetap tersandera cooldown 90 hari, §12.2). *(v4.25: **"modul presensi/absensi"** dipindah keluar dari daftar ini — sudah dibangun penuh, lihat §3.2 Modul Presensi & §7. v4.23: **"Reset password mandiri"** dipersempit jadi OTP-wali-saja — jalur emailnya sudah jalan, lihat §9.1. v4.9: "Excel Importer massal" dan "Daftar Inventaris santri" dipindah keluar dari daftar ini — sudah selesai, lihat §3.2/§22 changelog dan §8. v4.19: **"WhatsApp Gateway + Queue Job"** dan **"Feature test isolasi & middleware"** juga dikeluarkan — keduanya sudah jalan sejak v4.17 (Fonnte + reminder H-3/H-1, §12) dan `tests/TenantIsolation/` + `tests/Feature/` (§17), tapi luput dihapus dari daftar ini.)*
 
 **Catatan skema periode (v4.9, pelajaran v4.19):** kolom `bulan` kini konsisten ditambahkan ke tiga tabel berbasis periode — `nilai_akademik`, `kesantrian_karakter_rapor`, `tahfidz_rapor` — mendampingi `tahun_ajaran`/`periode` yang sudah ada. **Pelajaran v4.19:** menambah kolom identitas periode saja tidak cukup — setiap pembaca lama yang menebak periode dari tanggal harus ikut diubah. Halaman rapor wali luput dan baru ketahuan salah setahun kemudian (§8), dan seeder dummy juga tidak ikut diperbarui sehingga data demo tak terlihat di panel admin maupun portal wali. Saat menambah kolom identitas ke tabel yang sudah dipakai, telusuri dulu **semua** pembacanya, bukan hanya form penulisnya. Pola ini jadi referensi saat modul periode lain ditambah ke depan.
 
@@ -1267,6 +1416,8 @@ Daftar tiga cacat yang dicatat v4.20 sudah habis dikerjakan, dan dua lagi ditemu
 | Sebagian enum di-hardcode (CHECK constraint) | Aman untuk nilai tetap (`A/B/C/D`, `tipe_setoran`) | Saat pesantren minta **menambah kategori** (mis. `kategori_keluhan`, jenis amalan) → migrasi ke tabel `master_{x}` per-tenant |
 | Sebagian besar entitas tenant menggantung ke `santri` | Pola per-santri konsisten & teruji; SPP & **akademik formal** (`mata_pelajaran` — akar `kelas`, bukan `santri`, v4.5) sudah jadi contoh nyata "modul bukan-per-santri" yang ikut §1.7 | Saat modul bukan-per-santri lain masuk (mis. aset pondok, kepegawaian) → ikuti pola yang sama: entitas baru dengan akar selain `santri`, ikuti §1.7 |
 | Email unik global | Wali tak bisa pakai email sama di dua pesantren | Bila kasus ini sering → pertimbangkan identitas wali lintas-tenant (kompleks; kemungkinan tetap ditolak) |
+| `santri` tidak menyimpan tanggal masuk/keluar *(v4.25)* | Rekap presensi hanya mencakup santri `status_aktif = true`; kehadiran santri yang sudah non-aktif tidak bisa direkonstruksi secara historis, dan penyebut "hari efektif" tidak tahu kapan seorang santri mulai terdaftar | Saat pesantren meminta rekap presensi lintas-tahun atau laporan santri alumni → tambah `tanggal_masuk`/`tanggal_keluar` ke `santri` dan jadikan penyebut rekap sadar-periode |
+| Presensi per jam tanpa jadwal mingguan *(v4.25)* | `presensi_jam_pelajaran` hanya master jam (jam ke-N + rentang waktu); kombinasi kelas/mapel/jam dipilih manual tiap kali mengisi, tidak ada validasi bentrok dan tidak ada "jadwal saya hari ini" untuk ustadz | Saat pesantren mulai mengeluh input berulang atau minta deteksi bentrok → bangun `jadwal_pelajaran` (hari + jam_ke + kelas + mapel + ustadz) sebagai modul tersendiri, dan biarkan presensi menempel ke slot jadwal |
 | Deploy host-langsung (tanpa Docker) | Ramping & cocok skala MVP solo-dev di VPS ~1GB; environment dijaga via PHP 8.4 di server + `setup-server.sh` idempotent | Saat (a) butuh service berat di-install native (mis. Meilisearch, runtime AI), (b) pindah multi-server / DB-per-tenant, atau (c) ada dev kedua (parity environment baru terbayar) → pindah ke **Docker Compose** (tanpa Coolify) |
 
 > *Filosofi: batas-batas ini **sengaja** dipilih demi kesederhanaan MVP solo-dev. Yang penting bukan menghindarinya, tapi menamainya sekarang agar saat pemicunya datang, ia ditangani sebagai keputusan terencana — bukan kejutan.*
@@ -1290,4 +1441,4 @@ Daftar tiga cacat yang dicatat v4.20 sudah habis dikerjakan, dan dua lagi ditemu
 
 ---
 
-*Confidential — Internal Document | Walisantri.com v4.23 | Agustus 2026*
+*Confidential — Internal Document | Walisantri.com v4.25 | Agustus 2026*
