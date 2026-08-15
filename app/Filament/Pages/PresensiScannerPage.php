@@ -86,6 +86,21 @@ class PresensiScannerPage extends Page
             return;
         }
 
+        // Beberapa payload menempel jadi satu string. Penyebab lazimnya alat
+        // pemindai yang tidak dikonfigurasi mengirim Enter setelah kode, sehingga
+        // pindaian kedua dan seterusnya menumpuk di kolom yang sama. "Tidak
+        // dikenali" benar secara harfiah tapi tidak menolong sama sekali —
+        // petugas tidak akan menduga masalahnya ada di setelan alatnya.
+        if (substr_count($masukan, KodePresensi::PREFIKS) > 1) {
+            $this->catatRiwayat(
+                'Beberapa kode sekaligus',
+                'danger',
+                'Kolom berisi lebih dari satu kode. Alat pemindai Anda kemungkinan belum diatur mengirim Enter setelah memindai — kosongkan kolomnya, lalu pindai satu kartu saja.',
+            );
+
+            return;
+        }
+
         $santri = $this->cariSantri($masukan);
 
         if (! $santri) {

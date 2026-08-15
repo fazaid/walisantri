@@ -248,6 +248,36 @@ class PresensiScannerPageTest extends TestCase
             ->assertSeeHtml('wire:ignore');
     }
 
+    public function test_beberapa_kode_menempel_dijelaskan_penyebabnya(): void
+    {
+        // Persis keluhan dari lapangan: tiga payload menempel jadi satu string.
+        // Penyebab lazimnya alat pemindai yang tidak mengirim Enter, sehingga
+        // pindaian menumpuk di kolom yang sama. "Tidak dikenali" benar secara
+        // harfiah tapi tidak menolong — petugas tidak akan menduga masalahnya
+        // ada di setelan alatnya.
+        $gabungan = KodePresensi::payload('5MBA10CVV6T4')
+            .KodePresensi::payload('P1FVSKS125QV')
+            .KodePresensi::payload('9Q5RZG0P334X');
+
+        $this->scan($gabungan)
+            ->assertSee('Beberapa kode sekaligus')
+            ->assertSee('belum diatur mengirim Enter');
+
+        $this->assertSame(0, Presensi::withoutGlobalScope('pesantren')->count());
+    }
+
+    public function test_kolom_teks_tidak_terikat_wire_model(): void
+    {
+        // Kolom ini autofocus sepanjang sesi, dan morph Livewire sengaja tidak
+        // menimpa nilai input yang sedang fokus — jadi pengosongan lewat server
+        // TIDAK PERNAH sampai ke DOM, dan pindaian berikutnya menempel di
+        // belakang yang lama. Nilainya karena itu dibersihkan di sisi klien.
+        Livewire::actingAs($this->admin)
+            ->test(PresensiScannerPage::class)
+            ->assertDontSeeHtml('wire:model="kode"')
+            ->assertSeeHtml('x-ref="kolomKode"');
+    }
+
     public function test_wali_santri_tidak_bisa_membuka_halaman_scan(): void
     {
         $wali = User::factory()->waliSantri()->create(['pesantren_id' => $this->pesantren->id]);

@@ -151,6 +151,31 @@ window.presensiScanner = function () {
             this.terakhirTerlihat = 0;
         },
 
+        /**
+         * Kirim isi kolom teks (alat pemindai atau ketik manual), lalu kosongkan.
+         *
+         * Pengosongannya dilakukan DI SINI, bukan diserahkan ke `$this->kode = ''`
+         * di sisi server: kolom ini selalu fokus, dan morph Livewire dengan sengaja
+         * tidak menimpa nilai input yang sedang fokus. Diserahkan ke server, kolomnya
+         * tidak pernah bersih dan pindaian berikutnya menempel di belakang yang lama.
+         */
+        kirimManual() {
+            const kolom = this.$refs.kolomKode;
+
+            if (!kolom) {
+                return;
+            }
+
+            const nilai = kolom.value.trim();
+            kolom.value = '';
+
+            if (nilai === '') {
+                return;
+            }
+
+            this.$wire.call('scan', nilai);
+        },
+
         /** Berapa lama kamera harus TIDAK melihat QR sebelum kartu dianggap diangkat. */
         get ambangAngkat() {
             // Cukup panjang untuk menahan kedipan pembacaan (tangan bergoyang,

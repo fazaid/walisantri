@@ -30,13 +30,24 @@
             + {{ $pengaturan->toleransi_terlambat_menit }} menit.
         </p>
 
-        {{-- Jalur utama: alat pemindai USB/Bluetooth berperilaku sebagai papan
-             ketik (mengetik kode lalu menekan Enter), jadi tidak ada dependensi
-             JS sama sekali dan petugas tidak perlu menyentuh layar. --}}
+        {{--
+            Jalur utama: alat pemindai USB/Bluetooth berperilaku sebagai papan
+            ketik (mengetik kode lalu menekan Enter).
+
+            ⚠️ SENGAJA TANPA wire:model. Kolom ini `autofocus` dan tetap fokus
+            sepanjang sesi, sedangkan morph Livewire dengan sengaja TIDAK menimpa
+            nilai input yang sedang fokus — supaya ketikan pengguna tidak terhapus
+            di tengah jalan. Akibatnya `$this->kode = ''` di sisi server tidak
+            pernah sampai ke DOM, kolomnya tidak pernah bersih, dan tiap pindaian
+            berikutnya menempel di belakang yang lama:
+            "WSP1.AAAWSP1.BBBWSP1.CCC" — lalu semuanya ditolak sebagai satu kode
+            ngawur. Karena itu nilainya diambil dan dibersihkan di sisi klien,
+            lalu dikirim sebagai argumen; jalur yang sama persis dengan kamera.
+        --}}
         <input
             type="text"
-            wire:model="kode"
-            wire:keydown.enter="scan"
+            x-ref="kolomKode"
+            x-on:keydown.enter.prevent="kirimManual()"
             autofocus
             autocomplete="off"
             placeholder="Menunggu pemindaian…"

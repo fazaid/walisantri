@@ -4,7 +4,17 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Agustus 2026 — v4.36
+**Last Updated:** Agustus 2026 — v4.37
+
+**Changelog v4.37:** **Perbaikan: kode pindaian menumpuk di kolom teks sampai jadi satu string ngawur.** Gejalanya dari lapangan: `WSP1.5MBA10CVV6T4WSP1.P1FVSKS125QVWSP1.9Q5RZG0P334X` — tiga payload menempel, lalu ditolak sebagai satu kode tak dikenal.
+
+Penyebabnya bukan pemindainya, melainkan pengosongan kolom yang tidak pernah sampai. Kolom itu `autofocus` dan tetap fokus sepanjang sesi, sementara **morph Livewire dengan sengaja tidak menimpa nilai input yang sedang fokus** — perlindungan yang benar, supaya ketikan pengguna tidak terhapus di tengah jalan. Akibatnya `$this->kode = ''` di sisi server tidak pernah tercermin di DOM, kolomnya tidak pernah bersih, dan pindaian berikutnya menempel di belakang yang lama.
+
+Diperbaiki dengan **melepas `wire:model` dari kolom itu**. Nilainya kini diambil dan dikosongkan di sisi klien lewat `x-ref`, lalu dikirim sebagai argumen — jalur yang sama persis dengan kamera. Server tidak lagi punya urusan mengatur isi kolom.
+
+> **Pelajaran: dua-arah `wire:model` dan `autofocus` permanen adalah pasangan yang buruk.** Perlindungan input-fokus di morph membuat setiap "kosongkan dari server" gagal diam-diam. Untuk kolom yang dipakai berulang-ulang tanpa jeda — pemindai, entri cepat, command palette — nilainya lebih baik dibaca dan dibersihkan di klien lalu dikirim sebagai argumen. Gejalanya menyesatkan karena pemindaian PERTAMA selalu berhasil; yang gagal justru yang kedua, dan pesan galatnya menunjuk ke kode, bukan ke kolomnya.
+
+Ditambahkan juga pesan khusus saat beberapa payload terkirim sekaligus: itu juga terjadi pada alat pemindai yang belum diatur mengirim Enter setelah memindai, dan "Kode tidak ditemukan" benar secara harfiah tapi tidak menolong — petugas tidak akan menduga masalahnya ada di setelan alatnya.
 
 **Changelog v4.36:** **Perbaikan: kamera jadi kotak hitam kosong setelah santri pertama berhasil dipindai.** Elemen `<video>` disisipkan html5-qrcode lewat JavaScript, jadi ia **tidak ada di HTML yang dirender server**. Pemindaian yang berhasil mengubah `$riwayat` → Livewire me-render ulang → morph membandingkan DOM dengan HTML server, menganggap video itu simpanan liar, dan menghapusnya. Wadahnya tetap terlihat karena Alpine masih memegang `tampil`, sehingga yang tersisa hanyalah kotak hitam. Ditutup dengan **`wire:ignore`** pada wadah pemindai.
 
@@ -1501,7 +1511,7 @@ Sisanya: `PresensiIzinTest`, `PresensiHariLiburTest`, `PresensiRekapPageTest`, `
 
 **Konfigurasi:** unit test pakai PostgreSQL ephemeral (mis. service container `postgres` di GitHub Actions) atau SQLite in-memory untuk test yang tidak bergantung fitur PostgreSQL; `CACHE_DRIVER=array`, `QUEUE_CONNECTION=sync`. Test isolasi tenant & RLS **wajib** pakai PostgreSQL (bukan SQLite) agar policy ikut teruji.
 
-**Sebaran nyata (v4.36):** 608 tes / 2.435 asersi (terhadap PostgreSQL; di SQLite 10 tes isolasi tenant di-skip).
+**Sebaran nyata (v4.37):** 610 tes / 2.440 asersi (terhadap PostgreSQL; di SQLite 10 tes isolasi tenant di-skip).
 
 ```
 tests/Feature/                                52 berkas  ← tulang punggung: alur panel Filament,
@@ -1605,7 +1615,7 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 
 # 22. Catatan Implementasi Aktual
 
-**PRD ini v4.36.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
+**PRD ini v4.37.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
 
 **Bug & fix:** `HasUuids` isi `id` jika tak di-override → `uniqueIds(): ['uuid']` · `$navigationGroup` `?string` error → `string|UnitEnum|null` · index name >63 char (batas PostgreSQL) → nama eksplisit pendek · ingat PostgreSQL tak punya unsigned int (kolom unsigned → signed bigint) · (v4.7) `tahun_ajaran` di form Nilai Akademik/Rapor Tahfidz semula `TextInput` bebas → mismatch format antar input & filter rapor bikin data tidak muncul → diganti `Select` dropdown seragam (service `TahunAjaranOptions`) · (v4.7) Filament cluster default merender sub-navigation tab di bawah header & dropdown khusus mobile → di-override via render hook + CSS agar tab tampil di atas breadcrumbs, konsisten desktop/mobile (detail di §7).
 
@@ -1676,4 +1686,4 @@ Daftar tiga cacat yang dicatat v4.20 sudah habis dikerjakan, dan dua lagi ditemu
 
 ---
 
-*Confidential — Internal Document | Walisantri.com v4.36 | Agustus 2026*
+*Confidential — Internal Document | Walisantri.com v4.37 | Agustus 2026*
