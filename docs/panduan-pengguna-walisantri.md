@@ -288,12 +288,22 @@ Modul ini mencatat kehadiran santri dengan tujuh status: **Hadir · Sakit · Izi
 3. **Hari libur mingguan** — centang hari yang memang tidak ada kegiatan (mis. Jumat, atau Minggu). Hari ini tidak akan dihitung sebagai hari efektif di rekap.
 4. **Aktifkan presensi per jam pelajaran** — biarkan mati kalau pesantren hanya butuh absen harian. Menyalakannya memunculkan menu tambahan; lihat bagian 8.6.
 5. **Aktifkan pengajuan izin oleh wali** — kalau dimatikan, hanya admin/ustadz yang bisa mencatat izin.
+6. **Batas edit ustadz (hari)** — berapa hari ke belakang ustadz masih boleh mengisi atau memperbaiki presensi (bawaan 7 hari). Admin tidak terkena batas ini dan bisa memperbaiki tanggal kapan pun. Isi `0` kalau Anda ingin ustadz bebas mengedit tanpa batas waktu.
+
+> **Kenapa ada batas waktu?** Wali santri membaca catatan kehadiran anaknya. Kalau catatan alpa bulan lalu bisa diubah diam-diam, satu keluhan orang tua akan sulit ditelusuri. Batas ini membuat koreksi wajar (santri ternyata izin, ustadz lupa mencatat kemarin) tetap mudah, sementara perubahan yang jauh ke belakang harus lewat admin — dan tercatat siapa yang melakukannya.
 
 ### 8.2 Kehadiran (isi presensi harian)
 
 Menu: **Presensi → Kehadiran**, lalu klik tombol **Isi Presensi** di kanan atas.
 
-1. Pilih **Tanggal** dan **Kelas**. Semua santri aktif di kelas itu langsung tampil.
+1. Pilih **Tanggal**, lalu pilih **Kelompok**:
+   - **Kelas** — pilih satu kelas. Ini pilihan yang biasa dipakai, dan satu-satunya yang tersedia untuk ustadz (terbatas kelas yang ia walikan).
+   - **Semua santri aktif** *(admin saja)* — seluruh santri pesantren dalam satu layar, berguna untuk pondok kecil atau kegiatan gabungan.
+   - **Belum punya kelas** *(admin saja)* — santri yang belum terdaftar di kelas mana pun, lengkap dengan jumlahnya.
+
+   Semua santri di kelompok terpilih langsung tampil.
+
+> **Kenapa ada pilihan "Belum punya kelas"?** Kelas bersifat opsional di data santri — santri yang diimpor massal sebelum data Kelas dibuat, atau yang kelasnya dihapus, akan kehilangan kelasnya. Tanpa pilihan ini mereka tidak akan pernah bisa diabsen dan tidak terlihat di mana pun. Kalau angkanya besar, sebaiknya rapikan dulu lewat menu **Santri** (tersedia filter **Tanpa Kelas** di daftar santri).
 2. Semua santri **sudah tercentang Hadir**. Anda hanya perlu mengubah yang tidak hadir — itu jauh lebih cepat daripada mencentang satu per satu.
 3. Ubah status santri yang perlu, isi **Catatan** bila ada (mis. "menyusul, ke poliklinik").
 4. Klik **Simpan**. Menyimpan ulang untuk tanggal yang sama akan **memperbarui**, bukan membuat data ganda.
@@ -359,7 +369,13 @@ Menu: **Presensi → Rekap**.
 3. Tabel menampilkan jumlah tiap status, **Hari Efektif**, kolom **Tanpa Keterangan**, dan **% Kehadiran** (Hadir + Terlambat + Dispensasi dihitung hadir).
 4. Klik **Ekspor Excel** untuk mengunduh.
 
-Kolom **Tanpa Keterangan** yang besar di satu kelas biasanya bukan berarti santrinya bolos — melainkan presensi kelas itu belum diisi. Gunakan kolom ini untuk memantau kedisiplinan pencatatan.
+Kolom **Tanpa Keterangan** yang besar di satu kelas biasanya bukan berarti santrinya bolos — melainkan presensi kelas itu belum diisi. Gunakan kolom ini untuk memantau kedisiplinan pencatatan, bukan kedisiplinan santri.
+
+Bedanya dengan **Alpa**: Alpa berarti seseorang menyatakan santri itu tidak hadir tanpa keterangan; Tanpa Keterangan berarti tidak ada yang menyatakan apa pun. Sistem sengaja tidak menebak — lihat catatan di bagian 8.2.
+
+Di halaman ini juga ada panel **Perlu Perhatian**: daftar santri dengan **3 hari alpa berturut-turut atau lebih**. Gunakan sebagai peringatan dini untuk menghubungi wali sebelum masalahnya membesar.
+
+> Catatan: rekap hanya mencakup **santri aktif**. Santri yang sudah dihapus dari sistem tidak muncul di rekap meski catatan kehadirannya masih tersimpan.
 
 Presensi juga bisa disertakan di **Rapor** (bagian 9) sebagai salah satu modul yang dicentang, sehingga ikut tercetak di PDF rapor santri.
 

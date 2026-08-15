@@ -199,6 +199,41 @@ class MutabaahHarianPage extends Page implements HasForms
         })->all();
     }
 
+    /**
+     * Kenapa halaman ini tidak bisa dipakai, kalau memang tidak bisa — dibaca
+     * view sebelum form dirender.
+     *
+     * Dua penyebabnya sama-sama membuat halaman tampak berfungsi padahal tidak:
+     * tanpa amal master, tiap baris santri hanya punya dropdown Udzur dan skor
+     * selalu 0%; tanpa santri, Repeater kosong dan menyimpan hanya menghasilkan
+     * "tersimpan untuk 0 santri". Keduanya perlu tindakan orang lain (admin),
+     * jadi pesannya menyebut langkah konkret, bukan sekadar "data kosong".
+     *
+     * @return array{judul: string, saran: string}|null
+     */
+    public function peringatanKosong(): ?array
+    {
+        if ($this->amalMasterList()->isEmpty()) {
+            return [
+                'judul' => 'Belum ada amalan yang bisa diisi.',
+                'saran' => Auth::user()?->role === 'admin_pesantren'
+                    ? 'Tambahkan daftar amalan lebih dulu lewat menu Kesantrian → Mutabaah → Amal Master.'
+                    : 'Minta admin pesantren mengisi daftar amalan lebih dulu (Kesantrian → Amal Master).',
+            ];
+        }
+
+        if (! $this->getSantriQuery()->exists()) {
+            return [
+                'judul' => 'Belum ada santri yang bisa diisi mutaba\'ahnya.',
+                'saran' => Auth::user()?->role === 'ustadz'
+                    ? 'Anda belum dipercayakan membimbing santri mana pun. Minta admin pesantren menetapkan Anda sebagai pembimbing lewat menu Santri.'
+                    : 'Tambahkan santri aktif lebih dulu lewat menu Santri.',
+            ];
+        }
+
+        return null;
+    }
+
     public function content(Schema $schema): Schema
     {
         return $schema->components([
@@ -220,23 +255,61 @@ class MutabaahHarianPage extends Page implements HasForms
         $data = $this->form->getState();
         $rows = $data['rows'] ?? [];
 
+        if ($rows === []) {
+            Notification::make()
+                ->title('Tidak ada santri untuk disimpan')
+                ->body('Belum ada santri aktif yang bisa diisi mutaba\'ahnya pada tanggal ini.')
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        $pesantrenId = Auth::user()->pesantren_id;
+        $sekarang = now();
+
+        $baris = array_map(fn (array $row): array => [
+            'pesantren_id' => $pesantrenId,
+            'santri_id' => $row['santri_id'],
+            'tanggal' => $data['tanggal'],
+            // Query builder tidak melewati cast 'array', jadi jsonb-nya
+            // dikodekan di sini.
+            'amalan' => json_encode($row['amalan'] ?? [], JSON_THROW_ON_ERROR),
+            'status_udzur' => $row['status_udzur'],
+            'created_at' => $sekarang,
+            'updated_at' => $sekarang,
+        ], $rows);
+
         try {
-            // Satu tombol menyimpan seluruh santri, jadi kegagalan di tengah
-            // tidak boleh meninggalkan separuh data tersimpan tanpa penanda.
-            DB::transaction(function () use ($rows, $data): void {
-                foreach ($rows as $row) {
-                    KesantrianMutabaah::updateOrCreate(
-                        [
-                            'santri_id' => $row['santri_id'],
-                            'tanggal' => $data['tanggal'],
-                        ],
-                        [
-                            'amalan' => $row['amalan'] ?? [],
-                            'status_udzur' => $row['status_udzur'],
-                        ]
-                    );
-                }
-            });
+            // upsert(), bukan loop updateOrCreate() di dalam transaksi.
+            //
+            // updateOrCreate adalah SELECT lalu INSERT: dua ustadz yang menyimpan
+            // tanggal yang sama bersamaan membuat INSERT kedua melanggar unique
+            // (santri_id, tanggal). Karena seluruh loop dulu dibungkus satu
+            // transaksi, satu tabrakan itu me-rollback SEMUA santri di batch dan
+            // pengguna hanya melihat "Terjadi kesalahan" — padahal tidak ada yang
+            // salah dengan datanya. ON CONFLICT DO UPDATE menyelesaikannya dalam
+            // satu pernyataan: bebas balapan, dan tidak ada lagi yang bisa
+            // di-rollback separuh jalan sehingga transaksi pembungkusnya pun
+            // tidak diperlukan.
+            //
+            // Konsekuensi yang harus diingat: upsert melewati model event, jadi
+            // auto-assign pesantren_id milik Multitenantable tidak menyala dan
+            // kolomnya disetel manual di atas.
+            //
+            // Tetap dibungkus DB::transaction meski isinya satu pernyataan, dan
+            // itu bukan sisa pola lama: di PostgreSQL, pernyataan yang gagal
+            // membuat SELURUH transaksi berjalan jadi aborted (25P02) sehingga
+            // query apa pun sesudahnya ikut ditolak. Pembungkus ini menjadikannya
+            // savepoint saat save() dipanggil di dalam transaksi lain — termasuk
+            // di test yang memakai RefreshDatabase — sehingga kegagalan cukup
+            // membatalkan upsert-nya saja. Yang dulu jadi bug adalah LOOP di dalam
+            // transaksi; satu pernyataan tidak punya yang bisa di-rollback separuh.
+            DB::transaction(fn () => KesantrianMutabaah::upsert(
+                $baris,
+                ['santri_id', 'tanggal'],
+                ['amalan', 'status_udzur', 'updated_at'],
+            ));
         } catch (\Throwable $e) {
             Log::error('mutabaah_harian_save_failed', ['message' => $e->getMessage()]);
 

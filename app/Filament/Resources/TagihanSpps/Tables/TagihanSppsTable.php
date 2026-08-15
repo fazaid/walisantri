@@ -114,30 +114,18 @@ class TagihanSppsTable
                             ->where('status_aktif', true)
                             ->get();
 
-                        $created = 0;
-                        $skipped = 0;
                         $noTarif = 0;
+                        $rows = [];
+                        $sekarang = now();
 
                         foreach ($santris as $santri) {
-                            $exists = TagihanSpp::withoutGlobalScope('pesantren')
-                                ->where('santri_id', $santri->id)
-                                ->where('bulan', $data['bulan'])
-                                ->where('tahun', $data['tahun'])
-                                ->exists();
-
-                            if ($exists) {
-                                $skipped++;
-
-                                continue;
-                            }
-
                             if (! $santri->kelas_id || ! isset($tarifMap[$santri->kelas_id])) {
                                 $noTarif++;
 
                                 continue;
                             }
 
-                            TagihanSpp::create([
+                            $rows[] = [
                                 'pesantren_id' => $pesantrenId,
                                 'santri_id' => $santri->id,
                                 'bulan' => $data['bulan'],
@@ -145,11 +133,27 @@ class TagihanSppsTable
                                 'nominal' => $tarifMap[$santri->kelas_id],
                                 'jatuh_tempo' => $data['jatuh_tempo'] ?? null,
                                 'keterangan' => $data['keterangan'],
-                                'status' => StatusTagihanSpp::BelumBayar,
-                            ]);
-
-                            $created++;
+                                'status' => StatusTagihanSpp::BelumBayar->value,
+                                'created_at' => $sekarang,
+                                'updated_at' => $sekarang,
+                            ];
                         }
+
+                        // insertOrIgnore, bukan cek exists() lalu create() per santri.
+                        // Pola lama adalah check-then-act tanpa transaksi: dua klik
+                        // bersamaan (atau dua admin) membuat cek "belum ada" pada
+                        // keduanya, lalu INSERT kedua melanggar tagihan_spp_unik_per_bulan
+                        // dan errornya sampai mentah ke layar — dengan sebagian tagihan
+                        // sudah terlanjur tersimpan, sehingga mengulang aksi pun tidak
+                        // bersih. ON CONFLICT DO NOTHING menyerahkan keunikan ke DB, yang
+                        // memang satu-satunya pihak yang bisa menjaminnya.
+                        //
+                        // Lewat query builder, jadi: cast enum ditulis manual (->value),
+                        // timestamps diisi sendiri, dan pesantren_id disetel eksplisit
+                        // karena auto-assign Multitenantable menempel di event creating
+                        // yang tidak menyala di jalur ini.
+                        $created = $rows === [] ? 0 : TagihanSpp::insertOrIgnore($rows);
+                        $skipped = count($rows) - $created;
 
                         $msg = "{$created} tagihan dibuat";
                         if ($skipped) {

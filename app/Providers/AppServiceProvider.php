@@ -8,6 +8,7 @@ namespace App\Providers;
 use App\Models\DemoRequest;
 use App\Models\EmailGatewaySetting;
 use App\Models\Kelas;
+use App\Models\KesantrianKesehatan;
 use App\Models\MasterPengumuman;
 use App\Models\Pesantren;
 use App\Models\PlatformBankAccount;
@@ -15,6 +16,7 @@ use App\Models\Santri;
 use App\Models\User;
 use App\Observers\DemoRequestObserver;
 use App\Observers\KelasObserver;
+use App\Observers\KesantrianKesehatanObserver;
 use App\Observers\MasterPengumumanObserver;
 use App\Observers\PesantrenObserver;
 use App\Observers\PlatformBankAccountObserver;
@@ -82,6 +84,7 @@ class AppServiceProvider extends ServiceProvider
         MasterPengumuman::observe(MasterPengumumanObserver::class);
         DemoRequest::observe(DemoRequestObserver::class);
         Kelas::observe(KelasObserver::class);
+        KesantrianKesehatan::observe(KesantrianKesehatanObserver::class);
     }
 
     // -----------------------------------------------------------------

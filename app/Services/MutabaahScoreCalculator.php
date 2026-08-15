@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\KesantrianAmalMaster;
 use App\Models\KesantrianMutabaah;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 class MutabaahScoreCalculator
@@ -97,6 +98,88 @@ class MutabaahScoreCalculator
                 'pct' => $max > 0 ? (int) round($total / $max * 100) : 0,
             ];
         })->values()->all();
+    }
+
+    /**
+     * Versi streaming dari persentaseRataRata() + breakdown() untuk rentang yang
+     * tidak dibatasi tanggal.
+     *
+     * Halaman statistik wali menampilkan angka "dari seluruh waktu tercatat", jadi
+     * agregatnya memang harus menyentuh seluruh riwayat santri — tapi jalur lama
+     * melakukannya dengan ->get() sehingga tiap baris dihidupkan jadi model Eloquent
+     * lengkap dengan jsonb-nya. Untuk santri yang sudah bertahun-tahun mondok itu
+     * ribuan model per request, dan bebannya tumbuh terus tanpa pernah ada yang
+     * memicu peringatan. chunkById menjaga memori tetap datar; aritmetikanya
+     * dipertahankan identik dengan kedua method di atas (dikunci tes ekuivalensi),
+     * jadi angka yang dibaca wali tidak bergeser satu digit pun.
+     *
+     * @param  Builder<KesantrianMutabaah>  $query
+     * @return array{total_hari: int, rata_rata: int, breakdown: array<int, array<string, mixed>>}
+     */
+    public static function agregat(Builder $query, int $pesantrenId): array
+    {
+        $master = self::masterAktif($pesantrenId);
+
+        $totalHari = 0;
+        $skorPerPesantren = [];   // pesantren_id => total skor
+        $hariPerPesantren = [];   // pesantren_id => jumlah baris
+        $totalPerAmal = [];       // kode => akumulasi
+
+        foreach ($master as $item) {
+            $totalPerAmal[$item->kode] = 0;
+        }
+
+        $query->clone()->chunkById(500, function (Collection $batch) use (
+            $master, &$totalHari, &$skorPerPesantren, &$hariPerPesantren, &$totalPerAmal
+        ): void {
+            $totalHari += $batch->count();
+
+            foreach ($batch as $rec) {
+                $pid = (int) $rec->pesantren_id;
+                $skorPerPesantren[$pid] = ($skorPerPesantren[$pid] ?? 0) + self::skor($rec);
+                $hariPerPesantren[$pid] = ($hariPerPesantren[$pid] ?? 0) + 1;
+
+                $amalan = $rec->amalan ?? [];
+
+                foreach ($master as $item) {
+                    $totalPerAmal[$item->kode] += $item->tipe === 'hitungan'
+                        ? (float) ($amalan[$item->kode] ?? 0)
+                        : ((bool) ($amalan[$item->kode] ?? false) ? 1 : 0);
+                }
+            }
+        });
+
+        // Persis penjumlahan yang dilakukan persentaseRataRata(): penyebutnya
+        // maxScore per pesantren dikali jumlah baris pesantren itu.
+        $totalSkor = 0;
+        $totalMaks = 0;
+
+        foreach ($hariPerPesantren as $pid => $jumlah) {
+            $totalSkor += $skorPerPesantren[$pid];
+            $totalMaks += self::maxScore($pid) * $jumlah;
+        }
+
+        $breakdown = $master->map(function (KesantrianAmalMaster $item) use ($totalPerAmal, $totalHari) {
+            $total = $totalPerAmal[$item->kode];
+            $max = $item->tipe === 'hitungan' ? $totalHari * $item->nilai_maks : $totalHari;
+
+            return [
+                'kode' => $item->kode,
+                'tipe' => $item->tipe,
+                'icon' => $item->icon ?: '✅',
+                'label' => $item->label,
+                'total' => $total,
+                'max' => $max,
+                'unit' => $item->satuan,
+                'pct' => $max > 0 ? (int) round($total / $max * 100) : 0,
+            ];
+        })->values()->all();
+
+        return [
+            'total_hari' => $totalHari,
+            'rata_rata' => $totalMaks > 0 ? (int) round($totalSkor / $totalMaks * 100) : 0,
+            'breakdown' => $breakdown,
+        ];
     }
 
     /** Reset cache master amal — dipakai di test atau setelah amal_master diubah dalam request yang sama. */
