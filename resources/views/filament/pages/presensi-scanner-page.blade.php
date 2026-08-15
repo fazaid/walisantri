@@ -44,10 +44,10 @@
         >
 
         {{-- Lapis kedua: kamera, untuk pesantren tanpa alat pemindai. --}}
-        <div class="mt-4 flex items-center gap-3">
+        <div class="mt-4 flex flex-wrap items-center gap-3">
             <button
                 type="button"
-                x-show="! aktif"
+                x-show="! tampil"
                 x-on:click="nyalakan()"
                 x-bind:disabled="memuat"
                 class="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-60"
@@ -58,7 +58,7 @@
 
             <button
                 type="button"
-                x-show="aktif"
+                x-show="tampil"
                 x-cloak
                 x-on:click="matikan()"
                 class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
@@ -75,9 +75,28 @@
         <p x-show="galat" x-cloak x-text="galat"
            class="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200"></p>
 
-        {{-- Wadah video dipasang html5-qrcode saat kamera dinyalakan. --}}
-        <div x-show="aktif" x-cloak class="mt-4">
-            <div id="pemindai-kamera" class="mx-auto w-full max-w-sm overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700"></div>
+        {{--
+            Wadah video. x-show terikat ke `tampil`, BUKAN `aktif` — dan itu
+            memperbaiki bug nyata: html5-qrcode mengukur lebar elemen ini untuk
+            menentukan ukuran video dan kotak pindai, jadi ia harus sudah terlihat
+            SEBELUM start() dipanggil. Versi sebelumnya menampilkannya baru setelah
+            kamera berhasil menyala, sehingga elemennya masih display:none saat
+            diukur, clientWidth terbaca 0, dan videonya tidak pernah muncul.
+
+            min-height menahan pergeseran layout saat video belum terpasang;
+            [&_video] memastikan elemen video yang disisipkan pustaka mengisi
+            wadahnya alih-alih memakai ukuran intrinsik kamera.
+        --}}
+        <div x-show="tampil" x-cloak class="mt-4">
+            <div
+                id="pemindai-kamera"
+                class="mx-auto w-full max-w-sm overflow-hidden rounded-xl border border-gray-200 bg-black dark:border-gray-700 [&_video]:h-auto [&_video]:w-full"
+                style="min-height: 16rem;"
+            ></div>
+
+            <p x-show="memuat" x-cloak class="mt-2 text-center text-xs text-gray-500 dark:text-gray-400">
+                Menyiapkan kamera…
+            </p>
         </div>
     </div>
 
