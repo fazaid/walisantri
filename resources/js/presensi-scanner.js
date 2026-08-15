@@ -14,12 +14,20 @@ import { Html5Qrcode } from 'html5-qrcode';
  * tidak" demi menghemat unduhan di Chrome. Itu dilepas dengan sadar: Safari/iOS
  * tidak mendukung BarcodeDetector sama sekali (semua browser di iOS memakai
  * WebKit), jadi pustakanya tetap harus ada — dan dua jalur kode untuk halaman yang
- * TIDAK BISA disentuh test suite adalah pertukaran yang buruk. Satu jalur berarti
- * yang dipakai ustadz setiap pagi adalah jalur yang sama dengan yang kita uji
- * manual. Pustakanya pun hanya diunduh saat tombol kamera ditekan, lalu di-cache.
+ * TIDAK BISA disentuh test suite adalah pertukaran yang buruk.
  */
 window.presensiScanner = function () {
     return {
+        /**
+         * Dua bendera, bukan satu, dan itu memperbaiki bug nyata.
+         *
+         * `tampil` mengendalikan wadah video; `aktif` menandai kamera benar-benar
+         * berjalan. Versi pertama memakai satu bendera yang baru dinyalakan SETELAH
+         * start() berhasil — akibatnya wadahnya masih display:none saat
+         * html5-qrcode mengukurnya, clientWidth terbaca 0, dan videonya tidak
+         * pernah muncul. Wadah harus terlihat LEBIH DULU.
+         */
+        tampil: false,
         aktif: false,
         memuat: false,
         galat: '',
@@ -29,7 +37,7 @@ window.presensiScanner = function () {
         terakhir: new Map(),
 
         /**
-         * getUserMedia hanya tersedia di secure context. Di localhost browser
+         * getUserMedia hanya tersedia di secure context. Di localhost peramban
          * memberi keringanan, tapi domain .test lewat http biasa TIDAK — dan
          * gejalanya cuma `navigator.mediaDevices === undefined`, yang tanpa
          * penjelasan terbaca seperti "kameranya rusak".
@@ -51,6 +59,13 @@ window.presensiScanner = function () {
 
             this.memuat = true;
 
+            // Tampilkan wadahnya dulu, lalu tunggu Alpine benar-benar menerapkan
+            // perubahan DOM-nya. html5-qrcode menghitung ukuran video dan kotak
+            // pindai dari lebar elemen; elemen yang masih display:none berukuran
+            // nol, dan videonya tidak akan pernah terlihat.
+            this.tampil = true;
+            await this.$nextTick();
+
             try {
                 this.pemindai = new Html5Qrcode('pemindai-kamera', { verbose: false });
 
@@ -58,7 +73,17 @@ window.presensiScanner = function () {
                     // Kamera belakang untuk ponsel; di laptop berwebcam tunggal
                     // peramban mengabaikan preferensi ini dan memakai apa adanya.
                     { facingMode: 'environment' },
-                    { fps: 10, qrbox: { width: 240, height: 240 } },
+                    {
+                        fps: 10,
+                        // Kotak pindai diturunkan dari ukuran viewfinder yang
+                        // sebenarnya, bukan angka tetap: kotak yang lebih besar
+                        // daripada videonya membuat pustaka ini menolak memulai.
+                        qrbox: (lebar, tinggi) => {
+                            const sisi = Math.floor(Math.min(lebar, tinggi) * 0.7);
+
+                            return { width: sisi, height: sisi };
+                        },
+                    },
                     (teks) => this.terbaca(teks),
                     // Callback kegagalan per-frame sengaja dibiarkan kosong: ia
                     // menyala puluhan kali per detik selama tidak ada QR di depan
@@ -68,15 +93,28 @@ window.presensiScanner = function () {
 
                 this.aktif = true;
             } catch (e) {
-                this.galat = 'Kamera tidak bisa dibuka. Pastikan izin kamera diberikan untuk situs ini.';
-                this.pemindai = null;
+                // Sebutkan penyebab aslinya. Pesan generik "pastikan izin
+                // diberikan" menyesatkan saat penyebabnya sebenarnya kamera
+                // dipakai aplikasi lain, atau perangkatnya memang tidak punya.
+                this.galat = 'Kamera tidak bisa dibuka: ' + (e?.message || e)
+                    + ' — pastikan izin kamera diberikan untuk situs ini dan tidak sedang dipakai aplikasi lain.';
+
+                await this.bersihkanPemindai();
+                this.tampil = false;
             } finally {
                 this.memuat = false;
             }
         },
 
         async matikan() {
+            await this.bersihkanPemindai();
+            this.tampil = false;
+        },
+
+        async bersihkanPemindai() {
             if (!this.pemindai) {
+                this.aktif = false;
+
                 return;
             }
 

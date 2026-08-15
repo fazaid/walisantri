@@ -4,7 +4,13 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Agustus 2026 — v4.33
+**Last Updated:** Agustus 2026 — v4.34
+
+**Changelog v4.34:** **Perbaikan: layar kamera tidak pernah muncul saat tombol pindai ditekan.** Wadah video terikat `x-show` pada bendera yang sama dengan "kamera berjalan", dan bendera itu baru dinyalakan **setelah** `start()` berhasil — sehingga html5-qrcode mengukur elemen yang masih `display:none`, membaca `clientWidth` sebagai 0, dan videonya tidak pernah terpasang. Diperbaiki dengan memisahkan dua bendera: `tampil` (wadah terlihat) dinyalakan **sebelum** `start()`, disusul `await $nextTick()` agar Alpine sempat menerapkan perubahan DOM-nya; `aktif` (kamera benar-benar berjalan) tetap menyusul.
+
+> **Pelajaran yang berlaku di luar kasus ini: pustaka yang mengukur DOM tidak boleh diinisialisasi di dalam elemen tersembunyi.** `display:none` membuat semua pengukuran nol, dan pustakanya jarang mengeluh — ia hanya menghasilkan sesuatu yang berukuran nol, sehingga gejalanya terbaca sebagai "fiturnya tidak jalan" alih-alih menunjuk penyebabnya. Kelas jebakan yang sama menunggu di chart, peta, kanvas tanda tangan, dan editor teks kaya. Kalau elemennya harus disembunyikan sampai siap, tampilkan dulu lalu tunggu satu tick — jangan dibalik.
+
+Dua perbaikan kecil menyertainya: kotak pindai kini diturunkan dari ukuran viewfinder yang sebenarnya (kotak yang lebih besar daripada videonya membuat pustaka ini menolak memulai), dan pesan galat menyertakan penyebab aslinya — "pastikan izin diberikan" menyesatkan saat penyebabnya kamera sedang dipakai aplikasi lain.
 
 **Changelog v4.33:** **Pemindaian kartu lewat KAMERA** — lapis kedua halaman Scan, untuk pesantren yang tidak punya alat pemindai. Cukup ponsel atau laptop berwebcam: tekan "Pindai dengan Kamera", arahkan kartu, selesai.
 
@@ -1583,7 +1589,7 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 
 # 22. Catatan Implementasi Aktual
 
-**PRD ini v4.33.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
+**PRD ini v4.34.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
 
 **Bug & fix:** `HasUuids` isi `id` jika tak di-override → `uniqueIds(): ['uuid']` · `$navigationGroup` `?string` error → `string|UnitEnum|null` · index name >63 char (batas PostgreSQL) → nama eksplisit pendek · ingat PostgreSQL tak punya unsigned int (kolom unsigned → signed bigint) · (v4.7) `tahun_ajaran` di form Nilai Akademik/Rapor Tahfidz semula `TextInput` bebas → mismatch format antar input & filter rapor bikin data tidak muncul → diganti `Select` dropdown seragam (service `TahunAjaranOptions`) · (v4.7) Filament cluster default merender sub-navigation tab di bawah header & dropdown khusus mobile → di-override via render hook + CSS agar tab tampil di atas breadcrumbs, konsisten desktop/mobile (detail di §7).
 
@@ -1654,4 +1660,4 @@ Daftar tiga cacat yang dicatat v4.20 sudah habis dikerjakan, dan dua lagi ditemu
 
 ---
 
-*Confidential — Internal Document | Walisantri.com v4.33 | Agustus 2026*
+*Confidential — Internal Document | Walisantri.com v4.34 | Agustus 2026*
