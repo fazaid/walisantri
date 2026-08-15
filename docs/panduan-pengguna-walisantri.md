@@ -316,12 +316,20 @@ Kalau tanggal yang dipilih terdaftar sebagai hari libur, akan muncul peringatan 
 
 **Admin saja.** Menu: **Presensi → Hari Libur**.
 
-1. Klik **+ New**. Pilih **Tahun Ajaran**.
+1. Klik **Tambah Hari Libur**.
 2. Isi **Tanggal Mulai** dan **Tanggal Selesai** — untuk libur satu hari, isi tanggal yang sama di keduanya.
-3. Isi **Keterangan** (mis. "Maulid Nabi", "Libur Akhir Semester Ganjil").
-4. Simpan. Rentang tanggal otomatis dipecah menjadi baris per hari.
+3. Isi **Keterangan** (mis. "Maulid Nabi", "Libur Akhir Semester Ganjil") dan pilih **Tahun Ajaran**.
+4. Simpan. Rentang tanggal otomatis dipecah menjadi baris per hari, dan sistem memberi tahu berapa hari yang tersimpan.
 
-Hari libur dan hari libur mingguan sama-sama dikeluarkan dari perhitungan **hari efektif** di rekap — jadi persentase kehadiran tidak turun hanya karena pondok sedang libur.
+Beberapa hal yang memudahkan:
+
+- **Salah tanggal? Simpan ulang saja.** Menyimpan rentang yang menimpa libur yang sudah ada akan **memperbarui keterangannya**, bukan menolak. Jadi mengoreksi cukup dengan menyimpan rentang yang benar.
+- **Tanggal terbalik tetap aman.** Kalau tanggal selesai lebih awal daripada tanggal mulai, sistem menukarnya sendiri.
+- **Menghapus libur sepekan** berarti mencentang barisnya di daftar lalu memakai hapus massal — konsekuensi dari penyimpanan per hari.
+
+Hari libur dan hari libur mingguan (bagian 8.1) sama-sama dikeluarkan dari perhitungan **hari efektif** di rekap — jadi persentase kehadiran tidak turun hanya karena pondok sedang libur.
+
+> **Mengisi presensi di hari libur tetap boleh.** Kalau Anda memilih tanggal yang terdaftar libur di halaman Isi Presensi, akan muncul peringatan kuning — tapi tombol simpannya tetap aktif. Ini disengaja: ada pondok yang tetap berkegiatan di hari libur (kajian, kerja bakti, lomba). Peringatan itu untuk mencegah kesalahan yang jauh lebih umum, yaitu salah memilih tanggal.
 
 ### 8.4 Kartu QR & Absen dengan Pemindai
 

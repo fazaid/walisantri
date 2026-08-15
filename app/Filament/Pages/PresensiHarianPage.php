@@ -10,6 +10,7 @@ use App\Models\Kelas;
 use App\Models\Presensi;
 use App\Models\PresensiPengaturan;
 use App\Models\Santri;
+use App\Services\PresensiKalender;
 use App\Support\PenugasanUstadz;
 use App\Support\Waktu;
 use BackedEnum;
@@ -214,6 +215,22 @@ class PresensiHarianPage extends Page implements HasForms
         }
 
         return null;
+    }
+
+    /**
+     * Keterangan hari libur untuk tanggal yang sedang dipilih, atau null.
+     *
+     * MEMPERINGATKAN, bukan melarang: ada pondok yang tetap berkegiatan di hari
+     * libur (kajian, kerja bakti, lomba), dan melarang pengisian akan memaksa
+     * mereka memakai tanggal yang salah. Yang dicegah peringatan ini adalah
+     * kesalahan yang jauh lebih umum — salah memilih tanggal.
+     */
+    public function peringatanHariLibur(): ?string
+    {
+        $tanggal = $this->tanggal ?? Waktu::hariIni();
+
+        return PresensiKalender::untuk(Auth::user()->pesantren_id)
+            ->keteranganLibur($tanggal);
     }
 
     public function form(Schema $schema): Schema

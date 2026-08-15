@@ -4,7 +4,18 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Agustus 2026 — v4.28
+**Last Updated:** Agustus 2026 — v4.29
+
+**Changelog v4.29:** **Modul Presensi Fase 2 — kalender hari libur.** Menu **Hari Libur** (`admin_pesantren` saja) dan service `App\Services\PresensiKalender` yang menjadi satu-satunya sumber jawaban atas "hari ini sekolah atau tidak". Halaman Isi Presensi kini memperingatkan saat tanggal terpilih jatuh di hari libur.
+
+- **Rentang di form, baris harian di tabel.** Orang memikirkan hari libur sebagai rentang ("libur akhir semester 20 Des–5 Jan"), bukan tujuh belas entri terpisah — jadi form tambah menerima rentang. Tabelnya tetap satu baris per hari, dan pengembangannya terjadi sekali di `PresensiHariLiburResource::simpanRentang()`. Imbalannya: rekap cukup `whereIn('tanggal', …)` alih-alih logika tumpang-tindih rentang, yang selalu salah di kasus tepi. Form **ubah** sengaja berbeda dari form **tambah** — orang menambah libur dalam rentang, tapi mengoreksinya per hari.
+- **Rentang beririsan memperbarui, bukan gagal.** `updateOrCreate` atas `(pesantren_id, tanggal)`: menyimpan rentang yang menabrak libur yang sudah ada mengganti keterangannya. Itu yang diharapkan admin saat mengoreksi tanggal — bukan pelanggaran unique yang mentah ke layar (kelas bug yang baru ditutup di v4.27). Tanggal yang terbalik ditukar diam-diam, dan rentang di atas 400 hari ditolak dengan penjelasan — salah ketik tahun adalah cara termudah membuat rentang raksasa.
+- **`PresensiKalender` menggabungkan dua sumber libur** supaya pemanggilnya tidak perlu tahu ada dua: libur **mingguan** (pola tetap di `presensi_pengaturan.hari_libur_mingguan`) dan libur **kalender** (tanggal tertentu di `presensi_hari_libur`). `hariEfektif()` mengambil libur kalender **sekali untuk seluruh rentang** — versi naifnya akan menembakkan ~180 query hanya untuk menghitung penyebut satu semester. Libur kalender didahulukan saat bertabrakan: "Maulid Nabi" lebih berguna daripada "Libur Minggu".
+- **Peringatan hari libur MEMPERINGATKAN, bukan melarang.** Ada pondok yang tetap berkegiatan di hari libur (kajian, kerja bakti, lomba), dan melarang pengisian akan memaksa mereka memakai tanggal yang salah — persis kesalahan yang ingin dicegah. Dikunci tes yang memastikan penyimpanan tetap berhasil meski peringatannya muncul.
+
+> **Penomoran hari adalah bagian paling rawan di seluruh fase ini.** `Carbon::dayOfWeek` memakai **0 = Minggu … 6 = Sabtu**, sedangkan ISO-8601 memakai 1 = Senin … 7 = Minggu. Tertukar berarti seluruh perhitungan hari efektif bergeser satu hari **tanpa satu pun error muncul** — dan gejalanya baru terlihat sebagai persentase kehadiran yang meleset di rapor. `PresensiKalenderTest` karena itu menguji dua pesantren dengan hari libur berbeda (Minggu dan Jumat), bukan hanya kasus default.
+
+Cakupan tes naik jadi **535 tes / 1.637 asersi** — `PresensiHariLiburTest` (8 kasus) dan `PresensiKalenderTest` (11 kasus, termasuk rentang sehari, rentang terbalik, dan kebocoran lintas-tenant).
 
 **Changelog v4.28:** **Modul Presensi Fase 1 — kodenya akhirnya ada.** Setelah tiga rilis dokumen (v4.25 rancangan, v4.26 audit pra-implementasi, v4.27 tujuh bug fondasi ditutup), fase pertama dibangun: pesantren sudah bisa mengabsen santri setiap hari dan datanya tersimpan benar. Yang menyusul di fase berikutnya: kalender hari libur, rekap & ekspor, kartu QR, pengajuan izin, dan presensi per jam pelajaran.
 
@@ -649,7 +660,7 @@ erDiagram
 | `2026_08_15_000002` | `create_presensi_pengaturan_table` | 1 ✅ |
 | `2026_08_15_000003` | `create_presensi_table` (tanpa `presensi_izin_id`) | 1 ✅ |
 | `2026_08_15_000004` | `seed_presensi_pengaturan_untuk_pesantren_lama` | 1 ✅ |
-| menyusul | `create_presensi_hari_libur_table` | 2 |
+| `2026_08_15_000005` | `create_presensi_hari_libur_table` | 2 ✅ |
 | menyusul | `create_presensi_izin_table` + `add_presensi_izin_id_to_presensi_table` | 4 |
 | menyusul | `add_kode_presensi_to_santri_table` | 5 |
 | menyusul | `create_presensi_jam_pelajaran_table` | 6 |
@@ -1417,7 +1428,7 @@ Sisanya: `PresensiIzinTest`, `PresensiHariLiburTest`, `PresensiRekapPageTest`, `
 
 **Konfigurasi:** unit test pakai PostgreSQL ephemeral (mis. service container `postgres` di GitHub Actions) atau SQLite in-memory untuk test yang tidak bergantung fitur PostgreSQL; `CACHE_DRIVER=array`, `QUEUE_CONNECTION=sync`. Test isolasi tenant & RLS **wajib** pakai PostgreSQL (bukan SQLite) agar policy ikut teruji.
 
-**Sebaran nyata (v4.28):** 516 tes / 1.578 asersi (terhadap PostgreSQL; di SQLite 10 tes isolasi tenant di-skip).
+**Sebaran nyata (v4.29):** 535 tes / 1.637 asersi (terhadap PostgreSQL; di SQLite 10 tes isolasi tenant di-skip).
 
 ```
 tests/Feature/                                52 berkas  ← tulang punggung: alur panel Filament,
@@ -1521,7 +1532,7 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 
 # 22. Catatan Implementasi Aktual
 
-**PRD ini v4.28.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
+**PRD ini v4.29.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
 
 **Bug & fix:** `HasUuids` isi `id` jika tak di-override → `uniqueIds(): ['uuid']` · `$navigationGroup` `?string` error → `string|UnitEnum|null` · index name >63 char (batas PostgreSQL) → nama eksplisit pendek · ingat PostgreSQL tak punya unsigned int (kolom unsigned → signed bigint) · (v4.7) `tahun_ajaran` di form Nilai Akademik/Rapor Tahfidz semula `TextInput` bebas → mismatch format antar input & filter rapor bikin data tidak muncul → diganti `Select` dropdown seragam (service `TahunAjaranOptions`) · (v4.7) Filament cluster default merender sub-navigation tab di bawah header & dropdown khusus mobile → di-override via render hook + CSS agar tab tampil di atas breadcrumbs, konsisten desktop/mobile (detail di §7).
 
@@ -1592,4 +1603,4 @@ Daftar tiga cacat yang dicatat v4.20 sudah habis dikerjakan, dan dua lagi ditemu
 
 ---
 
-*Confidential — Internal Document | Walisantri.com v4.28 | Agustus 2026*
+*Confidential — Internal Document | Walisantri.com v4.29 | Agustus 2026*
