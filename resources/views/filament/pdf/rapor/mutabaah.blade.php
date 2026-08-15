@@ -2,7 +2,13 @@
     $rr = $modul['rata_rata'];
 @endphp
 
-<div class="section-title">Statistik Kehadiran</div>
+{{--
+    Judulnya BUKAN "Statistik Kehadiran" — bagian ini merender total_hari /
+    total_udzur / rata-rata skor amalan, yaitu statistik udzur mutaba'ah.
+    Dibiarkan, satu PDF rapor akan memuat dua bagian berjudul "Kehadiran" dengan
+    angka berbeda yang sama-sama benar, dan itu pabrik pertanyaan dari wali.
+--}}
+<div class="section-title">Ringkasan Mutaba'ah</div>
 <table class="stat-grid-4">
     <tr>
         <td>

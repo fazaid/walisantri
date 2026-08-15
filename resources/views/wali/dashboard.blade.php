@@ -27,6 +27,21 @@
     </div>
     @endif
 
+    {{-- Alert Kehadiran Hari Ini --}}
+    @if($alertKehadiran->isNotEmpty())
+    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-1">
+        <p class="text-sm font-semibold text-amber-700">🗓️ Kehadiran Hari Ini</p>
+        @foreach($alertKehadiran as $alert)
+        <p class="text-xs text-amber-700">
+            <a href="{{ route('wali.santri.presensi', $alert['santri_id']) }}" class="underline decoration-amber-300">
+                <span class="font-medium">{{ $alert['nama'] }}</span>
+            </a>
+            — tercatat {{ $alert['status'] }}
+        </p>
+        @endforeach
+    </div>
+    @endif
+
     @if($santri)
         {{-- Wali dengan 1 anak: tampilkan detail penuh langsung, tanpa tab tambahan --}}
         @include('wali.partials.santri-detail', array_merge(['santri' => $santri], $detail))

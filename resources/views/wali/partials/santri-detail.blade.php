@@ -308,6 +308,24 @@
         </div>
     </a>
 
+    {{-- Presensi --}}
+    @php $presensiPreview = $previewMode ?? false; @endphp
+    <a @unless($presensiPreview) href="{{ route('wali.santri.presensi', $santri->id) }}" @endunless
+       class="block bg-white rounded-2xl shadow-sm border border-gray-100 px-4 py-3 @unless($presensiPreview) hover:border-teal-200 transition-colors @endunless">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-xl">🗓️</span>
+                <div>
+                    <p class="text-sm font-semibold text-gray-800">Presensi & Kehadiran</p>
+                    <p class="text-xs text-gray-400">Rekap bulanan dan catatan harian</p>
+                </div>
+            </div>
+            @unless($presensiPreview)
+            <span class="text-xs font-medium text-teal-600">Detail →</span>
+            @endunless
+        </div>
+    </a>
+
     {{-- Pengajuan Izin --}}
     @php $izinPreview = $previewMode ?? false; @endphp
     <a @unless($izinPreview) href="{{ route('wali.izin') }}" @endunless

@@ -7,6 +7,7 @@ use App\Models\Santri;
 use App\Services\Rapor\RaporAkademikData;
 use App\Services\Rapor\RaporKarakterData;
 use App\Services\Rapor\RaporMutabaahData;
+use App\Services\Rapor\RaporPresensiData;
 use App\Services\Rapor\RaporTahfidzData;
 use App\Services\TahunAjaranOptions;
 use App\Support\Waktu;
@@ -26,6 +27,7 @@ class RaporPage extends Page
         'tahfidz' => 'Tahfidz',
         'mutabaah' => 'Mutabaah',
         'karakter' => 'Karakter',
+        'presensi' => 'Presensi',
     ];
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentChartBar;
@@ -161,6 +163,7 @@ class RaporPage extends Page
             'tahfidz' => RaporTahfidzData::class,
             'mutabaah' => RaporMutabaahData::class,
             'karakter' => RaporKarakterData::class,
+            'presensi' => RaporPresensiData::class,
         ];
 
         $data = [];

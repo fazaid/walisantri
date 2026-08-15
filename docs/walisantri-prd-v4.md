@@ -4,7 +4,27 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Agustus 2026 — v4.39
+**Last Updated:** Agustus 2026 — v4.40
+
+**Changelog v4.40:** **Modul Presensi Fase 7 — angkanya sampai ke wali.** Fase terakhir modul ini menutup jarak antara data yang sudah dikumpulkan enam fase sebelumnya dan orang yang paling ingin membacanya.
+
+Yang jadi: halaman **Presensi** di portal wali (`/wali/santri/{santri}/presensi`), **alert kehadiran hari ini** di Beranda wali, dan modul **Presensi** sebagai rapor kelima di `RaporPage` (`RaporPresensiData` + `filament.pdf.rapor.presensi` + partial layar).
+
+**Empat permukaan, satu sumber angka.** `PresensiRekap` mendapat parameter `santriId` dan method `satuSantri()`, lalu dipakai apa adanya oleh halaman Rekap admin, ekspor Excel, portal wali, dan rapor PDF. Menghitungnya lagi di controller wali dan di `RaporPresensiData` akan lebih pendek ditulis — dan akan berakhir dengan "hari efektif" versi empat, yang selisihnya baru ketahuan saat seorang wali membandingkan persentase di ponselnya dengan persentase di rapor cetak. Itu persis kegagalan v4.19, dan biayanya setahun. `satuSantri()` **melempar** bila `santriId` tidak disetel, bukan mengembalikan baris pertama pesantren: angka yang terlihat masuk akal untuk santri yang salah adalah kegagalan yang paling mahal untuk ditemukan.
+
+**"Tanpa Keterangan" dijelaskan di setiap permukaan tempat ia muncul** — di portal wali, di layar rapor, dan di dalam PDF-nya. Angka itu berarti hari efektif yang presensinya belum diisi, BUKAN ketidakhadiran yang dinyatakan; sistem ini tidak pernah menandai Alpa otomatis (§11). Rapor adalah dokumen yang dibaca orang tua dan disimpan bertahun-tahun, jadi ambiguitasnya harus tercetak di lembar yang sama, bukan diserahkan ke ingatan wali kelas.
+
+**Alert Beranda berangkat dari baris yang ADA, dan hanya untuk status yang benar-benar tidak hadir.** Hari tanpa catatan tidak pernah dianggap ketidakhadiran — menebaknya berarti mengirim kabar buruk ke orang tua hanya karena ustadznya belum sempat mengisi. Terlambat dan Dispensasi juga tidak memicu banner: keduanya dihitung hadir oleh `StatusKehadiran::hadirEfektif()`, dan memakai definisi berbeda di Beranda berarti wali membaca "tidak hadir" lalu melihat "100% hadir" di halaman presensi anak yang sama.
+
+**`BlockMagicLinkSession` ikut disunting, dan itu bukan detail.** Kartu Presensi tampil di halaman report yang dibuka sesi Magic Link, jadi tanpa menambahkan `wali.santri.presensi` ke daftar route yang diizinkan, menekannya akan memantulkan wali kembali ke report tanpa penjelasan apa pun. Ia halaman detail baca-saja yang ditaut langsung dari report — persis seperti tahfidz, kesehatan, mutaba'ah, dan inventaris yang sudah ada di daftar itu sejak awal.
+
+**Dua koreksi terhadap PRD sendiri.** §8 mendaftarkan halaman presensi wali sebagai *(v4.25)* dan alert kehadiran sebagai *(v4.26)*, dan §15 menulis modul Presensi sudah jadi rapor kelima sejak v4.25 — ketiganya **belum ada kodenya** sampai rilis ini; yang ditulis di sana adalah rancangan, bukan status. Ditandai ulang sebagai v4.40. Sekalian dibayar utang v4.25 yang tertulis "wajib dikerjakan di fase yang sama": judul `resources/views/filament/pdf/rapor/mutabaah.blade.php` diganti dari "Statistik Kehadiran" jadi "Ringkasan Mutaba'ah" — bagian itu merender statistik udzur, dan membiarkannya membuat satu PDF memuat dua bagian "Kehadiran" dengan angka berbeda yang sama-sama benar.
+
+**Yang TIDAK ditampilkan ke wali, dan disengaja:** presensi per jam pelajaran. Penyebutnya berbeda — "hari efektif" tidak berlaku untuk jam pelajaran (§3.2, v4.39) — dan mencampurnya di satu daftar membuat wali membaca satu hari yang sama beberapa kali dengan status berbeda tanpa penjelasan. Dikunci tes di kedua permukaan.
+
+Cakupan tes naik jadi **658 tes / 2.574 asersi** — `WaliPresensiTest` (16 kasus, termasuk kebocoran antar-wali dan dua jalur Magic Link) dan empat kasus baru di `RaporPageTest`.
+
+**Modul Presensi selesai.** Tujuh fase: fondasi & kehadiran harian (v4.28) → kalender hari libur (v4.29) → rekap & ekspor (v4.30) → pengajuan izin (v4.31) → kartu QR & scan (v4.32) → presensi per jam pelajaran (v4.39) → portal wali & rapor (v4.40).
 
 **Changelog v4.39:** **Modul Presensi Fase 6 — presensi per jam pelajaran.** Mode opsional yang dijanjikan sejak v4.25 akhirnya ada, dan **mati secara bawaan**: pesantren yang cukup dengan presensi harian tidak melihat perubahan apa pun di layarnya.
 
@@ -1131,7 +1151,7 @@ Dashboard                        ← semua role
   (v4.19: Cluster Mutabaah dibubarkan, isinya masuk ke sini — sort 3 kosong)
 ──
 Rapor DocumentChartBar ← halaman top-level, BUKAN cluster (v4.19, slug /admin/rapor, sort 5)
-  satu halaman, modul dipilih lewat checkbox: Akademik · Tahfidz · Mutabaah · Karakter
+  satu halaman, modul dipilih lewat checkbox: Akademik · Tahfidz · Mutabaah · Karakter · Presensi (v4.40)
 ──
 [Cluster Keuangan] Banknotes ← top-level sidebar, tanpa group (v4.9, sort 6)
   Tagihan SPP · Uang Saku Santri (SaldoUangSakuPage) [semua admin_pesantren only]
@@ -1209,11 +1229,13 @@ Blade + TailwindCSS murni (tanpa Flux UI), mobile-first. Akses via Magic Link (�
 
   Label adab/kepribadian di halaman & PDF wali kini diambil dari `RaporKarakterData::adabFields()`/`kepribadianFields()` — satu sumber dengan panel admin. Dikunci `tests/Feature/WaliRaporTest.php` (10 kasus); sebelumnya `Wali\RaporController` dan `Wali\LaporanController` sama sekali tidak punya tes.
 
-- **Presensi santri** *(v4.25)*: `/wali/santri/{santri}/presensi` — rekap bulan berjalan (tujuh status + hari efektif + % kehadiran) dan daftar harian, dengan filter bulan. Baca-saja.
+- **Presensi santri** *(dirancang v4.25, **dibangun v4.40**)*: `/wali/santri/{santri}/presensi` — rekap bulan (tujuh status + hari efektif + % kehadiran) dan daftar harian, dengan filter 12 bulan terakhir. Baca-saja. Angkanya datang dari `App\Services\PresensiRekap` yang sama dengan panel admin dan rapor PDF, bukan query tersendiri. Hanya presensi harian; presensi per jam pelajaran tidak diikutkan karena penyebutnya berbeda. Bulan di luar jendela **jatuh ke bulan berjalan, bukan 404** — wali lazim menyimpan tautan lama.
 - **Pengajuan Izin** *(v4.25)*: `/wali/izin` (daftar pengajuan semua anak + statusnya) dan `POST /wali/izin` (pilih anak, jenis, rentang tanggal, alasan, lampiran opsional). Izin yang disetujui admin/wali kelas langsung mengisi presensi tanggal terkait (§3.2). Lampiran disajikan lewat rute terotorisasi `wali.izin.lampiran` karena disimpan di disk `local`, bukan `public`.
-- **Alert kehadiran di Beranda** *(v4.26)*: banner saat ada anak berstatus tidak hadir hari ini, mengikuti pola `$alertKesehatan` dan `$tunggakanSpp` yang sudah ada di `Wali\DashboardController`.
+- **Alert kehadiran di Beranda** *(dirancang v4.26, **dibangun v4.40**)*: banner saat ada anak yang hari ini **tercatat** tidak hadir, mengikuti pola `$alertKesehatan` dan `$tunggakanSpp` di `Wali\DashboardController`. Hari tanpa catatan tidak pernah memicunya (§11), dan Terlambat/Dispensasi juga tidak — keduanya dihitung hadir oleh `StatusKehadiran::hadirEfektif()`.
 
 > **Tidak ada pesan keluar untuk ketidakhadiran — keputusan sadar (v4.26).** Memberi tahu orang tua saat anaknya tidak masuk adalah nilai jual terbesar modul ini, tapi kedua kanalnya sedang tidak layak: integrasi WhatsApp **sengaja dimatikan** (§12.1, dan menambahkannya berarti dispatch kelima dengan volume puluhan pesan per hari per pesantren — jauh di atas notifikasi billing yang jadi alasan keempat pengecualian itu diizinkan), sementara `users.email` nullable karena wali santri memang dirancang passwordless lewat Magic Link, sehingga jangkauan email tidak merata. Jadi v1 mengandalkan alert di Beranda. Pemicu tinjau ulang: data nyata berapa banyak wali yang benar-benar membuka portal.
+
+> **Sesi Magic Link boleh membuka halaman presensi (v4.40).** `wali.santri.presensi` masuk `BlockMagicLinkSession::ROUTE_DIIZINKAN` bersama tahfidz, kesehatan, mutaba'ah, dan inventaris — semuanya halaman detail baca-saja yang ditaut langsung dari report. Melewatkannya berarti kartunya tampil di report lalu memantulkan wali kembali ke report saat ditekan, tanpa penjelasan apa pun.
 
 > **Tidak ada item bottom nav ke-6.** Kelima tab (Beranda · SPP · Pengumuman · Uang Saku · Rapor) dipertahankan; presensi dicapai dari detail santri, persis seperti Tahfidz, Kesehatan, Mutaba'ah, dan Inventaris yang juga sudah jadi halaman anak sejak awal. `wali/layouts/app.blade.php` membagi lebar `flex-1` per item, dan item keenam akan memotong label di layar sempit.
 
@@ -1477,7 +1499,7 @@ Step **"lihat/salin Magic Link wali pertama" dihapus di v4.21** — membuka moda
 
 **Alur (sinkron):** klik Export + filter → `Admin\ExportController` memanggil `Excel::download()` → berkas langsung terunduh di request yang sama. Tidak ada job, tidak ada queue, tidak ada penyimpanan di server, jadi tidak ada berkas yang perlu dibersihkan. Route: `admin.export.santri` · `admin.export.mutabaah` · `admin.export.rekam-medis`.
 
-Untuk PDF rapor, `RaporPage` merender `filament.pdf.rapor-gabungan` lewat DomPDF, juga sinkron. **v4.25:** rute keempat `admin.export.presensi` ditambahkan dengan pola yang sama persis, dan modul **Presensi** menjadi checkbox kelima di `RaporPage` (`RaporPresensiData` + view `filament.pdf.rapor.presensi`). Agregasinya hidup di satu tempat, `App\Services\PresensiRekap`, yang dipakai bersama oleh halaman Rekap, ekspor Excel, dan PDF rapor — pelajaran v4.19 (halaman dan PDF yang punya versi query sendiri akan menyimpang, dan menyimpangnya baru ketahuan setahun kemudian).
+Untuk PDF rapor, `RaporPage` merender `filament.pdf.rapor-gabungan` lewat DomPDF, juga sinkron. **v4.25:** rute keempat `admin.export.presensi` ditambahkan dengan pola yang sama persis. **v4.40:** modul **Presensi** menjadi checkbox kelima di `RaporPage` (`RaporPresensiData` + view `filament.pdf.rapor.presensi` + partial layar `filament.pages.partials.rapor.presensi`) — sempat tertulis di sini sejak v4.25 sebagai rancangan, tapi kodenya baru ada sekarang. Agregasinya hidup di satu tempat, `App\Services\PresensiRekap`, yang dipakai bersama oleh halaman Rekap, ekspor Excel, dan PDF rapor — pelajaran v4.19 (halaman dan PDF yang punya versi query sendiri akan menyimpang, dan menyimpangnya baru ketahuan setahun kemudian).
 
 > ⚠️ **`PresensiRekap` wajib mengagregasi di SQL, dan tidak boleh mencontek modul Rapor (v4.26).** `RaporMutabaahData` dan `RaporAkademikData` sama-sama `->get()` seluruh baris lalu merekap dengan Collection (`$records->where(...)->count()`, `->groupBy()`, `->sum()`). Itu aman **di sana** karena lingkupnya satu santri (~180 baris per semester). Rekap presensi satu semester untuk 1.000 santri menyentuh ratusan ribu baris; pola yang sama akan menghabiskan memori PHP jauh sebelum halamannya selesai dirender.
 >
@@ -1550,7 +1572,7 @@ Sisanya: `PresensiIzinTest`, `PresensiHariLiburTest`, `PresensiRekapPageTest`, `
 
 **Konfigurasi:** unit test pakai PostgreSQL ephemeral (mis. service container `postgres` di GitHub Actions) atau SQLite in-memory untuk test yang tidak bergantung fitur PostgreSQL; `CACHE_DRIVER=array`, `QUEUE_CONNECTION=sync`. Test isolasi tenant & RLS **wajib** pakai PostgreSQL (bukan SQLite) agar policy ikut teruji.
 
-**Sebaran nyata (v4.39):** 638 tes / 2.525 asersi (terhadap PostgreSQL; di SQLite 10 tes isolasi tenant di-skip).
+**Sebaran nyata (v4.40):** 658 tes / 2.574 asersi (terhadap PostgreSQL; di SQLite 10 tes isolasi tenant di-skip).
 
 ```
 tests/Feature/                                52 berkas  ← tulang punggung: alur panel Filament,
@@ -1654,7 +1676,7 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 
 # 22. Catatan Implementasi Aktual
 
-**PRD ini v4.39.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
+**PRD ini v4.40.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
 
 **Bug & fix:** `HasUuids` isi `id` jika tak di-override → `uniqueIds(): ['uuid']` · `$navigationGroup` `?string` error → `string|UnitEnum|null` · index name >63 char (batas PostgreSQL) → nama eksplisit pendek · ingat PostgreSQL tak punya unsigned int (kolom unsigned → signed bigint) · (v4.7) `tahun_ajaran` di form Nilai Akademik/Rapor Tahfidz semula `TextInput` bebas → mismatch format antar input & filter rapor bikin data tidak muncul → diganti `Select` dropdown seragam (service `TahunAjaranOptions`) · (v4.7) Filament cluster default merender sub-navigation tab di bawah header & dropdown khusus mobile → di-override via render hook + CSS agar tab tampil di atas breadcrumbs, konsisten desktop/mobile (detail di §7).
 
@@ -1725,4 +1747,4 @@ Daftar tiga cacat yang dicatat v4.20 sudah habis dikerjakan, dan dua lagi ditemu
 
 ---
 
-*Confidential — Internal Document | Walisantri.com v4.39 | Agustus 2026*
+*Confidential — Internal Document | Walisantri.com v4.40 | Agustus 2026*
