@@ -44,8 +44,7 @@ class SantriForm
                             ),
                         TextInput::make('nama_lengkap')
                             ->required()
-                            ->maxLength(255)
-                            ->columnSpanFull(),
+                            ->maxLength(255),
                         TextInput::make('nama_panggilan')
                             ->maxLength(100),
                         DatePicker::make('tanggal_lahir')

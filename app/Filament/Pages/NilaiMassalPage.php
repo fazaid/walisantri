@@ -25,6 +25,7 @@ use Filament\Schemas\Components\Form;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -246,15 +247,18 @@ class NilaiMassalPage extends Page implements HasForms
         $data = $this->form->getState();
         $rows = $data['rows'] ?? [];
 
-        // bulan hanya bermakna untuk periode Bulanan; untuk semester ia NULL,
-        // sesuai unique index (santri_id, mata_pelajaran_id, tahun_ajaran,
-        // periode, bulan). Saat bulan NULL, unique index tidak menegakkan
-        // apa pun, jadi updateOrCreate-lah yang mencegah duplikat.
+        // bulan hanya bermakna untuk periode Bulanan; untuk semester ia NULL.
+        // Keunikan periode semester dijaga partial unique index
+        // `nilai_akademik_unik_tanpa_bulan` (migrasi tenant/2026_08_15_000001) —
+        // BUKAN oleh unique lima kolom, yang tidak menjaga apa pun saat `bulan`
+        // NULL karena NULL tidak pernah sama dengan NULL di dalam UNIQUE.
         $bulan = $data['periode'] === 'Bulanan' ? ($data['bulan'] ?? null) : null;
 
         $tersimpan = 0;
 
-        try {
+        $simpan = function () use ($rows, $data, $bulan, &$tersimpan): void {
+            $tersimpan = 0;
+
             DB::transaction(function () use ($rows, $data, $bulan, &$tersimpan) {
                 foreach ($rows as $row) {
                     if (! isset($row['nilai']) || $row['nilai'] === '' || $row['nilai'] === null) {
@@ -278,6 +282,20 @@ class NilaiMassalPage extends Page implements HasForms
                     $tersimpan++;
                 }
             });
+        };
+
+        try {
+            try {
+                $simpan();
+            } catch (UniqueConstraintViolationException) {
+                // updateOrCreate adalah SELECT-lalu-INSERT, jadi dua penyimpanan
+                // bersamaan bisa sama-sama menyimpulkan "belum ada" lalu yang kedua
+                // menabrak unique index. Sekali ulang sudah cukup: SELECT pada
+                // percobaan kedua menemukan baris yang baru saja ditulis pihak lain
+                // dan berubah jadi UPDATE. Tanpa ini, penyimpanan yang sebenarnya
+                // sah akan gagal total hanya karena bentrok sesaat.
+                $simpan();
+            }
         } catch (\Throwable $e) {
             Log::error('nilai_massal_save_failed', ['message' => $e->getMessage()]);
 

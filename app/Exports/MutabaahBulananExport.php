@@ -28,7 +28,16 @@ class MutabaahBulananExport implements FromCollection, ShouldAutoSize, WithHeadi
 
     public function collection(): Collection
     {
-        return KesantrianMutabaah::with('santri')
+        // withTrashed() pada eager load-nya disengaja. Query ini berangkat dari
+        // tabel anak, jadi baris milik santri yang sudah di-soft-delete tetap
+        // ikut terambil — tapi relasi belongsTo tunduk pada global scope
+        // SoftDeletes, sehingga `$record->santri` mengembalikan null dan kolom
+        // namanya tercetak "-". Hasilnya rekap bulanan berisi baris data lengkap
+        // tanpa identitas: tidak bisa dibaca, dan tidak jelas apakah itu bug atau
+        // memang santri anonim. Nama tetap ditampilkan (dengan penanda di
+        // ::map()), bukan barisnya yang dibuang — membuang baris akan diam-diam
+        // mengubah total rekap satu bulan yang sudah berjalan.
+        return KesantrianMutabaah::with(['santri' => fn ($q) => $q->withTrashed()])
             ->where('pesantren_id', $this->pesantrenId)
             ->whereMonth('tanggal', $this->bulan)
             ->whereYear('tanggal', $this->tahun)
@@ -61,7 +70,9 @@ class MutabaahBulananExport implements FromCollection, ShouldAutoSize, WithHeadi
 
         return array_merge(
             [
-                $record->santri?->nama_lengkap ?? '-',
+                $record->santri === null
+                    ? '-'
+                    : $record->santri->nama_lengkap.($record->santri->trashed() ? ' (dihapus)' : ''),
                 $record->tanggal->format('d/m/Y'),
                 str_replace('_', ' ', $record->status_udzur ?? ''),
             ],

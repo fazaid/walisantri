@@ -87,6 +87,63 @@ class MutabaahHarianPageTest extends TestCase
         $this->assertTrue(KesantrianMutabaah::first()->amalan['is_dhuha']);
     }
 
+    public function test_simpan_ulang_memperbarui_bukan_menduplikasi(): void
+    {
+        $pesantren = Pesantren::factory()->create();
+        $ustadz = User::factory()->ustadz()->create(['pesantren_id' => $pesantren->id]);
+        $this->makeAmalMaster($pesantren);
+
+        Santri::factory()->create([
+            'pesantren_id' => $pesantren->id,
+            'pembimbing_ustadz_id' => $ustadz->id,
+            'nama_lengkap' => 'Ahmad',
+        ]);
+
+        $komponen = Livewire::actingAs($ustadz)->test(MutabaahHarianPage::class);
+        $komponen->call('save')->assertHasNoErrors();
+
+        $rows = $komponen->get('rows');
+        $kunci = array_key_first($rows);
+        $rows[$kunci]['status_udzur'] = 'Sakit';
+
+        $komponen->set('rows', $rows)->call('save')->assertHasNoErrors();
+
+        // upsert: ON CONFLICT DO UPDATE, bukan baris kedua.
+        $this->assertSame(1, KesantrianMutabaah::count());
+        $this->assertSame('Sakit', KesantrianMutabaah::first()->status_udzur);
+    }
+
+    public function test_halaman_memberi_tahu_saat_amal_master_belum_ada(): void
+    {
+        $pesantren = Pesantren::factory()->create();
+        $admin = User::factory()->adminPesantren()->create(['pesantren_id' => $pesantren->id]);
+
+        Santri::factory()->create(['pesantren_id' => $pesantren->id]);
+
+        // Tanpa guard, halaman tampak normal tapi tiap baris santri cuma punya
+        // dropdown Udzur dan skornya selalu 0% — persis gejala yang dicatat
+        // migrasi tenant/2026_08_13_000003.
+        Livewire::actingAs($admin)
+            ->test(MutabaahHarianPage::class)
+            ->assertSee('Belum ada amalan yang bisa diisi.')
+            ->assertSee('Amal Master');
+    }
+
+    public function test_ustadz_tanpa_santri_binaan_diberi_arahan(): void
+    {
+        $pesantren = Pesantren::factory()->create();
+        $ustadz = User::factory()->ustadz()->create(['pesantren_id' => $pesantren->id]);
+        $this->makeAmalMaster($pesantren);
+
+        // Santri ada di pesantren, tapi bukan binaan ustadz ini.
+        Santri::factory()->create(['pesantren_id' => $pesantren->id]);
+
+        Livewire::actingAs($ustadz)
+            ->test(MutabaahHarianPage::class)
+            ->assertSee('Belum ada santri yang bisa diisi mutaba\'ahnya.')
+            ->assertSee('pembimbing');
+    }
+
     public function test_toggle_amal_di_form_satuan_default_terisi(): void
     {
         $pesantren = Pesantren::factory()->create();
