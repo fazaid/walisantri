@@ -30,13 +30,24 @@
             + {{ $pengaturan->toleransi_terlambat_menit }} menit.
         </p>
 
-        {{-- Jalur utama: alat pemindai USB/Bluetooth berperilaku sebagai papan
-             ketik (mengetik kode lalu menekan Enter), jadi tidak ada dependensi
-             JS sama sekali dan petugas tidak perlu menyentuh layar. --}}
+        {{--
+            Jalur utama: alat pemindai USB/Bluetooth berperilaku sebagai papan
+            ketik (mengetik kode lalu menekan Enter).
+
+            ⚠️ SENGAJA TANPA wire:model. Kolom ini `autofocus` dan tetap fokus
+            sepanjang sesi, sedangkan morph Livewire dengan sengaja TIDAK menimpa
+            nilai input yang sedang fokus — supaya ketikan pengguna tidak terhapus
+            di tengah jalan. Akibatnya `$this->kode = ''` di sisi server tidak
+            pernah sampai ke DOM, kolomnya tidak pernah bersih, dan tiap pindaian
+            berikutnya menempel di belakang yang lama:
+            "WSP1.AAAWSP1.BBBWSP1.CCC" — lalu semuanya ditolak sebagai satu kode
+            ngawur. Karena itu nilainya diambil dan dibersihkan di sisi klien,
+            lalu dikirim sebagai argumen; jalur yang sama persis dengan kamera.
+        --}}
         <input
             type="text"
-            wire:model="kode"
-            wire:keydown.enter="scan"
+            x-ref="kolomKode"
+            x-on:keydown.enter.prevent="kirimManual()"
             autofocus
             autocomplete="off"
             placeholder="Menunggu pemindaian…"
@@ -68,7 +79,7 @@
             </button>
 
             <p x-show="aktif" x-cloak class="text-xs text-gray-500 dark:text-gray-400">
-                Arahkan QR kartu ke kamera. Kartu yang sama tidak dibaca ulang dalam 3 detik.
+                Arahkan QR kartu ke kamera. Tiap kartu dicatat sekali — jauhkan kartunya, lalu dekatkan kartu berikutnya.
             </p>
         </div>
 
@@ -88,7 +99,18 @@
             wadahnya alih-alih memakai ukuran intrinsik kamera.
         --}}
         <div x-show="tampil" x-cloak class="mt-4">
+            {{--
+                wire:ignore WAJIB. Elemen <video> di dalam sini disisipkan
+                html5-qrcode lewat JavaScript, jadi ia TIDAK ADA di HTML yang
+                dirender server. Tiap pemindaian berhasil mengubah $riwayat →
+                Livewire me-render ulang → morph membandingkan DOM dengan HTML
+                server, menganggap video itu simpanan liar, dan menghapusnya.
+                Gejalanya: wadahnya tetap terlihat (Alpine masih memegang
+                `tampil`) tapi isinya hitam kosong, persis setelah santri
+                PERTAMA berhasil dipindai.
+            --}}
             <div
+                wire:ignore
                 id="pemindai-kamera"
                 class="mx-auto w-full max-w-sm overflow-hidden rounded-xl border border-gray-200 bg-black dark:border-gray-700 [&_video]:h-auto [&_video]:w-full"
                 style="min-height: 16rem;"

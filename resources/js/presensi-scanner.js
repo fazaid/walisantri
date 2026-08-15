@@ -33,8 +33,23 @@ window.presensiScanner = function () {
         galat: '',
         pemindai: null,
 
-        /** kode => timestamp pemindaian terakhir, untuk menelan pembacaan beruntun */
-        terakhir: new Map(),
+        /**
+         * Kartu yang SEDANG berada di depan kamera, dan kapan terakhir kali ada QR
+         * terbaca (kode apa pun).
+         *
+         * Versi pertama memakai jeda waktu: kode yang sama diabaikan bila terbaca
+         * lagi dalam 3 detik. Itu keliru — bukan "sekali catat", melainkan "catat
+         * tiap 3 detik". Kamera membaca kartu yang sama puluhan kali per detik
+         * selama ia di depan lensa, jadi tiap jeda habis satu catatan baru terkirim
+         * lagi, dan riwayat pemindaian membanjir tanpa henti.
+         *
+         * Yang benar bukan membatasi FREKUENSI, melainkan mengenali PENYAJIAN:
+         * satu kartu yang ditunjukkan = satu catatan, berapa lama pun ia ditahan.
+         * Kartu dianggap "diangkat" saat kamera berhenti melihat QR apa pun selama
+         * ambang di bawah — sesudah itu kartu yang sama boleh dipindai lagi.
+         */
+        kodeAktif: null,
+        terakhirTerlihat: 0,
 
         /**
          * getUserMedia hanya tersedia di secure context. Di localhost peramban
@@ -85,10 +100,11 @@ window.presensiScanner = function () {
                         },
                     },
                     (teks) => this.terbaca(teks),
-                    // Callback kegagalan per-frame sengaja dibiarkan kosong: ia
-                    // menyala puluhan kali per detik selama tidak ada QR di depan
-                    // kamera, dan itu keadaan normal, bukan galat.
-                    () => {},
+                    // Callback ini menyala puluhan kali per detik selama tidak ada
+                    // QR terbaca — itu keadaan normal, bukan galat, jadi tidak ada
+                    // yang dilaporkan ke pengguna. Tapi justru dari sinilah kita
+                    // tahu kartunya sudah diangkat.
+                    () => this.tanpaQr(),
                 );
 
                 this.aktif = true;
@@ -128,6 +144,45 @@ window.presensiScanner = function () {
 
             this.pemindai = null;
             this.aktif = false;
+
+            // Lupakan kartu yang sedang "dipegang", supaya menyalakan kamera lagi
+            // tidak mewarisi keadaan sesi sebelumnya.
+            this.kodeAktif = null;
+            this.terakhirTerlihat = 0;
+        },
+
+        /**
+         * Kirim isi kolom teks (alat pemindai atau ketik manual), lalu kosongkan.
+         *
+         * Pengosongannya dilakukan DI SINI, bukan diserahkan ke `$this->kode = ''`
+         * di sisi server: kolom ini selalu fokus, dan morph Livewire dengan sengaja
+         * tidak menimpa nilai input yang sedang fokus. Diserahkan ke server, kolomnya
+         * tidak pernah bersih dan pindaian berikutnya menempel di belakang yang lama.
+         */
+        kirimManual() {
+            const kolom = this.$refs.kolomKode;
+
+            if (!kolom) {
+                return;
+            }
+
+            const nilai = kolom.value.trim();
+            kolom.value = '';
+
+            if (nilai === '') {
+                return;
+            }
+
+            this.$wire.call('scan', nilai);
+        },
+
+        /** Berapa lama kamera harus TIDAK melihat QR sebelum kartu dianggap diangkat. */
+        get ambangAngkat() {
+            // Cukup panjang untuk menahan kedipan pembacaan (tangan bergoyang,
+            // fokus berpindah, pantulan cahaya) yang membuat beberapa frame gagal
+            // meski kartunya masih di situ — tapi cukup pendek agar petugas bisa
+            // memindai kartu berikutnya tanpa menunggu.
+            return 1200;
         },
 
         terbaca(teks) {
@@ -137,23 +192,42 @@ window.presensiScanner = function () {
                 return;
             }
 
-            // Kamera membaca QR yang sama puluhan kali per detik selama kartu masih
-            // di depan lensa. Tanpa jeda ini, satu kartu menghasilkan puluhan
-            // request Livewire — dan server tetap menjawab benar ("sudah tercatat")
-            // setiap kali, jadi gejalanya cuma layar yang membanjir.
-            const sekarang = Date.now();
-            const sebelumnya = this.terakhir.get(kode);
+            this.terakhirTerlihat = Date.now();
 
-            if (sebelumnya && sekarang - sebelumnya < 3000) {
+            // Kartu yang sama masih di depan lensa — sudah dicatat saat pertama
+            // terbaca, jadi tidak ada yang perlu dikirim lagi. Inilah yang
+            // membedakan "satu penyajian = satu catatan" dari jeda berbasis waktu,
+            // yang justru mengirim ulang setiap kali jedanya habis.
+            if (kode === this.kodeAktif) {
                 return;
             }
 
-            this.terakhir.set(kode, sekarang);
+            this.kodeAktif = kode;
 
             // Masuk lewat pintu yang SAMA dengan alat pemindai dan ketik manual:
             // seluruh aturan (terlambat, scan ganda, cakupan ustadz, tenant) hidup
             // di sisi server dan tidak perlu disalin ke sini.
-            this.$wire.set('kode', kode).then(() => this.$wire.call('scan'));
+            //
+            // Kodenya dikirim sebagai ARGUMEN, bukan lewat $wire.set() lalu
+            // $wire.call(). Dua pemanggilan itu berarti dua round-trip dan dua
+            // render ulang untuk satu kartu — dan tiap render ulang adalah satu
+            // kesempatan bagi morph Livewire mengusik DOM kamera.
+            this.$wire.call('scan', kode);
+        },
+
+        /**
+         * Satu frame tanpa QR terbaca. Setelah cukup lama tidak melihat apa pun,
+         * kartu dianggap sudah diangkat sehingga kartu yang sama boleh dipindai
+         * lagi bila nanti ditunjukkan ulang.
+         */
+        tanpaQr() {
+            if (this.kodeAktif === null) {
+                return;
+            }
+
+            if (Date.now() - this.terakhirTerlihat > this.ambangAngkat) {
+                this.kodeAktif = null;
+            }
         },
 
         /** Lepas kamera saat komponen dibongkar — jangan biarkan lampunya menyala. */

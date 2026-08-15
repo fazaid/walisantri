@@ -68,12 +68,36 @@ class PresensiScannerPage extends Page
             ->keteranganLibur(Waktu::hariIni());
     }
 
-    public function scan(): void
+    /**
+     * @param  string|null  $dariKamera  kode hasil pindaian kamera.
+     *
+     * Jalur kamera mengirim kodenya sebagai ARGUMEN, bukan lewat `$wire.set()`
+     * lalu `$wire.call()`. Dua pemanggilan itu berarti dua round-trip dan dua
+     * render ulang untuk satu kartu — dan tiap render ulang adalah satu
+     * kesempatan bagi morph Livewire mengusik DOM kamera. Jalur ketik manual
+     * tetap memakai `$this->kode` lewat wire:model.
+     */
+    public function scan(?string $dariKamera = null): void
     {
-        $masukan = trim($this->kode);
+        $masukan = trim($dariKamera ?? $this->kode);
         $this->kode = '';
 
         if ($masukan === '') {
+            return;
+        }
+
+        // Beberapa payload menempel jadi satu string. Penyebab lazimnya alat
+        // pemindai yang tidak dikonfigurasi mengirim Enter setelah kode, sehingga
+        // pindaian kedua dan seterusnya menumpuk di kolom yang sama. "Tidak
+        // dikenali" benar secara harfiah tapi tidak menolong sama sekali —
+        // petugas tidak akan menduga masalahnya ada di setelan alatnya.
+        if (substr_count($masukan, KodePresensi::PREFIKS) > 1) {
+            $this->catatRiwayat(
+                'Beberapa kode sekaligus',
+                'danger',
+                'Kolom berisi lebih dari satu kode. Alat pemindai Anda kemungkinan belum diatur mengirim Enter setelah memindai — kosongkan kolomnya, lalu pindai satu kartu saja.',
+            );
+
             return;
         }
 

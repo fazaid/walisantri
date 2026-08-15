@@ -220,6 +220,91 @@ class PresensiScannerPageTest extends TestCase
             ->assertSee('presensi-scanner', escape: false);
     }
 
+    public function test_kode_dari_kamera_dikirim_sebagai_argumen(): void
+    {
+        $this->bekukanJam('06:45');
+
+        // Jalur kamera memanggil scan($kode) langsung — satu round-trip, bukan
+        // $wire.set() lalu $wire.call() yang berarti dua render ulang untuk satu
+        // kartu. Tiap render ulang adalah satu kesempatan bagi morph Livewire
+        // mengusik DOM kamera.
+        Livewire::actingAs($this->admin)
+            ->test(PresensiScannerPage::class)
+            ->call('scan', KodePresensi::payload($this->santri->kode_presensi))
+            ->assertSee('Ahmad Fauzi')
+            ->assertSee('Hadir.');
+
+        $this->assertSame(1, Presensi::withoutGlobalScope('pesantren')->count());
+    }
+
+    public function test_wadah_kamera_dilindungi_dari_morph_livewire(): void
+    {
+        // Elemen <video> disisipkan html5-qrcode lewat JavaScript, jadi ia tidak
+        // ada di HTML yang dirender server. Tanpa wire:ignore, render ulang
+        // pertama (dipicu perubahan $riwayat setelah santri pertama dipindai)
+        // membuat morph menghapus video itu — kameranya jadi kotak hitam kosong.
+        Livewire::actingAs($this->admin)
+            ->test(PresensiScannerPage::class)
+            ->assertSeeHtml('wire:ignore');
+    }
+
+    public function test_beberapa_kode_menempel_dijelaskan_penyebabnya(): void
+    {
+        // Persis keluhan dari lapangan: tiga payload menempel jadi satu string.
+        // Penyebab lazimnya alat pemindai yang tidak mengirim Enter, sehingga
+        // pindaian menumpuk di kolom yang sama. "Tidak dikenali" benar secara
+        // harfiah tapi tidak menolong — petugas tidak akan menduga masalahnya
+        // ada di setelan alatnya.
+        $gabungan = KodePresensi::payload('5MBA10CVV6T4')
+            .KodePresensi::payload('P1FVSKS125QV')
+            .KodePresensi::payload('9Q5RZG0P334X');
+
+        $this->scan($gabungan)
+            ->assertSee('Beberapa kode sekaligus')
+            ->assertSee('belum diatur mengirim Enter');
+
+        $this->assertSame(0, Presensi::withoutGlobalScope('pesantren')->count());
+    }
+
+    public function test_kolom_teks_tidak_terikat_wire_model(): void
+    {
+        // Kolom ini autofocus sepanjang sesi, dan morph Livewire sengaja tidak
+        // menimpa nilai input yang sedang fokus — jadi pengosongan lewat server
+        // TIDAK PERNAH sampai ke DOM, dan pindaian berikutnya menempel di
+        // belakang yang lama. Nilainya karena itu dibersihkan di sisi klien.
+        Livewire::actingAs($this->admin)
+            ->test(PresensiScannerPage::class)
+            ->assertDontSeeHtml('wire:model="kode"')
+            ->assertSeeHtml('x-ref="kolomKode"');
+    }
+
+    public function test_dua_kartu_berbeda_berurutan_di_komponen_yang_sama(): void
+    {
+        $this->bekukanJam('06:45');
+
+        $kedua = Santri::factory()->create([
+            'pesantren_id' => $this->pesantren->id,
+            'kelas_id' => $this->kelas->id,
+            'nama_lengkap' => 'Bilal Kedua',
+        ]);
+
+        // Persis keluhan lapangan: kartu pertama berhasil, kartu kedua ditolak
+        // "beberapa kode sekaligus". Keduanya dijalankan pada INSTANCE komponen
+        // yang sama supaya keadaan antar-pemindaian benar-benar terbawa —
+        // kalau $this->kode menumpuk di sisi server, di sinilah ketahuannya.
+        $komponen = Livewire::actingAs($this->admin)->test(PresensiScannerPage::class);
+
+        $komponen->call('scan', KodePresensi::payload($this->santri->kode_presensi))
+            ->assertSee('Ahmad Fauzi');
+
+        $komponen->call('scan', KodePresensi::payload($kedua->kode_presensi))
+            ->assertSee('Bilal Kedua')
+            ->assertDontSee('Beberapa kode sekaligus');
+
+        $this->assertSame(2, Presensi::withoutGlobalScope('pesantren')->count());
+        $this->assertSame('', $komponen->get('kode'));
+    }
+
     public function test_wali_santri_tidak_bisa_membuka_halaman_scan(): void
     {
         $wali = User::factory()->waliSantri()->create(['pesantren_id' => $this->pesantren->id]);
