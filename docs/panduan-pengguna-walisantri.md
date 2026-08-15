@@ -335,14 +335,18 @@ Hari libur dan hari libur mingguan (bagian 8.1) sama-sama dikeluarkan dari perhi
 
 Cara tercepat mengabsen banyak santri: cetak kartu ber-QR sekali, lalu tinggal dipindai tiap pagi. Santri tidak perlu membawa ponsel.
 
-**Mencetak kartu.** Dari **Presensi → Kehadiran**, klik **Cetak Kartu**, pilih kelas, lalu unduh PDF-nya dan cetak. Setiap kartu memuat nama, NIS, dan kode QR santri.
+**Mencetak kartu.** Dari **Presensi → Kehadiran**, klik **Cetak Kartu**, pilih kelas, lalu unduh PDF-nya dan cetak. Setiap kartu memuat nama, NIS, kode QR, dan **kode kartu dalam bentuk teks** — kode teks itu cadangan bila QR-nya lecek atau kamera gagal membaca.
 
 **Memindai.** Klik **Scan QR** dari halaman yang sama.
 
 1. Kolom pemindaian langsung aktif. Kalau Anda memakai **alat pemindai (scanner) USB atau Bluetooth**, cukup arahkan dan tembak — alat itu bekerja seperti papan ketik, jadi tidak perlu pengaturan apa pun.
 2. Setiap pemindaian langsung tercatat **Hadir**, atau **Terlambat** bila sudah lewat jam masuk + toleransi. Nama santri dan jamnya muncul di layar sebagai konfirmasi.
-3. Kartu tertinggal? Ketik saja **NIS** santri di kolom yang sama, lalu tekan Enter.
+3. Kartu tertinggal? Ketik **NIS** santri atau **kode kartu** di kolom yang sama, lalu tekan Enter.
 4. Memindai kartu yang sama dua kali tidak membuat data ganda — akan muncul keterangan "sudah tercatat", lengkap dengan jam pencatatan pertamanya.
+
+> **Jam pemindaian pertama yang dipakai, bukan yang terakhir.** Jadi santri yang sudah tercatat hadir pagi-pagi lalu kartunya terpindai lagi setelah lewat batas tidak akan berubah jadi terlambat.
+
+Kalau Anda ustadz, pemindaian dibatasi ke santri di kelas yang Anda walikan — kartu dari kelas lain akan ditolak dengan keterangan.
 
 > **Kartu hilang atau terlanjur difoto orang lain?** Buka detail santri, klik **Regenerasi Kode Presensi**, lalu cetak ulang kartunya. Kode lama langsung tidak berlaku.
 

@@ -6,6 +6,7 @@ use App\Enums\OnboardingStep;
 use App\Exceptions\SantriQuotaExceededException;
 use App\Models\Santri;
 use App\Observers\Concerns\ReplacesUploadedFile;
+use App\Support\KodePresensi;
 
 class SantriObserver
 {
@@ -13,6 +14,13 @@ class SantriObserver
 
     public function creating(Santri $santri): void
     {
+        // SEBELUM kedua early-return di bawah, dan itu disengaja: santri non-aktif
+        // pun harus punya kode kartu, kalau tidak ia lahir tanpa kode dan tidak
+        // akan pernah bisa dicetak kartunya saat suatu hari diaktifkan kembali.
+        if (blank($santri->kode_presensi)) {
+            $santri->kode_presensi = KodePresensi::buat();
+        }
+
         if ($santri->status_aktif === false) {
             return;
         }
