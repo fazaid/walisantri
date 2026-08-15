@@ -316,12 +316,20 @@ Kalau tanggal yang dipilih terdaftar sebagai hari libur, akan muncul peringatan 
 
 **Admin saja.** Menu: **Presensi → Hari Libur**.
 
-1. Klik **+ New**. Pilih **Tahun Ajaran**.
+1. Klik **Tambah Hari Libur**.
 2. Isi **Tanggal Mulai** dan **Tanggal Selesai** — untuk libur satu hari, isi tanggal yang sama di keduanya.
-3. Isi **Keterangan** (mis. "Maulid Nabi", "Libur Akhir Semester Ganjil").
-4. Simpan. Rentang tanggal otomatis dipecah menjadi baris per hari.
+3. Isi **Keterangan** (mis. "Maulid Nabi", "Libur Akhir Semester Ganjil") dan pilih **Tahun Ajaran**.
+4. Simpan. Rentang tanggal otomatis dipecah menjadi baris per hari, dan sistem memberi tahu berapa hari yang tersimpan.
 
-Hari libur dan hari libur mingguan sama-sama dikeluarkan dari perhitungan **hari efektif** di rekap — jadi persentase kehadiran tidak turun hanya karena pondok sedang libur.
+Beberapa hal yang memudahkan:
+
+- **Salah tanggal? Simpan ulang saja.** Menyimpan rentang yang menimpa libur yang sudah ada akan **memperbarui keterangannya**, bukan menolak. Jadi mengoreksi cukup dengan menyimpan rentang yang benar.
+- **Tanggal terbalik tetap aman.** Kalau tanggal selesai lebih awal daripada tanggal mulai, sistem menukarnya sendiri.
+- **Menghapus libur sepekan** berarti mencentang barisnya di daftar lalu memakai hapus massal — konsekuensi dari penyimpanan per hari.
+
+Hari libur dan hari libur mingguan (bagian 8.1) sama-sama dikeluarkan dari perhitungan **hari efektif** di rekap — jadi persentase kehadiran tidak turun hanya karena pondok sedang libur.
+
+> **Mengisi presensi di hari libur tetap boleh.** Kalau Anda memilih tanggal yang terdaftar libur di halaman Isi Presensi, akan muncul peringatan kuning — tapi tombol simpannya tetap aktif. Ini disengaja: ada pondok yang tetap berkegiatan di hari libur (kajian, kerja bakti, lomba). Peringatan itu untuk mencegah kesalahan yang jauh lebih umum, yaitu salah memilih tanggal.
 
 ### 8.4 Kartu QR & Absen dengan Pemindai
 
@@ -367,13 +375,17 @@ Menu: **Presensi → Rekap**.
 1. Pilih **Tahun Ajaran** dan **Periode** (Bulanan / Semester Ganjil / Semester Genap).
 2. Pilih tampilan: **per kelas**, **per santri**, atau **per jam pelajaran**.
 3. Tabel menampilkan jumlah tiap status, **Hari Efektif**, kolom **Tanpa Keterangan**, dan **% Kehadiran** (Hadir + Terlambat + Dispensasi dihitung hadir).
-4. Klik **Ekspor Excel** untuk mengunduh.
+4. Klik **Ekspor Excel** di kanan atas untuk mengunduh. Isinya persis angka yang tampil di layar, mengikuti filter yang sedang aktif.
 
 Kolom **Tanpa Keterangan** yang besar di satu kelas biasanya bukan berarti santrinya bolos — melainkan presensi kelas itu belum diisi. Gunakan kolom ini untuk memantau kedisiplinan pencatatan, bukan kedisiplinan santri.
 
 Bedanya dengan **Alpa**: Alpa berarti seseorang menyatakan santri itu tidak hadir tanpa keterangan; Tanpa Keterangan berarti tidak ada yang menyatakan apa pun. Sistem sengaja tidak menebak — lihat catatan di bagian 8.2.
 
 Di halaman ini juga ada panel **Perlu Perhatian**: daftar santri dengan **3 hari alpa berturut-turut atau lebih**. Gunakan sebagai peringatan dini untuk menghubungi wali sebelum masalahnya membesar.
+
+> "Berturut-turut" dihitung atas **hari efektif**, bukan hari kalender. Jadi alpa hari Jumat lalu alpa hari Senin tetap terhitung dua kali berturut-turut kalau Sabtu–Minggu memang libur — akhir pekan tidak memutus rangkaian.
+
+**Di Dashboard** juga ada kartu **Kehadiran Hari Ini** (untuk Admin dan Ustadz): berapa santri hadir, berapa tidak hadir, dan berapa **kelas yang belum diabsen** hari ini. Angka ketiga itu yang paling berguna untuk memantau — ia menunjukkan kelas mana yang ustadznya belum mengisi. Kalau hari ini terdaftar libur, kartunya berganti jadi keterangan liburnya, karena "belum diabsen" saat libur memang bukan kelalaian.
 
 > Catatan: rekap hanya mencakup **santri aktif**. Santri yang sudah dihapus dari sistem tidak muncul di rekap meski catatan kehadirannya masih tersimpan.
 

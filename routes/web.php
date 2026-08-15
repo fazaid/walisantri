@@ -166,6 +166,7 @@ Route::domain($appDomain)->group(function () use ($sameDomain) {
             Route::get('santri', [ExportController::class, 'santri'])->name('santri');
             Route::get('mutabaah', [ExportController::class, 'mutabaah'])->name('mutabaah');
             Route::get('rekam-medis', [ExportController::class, 'rekamMedis'])->name('rekam-medis');
+            Route::get('presensi', [ExportController::class, 'presensi'])->name('presensi');
         });
 
     // --- Preview portal wali dari admin panel (tanpa Auth::login, sesi admin tetap utuh) ---

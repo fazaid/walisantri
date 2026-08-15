@@ -58,6 +58,19 @@ class PenugasanUstadz
         return Kelas::where('wali_kelas_id', self::userId($userId))->pluck('id');
     }
 
+    /**
+     * Santri di kelas yang ia walikan — fondasi cakupan presensi harian.
+     *
+     * Turunan murni dari kelasIdsPerwalian(): tidak ada kolom baru, jadi tidak bisa
+     * basi. Sengaja TIDAK digabung dengan santriIdsBimbingan() — pembimbing halaqah
+     * tidak punya akses presensi sama sekali (§5.4), dan menggabungkannya di sini
+     * adalah cara paling mudah untuk melebarkan cakupan tanpa sadar.
+     */
+    public static function santriIdsPerwalianKelas(?int $userId = null): Collection
+    {
+        return Santri::whereIn('kelas_id', self::kelasIdsPerwalian($userId))->pluck('id');
+    }
+
     /** Ekskul yang ia bina — ekskul_masters.pembina_id */
     public static function ekskulIdsDibina(?int $userId = null): Collection
     {
