@@ -88,7 +88,18 @@
             wadahnya alih-alih memakai ukuran intrinsik kamera.
         --}}
         <div x-show="tampil" x-cloak class="mt-4">
+            {{--
+                wire:ignore WAJIB. Elemen <video> di dalam sini disisipkan
+                html5-qrcode lewat JavaScript, jadi ia TIDAK ADA di HTML yang
+                dirender server. Tiap pemindaian berhasil mengubah $riwayat →
+                Livewire me-render ulang → morph membandingkan DOM dengan HTML
+                server, menganggap video itu simpanan liar, dan menghapusnya.
+                Gejalanya: wadahnya tetap terlihat (Alpine masih memegang
+                `tampil`) tapi isinya hitam kosong, persis setelah santri
+                PERTAMA berhasil dipindai.
+            --}}
             <div
+                wire:ignore
                 id="pemindai-kamera"
                 class="mx-auto w-full max-w-sm overflow-hidden rounded-xl border border-gray-200 bg-black dark:border-gray-700 [&_video]:h-auto [&_video]:w-full"
                 style="min-height: 16rem;"

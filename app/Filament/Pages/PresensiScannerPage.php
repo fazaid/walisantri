@@ -68,9 +68,18 @@ class PresensiScannerPage extends Page
             ->keteranganLibur(Waktu::hariIni());
     }
 
-    public function scan(): void
+    /**
+     * @param  string|null  $dariKamera  kode hasil pindaian kamera.
+     *
+     * Jalur kamera mengirim kodenya sebagai ARGUMEN, bukan lewat `$wire.set()`
+     * lalu `$wire.call()`. Dua pemanggilan itu berarti dua round-trip dan dua
+     * render ulang untuk satu kartu — dan tiap render ulang adalah satu
+     * kesempatan bagi morph Livewire mengusik DOM kamera. Jalur ketik manual
+     * tetap memakai `$this->kode` lewat wire:model.
+     */
+    public function scan(?string $dariKamera = null): void
     {
-        $masukan = trim($this->kode);
+        $masukan = trim($dariKamera ?? $this->kode);
         $this->kode = '';
 
         if ($masukan === '') {

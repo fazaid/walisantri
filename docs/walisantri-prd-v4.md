@@ -4,7 +4,15 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Agustus 2026 — v4.35
+**Last Updated:** Agustus 2026 — v4.36
+
+**Changelog v4.36:** **Perbaikan: kamera jadi kotak hitam kosong setelah santri pertama berhasil dipindai.** Elemen `<video>` disisipkan html5-qrcode lewat JavaScript, jadi ia **tidak ada di HTML yang dirender server**. Pemindaian yang berhasil mengubah `$riwayat` → Livewire me-render ulang → morph membandingkan DOM dengan HTML server, menganggap video itu simpanan liar, dan menghapusnya. Wadahnya tetap terlihat karena Alpine masih memegang `tampil`, sehingga yang tersisa hanyalah kotak hitam. Ditutup dengan **`wire:ignore`** pada wadah pemindai.
+
+Sekalian: kode hasil pindaian kini dikirim sebagai **argumen** (`$wire.call('scan', kode)`), bukan `$wire.set()` lalu `$wire.call()`. Dua pemanggilan itu berarti dua round-trip dan dua render ulang untuk satu kartu — dan tiap render ulang adalah satu kesempatan bagi morph mengusik DOM kamera. Jalur ketik manual tetap memakai `wire:model`.
+
+> **Pelajaran: apa pun yang disisipkan JavaScript ke dalam komponen Livewire wajib diberi `wire:ignore`.** Morph hanya tahu HTML yang dirender server; segala yang ditambahkan pustaka pihak ketiga sesudahnya — video, kanvas, peta, editor teks kaya, widget grafik — terlihat seperti sampah yang harus dibersihkan. Gejalanya khas dan menyesatkan: fiturnya bekerja sempurna **sampai interaksi pertama yang memicu render ulang**, lalu lenyap tanpa pesan galat apa pun. Karena render ulang itu justru dipicu oleh keberhasilan, bug seperti ini nyaris mustahil terlihat saat mencoba sekali.
+
+Dua tes regresi ditambahkan: `scan()` dipanggil dengan argumen (jalur kamera), dan wadah pemindai memuat `wire:ignore`.
 
 **Changelog v4.35:** **Perbaikan: pemindaian kamera mencatat kartu yang sama berulang tiap 3 detik.** Penjaga duplikatnya memakai jeda waktu — kode yang sama diabaikan bila terbaca lagi dalam 3 detik. Itu mekanisme yang keliru untuk masalahnya: bukan "sekali catat", melainkan **"catat tiap 3 detik"**. Kamera membaca kartu yang sama puluhan kali per detik selama ia di depan lensa, jadi setiap jeda habis satu catatan baru terkirim lagi, dan riwayat pemindaian membanjir tanpa henti.
 
@@ -1493,7 +1501,7 @@ Sisanya: `PresensiIzinTest`, `PresensiHariLiburTest`, `PresensiRekapPageTest`, `
 
 **Konfigurasi:** unit test pakai PostgreSQL ephemeral (mis. service container `postgres` di GitHub Actions) atau SQLite in-memory untuk test yang tidak bergantung fitur PostgreSQL; `CACHE_DRIVER=array`, `QUEUE_CONNECTION=sync`. Test isolasi tenant & RLS **wajib** pakai PostgreSQL (bukan SQLite) agar policy ikut teruji.
 
-**Sebaran nyata (v4.33):** 606 tes / 2.431 asersi (terhadap PostgreSQL; di SQLite 10 tes isolasi tenant di-skip).
+**Sebaran nyata (v4.36):** 608 tes / 2.435 asersi (terhadap PostgreSQL; di SQLite 10 tes isolasi tenant di-skip).
 
 ```
 tests/Feature/                                52 berkas  ← tulang punggung: alur panel Filament,
@@ -1597,7 +1605,7 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 
 # 22. Catatan Implementasi Aktual
 
-**PRD ini v4.35.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
+**PRD ini v4.36.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
 
 **Bug & fix:** `HasUuids` isi `id` jika tak di-override → `uniqueIds(): ['uuid']` · `$navigationGroup` `?string` error → `string|UnitEnum|null` · index name >63 char (batas PostgreSQL) → nama eksplisit pendek · ingat PostgreSQL tak punya unsigned int (kolom unsigned → signed bigint) · (v4.7) `tahun_ajaran` di form Nilai Akademik/Rapor Tahfidz semula `TextInput` bebas → mismatch format antar input & filter rapor bikin data tidak muncul → diganti `Select` dropdown seragam (service `TahunAjaranOptions`) · (v4.7) Filament cluster default merender sub-navigation tab di bawah header & dropdown khusus mobile → di-override via render hook + CSS agar tab tampil di atas breadcrumbs, konsisten desktop/mobile (detail di §7).
 
@@ -1668,4 +1676,4 @@ Daftar tiga cacat yang dicatat v4.20 sudah habis dikerjakan, dan dua lagi ditemu
 
 ---
 
-*Confidential — Internal Document | Walisantri.com v4.35 | Agustus 2026*
+*Confidential — Internal Document | Walisantri.com v4.36 | Agustus 2026*

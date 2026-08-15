@@ -220,6 +220,34 @@ class PresensiScannerPageTest extends TestCase
             ->assertSee('presensi-scanner', escape: false);
     }
 
+    public function test_kode_dari_kamera_dikirim_sebagai_argumen(): void
+    {
+        $this->bekukanJam('06:45');
+
+        // Jalur kamera memanggil scan($kode) langsung — satu round-trip, bukan
+        // $wire.set() lalu $wire.call() yang berarti dua render ulang untuk satu
+        // kartu. Tiap render ulang adalah satu kesempatan bagi morph Livewire
+        // mengusik DOM kamera.
+        Livewire::actingAs($this->admin)
+            ->test(PresensiScannerPage::class)
+            ->call('scan', KodePresensi::payload($this->santri->kode_presensi))
+            ->assertSee('Ahmad Fauzi')
+            ->assertSee('Hadir.');
+
+        $this->assertSame(1, Presensi::withoutGlobalScope('pesantren')->count());
+    }
+
+    public function test_wadah_kamera_dilindungi_dari_morph_livewire(): void
+    {
+        // Elemen <video> disisipkan html5-qrcode lewat JavaScript, jadi ia tidak
+        // ada di HTML yang dirender server. Tanpa wire:ignore, render ulang
+        // pertama (dipicu perubahan $riwayat setelah santri pertama dipindai)
+        // membuat morph menghapus video itu — kameranya jadi kotak hitam kosong.
+        Livewire::actingAs($this->admin)
+            ->test(PresensiScannerPage::class)
+            ->assertSeeHtml('wire:ignore');
+    }
+
     public function test_wali_santri_tidak_bisa_membuka_halaman_scan(): void
     {
         $wali = User::factory()->waliSantri()->create(['pesantren_id' => $this->pesantren->id]);

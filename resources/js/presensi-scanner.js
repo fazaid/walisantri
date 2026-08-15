@@ -182,7 +182,12 @@ window.presensiScanner = function () {
             // Masuk lewat pintu yang SAMA dengan alat pemindai dan ketik manual:
             // seluruh aturan (terlambat, scan ganda, cakupan ustadz, tenant) hidup
             // di sisi server dan tidak perlu disalin ke sini.
-            this.$wire.set('kode', kode).then(() => this.$wire.call('scan'));
+            //
+            // Kodenya dikirim sebagai ARGUMEN, bukan lewat $wire.set() lalu
+            // $wire.call(). Dua pemanggilan itu berarti dua round-trip dan dua
+            // render ulang untuk satu kartu — dan tiap render ulang adalah satu
+            // kesempatan bagi morph Livewire mengusik DOM kamera.
+            this.$wire.call('scan', kode);
         },
 
         /**
