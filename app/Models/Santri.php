@@ -40,6 +40,8 @@ use Illuminate\Support\Facades\Storage;
     'kamar_id',
     'status_aktif',
     'foto_profil',
+    'kode_presensi',
+    'kode_presensi_diperbarui_at',
 ])]
 #[Hidden(['pesantren_id'])]
 class Santri extends Model

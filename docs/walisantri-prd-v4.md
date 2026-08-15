@@ -4,7 +4,45 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Agustus 2026 — v4.30
+**Last Updated:** Agustus 2026 — v4.33
+
+**Changelog v4.33:** **Pemindaian kartu lewat KAMERA** — lapis kedua halaman Scan, untuk pesantren yang tidak punya alat pemindai. Cukup ponsel atau laptop berwebcam: tekan "Pindai dengan Kamera", arahkan kartu, selesai.
+
+- **Kolom teks ber-autofocus tetap jalur UTAMA, bukan diganti.** Alat pemindai USB/Bluetooth berperilaku sebagai papan ketik, jadi jalur itu bekerja tanpa JavaScript sama sekali dan bisa diuji penuh di PHPUnit. Kamera ditambahkan di sampingnya; keduanya bermuara ke method `scan()` yang sama, sehingga seluruh aturan (batas terlambat, pemindaian ganda, cakupan ustadz, isolasi tenant) tetap hidup di sisi server dan tidak perlu disalin ke JavaScript.
+- **Bundel dimuat HANYA di halaman ini**, lewat `@vite` di view-nya — bukan didaftarkan sebagai aset panel. `html5-qrcode` menghasilkan ~370 KB (109 KB gzip); membebankannya ke setiap halaman admin demi satu layar yang dibuka sekali sehari tidak sepadan.
+- **Jeda 3 detik per kode di sisi klien.** Kamera membaca QR yang sama puluhan kali per detik selama kartu masih di depan lensa; tanpa jeda ini satu kartu menghasilkan puluhan request Livewire. Server tetap menjawab benar setiap kali ("sudah tercatat"), jadi gejalanya hanya layar yang membanjir — tapi itu sudah cukup mengganggu di depan antrean.
+
+> **Rancangan v4.25 menyebut jalur ganda "`BarcodeDetector` bila ada, pustaka bila tidak" demi menghemat unduhan di Chrome. Itu dilepas dengan sadar.** Safari/iOS tidak mendukung `BarcodeDetector` sama sekali — semua browser di iOS memakai WebKit — jadi pustakanya tetap harus ikut dibundel apa pun yang terjadi. Dua jalur kode untuk halaman yang **tidak bisa disentuh test suite** adalah pertukaran yang buruk: yang dipakai ustadz setiap pagi jadi belum tentu jalur yang pernah kita coba. Satu jalur berarti satu perilaku, dan pustakanya toh hanya diunduh saat tombol kamera ditekan lalu di-cache peramban.
+
+> ⚠️ **Kamera menuntut secure context.** `navigator.mediaDevices` tidak ada di origin non-https (localhost dikecualikan peramban, tapi domain `.test` lewat http biasa TIDAK). Production aman karena berada di balik TLS Cloudflare; untuk mencobanya di Herd, situsnya harus di-`herd secure` lebih dulu. Tanpa itu gejalanya hanya `navigator.mediaDevices === undefined`, yang tanpa penjelasan terbaca seperti "kameranya rusak" — karena itu halamannya membedakan dua pesan: peramban tidak mendukung, versus koneksi belum aman.
+
+**Changelog v4.32:** **Modul Presensi Fase 5 — kartu QR dan halaman scan.** Setiap santri punya kode kartu sendiri; kartunya dicetak per kelas sebagai PDF, dan petugas memindainya di pintu masuk. Absen sekelas jadi hitungan detik, dan santri tidak perlu membawa ponsel.
+
+- **Kode kartu memakai kolom `santri.kode_presensi` baru, BUKAN `santri.uuid`** — temuan §13.2 yang akhirnya diwujudkan. `uuid` adalah token bearer Magic Link: `VerifyMagicToken` menukarnya jadi `Auth::login($wali)`, sesi wali yang utuh mencakup semua anaknya, SPP, uang saku, dan rapor. Kartu presensi adalah benda fisik yang dipegang anak, difotokopi, dan dipotret untuk grup WhatsApp — mencetak `uuid` di atasnya sama dengan mencetak kredensial. Dikunci `PresensiKartuQrTest::test_pdf_kartu_tidak_pernah_memuat_uuid_magic_link`, yang akan menolak siapa pun yang "menyederhanakannya" kembali.
+- **Isi QR adalah string opaque `WSP1.{kode}`, bukan URL.** Konsekuensinya disengaja: kamera bawaan ponsel yang memindai kartu ini tidak menawarkan "buka tautan" — hasilnya teks tak bermakna, sehingga kartunya tidak mengundang eksperimen.
+- **Alfabet Crockford Base32 tanpa I, L, O, dan U.** Kodenya juga dicetak sebagai teks di kartu, karena QR bisa lecek dan kamera bisa gagal — dan saat petugas mengetiknya ulang, I/L/1 dan O/0 adalah sumber salah ketik yang paling umum.
+- **Pemindaian berbasis input teks ber-autofocus, bukan kamera.** Alat pemindai USB/Bluetooth berperilaku sebagai papan ketik (mengetik kode lalu Enter), jadi nol dependensi JS, jalan di semua browser, dan bisa diuji penuh lewat `Livewire::test`. Kolom yang sama menerima ketikan manual kode maupun **NIS** saat kartu tertinggal. Kamera bisa menyusul tanpa mengubah jalur ini.
+- **Pemindaian ganda adalah kejadian NORMAL, bukan error.** Antrean padat, petugas ragu, kartu tersenggol dua kali. Jam pemindaian **pertama** dipertahankan — kalau ditimpa, santri yang datang tepat waktu lalu lewat lagi setelah batas akan berubah jadi terlambat, hukuman untuk hal yang tidak ia lakukan. Tabrakan di level DB (dua petugas nyaris bersamaan) ditangkap sebagai `UniqueConstraintViolationException` dan diperlakukan sama.
+- **`composer require chillerlan/php-qrcode:^5.0` eksplisit.** Paket ini sebelumnya hanya ada sebagai dependensi transitif `filament/filament`; menggantungkan fitur produk padanya berarti cetak kartu akan pecah saat deploy — bukan saat tes — kalau Filament suatu saat melepasnya. QR dirender sebagai **PNG base64**, bukan SVG: dukungan SVG DomPDF terbatas dan gagalnya diam, gambarnya sekadar tidak muncul.
+- **Generasi kode diletakkan SEBELUM kedua early-return di `SantriObserver::creating()`.** Santri non-aktif pun harus punya kode — kalau tidak, ia lahir tanpa kode dan tidak akan pernah bisa dicetak kartunya saat suatu hari diaktifkan kembali. Migrasi backfill memakai `DB::table`, bukan Eloquent: ia berjalan tanpa sesi auth, dan global scope `pesantren` akan menyaring habis apa pun yang dibaca lewat model.
+- **`RegenerasiKodePresensiAction`** untuk kartu yang hilang atau terlanjur difoto orang lain — pola `RegenerasiUuidAction`, mengisi `kode_presensi_diperbarui_at` sehingga admin punya jawaban atas "kartu siapa yang harus dicetak ulang", dan mencatat audit `presensi.kode_diregenerasi`.
+
+Cakupan tes naik jadi **605 tes / 2.428 asersi** — `PresensiKartuQrTest` (10 kasus) dan `PresensiScannerPageTest` (11 kasus, termasuk kasus tepi tepat-di-batas-toleransi dan kode milik pesantren lain).
+
+**Changelog v4.31:** **Modul Presensi Fase 4 — pengajuan izin.** Dua pintu masuk ke satu tabel: wali mengajukan lewat portal (menunggu persetujuan), admin/wali kelas mencatat langsung (langsung disetujui). Izin yang disetujui mengisi presensi otomatis, dan pembatalannya membersihkan jejaknya secara selektif.
+
+- **`PresensiIzinService` memegang seluruh transisi status beserta efek sampingnya** (pola `UpgradeOrderService`), bukan logika di dalam aksi Filament. Alasannya konkret: izin disetujui dari panel hari ini dan mungkin dari jalur lain besok; menaruh penulisan baris presensi di dalam aksi berarti jalur kedua harus menyalinnya, dan salinan itulah yang akan menyimpang.
+- **Hari libur dilewati saat persetujuan.** Mencatat "Sakit" pada hari yang memang tidak menuntut kehadiran akan mengotori penyebut rekap dan membuat santri tampak absen tanpa sebab.
+- **Persetujuan menimpa presensi manual yang sudah ada**, lewat `upsert`. Itu memang yang diharapkan: santri yang tadinya dikira bolos ternyata berhalangan, dan persetujuan adalah keputusan yang lebih baru.
+- **Pembatalan menghapus SELEKTIF** — hanya baris yang masih bersumber `izin`. Baris yang sejak itu disunting ustadz sudah berpindah ke sumber `manual`, dan orang yang membatalkan izin tidak sedang menyatakan bahwa koreksi manual itu salah.
+- **Sinkronisasi ke `status_udzur` mutaba'ah hanya `update`, tidak pernah `updateOrCreate`.** Alasannya aritmetik: `MutabaahScoreCalculator::persentaseRataRata()` memasukkan setiap baris ke penyebut tanpa memandang udzur, jadi baris kosong untuk hari izin akan menurunkan persentase amalan santri justru karena ia berhalangan — dan angka itu dibaca wali serta tercetak di rapor. Udzur yang sudah diisi manusia dengan keterangan lebih spesifik (mis. `Haid`) juga tidak ditimpa.
+- **Validasi tumpang tindih di form**, bukan di DB: "beririsan" bukan kesetaraan yang bisa dinyatakan sebagai constraint. `PresensiIzin::beririsan()` menangkap keempat bentuk irisan sekaligus (sebagian di kedua ujung, termuat seluruhnya, dan membungkus) dengan satu perbandingan. Izin yang ditolak/dibatalkan tidak dihitung — ia tidak pernah menulis presensi apa pun, jadi menghalangi pengajuan ulang hanya menyulitkan wali.
+- **Lampiran di disk `local`.** Surat keterangan dokter adalah data kesehatan anak (§13.2); disk `public` menghasilkan URL yang bisa ditebak tanpa melewati otorisasi. Disajikan lewat rute terotorisasi `wali.izin.lampiran`, dikunci tes yang memastikan wali lain mendapat 403.
+- **`PresensiObserver` akhirnya dibangun** — event `presensi.diubah` yang dijanjikan §10.2 sejak v4.26 tapi belum ada kodenya. Hanya perubahan **surut** yang dicatat (status berubah DAN tanggalnya bukan hari ini); koreksi di hari yang sama adalah pekerjaan normal.
+
+> **Koreksi rancangan §8 — penjagaan Magic Link ternyata lebih ketat daripada yang ditulis.** v4.25 menyatakan form pengajuan izin "harus disembunyikan bila sesi Magic Link, diganti ajakan login". Kenyataannya `BlockMagicLinkSession` sudah mengalihkan sesi magic link dari **seluruh** halaman portal agregat kembali ke halaman report, jadi `/wali/izin` tidak pernah terbuka sama sekali dari tautan cepat — penyembunyian form tidak pernah tercapai. Pemeriksaannya tetap dipertahankan di `IzinController::bolehMengajukan()` sebagai lapis kedua, dan kini juga melayani kill-switch `izin_wali_aktif` yang memang menampilkan penjelasan itu. Dikunci dua tes terpisah supaya kedua jalur tidak tertukar lagi.
+
+Cakupan tes naik jadi **584 tes / 1.777 asersi** — `PresensiIzinServiceTest` (13 kasus unit) dan `PresensiIzinTest` (13 kasus feature).
 
 **Changelog v4.30:** **Modul Presensi Fase 3 — rekap, ekspor, dan widget.** Modul ini kini bernilai penuh bagi admin: halaman **Rekap** (tujuh status + Tanpa Keterangan + Hari Efektif + % kehadiran), ekspor Excel, panel **Perlu Perhatian**, dan widget **Kehadiran Hari Ini** di dashboard admin maupun ustadz.
 
@@ -674,8 +712,8 @@ erDiagram
 | `2026_08_15_000003` | `create_presensi_table` (tanpa `presensi_izin_id`) | 1 ✅ |
 | `2026_08_15_000004` | `seed_presensi_pengaturan_untuk_pesantren_lama` | 1 ✅ |
 | `2026_08_15_000005` | `create_presensi_hari_libur_table` | 2 ✅ |
-| menyusul | `create_presensi_izin_table` + `add_presensi_izin_id_to_presensi_table` | 4 |
-| menyusul | `add_kode_presensi_to_santri_table` | 5 |
+| `2026_08_15_000006` + `000007` | `create_presensi_izin_table` + `add_presensi_izin_id_to_presensi_table` | 4 ✅ |
+| `2026_08_15_000008` | `add_kode_presensi_to_santri_table` | 5 ✅ |
 | menyusul | `create_presensi_jam_pelajaran_table` | 6 |
 
 `presensi` sengaja lahir **tanpa** kolom `presensi_izin_id`: ia FK ke `presensi_izin` yang baru ada di Fase 4, dan FK ke tabel yang belum ada tidak bisa ditulis. Kolomnya ditambahkan lewat migrasi `ALTER` tersendiri di fase itu.
@@ -1441,7 +1479,7 @@ Sisanya: `PresensiIzinTest`, `PresensiHariLiburTest`, `PresensiRekapPageTest`, `
 
 **Konfigurasi:** unit test pakai PostgreSQL ephemeral (mis. service container `postgres` di GitHub Actions) atau SQLite in-memory untuk test yang tidak bergantung fitur PostgreSQL; `CACHE_DRIVER=array`, `QUEUE_CONNECTION=sync`. Test isolasi tenant & RLS **wajib** pakai PostgreSQL (bukan SQLite) agar policy ikut teruji.
 
-**Sebaran nyata (v4.30):** 558 tes / 1.694 asersi (terhadap PostgreSQL; di SQLite 10 tes isolasi tenant di-skip).
+**Sebaran nyata (v4.33):** 606 tes / 2.431 asersi (terhadap PostgreSQL; di SQLite 10 tes isolasi tenant di-skip).
 
 ```
 tests/Feature/                                52 berkas  ← tulang punggung: alur panel Filament,
@@ -1545,7 +1583,7 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 
 # 22. Catatan Implementasi Aktual
 
-**PRD ini v4.30.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
+**PRD ini v4.33.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
 
 **Bug & fix:** `HasUuids` isi `id` jika tak di-override → `uniqueIds(): ['uuid']` · `$navigationGroup` `?string` error → `string|UnitEnum|null` · index name >63 char (batas PostgreSQL) → nama eksplisit pendek · ingat PostgreSQL tak punya unsigned int (kolom unsigned → signed bigint) · (v4.7) `tahun_ajaran` di form Nilai Akademik/Rapor Tahfidz semula `TextInput` bebas → mismatch format antar input & filter rapor bikin data tidak muncul → diganti `Select` dropdown seragam (service `TahunAjaranOptions`) · (v4.7) Filament cluster default merender sub-navigation tab di bawah header & dropdown khusus mobile → di-override via render hook + CSS agar tab tampil di atas breadcrumbs, konsisten desktop/mobile (detail di §7).
 
@@ -1616,4 +1654,4 @@ Daftar tiga cacat yang dicatat v4.20 sudah habis dikerjakan, dan dua lagi ditemu
 
 ---
 
-*Confidential — Internal Document | Walisantri.com v4.30 | Agustus 2026*
+*Confidential — Internal Document | Walisantri.com v4.33 | Agustus 2026*

@@ -10,6 +10,7 @@ use App\Http\Controllers\PublicProfileController;
 use App\Http\Controllers\SlugCheckController;
 use App\Http\Controllers\Wali\DashboardController;
 use App\Http\Controllers\Wali\InventarisController;
+use App\Http\Controllers\Wali\IzinController;
 use App\Http\Controllers\Wali\KesehatanStatsController;
 use App\Http\Controllers\Wali\LaporanController;
 use App\Http\Controllers\Wali\MutabaahStatsController;
@@ -140,6 +141,11 @@ Route::domain($appDomain)->group(function () use ($sameDomain) {
             Route::post('/spp/{tagihan}/konfirmasi', [SppController::class, 'konfirmasi'])->name('spp.konfirmasi');
             Route::get('/uang-saku', [UangSakuController::class, 'index'])->name('uang-saku');
             Route::get('/uang-saku/{santri}', [UangSakuController::class, 'show'])->name('uang-saku.show');
+            Route::get('/izin', [IzinController::class, 'index'])->name('izin');
+            Route::post('/izin', [IzinController::class, 'store'])->name('izin.store');
+            // Lampiran di disk 'local' — tidak punya URL publik, jadi disajikan
+            // lewat rute terotorisasi (pola orders.bukti-transfer).
+            Route::get('/izin/{izin}/lampiran', [IzinController::class, 'lampiran'])->name('izin.lampiran');
         });
 
     // --- Magic Link — /report/{uuid} (§4.3) ---
