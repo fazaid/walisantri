@@ -4,7 +4,15 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Agustus 2026 — v4.34
+**Last Updated:** Agustus 2026 — v4.35
+
+**Changelog v4.35:** **Perbaikan: pemindaian kamera mencatat kartu yang sama berulang tiap 3 detik.** Penjaga duplikatnya memakai jeda waktu — kode yang sama diabaikan bila terbaca lagi dalam 3 detik. Itu mekanisme yang keliru untuk masalahnya: bukan "sekali catat", melainkan **"catat tiap 3 detik"**. Kamera membaca kartu yang sama puluhan kali per detik selama ia di depan lensa, jadi setiap jeda habis satu catatan baru terkirim lagi, dan riwayat pemindaian membanjir tanpa henti.
+
+Yang benar bukan membatasi **frekuensi**, melainkan mengenali **penyajian**: satu kartu yang ditunjukkan = satu catatan, berapa lama pun ia ditahan. Sekarang komponen menyimpan `kodeAktif` — kartu yang sedang berada di depan kamera — dan hanya mengirim saat kode yang terbaca **berbeda** dari itu. Kartu dianggap diangkat lewat callback kegagalan per-frame html5-qrcode, yang menyala terus selama tidak ada QR terbaca: setelah 1.2 detik tanpa pembacaan, `kodeAktif` dilepas sehingga kartu yang sama boleh dipindai lagi bila ditunjukkan ulang.
+
+> **Pelajaran: jeda waktu (debounce) meredam laju, bukan mengulang.** Untuk kejadian yang datang terus-menerus dari sensor — kamera, GPS, pembaca RFID, pemindai berkas — pertanyaannya bukan "seberapa sering boleh diproses", melainkan "kapan ini kejadian yang *sama* dan kapan yang *baru*". Debounce hanya memperjarang gejalanya sampai terlihat seperti fitur yang berdenyut, dan justru itu yang membuatnya lolos dari tinjauan: 3 detik terasa seperti angka yang disengaja.
+
+Ambang 1.2 detik dipilih supaya kedipan pembacaan (tangan bergoyang, fokus berpindah, pantulan cahaya) yang membuat beberapa frame gagal tidak dikira "kartu diangkat", tapi petugas tetap tidak perlu menunggu untuk memindai kartu berikutnya. Teks bantuan di layar ikut diperbaiki — sebelumnya ia menjelaskan mekanisme jeda 3 detik itu apa adanya, dan karena mekanismenya salah, penjelasannya ikut menyesatkan.
 
 **Changelog v4.34:** **Perbaikan: layar kamera tidak pernah muncul saat tombol pindai ditekan.** Wadah video terikat `x-show` pada bendera yang sama dengan "kamera berjalan", dan bendera itu baru dinyalakan **setelah** `start()` berhasil — sehingga html5-qrcode mengukur elemen yang masih `display:none`, membaca `clientWidth` sebagai 0, dan videonya tidak pernah terpasang. Diperbaiki dengan memisahkan dua bendera: `tampil` (wadah terlihat) dinyalakan **sebelum** `start()`, disusul `await $nextTick()` agar Alpine sempat menerapkan perubahan DOM-nya; `aktif` (kamera benar-benar berjalan) tetap menyusul.
 
@@ -1589,7 +1597,7 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 
 # 22. Catatan Implementasi Aktual
 
-**PRD ini v4.34.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
+**PRD ini v4.35.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
 
 **Bug & fix:** `HasUuids` isi `id` jika tak di-override → `uniqueIds(): ['uuid']` · `$navigationGroup` `?string` error → `string|UnitEnum|null` · index name >63 char (batas PostgreSQL) → nama eksplisit pendek · ingat PostgreSQL tak punya unsigned int (kolom unsigned → signed bigint) · (v4.7) `tahun_ajaran` di form Nilai Akademik/Rapor Tahfidz semula `TextInput` bebas → mismatch format antar input & filter rapor bikin data tidak muncul → diganti `Select` dropdown seragam (service `TahunAjaranOptions`) · (v4.7) Filament cluster default merender sub-navigation tab di bawah header & dropdown khusus mobile → di-override via render hook + CSS agar tab tampil di atas breadcrumbs, konsisten desktop/mobile (detail di §7).
 
@@ -1660,4 +1668,4 @@ Daftar tiga cacat yang dicatat v4.20 sudah habis dikerjakan, dan dua lagi ditemu
 
 ---
 
-*Confidential — Internal Document | Walisantri.com v4.34 | Agustus 2026*
+*Confidential — Internal Document | Walisantri.com v4.35 | Agustus 2026*

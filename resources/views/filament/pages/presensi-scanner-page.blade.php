@@ -68,7 +68,7 @@
             </button>
 
             <p x-show="aktif" x-cloak class="text-xs text-gray-500 dark:text-gray-400">
-                Arahkan QR kartu ke kamera. Kartu yang sama tidak dibaca ulang dalam 3 detik.
+                Arahkan QR kartu ke kamera. Tiap kartu dicatat sekali — jauhkan kartunya, lalu dekatkan kartu berikutnya.
             </p>
         </div>
 
