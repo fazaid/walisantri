@@ -4,7 +4,17 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Agustus 2026 — v4.32
+**Last Updated:** Agustus 2026 — v4.33
+
+**Changelog v4.33:** **Pemindaian kartu lewat KAMERA** — lapis kedua halaman Scan, untuk pesantren yang tidak punya alat pemindai. Cukup ponsel atau laptop berwebcam: tekan "Pindai dengan Kamera", arahkan kartu, selesai.
+
+- **Kolom teks ber-autofocus tetap jalur UTAMA, bukan diganti.** Alat pemindai USB/Bluetooth berperilaku sebagai papan ketik, jadi jalur itu bekerja tanpa JavaScript sama sekali dan bisa diuji penuh di PHPUnit. Kamera ditambahkan di sampingnya; keduanya bermuara ke method `scan()` yang sama, sehingga seluruh aturan (batas terlambat, pemindaian ganda, cakupan ustadz, isolasi tenant) tetap hidup di sisi server dan tidak perlu disalin ke JavaScript.
+- **Bundel dimuat HANYA di halaman ini**, lewat `@vite` di view-nya — bukan didaftarkan sebagai aset panel. `html5-qrcode` menghasilkan ~370 KB (109 KB gzip); membebankannya ke setiap halaman admin demi satu layar yang dibuka sekali sehari tidak sepadan.
+- **Jeda 3 detik per kode di sisi klien.** Kamera membaca QR yang sama puluhan kali per detik selama kartu masih di depan lensa; tanpa jeda ini satu kartu menghasilkan puluhan request Livewire. Server tetap menjawab benar setiap kali ("sudah tercatat"), jadi gejalanya hanya layar yang membanjir — tapi itu sudah cukup mengganggu di depan antrean.
+
+> **Rancangan v4.25 menyebut jalur ganda "`BarcodeDetector` bila ada, pustaka bila tidak" demi menghemat unduhan di Chrome. Itu dilepas dengan sadar.** Safari/iOS tidak mendukung `BarcodeDetector` sama sekali — semua browser di iOS memakai WebKit — jadi pustakanya tetap harus ikut dibundel apa pun yang terjadi. Dua jalur kode untuk halaman yang **tidak bisa disentuh test suite** adalah pertukaran yang buruk: yang dipakai ustadz setiap pagi jadi belum tentu jalur yang pernah kita coba. Satu jalur berarti satu perilaku, dan pustakanya toh hanya diunduh saat tombol kamera ditekan lalu di-cache peramban.
+
+> ⚠️ **Kamera menuntut secure context.** `navigator.mediaDevices` tidak ada di origin non-https (localhost dikecualikan peramban, tapi domain `.test` lewat http biasa TIDAK). Production aman karena berada di balik TLS Cloudflare; untuk mencobanya di Herd, situsnya harus di-`herd secure` lebih dulu. Tanpa itu gejalanya hanya `navigator.mediaDevices === undefined`, yang tanpa penjelasan terbaca seperti "kameranya rusak" — karena itu halamannya membedakan dua pesan: peramban tidak mendukung, versus koneksi belum aman.
 
 **Changelog v4.32:** **Modul Presensi Fase 5 — kartu QR dan halaman scan.** Setiap santri punya kode kartu sendiri; kartunya dicetak per kelas sebagai PDF, dan petugas memindainya di pintu masuk. Absen sekelas jadi hitungan detik, dan santri tidak perlu membawa ponsel.
 
@@ -1469,7 +1479,7 @@ Sisanya: `PresensiIzinTest`, `PresensiHariLiburTest`, `PresensiRekapPageTest`, `
 
 **Konfigurasi:** unit test pakai PostgreSQL ephemeral (mis. service container `postgres` di GitHub Actions) atau SQLite in-memory untuk test yang tidak bergantung fitur PostgreSQL; `CACHE_DRIVER=array`, `QUEUE_CONNECTION=sync`. Test isolasi tenant & RLS **wajib** pakai PostgreSQL (bukan SQLite) agar policy ikut teruji.
 
-**Sebaran nyata (v4.32):** 605 tes / 2.428 asersi (terhadap PostgreSQL; di SQLite 10 tes isolasi tenant di-skip).
+**Sebaran nyata (v4.33):** 606 tes / 2.431 asersi (terhadap PostgreSQL; di SQLite 10 tes isolasi tenant di-skip).
 
 ```
 tests/Feature/                                52 berkas  ← tulang punggung: alur panel Filament,
@@ -1573,7 +1583,7 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 
 # 22. Catatan Implementasi Aktual
 
-**PRD ini v4.32.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
+**PRD ini v4.33.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
 
 **Bug & fix:** `HasUuids` isi `id` jika tak di-override → `uniqueIds(): ['uuid']` · `$navigationGroup` `?string` error → `string|UnitEnum|null` · index name >63 char (batas PostgreSQL) → nama eksplisit pendek · ingat PostgreSQL tak punya unsigned int (kolom unsigned → signed bigint) · (v4.7) `tahun_ajaran` di form Nilai Akademik/Rapor Tahfidz semula `TextInput` bebas → mismatch format antar input & filter rapor bikin data tidak muncul → diganti `Select` dropdown seragam (service `TahunAjaranOptions`) · (v4.7) Filament cluster default merender sub-navigation tab di bawah header & dropdown khusus mobile → di-override via render hook + CSS agar tab tampil di atas breadcrumbs, konsisten desktop/mobile (detail di §7).
 
@@ -1644,4 +1654,4 @@ Daftar tiga cacat yang dicatat v4.20 sudah habis dikerjakan, dan dua lagi ditemu
 
 ---
 
-*Confidential — Internal Document | Walisantri.com v4.32 | Agustus 2026*
+*Confidential — Internal Document | Walisantri.com v4.33 | Agustus 2026*

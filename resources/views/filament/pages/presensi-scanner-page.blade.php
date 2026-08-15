@@ -4,6 +4,13 @@
     $libur = $this->keteranganLibur();
 @endphp
 
+{{--
+    @vite di sini, BUKAN di AdminPanelProvider: html5-qrcode ~300 KB dan hanya
+    halaman ini yang membutuhkannya. Mendaftarkannya sebagai aset panel akan
+    membebani setiap halaman admin demi satu layar yang dibuka sekali sehari.
+--}}
+@vite('resources/js/presensi-scanner.js')
+
 @if($libur)
 <div class="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 dark:border-amber-700/60 dark:bg-amber-950/40">
     <p class="text-sm font-medium text-amber-800 dark:text-amber-200">Hari ini libur: {{ $libur }}</p>
@@ -13,54 +20,95 @@
 </div>
 @endif
 
-<div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
-    <p class="mb-1 text-sm font-semibold text-gray-800 dark:text-gray-100">Pindai kartu santri</p>
-    <p class="mb-4 text-xs text-gray-500 dark:text-gray-400">
-        Arahkan alat pemindai ke QR di kartu, atau ketik kode/NIS lalu tekan Enter.
-        Batas hadir: {{ \Illuminate\Support\Str::of($pengaturan->jam_masuk)->substr(0, 5) }}
-        + {{ $pengaturan->toleransi_terlambat_menit }} menit.
-    </p>
+<div x-data="presensiScanner()" x-on:livewire:navigating.window="bersihkan()">
 
-    {{-- Autofocus + wire:keydown.enter: alat pemindai USB/Bluetooth berperilaku
-         sebagai papan ketik (mengetik kode lalu menekan Enter), jadi tidak ada
-         dependensi JS sama sekali dan petugas tidak perlu menyentuh layar. --}}
-    <input
-        type="text"
-        wire:model="kode"
-        wire:keydown.enter="scan"
-        autofocus
-        autocomplete="off"
-        placeholder="Menunggu pemindaian…"
-        class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 font-mono text-lg tracking-widest text-gray-800 placeholder-gray-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-    >
-</div>
+    <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+        <p class="mb-1 text-sm font-semibold text-gray-800 dark:text-gray-100">Pindai kartu santri</p>
+        <p class="mb-4 text-xs text-gray-500 dark:text-gray-400">
+            Arahkan alat pemindai ke QR di kartu, atau ketik kode/NIS lalu tekan Enter.
+            Batas hadir: {{ \Illuminate\Support\Str::of($pengaturan->jam_masuk)->substr(0, 5) }}
+            + {{ $pengaturan->toleransi_terlambat_menit }} menit.
+        </p>
 
-<div class="mt-6">
-    <p class="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-100">Riwayat Pemindaian</p>
+        {{-- Jalur utama: alat pemindai USB/Bluetooth berperilaku sebagai papan
+             ketik (mengetik kode lalu menekan Enter), jadi tidak ada dependensi
+             JS sama sekali dan petugas tidak perlu menyentuh layar. --}}
+        <input
+            type="text"
+            wire:model="kode"
+            wire:keydown.enter="scan"
+            autofocus
+            autocomplete="off"
+            placeholder="Menunggu pemindaian…"
+            class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 font-mono text-lg tracking-widest text-gray-800 placeholder-gray-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+        >
 
-    @if(empty($riwayat))
-        <div class="rounded-xl border border-gray-200 bg-white py-10 text-center text-sm text-gray-400 dark:border-gray-700 dark:bg-gray-900">
-            Belum ada pemindaian pada sesi ini.
+        {{-- Lapis kedua: kamera, untuk pesantren tanpa alat pemindai. --}}
+        <div class="mt-4 flex items-center gap-3">
+            <button
+                type="button"
+                x-show="! aktif"
+                x-on:click="nyalakan()"
+                x-bind:disabled="memuat"
+                class="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-60"
+            >
+                <x-filament::icon icon="heroicon-o-camera" class="h-4 w-4" />
+                <span x-text="memuat ? 'Menyiapkan kamera…' : 'Pindai dengan Kamera'"></span>
+            </button>
+
+            <button
+                type="button"
+                x-show="aktif"
+                x-cloak
+                x-on:click="matikan()"
+                class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+            >
+                <x-filament::icon icon="heroicon-o-stop-circle" class="h-4 w-4" />
+                Matikan Kamera
+            </button>
+
+            <p x-show="aktif" x-cloak class="text-xs text-gray-500 dark:text-gray-400">
+                Arahkan QR kartu ke kamera. Kartu yang sama tidak dibaca ulang dalam 3 detik.
+            </p>
         </div>
-    @else
-        <div class="space-y-2">
-            @foreach($riwayat as $item)
-                @php
-                    $warna = match($item['nada']) {
-                        'success' => 'border-green-200 bg-green-50 dark:border-green-800/60 dark:bg-green-950/30',
-                        'warning' => 'border-amber-200 bg-amber-50 dark:border-amber-800/60 dark:bg-amber-950/30',
-                        default => 'border-red-200 bg-red-50 dark:border-red-800/60 dark:bg-red-950/30',
-                    };
-                @endphp
-                <div class="flex items-center justify-between rounded-xl border px-4 py-2.5 {{ $warna }}">
-                    <div>
-                        <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ $item['nama'] }}</p>
-                        <p class="text-xs text-gray-600 dark:text-gray-400">{{ $item['pesan'] }}</p>
+
+        <p x-show="galat" x-cloak x-text="galat"
+           class="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200"></p>
+
+        {{-- Wadah video dipasang html5-qrcode saat kamera dinyalakan. --}}
+        <div x-show="aktif" x-cloak class="mt-4">
+            <div id="pemindai-kamera" class="mx-auto w-full max-w-sm overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700"></div>
+        </div>
+    </div>
+
+    <div class="mt-6">
+        <p class="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-100">Riwayat Pemindaian</p>
+
+        @if(empty($riwayat))
+            <div class="rounded-xl border border-gray-200 bg-white py-10 text-center text-sm text-gray-400 dark:border-gray-700 dark:bg-gray-900">
+                Belum ada pemindaian pada sesi ini.
+            </div>
+        @else
+            <div class="space-y-2">
+                @foreach($riwayat as $item)
+                    @php
+                        $warna = match($item['nada']) {
+                            'success' => 'border-green-200 bg-green-50 dark:border-green-800/60 dark:bg-green-950/30',
+                            'warning' => 'border-amber-200 bg-amber-50 dark:border-amber-800/60 dark:bg-amber-950/30',
+                            default => 'border-red-200 bg-red-50 dark:border-red-800/60 dark:bg-red-950/30',
+                        };
+                    @endphp
+                    <div class="flex items-center justify-between rounded-xl border px-4 py-2.5 {{ $warna }}">
+                        <div>
+                            <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ $item['nama'] }}</p>
+                            <p class="text-xs text-gray-600 dark:text-gray-400">{{ $item['pesan'] }}</p>
+                        </div>
+                        <span class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ $item['waktu'] }}</span>
                     </div>
-                    <span class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ $item['waktu'] }}</span>
-                </div>
-            @endforeach
-        </div>
-    @endif
+                @endforeach
+            </div>
+        @endif
+    </div>
+
 </div>
 </x-filament-panels::page>

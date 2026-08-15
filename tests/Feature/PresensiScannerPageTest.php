@@ -207,6 +207,19 @@ class PresensiScannerPageTest extends TestCase
         $this->assertSame(1, Presensi::withoutGlobalScope('pesantren')->count());
     }
 
+    public function test_halaman_menawarkan_kamera_di_samping_jalur_alat_pemindai(): void
+    {
+        // Kamera adalah lapis KEDUA; kolom teks ber-autofocus tetap jalur utama
+        // karena ia bekerja tanpa JavaScript dan bisa diuji di sini.
+        Livewire::actingAs($this->admin)
+            ->test(PresensiScannerPage::class)
+            ->assertSee('Pindai dengan Kamera')
+            ->assertSee('pemindai-kamera', escape: false)
+            // Bundel html5-qrcode dimuat HANYA di halaman ini, bukan sebagai aset
+            // panel — ~370 KB tidak boleh membebani setiap halaman admin.
+            ->assertSee('presensi-scanner', escape: false);
+    }
+
     public function test_wali_santri_tidak_bisa_membuka_halaman_scan(): void
     {
         $wali = User::factory()->waliSantri()->create(['pesantren_id' => $this->pesantren->id]);
