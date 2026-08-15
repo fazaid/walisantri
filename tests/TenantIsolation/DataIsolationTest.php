@@ -2,8 +2,11 @@
 
 namespace Tests\TenantIsolation;
 
+use App\Enums\StatusKehadiran;
 use App\Models\KesantrianKesehatan;
 use App\Models\Pesantren;
+use App\Models\Presensi;
+use App\Models\PresensiPengaturan;
 use App\Models\PrestasiSantri;
 use App\Models\Santri;
 use App\Models\TagihanSpp;
@@ -221,6 +224,50 @@ class DataIsolationTest extends TestCase
 
         $this->assertTrue($result->contains('id', $prestasiA->id), 'Admin A harus bisa lihat prestasi santrinya sendiri');
         $this->assertFalse($result->contains('id', $prestasiB->id), 'Admin A TIDAK boleh lihat prestasi santri tenant lain');
+    }
+
+    public function test_presensi_tidak_bocor_lintas_tenant(): void
+    {
+        [$pesantrenA, $adminA, $santriA] = $this->createTenantWithSantri('pesantren-presensi-a');
+        [$pesantrenB, , $santriB] = $this->createTenantWithSantri('pesantren-presensi-b');
+
+        $presensiA = Presensi::create([
+            'pesantren_id' => $pesantrenA->id,
+            'santri_id' => $santriA->id,
+            'tanggal' => now()->toDateString(),
+            'jam_ke' => Presensi::HARIAN,
+            'status' => StatusKehadiran::Hadir,
+        ]);
+        $presensiB = Presensi::create([
+            'pesantren_id' => $pesantrenB->id,
+            'santri_id' => $santriB->id,
+            'tanggal' => now()->toDateString(),
+            'jam_ke' => Presensi::HARIAN,
+            'status' => StatusKehadiran::Alpa,
+        ]);
+
+        $this->actingAs($adminA);
+
+        $result = Presensi::all();
+
+        $this->assertTrue($result->contains('id', $presensiA->id), 'Admin A harus bisa lihat presensi santrinya sendiri');
+        $this->assertFalse($result->contains('id', $presensiB->id), 'Admin A TIDAK boleh lihat presensi tenant lain');
+    }
+
+    public function test_pengaturan_presensi_tidak_bocor_lintas_tenant(): void
+    {
+        [$pesantrenA, $adminA] = $this->createTenantWithUser('pesantren-set-presensi-a');
+        [$pesantrenB] = $this->createTenantWithUser('pesantren-set-presensi-b');
+
+        PresensiPengaturan::untuk($pesantrenA->id);
+        PresensiPengaturan::untuk($pesantrenB->id)->update(['batas_edit_ustadz_hari' => 99]);
+
+        $this->actingAs($adminA);
+
+        $terlihat = PresensiPengaturan::all();
+
+        $this->assertCount(1, $terlihat);
+        $this->assertSame($pesantrenA->id, $terlihat->first()->pesantren_id);
     }
 
     /**

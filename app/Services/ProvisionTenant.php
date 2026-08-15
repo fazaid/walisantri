@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Pesantren;
+use App\Models\PresensiPengaturan;
 use App\Models\TenantDomain;
 use App\Support\AmalanDefault;
 
@@ -37,5 +38,13 @@ class ProvisionTenant
         );
 
         AmalanDefault::untukPesantren($pesantren->id);
+
+        // Baris pengaturan presensi. Idempoten (firstOrCreate), dan sengaja bukan
+        // satu-satunya pengisi: migrasi 2026_08_15_000004 menambal tenant lama, dan
+        // PresensiPengaturan::untuk() menyembuhkan sisa kemungkinan apa pun saat
+        // dibaca. Tiga lapis, karena modul Mutaba'ah pernah lumpuh berbulan-bulan
+        // justru karena satu-satunya pengisi datanya adalah migrasi yang hanya
+        // jalan sekali.
+        PresensiPengaturan::untuk($pesantren->id);
     }
 }
