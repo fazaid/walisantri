@@ -375,13 +375,17 @@ Menu: **Presensi → Rekap**.
 1. Pilih **Tahun Ajaran** dan **Periode** (Bulanan / Semester Ganjil / Semester Genap).
 2. Pilih tampilan: **per kelas**, **per santri**, atau **per jam pelajaran**.
 3. Tabel menampilkan jumlah tiap status, **Hari Efektif**, kolom **Tanpa Keterangan**, dan **% Kehadiran** (Hadir + Terlambat + Dispensasi dihitung hadir).
-4. Klik **Ekspor Excel** untuk mengunduh.
+4. Klik **Ekspor Excel** di kanan atas untuk mengunduh. Isinya persis angka yang tampil di layar, mengikuti filter yang sedang aktif.
 
 Kolom **Tanpa Keterangan** yang besar di satu kelas biasanya bukan berarti santrinya bolos — melainkan presensi kelas itu belum diisi. Gunakan kolom ini untuk memantau kedisiplinan pencatatan, bukan kedisiplinan santri.
 
 Bedanya dengan **Alpa**: Alpa berarti seseorang menyatakan santri itu tidak hadir tanpa keterangan; Tanpa Keterangan berarti tidak ada yang menyatakan apa pun. Sistem sengaja tidak menebak — lihat catatan di bagian 8.2.
 
 Di halaman ini juga ada panel **Perlu Perhatian**: daftar santri dengan **3 hari alpa berturut-turut atau lebih**. Gunakan sebagai peringatan dini untuk menghubungi wali sebelum masalahnya membesar.
+
+> "Berturut-turut" dihitung atas **hari efektif**, bukan hari kalender. Jadi alpa hari Jumat lalu alpa hari Senin tetap terhitung dua kali berturut-turut kalau Sabtu–Minggu memang libur — akhir pekan tidak memutus rangkaian.
+
+**Di Dashboard** juga ada kartu **Kehadiran Hari Ini** (untuk Admin dan Ustadz): berapa santri hadir, berapa tidak hadir, dan berapa **kelas yang belum diabsen** hari ini. Angka ketiga itu yang paling berguna untuk memantau — ia menunjukkan kelas mana yang ustadznya belum mengisi. Kalau hari ini terdaftar libur, kartunya berganti jadi keterangan liburnya, karena "belum diabsen" saat libur memang bukan kelalaian.
 
 > Catatan: rekap hanya mencakup **santri aktif**. Santri yang sudah dihapus dari sistem tidak muncul di rekap meski catatan kehadirannya masih tersimpan.
 

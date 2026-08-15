@@ -4,7 +4,20 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Agustus 2026 — v4.29
+**Last Updated:** Agustus 2026 — v4.30
+
+**Changelog v4.30:** **Modul Presensi Fase 3 — rekap, ekspor, dan widget.** Modul ini kini bernilai penuh bagi admin: halaman **Rekap** (tujuh status + Tanpa Keterangan + Hari Efektif + % kehadiran), ekspor Excel, panel **Perlu Perhatian**, dan widget **Kehadiran Hari Ini** di dashboard admin maupun ustadz.
+
+- **`App\Services\PresensiRekap` mengagregasi di SQL, bukan Collection.** Kedua service di `App\Services\Rapor` menarik seluruh baris ke memori — aman di sana karena lingkupnya satu santri, mustahil di sini: rekap satu semester untuk 1.000 santri menyentuh ratusan ribu baris. Cetakan yang diikuti: `SaldoUangSakuPage` dan `Wali\TahfidzStatsController` (§15). Halaman Rekap dan ekspor Excel memakai service yang **sama** — pelajaran v4.19, saat halaman rapor dan PDF-nya punya query masing-masing lalu menyimpang tanpa ketahuan setahun.
+- **Rekap berangkat dari `santri`, bukan dari `presensi`.** Santri yang belum pernah diabsen sama sekali harus tetap muncul — justru merekalah yang paling perlu terlihat. Santri yang di-soft-delete dikecualikan (keputusan v4.26).
+- **Rentang selalu dipotong ke hari ini.** Periode "Semester Ganjil" berakhir 31 Desember; dibuka pertengahan Agustus, seluruh sisa tahun akan masuk penyebut hari efektif dan persentase kehadiran **setiap** santri anjlok tanpa ada yang salah. Batas atasnya karena itu di-*clamp* di `PresensiRekap::batasAkhir()`.
+- **"Tanpa Keterangan" bukan Alpa, dan bedanya dijelaskan di halamannya.** Alpa berarti seseorang menyatakan santri tidak hadir; Tanpa Keterangan berarti tidak ada yang menyatakan apa pun. Angka besar di kolom itu hampir selalu berarti presensinya belum diisi — alat memantau disiplin **pencatatan**, bukan disiplin santri.
+- **Panel Perlu Perhatian menghitung alpa beruntun atas HARI EFEKTIF, bukan hari kalender.** Alpa Jumat lalu alpa Senin adalah dua kali berturut-turut bila Sabtu–Minggu libur; menghitungnya atas hari kalender akan memutus rangkaian setiap akhir pekan dan membuat panel ini nyaris tidak pernah menyala. Ini realisasi non-AI dari "Deteksi Pola Ketidakhadiran" (§20) — satu query biasa, tersedia semua paket, tidak menunggu post-v1.0.
+- **Widget `PresensiHariIniStat` dibuat SATU kelas untuk admin dan ustadz**, bukan sepasang seperti tetangganya di `app/Filament/Widgets/`: yang berbeda hanya cakupan kelasnya, sementara ketiga angkanya identik. Menyalinnya jadi dua berarti dua tempat yang harus ikut berubah setiap kali definisi "belum diabsen" disesuaikan. **Sengaja tanpa cache** — angka "hari ini" yang basi 15 menit membuat ustadz yang baru mengisi presensi mengisinya dua kali. Di hari libur widgetnya menjelaskan keadaan alih-alih menuduh.
+
+> **Jebakan yang memakan waktu:** docblock widget sempat memuat rangkaian karakter `*/` di tengah kalimat (menulis "sepasang Admin\*/Ustadz\*"), yang menutup blok komentar lebih awal dan memecahkan seluruh file dengan parse error di baris yang tampak tidak berhubungan. Sepele, tapi pesan errornya sama sekali tidak menunjuk ke penyebabnya.
+
+Cakupan tes naik jadi **558 tes / 1.694 asersi** — `PresensiRekapTest` (12 kasus unit, termasuk clamp rentang, alpa beruntun melompati libur, dan santri terhapus), `PresensiRekapPageTest` (6), dan `PresensiExportTest` (5).
 
 **Changelog v4.29:** **Modul Presensi Fase 2 — kalender hari libur.** Menu **Hari Libur** (`admin_pesantren` saja) dan service `App\Services\PresensiKalender` yang menjadi satu-satunya sumber jawaban atas "hari ini sekolah atau tidak". Halaman Isi Presensi kini memperingatkan saat tanggal terpilih jatuh di hari libur.
 
@@ -769,7 +782,7 @@ Widget yang tampil untuk `admin_pesantren` (semua `canView()` cek role ini, semu
 - **PengumumanCentralWidget** — full-width, tampil hanya kalau ada pengumuman pusat aktif (hidden-when-empty).
 - **OnboardingChecklistWidget** *(sort −2, paling atas)* — checklist setup 6 langkah (§14); `canView()` = `admin_pesantren` **dan** onboarding belum lengkap, jadi hilang sendiri setelah tuntas.
 - **PengumumanWidget** *(sort −1)* — pengumuman internal pesantren; satu-satunya widget di dashboard ini yang juga tampil untuk `ustadz`.
-- **AdminPresensiHariIniStat** *(v4.26)* — tiga angka hari ini: santri hadir, santri tidak hadir, dan **kelas yang belum diabsen** (warna berambang, pola `UstadzStatsOverview`: `success` bila nol, `warning` bila sedikit, `danger` bila banyak). Kehadiran adalah data paling *hari ini* di seluruh aplikasi, dan angka ketiga itulah alat manajemen sebenarnya — ia menunjukkan disiplin pencatatan, bukan disiplin santri. Dashboard `ustadz` mendapat padanannya, **UstadzPresensiHariIniStat** ("Kelas Anda belum diabsen"), ter-scope ke kelas perwaliannya.
+- **PresensiHariIniStat** *(v4.26 dirancang, v4.30 dibangun)* — tiga angka hari ini: santri hadir, santri tidak hadir, dan **kelas yang belum diabsen** (warna berambang, pola `UstadzStatsOverview`). Kehadiran adalah data paling *hari ini* di seluruh aplikasi, dan angka ketiga itulah alat manajemen sebenarnya — ia menunjukkan disiplin **pencatatan**, bukan disiplin santri. ⚠️ **Satu kelas untuk admin DAN ustadz**, bukan sepasang `Admin*`/`Ustadz*` seperti tetangganya di direktori itu — rancangan v4.26 sempat menyebut dua kelas, tapi yang berbeda antara keduanya hanya cakupan kelasnya sementara ketiga angkanya identik; menyalinnya berarti dua tempat yang harus ikut berubah setiap kali definisi "belum diabsen" disesuaikan. Di hari libur widgetnya berganti menjadi satu kartu yang menjelaskan keadaan, karena "belum diabsen" saat libur bukan kelalaian.
 
 > **Kedua widget presensi sengaja TIDAK di-cache**, berbeda dari `AdminStatsOverview` yang menyimpan agregat amalan mingguan 15 menit dengan key ber-tenant. Angka "hari ini" yang basi 15 menit lebih buruk daripada tidak ada: ustadz yang baru saja mengisi presensi lalu melihat "belum diabsen" akan mengisinya dua kali. Lingkupnya pun murah — satu hari, satu pesantren, satu index `(pesantren_id, tanggal, jam_ke)`.
 
@@ -1351,7 +1364,7 @@ Step **"lihat/salin Magic Link wali pertama" dihapus di v4.21** — membuka moda
 | Rapor Akademik / Tahfidz / Mutabaah / Karakter | PDF | Admin/Ustadz | Satu dokumen gabungan per santri, modul dipilih lewat checkbox di `RaporPage` (v4.19, lihat §7) |
 | Data Santri | Excel | Admin | **Semua santri** — aktif & non-aktif, dengan kolom status (tidak difilter `status_aktif`) |
 | Rekam Medis Periode | Excel | Admin/Ustadz | Filter tanggal, semua paket (v4.9: batasan "Berkembang+" dikoreksi — tidak ada Gate paket di kode) |
-| Rekap Presensi *(v4.25)* | Excel | Admin/Ustadz | Filter tahun ajaran + periode + kelas; ustadz hanya cakupannya (§5.4) |
+| Rekap Presensi *(v4.25, dibangun v4.30)* | Excel | Admin/Ustadz | Filter tahun ajaran + periode + kelas; ustadz hanya cakupannya (§5.4). Rute `admin.export.presensi`; angkanya dari `PresensiRekap` yang sama dengan halaman Rekap |
 
 **Alur (sinkron):** klik Export + filter → `Admin\ExportController` memanggil `Excel::download()` → berkas langsung terunduh di request yang sama. Tidak ada job, tidak ada queue, tidak ada penyimpanan di server, jadi tidak ada berkas yang perlu dibersihkan. Route: `admin.export.santri` · `admin.export.mutabaah` · `admin.export.rekam-medis`.
 
@@ -1428,7 +1441,7 @@ Sisanya: `PresensiIzinTest`, `PresensiHariLiburTest`, `PresensiRekapPageTest`, `
 
 **Konfigurasi:** unit test pakai PostgreSQL ephemeral (mis. service container `postgres` di GitHub Actions) atau SQLite in-memory untuk test yang tidak bergantung fitur PostgreSQL; `CACHE_DRIVER=array`, `QUEUE_CONNECTION=sync`. Test isolasi tenant & RLS **wajib** pakai PostgreSQL (bukan SQLite) agar policy ikut teruji.
 
-**Sebaran nyata (v4.29):** 535 tes / 1.637 asersi (terhadap PostgreSQL; di SQLite 10 tes isolasi tenant di-skip).
+**Sebaran nyata (v4.30):** 558 tes / 1.694 asersi (terhadap PostgreSQL; di SQLite 10 tes isolasi tenant di-skip).
 
 ```
 tests/Feature/                                52 berkas  ← tulang punggung: alur panel Filament,
@@ -1532,7 +1545,7 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 
 # 22. Catatan Implementasi Aktual
 
-**PRD ini v4.29.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
+**PRD ini v4.30.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
 
 **Bug & fix:** `HasUuids` isi `id` jika tak di-override → `uniqueIds(): ['uuid']` · `$navigationGroup` `?string` error → `string|UnitEnum|null` · index name >63 char (batas PostgreSQL) → nama eksplisit pendek · ingat PostgreSQL tak punya unsigned int (kolom unsigned → signed bigint) · (v4.7) `tahun_ajaran` di form Nilai Akademik/Rapor Tahfidz semula `TextInput` bebas → mismatch format antar input & filter rapor bikin data tidak muncul → diganti `Select` dropdown seragam (service `TahunAjaranOptions`) · (v4.7) Filament cluster default merender sub-navigation tab di bawah header & dropdown khusus mobile → di-override via render hook + CSS agar tab tampil di atas breadcrumbs, konsisten desktop/mobile (detail di §7).
 
@@ -1603,4 +1616,4 @@ Daftar tiga cacat yang dicatat v4.20 sudah habis dikerjakan, dan dua lagi ditemu
 
 ---
 
-*Confidential — Internal Document | Walisantri.com v4.29 | Agustus 2026*
+*Confidential — Internal Document | Walisantri.com v4.30 | Agustus 2026*
