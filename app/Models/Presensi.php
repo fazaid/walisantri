@@ -25,6 +25,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'menit_terlambat',
     'catatan',
     'sumber',
+    'presensi_izin_id',
     'dicatat_oleh',
     'dicatat_at',
 ])]
@@ -55,5 +56,10 @@ class Presensi extends Model
     public function mataPelajaran(): BelongsTo
     {
         return $this->belongsTo(MataPelajaran::class);
+    }
+
+    public function izin(): BelongsTo
+    {
+        return $this->belongsTo(PresensiIzin::class, 'presensi_izin_id');
     }
 }

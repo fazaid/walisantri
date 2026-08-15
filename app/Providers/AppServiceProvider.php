@@ -12,6 +12,7 @@ use App\Models\KesantrianKesehatan;
 use App\Models\MasterPengumuman;
 use App\Models\Pesantren;
 use App\Models\PlatformBankAccount;
+use App\Models\Presensi;
 use App\Models\Santri;
 use App\Models\User;
 use App\Observers\DemoRequestObserver;
@@ -20,6 +21,7 @@ use App\Observers\KesantrianKesehatanObserver;
 use App\Observers\MasterPengumumanObserver;
 use App\Observers\PesantrenObserver;
 use App\Observers\PlatformBankAccountObserver;
+use App\Observers\PresensiObserver;
 use App\Observers\SantriObserver;
 use App\Observers\UserObserver;
 use Filament\Support\Facades\FilamentTimezone;
@@ -85,6 +87,7 @@ class AppServiceProvider extends ServiceProvider
         DemoRequest::observe(DemoRequestObserver::class);
         Kelas::observe(KelasObserver::class);
         KesantrianKesehatan::observe(KesantrianKesehatanObserver::class);
+        Presensi::observe(PresensiObserver::class);
     }
 
     // -----------------------------------------------------------------

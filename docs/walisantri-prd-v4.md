@@ -4,7 +4,22 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Agustus 2026 — v4.30
+**Last Updated:** Agustus 2026 — v4.31
+
+**Changelog v4.31:** **Modul Presensi Fase 4 — pengajuan izin.** Dua pintu masuk ke satu tabel: wali mengajukan lewat portal (menunggu persetujuan), admin/wali kelas mencatat langsung (langsung disetujui). Izin yang disetujui mengisi presensi otomatis, dan pembatalannya membersihkan jejaknya secara selektif.
+
+- **`PresensiIzinService` memegang seluruh transisi status beserta efek sampingnya** (pola `UpgradeOrderService`), bukan logika di dalam aksi Filament. Alasannya konkret: izin disetujui dari panel hari ini dan mungkin dari jalur lain besok; menaruh penulisan baris presensi di dalam aksi berarti jalur kedua harus menyalinnya, dan salinan itulah yang akan menyimpang.
+- **Hari libur dilewati saat persetujuan.** Mencatat "Sakit" pada hari yang memang tidak menuntut kehadiran akan mengotori penyebut rekap dan membuat santri tampak absen tanpa sebab.
+- **Persetujuan menimpa presensi manual yang sudah ada**, lewat `upsert`. Itu memang yang diharapkan: santri yang tadinya dikira bolos ternyata berhalangan, dan persetujuan adalah keputusan yang lebih baru.
+- **Pembatalan menghapus SELEKTIF** — hanya baris yang masih bersumber `izin`. Baris yang sejak itu disunting ustadz sudah berpindah ke sumber `manual`, dan orang yang membatalkan izin tidak sedang menyatakan bahwa koreksi manual itu salah.
+- **Sinkronisasi ke `status_udzur` mutaba'ah hanya `update`, tidak pernah `updateOrCreate`.** Alasannya aritmetik: `MutabaahScoreCalculator::persentaseRataRata()` memasukkan setiap baris ke penyebut tanpa memandang udzur, jadi baris kosong untuk hari izin akan menurunkan persentase amalan santri justru karena ia berhalangan — dan angka itu dibaca wali serta tercetak di rapor. Udzur yang sudah diisi manusia dengan keterangan lebih spesifik (mis. `Haid`) juga tidak ditimpa.
+- **Validasi tumpang tindih di form**, bukan di DB: "beririsan" bukan kesetaraan yang bisa dinyatakan sebagai constraint. `PresensiIzin::beririsan()` menangkap keempat bentuk irisan sekaligus (sebagian di kedua ujung, termuat seluruhnya, dan membungkus) dengan satu perbandingan. Izin yang ditolak/dibatalkan tidak dihitung — ia tidak pernah menulis presensi apa pun, jadi menghalangi pengajuan ulang hanya menyulitkan wali.
+- **Lampiran di disk `local`.** Surat keterangan dokter adalah data kesehatan anak (§13.2); disk `public` menghasilkan URL yang bisa ditebak tanpa melewati otorisasi. Disajikan lewat rute terotorisasi `wali.izin.lampiran`, dikunci tes yang memastikan wali lain mendapat 403.
+- **`PresensiObserver` akhirnya dibangun** — event `presensi.diubah` yang dijanjikan §10.2 sejak v4.26 tapi belum ada kodenya. Hanya perubahan **surut** yang dicatat (status berubah DAN tanggalnya bukan hari ini); koreksi di hari yang sama adalah pekerjaan normal.
+
+> **Koreksi rancangan §8 — penjagaan Magic Link ternyata lebih ketat daripada yang ditulis.** v4.25 menyatakan form pengajuan izin "harus disembunyikan bila sesi Magic Link, diganti ajakan login". Kenyataannya `BlockMagicLinkSession` sudah mengalihkan sesi magic link dari **seluruh** halaman portal agregat kembali ke halaman report, jadi `/wali/izin` tidak pernah terbuka sama sekali dari tautan cepat — penyembunyian form tidak pernah tercapai. Pemeriksaannya tetap dipertahankan di `IzinController::bolehMengajukan()` sebagai lapis kedua, dan kini juga melayani kill-switch `izin_wali_aktif` yang memang menampilkan penjelasan itu. Dikunci dua tes terpisah supaya kedua jalur tidak tertukar lagi.
+
+Cakupan tes naik jadi **584 tes / 1.777 asersi** — `PresensiIzinServiceTest` (13 kasus unit) dan `PresensiIzinTest` (13 kasus feature).
 
 **Changelog v4.30:** **Modul Presensi Fase 3 — rekap, ekspor, dan widget.** Modul ini kini bernilai penuh bagi admin: halaman **Rekap** (tujuh status + Tanpa Keterangan + Hari Efektif + % kehadiran), ekspor Excel, panel **Perlu Perhatian**, dan widget **Kehadiran Hari Ini** di dashboard admin maupun ustadz.
 
@@ -674,7 +689,7 @@ erDiagram
 | `2026_08_15_000003` | `create_presensi_table` (tanpa `presensi_izin_id`) | 1 ✅ |
 | `2026_08_15_000004` | `seed_presensi_pengaturan_untuk_pesantren_lama` | 1 ✅ |
 | `2026_08_15_000005` | `create_presensi_hari_libur_table` | 2 ✅ |
-| menyusul | `create_presensi_izin_table` + `add_presensi_izin_id_to_presensi_table` | 4 |
+| `2026_08_15_000006` + `000007` | `create_presensi_izin_table` + `add_presensi_izin_id_to_presensi_table` | 4 ✅ |
 | menyusul | `add_kode_presensi_to_santri_table` | 5 |
 | menyusul | `create_presensi_jam_pelajaran_table` | 6 |
 
@@ -1441,7 +1456,7 @@ Sisanya: `PresensiIzinTest`, `PresensiHariLiburTest`, `PresensiRekapPageTest`, `
 
 **Konfigurasi:** unit test pakai PostgreSQL ephemeral (mis. service container `postgres` di GitHub Actions) atau SQLite in-memory untuk test yang tidak bergantung fitur PostgreSQL; `CACHE_DRIVER=array`, `QUEUE_CONNECTION=sync`. Test isolasi tenant & RLS **wajib** pakai PostgreSQL (bukan SQLite) agar policy ikut teruji.
 
-**Sebaran nyata (v4.30):** 558 tes / 1.694 asersi (terhadap PostgreSQL; di SQLite 10 tes isolasi tenant di-skip).
+**Sebaran nyata (v4.31):** 584 tes / 1.777 asersi (terhadap PostgreSQL; di SQLite 10 tes isolasi tenant di-skip).
 
 ```
 tests/Feature/                                52 berkas  ← tulang punggung: alur panel Filament,
@@ -1545,7 +1560,7 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 
 # 22. Catatan Implementasi Aktual
 
-**PRD ini v4.30.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
+**PRD ini v4.31.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
 
 **Bug & fix:** `HasUuids` isi `id` jika tak di-override → `uniqueIds(): ['uuid']` · `$navigationGroup` `?string` error → `string|UnitEnum|null` · index name >63 char (batas PostgreSQL) → nama eksplisit pendek · ingat PostgreSQL tak punya unsigned int (kolom unsigned → signed bigint) · (v4.7) `tahun_ajaran` di form Nilai Akademik/Rapor Tahfidz semula `TextInput` bebas → mismatch format antar input & filter rapor bikin data tidak muncul → diganti `Select` dropdown seragam (service `TahunAjaranOptions`) · (v4.7) Filament cluster default merender sub-navigation tab di bawah header & dropdown khusus mobile → di-override via render hook + CSS agar tab tampil di atas breadcrumbs, konsisten desktop/mobile (detail di §7).
 
@@ -1616,4 +1631,4 @@ Daftar tiga cacat yang dicatat v4.20 sudah habis dikerjakan, dan dua lagi ditemu
 
 ---
 
-*Confidential — Internal Document | Walisantri.com v4.30 | Agustus 2026*
+*Confidential — Internal Document | Walisantri.com v4.31 | Agustus 2026*

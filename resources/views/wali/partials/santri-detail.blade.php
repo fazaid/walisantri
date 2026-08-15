@@ -308,6 +308,24 @@
         </div>
     </a>
 
+    {{-- Pengajuan Izin --}}
+    @php $izinPreview = $previewMode ?? false; @endphp
+    <a @unless($izinPreview) href="{{ route('wali.izin') }}" @endunless
+       class="block bg-white rounded-2xl shadow-sm border border-gray-100 px-4 py-3 @unless($izinPreview) hover:border-teal-200 transition-colors @endunless">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-xl">📝</span>
+                <div>
+                    <p class="text-sm font-semibold text-gray-800">Pengajuan Izin</p>
+                    <p class="text-xs text-gray-400">Ajukan izin sakit, pulang, atau dispensasi</p>
+                </div>
+            </div>
+            @unless($izinPreview)
+            <span class="text-xs font-medium text-teal-600">Buka →</span>
+            @endunless
+        </div>
+    </a>
+
     {{-- Ekstrakurikuler --}}
     @if($ekskul->isNotEmpty())
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
