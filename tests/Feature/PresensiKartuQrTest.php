@@ -10,6 +10,7 @@ use App\Models\Santri;
 use App\Models\User;
 use App\Services\KartuPresensiPdf;
 use App\Support\KodePresensi;
+use chillerlan\QRCode\QRCode;
 use Filament\Actions\Testing\TestAction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -125,6 +126,44 @@ class PresensiKartuQrTest extends TestCase
         // berpindah tangan dan dipotret — kalau suatu saat seseorang
         // "menyederhanakan" kartu QR kembali ke uuid, tes inilah yang menolaknya.
         $this->assertStringNotContainsString($santri->uuid, $pdf);
+    }
+
+    public function test_tiap_kartu_memuat_persis_satu_kode_miliknya(): void
+    {
+        $pesantren = Pesantren::factory()->create();
+        $admin = User::factory()->adminPesantren()->create(['pesantren_id' => $pesantren->id]);
+        $kelas = Kelas::factory()->create(['pesantren_id' => $pesantren->id]);
+
+        $santriList = collect(['Ahmad', 'Bilal', 'Candra'])->map(
+            fn (string $nama) => Santri::factory()->create([
+                'pesantren_id' => $pesantren->id,
+                'kelas_id' => $kelas->id,
+                'nama_lengkap' => $nama,
+            ])
+        );
+
+        $this->actingAs($admin);
+
+        $kartu = app(KartuPresensiPdf::class)->kartuUntukKelas($kelas);
+
+        $this->assertCount(3, $kartu);
+
+        // QR-nya DIBACA BALIK, bukan sekadar dicek ada. Bug yang ditutup tes ini
+        // tidak menghasilkan error apa pun — QRCode::render() menambahkan segmen
+        // data ke instance-nya, jadi satu instance yang dipakai ulang membuat
+        // kartu kedua memuat kode santri pertama DAN kedua, kartu ketiga
+        // ketiganya. Satu-satunya cara melihatnya adalah memindai hasilnya.
+        foreach ($kartu as $i => $k) {
+            $png = base64_decode(substr($k->qr, strlen('data:image/png;base64,')));
+            $terbaca = (string) (new QRCode)->readFromBlob($png);
+
+            $this->assertSame(
+                KodePresensi::payload($santriList[$i]->kode_presensi),
+                $terbaca,
+                "QR kartu ke-{$i} tidak memuat persis satu kode milik santri itu.",
+            );
+            $this->assertSame(1, substr_count($terbaca, KodePresensi::PREFIKS));
+        }
     }
 
     public function test_admin_bisa_mengganti_kode_kartu_yang_hilang(): void

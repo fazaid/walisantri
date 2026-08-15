@@ -4,7 +4,17 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Agustus 2026 — v4.37
+**Last Updated:** Agustus 2026 — v4.38
+
+**Changelog v4.38:** **Perbaikan: QR pada kartu cetak menumpuk kode santri sebelumnya.** Kartu pertama di tiap kelas selalu bisa dipindai, kartu kedua memuat kode santri pertama **dan** kedua, kartu ketiga memuat ketiganya — dan seterusnya. Yang selama ini tampak seperti masalah pemindai ternyata cacat di percetakannya.
+
+Penyebabnya satu baris: `KartuPresensiPdf` memakai **satu instance `QRCode` untuk seluruh kelas**, sedangkan `QRCode::render()` di chillerlan/php-qrcode **menambahkan** segmen data ke instance-nya, bukan menggantikan. Matriksnya membesar tiap kartu (28 → 32 → 36 baris) tanpa satu pun error atau peringatan. Diperbaiki dengan membuat instance baru per kartu.
+
+> **Pelajaran: `render()` yang menerima data tidak selalu berarti "render data ini" — bisa juga "tambahkan data ini lalu render semuanya".** Objek yang tampak seperti fungsi murni ternyata menyimpan keadaan, dan memakainya ulang di dalam perulangan adalah pola yang terasa hemat justru karena tidak ada yang meledak. Kelas jebakan yang sama ada di banyak pembangun dokumen (PDF, spreadsheet, arsip): satu instance, banyak `add`/`render`, keluaran yang diam-diam menumpuk.
+
+> **Kenapa ini lolos begitu lama:** bug-nya tidak terlihat di sisi yang membuatnya. PDF-nya tampak wajar — tiap kartu punya gambar QR yang berbeda, dan mata tidak bisa membedakan QR berisi satu kode dari QR berisi tiga. Ia baru muncul di ujung yang lain, sebagai "kode tidak dikenali" saat dipindai, sehingga penyelidikan mengarah ke pemindai, kolom input, dan Livewire — tiga tempat yang semuanya tidak bersalah. Yang akhirnya menunjuk ke arah benar adalah pengamatan sederhana dari lapangan: **kartu pertama selalu berhasil, kartu berikutnya tidak.**
+
+Dikunci `PresensiKartuQrTest::test_tiap_kartu_memuat_persis_satu_kode_miliknya`, yang **membaca balik** QR tiap kartu memakai pembaca bawaan pustaka itu dan membandingkannya dengan payload santri yang bersangkutan. Memeriksa "gambar QR-nya ada" tidak akan pernah menangkap bug ini — satu-satunya cara melihatnya adalah memindai hasilnya.
 
 **Changelog v4.37:** **Perbaikan: kode pindaian menumpuk di kolom teks sampai jadi satu string ngawur.** Gejalanya dari lapangan: `WSP1.5MBA10CVV6T4WSP1.P1FVSKS125QVWSP1.9Q5RZG0P334X` — tiga payload menempel, lalu ditolak sebagai satu kode tak dikenal.
 
@@ -1511,7 +1521,7 @@ Sisanya: `PresensiIzinTest`, `PresensiHariLiburTest`, `PresensiRekapPageTest`, `
 
 **Konfigurasi:** unit test pakai PostgreSQL ephemeral (mis. service container `postgres` di GitHub Actions) atau SQLite in-memory untuk test yang tidak bergantung fitur PostgreSQL; `CACHE_DRIVER=array`, `QUEUE_CONNECTION=sync`. Test isolasi tenant & RLS **wajib** pakai PostgreSQL (bukan SQLite) agar policy ikut teruji.
 
-**Sebaran nyata (v4.37):** 610 tes / 2.440 asersi (terhadap PostgreSQL; di SQLite 10 tes isolasi tenant di-skip).
+**Sebaran nyata (v4.38):** 612 tes / 2.452 asersi (terhadap PostgreSQL; di SQLite 10 tes isolasi tenant di-skip).
 
 ```
 tests/Feature/                                52 berkas  ← tulang punggung: alur panel Filament,
@@ -1615,7 +1625,7 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 
 # 22. Catatan Implementasi Aktual
 
-**PRD ini v4.37.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
+**PRD ini v4.38.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
 
 **Bug & fix:** `HasUuids` isi `id` jika tak di-override → `uniqueIds(): ['uuid']` · `$navigationGroup` `?string` error → `string|UnitEnum|null` · index name >63 char (batas PostgreSQL) → nama eksplisit pendek · ingat PostgreSQL tak punya unsigned int (kolom unsigned → signed bigint) · (v4.7) `tahun_ajaran` di form Nilai Akademik/Rapor Tahfidz semula `TextInput` bebas → mismatch format antar input & filter rapor bikin data tidak muncul → diganti `Select` dropdown seragam (service `TahunAjaranOptions`) · (v4.7) Filament cluster default merender sub-navigation tab di bawah header & dropdown khusus mobile → di-override via render hook + CSS agar tab tampil di atas breadcrumbs, konsisten desktop/mobile (detail di §7).
 
@@ -1686,4 +1696,4 @@ Daftar tiga cacat yang dicatat v4.20 sudah habis dikerjakan, dan dua lagi ditemu
 
 ---
 
-*Confidential — Internal Document | Walisantri.com v4.37 | Agustus 2026*
+*Confidential — Internal Document | Walisantri.com v4.38 | Agustus 2026*

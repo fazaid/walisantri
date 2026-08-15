@@ -278,6 +278,33 @@ class PresensiScannerPageTest extends TestCase
             ->assertSeeHtml('x-ref="kolomKode"');
     }
 
+    public function test_dua_kartu_berbeda_berurutan_di_komponen_yang_sama(): void
+    {
+        $this->bekukanJam('06:45');
+
+        $kedua = Santri::factory()->create([
+            'pesantren_id' => $this->pesantren->id,
+            'kelas_id' => $this->kelas->id,
+            'nama_lengkap' => 'Bilal Kedua',
+        ]);
+
+        // Persis keluhan lapangan: kartu pertama berhasil, kartu kedua ditolak
+        // "beberapa kode sekaligus". Keduanya dijalankan pada INSTANCE komponen
+        // yang sama supaya keadaan antar-pemindaian benar-benar terbawa —
+        // kalau $this->kode menumpuk di sisi server, di sinilah ketahuannya.
+        $komponen = Livewire::actingAs($this->admin)->test(PresensiScannerPage::class);
+
+        $komponen->call('scan', KodePresensi::payload($this->santri->kode_presensi))
+            ->assertSee('Ahmad Fauzi');
+
+        $komponen->call('scan', KodePresensi::payload($kedua->kode_presensi))
+            ->assertSee('Bilal Kedua')
+            ->assertDontSee('Beberapa kode sekaligus');
+
+        $this->assertSame(2, Presensi::withoutGlobalScope('pesantren')->count());
+        $this->assertSame('', $komponen->get('kode'));
+    }
+
     public function test_wali_santri_tidak_bisa_membuka_halaman_scan(): void
     {
         $wali = User::factory()->waliSantri()->create(['pesantren_id' => $this->pesantren->id]);
