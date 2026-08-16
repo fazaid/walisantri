@@ -7,52 +7,73 @@
     <meta name="robots" content="noindex">
     <title>Panduan Penggunaan — Walisantri</title>
     <link rel="icon" type="image/svg+xml" href="{{ \App\Models\PlatformBrandingSetting::faviconUrl() }}">
+    {{-- Tailwind dimuat SEBELUM <style> di bawah supaya aturan halaman ini menang
+         saat berbenturan: preflight-nya menyapu bersih gaya bawaan browser, dan
+         dokumen ini bersandar pada beberapa di antaranya (lihat blok "Preflight"). --}}
+    @vite(['resources/css/app.css'])
     <style>
+      /* Palet mengikuti landing (putih + teal Tailwind) supaya kedua halaman
+         terbaca satu situs. Mode gelap dipertahankan — dokumen ini panjang dan
+         sering dibaca di HP — dengan teal yang sama, hanya diterangkan agar
+         kontrasnya cukup di latar gelap. */
       :root{
-        --bg:#F1F0E8;
-        --bg-elevated:#FBFAF6;
-        --bg-sidebar:#EAE8DD;
-        --ink:#1C2521;
-        --ink-soft:#4B564F;
-        --ink-faint:#7C8579;
-        --border:#DAD6C8;
-        --border-strong:#C7C2AF;
-        --accent:#1F5C52;
-        --accent-ink:#123B34;
-        --accent-soft:#DCE8E3;
-        --gold:#A97A2E;
-        --gold-soft:#F1E6CE;
-        --ustadz:#4C6B85;
-        --ustadz-soft:#DDE6EC;
-        --danger:#A8432F;
-        --danger-soft:#F3E0DA;
-        --shadow: 0 1px 2px rgba(28,37,33,0.06), 0 8px 24px rgba(28,37,33,0.05);
+        --bg:#FFFFFF;
+        --bg-elevated:#F9FAFB;
+        --bg-sidebar:#F9FAFB;
+        --ink:#111827;
+        --ink-soft:#4B5563;
+        --ink-faint:#9CA3AF;
+        --border:#F3F4F6;
+        --border-strong:#E5E7EB;
+        --accent:#0F766E;
+        --accent-ink:#115E59;
+        --accent-soft:#F0FDFA;
+        --gold:#B45309;
+        --gold-soft:#FFFBEB;
+        --ustadz:#0369A1;
+        --ustadz-soft:#F0F9FF;
+        --danger:#B91C1C;
+        --danger-soft:#FEF2F2;
+        --shadow: 0 1px 2px rgba(17,24,39,0.06), 0 8px 24px rgba(17,24,39,0.05);
         --font-display: "Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Noto Serif",serif;
-        --font-body: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+        --font-body: 'Instrument Sans', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         --font-mono: ui-monospace,"SF Mono","Cascadia Code","Roboto Mono","Liberation Mono",monospace;
-        color-scheme: light dark;
+
+        /* Tinggi nav bersama (sticky, milik landing). Dipakai untuk menggeser
+           sidebar, drawer, dan lompatan anchor — tanpa ini semuanya bersembunyi
+           di balik nav.
+
+           Nilai di sini hanya cadangan saat JavaScript mati: yang berlaku diukur
+           dari nav-nya sendiri saat halaman dimuat (skrip di akhir <body>). Nav
+           itu milik partial bersama, jadi tingginya bisa berubah tanpa halaman
+           ini tahu — menebaknya di sini pernah meleset 8px di layar HP. */
+        --nav-h: 57px;
       }
-      @media (prefers-color-scheme: dark){
-        :root{
-          --bg:#101613;
-          --bg-elevated:#172420;
-          --bg-sidebar:#141E1A;
-          --ink:#ECE8DC;
-          --ink-soft:#AEB6AC;
-          --ink-faint:#79847C;
-          --border:#2B3733;
-          --border-strong:#3A4841;
-          --accent:#5FB9A6;
-          --accent-ink:#BFE9DE;
-          --accent-soft:#1E3733;
-          --gold:#E0AE64;
+      @media (min-width: 640px){
+        :root{ --nav-h: 69px; }
+      }
+      /* Dipicu kelas `dark` di <html>, bukan prefers-color-scheme: sejak tombol
+         mode dipasang di nav, halaman ini harus mengikuti pilihan pembaca —
+         bukan setelan perangkatnya sendiri (lihat partials/tema). */
+      :root.dark{
+          --bg:#0B1220;
+          --bg-elevated:#111A2B;
+          --bg-sidebar:#0F1726;
+          --ink:#E5E7EB;
+          --ink-soft:#9CA3AF;
+          --ink-faint:#6B7280;
+          --border:#1F2937;
+          --border-strong:#374151;
+          --accent:#2DD4BF;
+          --accent-ink:#5EEAD4;
+          --accent-soft:#134E4A;
+          --gold:#FBBF24;
           --gold-soft:#3A2E17;
-          --ustadz:#8FB0C9;
-          --ustadz-soft:#223140;
-          --danger:#E08265;
-          --danger-soft:#3B2019;
+          --ustadz:#7DD3FC;
+          --ustadz-soft:#1E293B;
+          --danger:#FCA5A5;
+          --danger-soft:#3B1D1D;
           --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
-        }
       }
 
       *{box-sizing:border-box;}
@@ -70,12 +91,30 @@
         *{scroll-behavior:auto !important; transition:none !important;}
       }
       html{scroll-behavior:smooth;}
-      a{color:var(--accent);}
+      /* Dibatasi ke .page, bukan `a` polos: utilitas Tailwind hidup di @layer dan
+         SELALU kalah dari aturan tak berlapis seperti blok ini, berapa pun
+         specificity-nya. Tanpa batasan ini, tautan abu-abu di nav & footer bersama
+         ikut menjadi teal dan kedua halaman justru tidak lagi seragam.
+         Pembungkusnya :where() supaya specificity tetap 0,0,1 seperti `a` polos —
+         .backlink dan .doc-lede menimpanya, dan itu memang yang diinginkan. */
+      :where(.page) a{color:var(--accent);}
       a:focus-visible, button:focus-visible, summary:focus-visible{
         outline:2px solid var(--accent);
         outline-offset:2px;
         border-radius:2px;
       }
+
+      /* ---------- Preflight ----------
+         Tailwind ikut termuat demi nav & footer bersama, dan preflight-nya
+         mematikan penanda daftar. Dokumen ini isinya ratusan <li> bernomor dan
+         berbutir, jadi keduanya dikembalikan di sini. */
+      .content ul{ list-style:disc; }
+      .content ol{ list-style:decimal; }
+      .content ol.steps{ list-style:none; }   /* bernomor lewat counter, bukan penanda */
+      /* Preflight juga mencabut garis bawah tautan. Di dalam kalimat, warna saja
+         tidak cukup menandai tautan (dan gagal total bagi pembaca buta warna),
+         jadi dikembalikan — kecuali tautan yang memang sudah punya bentuk sendiri. */
+      .content a:not(.backlink){ text-decoration:underline; text-underline-offset:2px; }
 
       /* ---------- Layout shell ---------- */
       .page{
@@ -95,9 +134,9 @@
         border-right:1px solid var(--border);
         padding:28px 20px 40px;
         position:sticky;
-        top:0;
+        top:var(--nav-h);
         align-self:start;
-        height:100vh;
+        height:calc(100vh - var(--nav-h));
         overflow-y:auto;
       }
       .sidebar-brand{
@@ -140,15 +179,19 @@
 
       .nav-toggle{ display:none; }
       .sidebar-close{ display:none; }
+      /* Checkbox pengendali drawer — disembunyikan di semua lebar. Aturan ini dulu
+         hanya hidup di dalam @media (max-width:900px), jadi di layar desktop
+         kotak centangnya benar-benar tampil menggantung di pojok kiri atas. */
+      #nav-toggle{ position:fixed; top:0; left:0; width:1px; height:1px; opacity:0; pointer-events:none; }
       @media (max-width: 900px){
         .sidebar{
           position:fixed;
-          inset:0 20% 0 0;
+          inset:var(--nav-h) 20% 0 0;
           z-index:40;
           transform:translateX(-100%);
           transition:transform 0.22s ease;
           box-shadow:var(--shadow);
-          height:100dvh;
+          height:calc(100dvh - var(--nav-h));
         }
         body:has(#nav-toggle:checked) .sidebar{ transform:translateX(0); }
         .nav-toggle{
@@ -156,7 +199,7 @@
           align-items:center;
           gap:8px;
           position:sticky;
-          top:0;
+          top:var(--nav-h);
           z-index:30;
           background:var(--bg-elevated);
           border-bottom:1px solid var(--border);
@@ -176,10 +219,9 @@
         .nav-toggle label span{
           width:18px; height:2px; background:var(--ink); display:block; border-radius:1px;
         }
-        #nav-toggle{ position:fixed; top:0; left:0; width:1px; height:1px; opacity:0; pointer-events:none; }
         .scrim{
           display:none;
-          position:fixed; inset:0; background:rgba(10,14,12,0.45); z-index:35;
+          position:fixed; inset:var(--nav-h) 0 0 0; background:rgba(10,14,12,0.45); z-index:35;
           cursor:pointer;
         }
         body:has(#nav-toggle:checked) .scrim{ display:block; }
@@ -243,7 +285,7 @@
         padding-top:40px;
         margin-top:8px;
         border-top:1px solid var(--border);
-        scroll-margin-top:24px;
+        scroll-margin-top:calc(var(--nav-h) + 24px);   /* nav sticky menutupi judul kalau 0 */
       }
       section.module:first-of-type{ border-top:none; }
       .module-eyebrow{
@@ -273,7 +315,7 @@
         margin:20px 0 6px;
         color:var(--ink);
       }
-      p{ margin:0 0 14px; }
+      :where(.page) p{ margin:0 0 14px; }   /* lihat catatan @layer di atas */
       .content section p, .content section li{ color:var(--ink); }
       ul, ol{ padding-left:1.35em; margin:0 0 16px; }
       li{ margin-bottom:6px; }
@@ -432,96 +474,25 @@
       }
       strong{ color:var(--ink); }
 
-      /* ---------- Header & footer situs (navigasi) ---------- */
-      .site-header{
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-        gap:16px;
-        padding:14px clamp(20px, 4vw, 64px);
-        background:var(--bg-elevated);
-        border-bottom:1px solid var(--border);
-      }
-      .site-header .brand,
-      .site-footer .brand{
-        display:inline-flex;
-        align-items:center;
-        gap:10px;
-        font-family:var(--font-display);
-        font-weight:700;
-        color:var(--accent-ink);
-        text-decoration:none;
-      }
-      .site-header .brand{ font-size:1.1rem; }
-      .site-header .brand img{ height:32px; width:auto; display:block; }
-      .site-header nav{
-        display:flex;
-        align-items:center;
-        gap:6px;
-        flex-wrap:wrap;
-        justify-content:flex-end;
-      }
-      .site-header nav a{
-        text-decoration:none;
-        color:var(--ink-soft);
-        font-size:0.9rem;
-        font-weight:500;
-        padding:7px 12px;
-        border-radius:7px;
-      }
-      .site-header nav a:hover{ background:var(--accent-soft); color:var(--accent-ink); }
-      .site-header nav a.cta{ background:var(--accent); color:#fff; }
-      .site-header nav a.cta:hover{ background:var(--accent-ink); color:#fff; }
+      /* ---------- Header & footer situs ----------
+         Markup DAN warnanya milik bersama dengan landing (partials/situs-*):
+         halaman ini tidak menyetel apa pun untuk keduanya, termasuk di mode gelap —
+         paletnya di app.css sudah membalik sendiri.
 
-      .site-footer{
-        border-top:1px solid var(--border);
-        background:var(--bg-elevated);
-        padding:28px clamp(20px, 4vw, 64px);
-        display:flex;
-        flex-direction:column;
-        gap:14px;
-        align-items:center;
-        text-align:center;
-      }
-      .site-footer .footer-top{
-        width:100%;
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-        gap:16px;
-        flex-wrap:wrap;
-      }
-      .site-footer .brand img{ height:28px; width:auto; display:block; }
-      .site-footer nav{ display:flex; gap:18px; flex-wrap:wrap; }
-      .site-footer nav a{ color:var(--ink-soft); text-decoration:none; font-size:0.9rem; }
-      .site-footer nav a:hover{ color:var(--accent-ink); }
-      .site-footer .note{ color:var(--ink-faint); font-size:0.82rem; margin:0; }
-      .site-footer .copyright{ color:var(--ink-faint); font-size:0.78rem; }
-
-      @media (max-width: 600px){
-        .site-header{ padding:12px 16px; }
-        .site-header .brand{ font-size:1rem; }
-        .site-header .brand img{ height:28px; }
-        .site-header nav a{ padding:6px 9px; font-size:0.85rem; }
-        .site-footer .footer-top{ flex-direction:column; text-align:center; }
-      }
+         ⚠️ Pemanggilan partialnya juga TIDAK boleh dibungkus div pembantu. Nav itu
+         sticky,
+         dan elemen sticky terkurung di blok induknya: pembungkus setinggi nav
+         membuatnya tidak punya ruang untuk menempel, lalu tergulir hilang — dan
+         sidebar di bawah ini ikut menggantung di ruang kosong setinggi --nav-h.
+         Itulah yang dulu terjadi dengan pembungkus .site-chrome. */
     </style>
+    @include('partials.tema')
     @include('partials.analytics-head')
 </head>
 <body>
 @include('partials.analytics-body')
 
-<header class="site-header">
-  <a class="brand" href="{{ url('/') }}">
-    <img src="{{ \App\Models\PlatformBrandingSetting::logoUrl() }}" alt="Walisantri.com">
-    Walisantri.com
-  </a>
-  <nav aria-label="Navigasi situs">
-    <a href="{{ url('/') }}">Beranda</a>
-    <a href="{{ route('demo') }}">Demo</a>
-    <a class="cta" href="{{ route('login') }}">Masuk</a>
-  </nav>
-</header>
+@include('partials.situs-nav')
 
 <label for="nav-toggle" class="scrim" aria-label="Tutup daftar isi"></label>
 <div class="nav-toggle">
@@ -1005,21 +976,7 @@
   </main>
 </div>
 
-<footer class="site-footer">
-  <div class="footer-top">
-    <a class="brand" href="{{ url('/') }}">
-      <img src="{{ \App\Models\PlatformBrandingSetting::logoUrl() }}" alt="Walisantri.com">
-      Walisantri.com
-    </a>
-    <nav aria-label="Navigasi situs">
-      <a href="{{ url('/') }}">Beranda</a>
-      <a href="{{ route('demo') }}">Demo</a>
-      <a href="{{ route('login') }}">Masuk</a>
-    </nav>
-  </div>
-  <p class="note">Panduan penggunaan Walisantri untuk Admin Pesantren &amp; Ustadz.</p>
-  <p class="copyright">© {{ date('Y') }} Walisantri.com · Hak Cipta Dilindungi</p>
-</footer>
+@include('partials.situs-footer')
 
 <script>
   document.querySelectorAll('.toc a').forEach(function (link) {
@@ -1027,6 +984,25 @@
       document.getElementById('nav-toggle').checked = false;
     });
   });
+
+  // --nav-h diukur, bukan ditebak: nav-nya milik partial bersama dengan landing,
+  // jadi tingginya bisa berubah kapan saja tanpa halaman ini tahu. Semua yang
+  // menempel di bawah nav (sidebar, bar daftar isi, scrim, lompatan anchor)
+  // bergantung pada angka ini.
+  (function () {
+    var nav = document.querySelector('nav');
+
+    if (! nav) {
+      return;
+    }
+
+    var ukur = function () {
+      document.documentElement.style.setProperty('--nav-h', nav.offsetHeight + 'px');
+    };
+
+    ukur();
+    window.addEventListener('resize', ukur);
+  })();
 </script>
 </body>
 </html>

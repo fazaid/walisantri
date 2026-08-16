@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\VerifikasiEmailController;
 use App\Http\Controllers\Auth\WaliLoginController;
 use App\Http\Controllers\DemoController;
 use App\Http\Controllers\LandingController;
+use App\Http\Controllers\PanduanController;
 use App\Http\Controllers\PublicProfileController;
 use App\Http\Controllers\SlugCheckController;
 use App\Http\Controllers\Wali\DashboardController;
@@ -71,7 +72,7 @@ Route::domain($baseDomain)->group(function () use ($sameDomain) {
     // identik membuat definisi kedua menimpa yang pertama (lihat catatan
     // $sameDomain untuk rute '/' di atas).
     if (! $sameDomain) {
-        Route::view('/panduan', 'panduan');
+        Route::get('/panduan', PanduanController::class);
     }
 });
 
@@ -123,7 +124,7 @@ Route::domain($appDomain)->group(function () use ($sameDomain) {
         ->name('verification.send');
 
     // --- Panduan penggunaan untuk Admin Pesantren & Ustadz — statis, tanpa login ---
-    Route::view('/panduan', 'panduan')->name('panduan');
+    Route::get('/panduan', PanduanController::class)->name('panduan');
 
     // --- Portal Wali Santri (§1.6) ---
     Route::middleware(['auth', 'magic.block', 'tenant.resolve', 'saas.lifecycle'])

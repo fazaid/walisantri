@@ -7,6 +7,7 @@
     <title>Demo Gratis — Walisantri.com</title>
     <link rel="icon" type="image/svg+xml" href="{{ \App\Models\PlatformBrandingSetting::faviconUrl() }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('partials.tema')
     @include('partials.analytics-head')
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans min-h-screen">
@@ -19,7 +20,10 @@
                 <img src="{{ \App\Models\PlatformBrandingSetting::logoUrl() }}" alt="Walisantri.com" class="h-8 w-auto">
                 Walisantri.com
             </a>
-            <a href="{{ route('landing') }}" class="text-sm text-gray-500 hover:text-teal-700">← Kembali ke Beranda</a>
+            <div class="flex items-center gap-2">
+                @include('partials.tema-tombol')
+                <a href="{{ route('landing') }}" class="text-sm text-gray-500 hover:text-teal-700">← Kembali ke Beranda</a>
+            </div>
         </div>
     </nav>
 

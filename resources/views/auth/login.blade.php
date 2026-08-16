@@ -15,10 +15,11 @@
     </title>
     <link rel="icon" type="image/svg+xml" href="{{ \App\Models\PlatformBrandingSetting::faviconUrl() }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('partials.tema')
     @include('partials.analytics-head')
 </head>
 <body class="min-h-screen flex items-center justify-center px-4
-    {{ $pesantren ? 'bg-blue-700' : 'bg-teal-700' }}">
+    {{ $pesantren ? 'bg-blue-700 dark:bg-blue-100' : 'bg-teal-700 dark:bg-teal-100' }}">
 @include('partials.analytics-body')
 
     <div class="w-full max-w-sm">
@@ -36,13 +37,13 @@
             @endif
 
             @if($pesantren)
-                <h1 class="text-white text-xl font-bold">{{ $pesantren->nama_pesantren }}</h1>
+                <h1 class="text-white dark:text-gray-900 text-xl font-bold">{{ $pesantren->nama_pesantren }}</h1>
                 <p class="text-blue-200 text-sm mt-1">Portal Wali Santri</p>
             @else
-                <h1 class="text-white text-2xl font-bold">
+                <h1 class="text-white dark:text-gray-900 text-2xl font-bold">
                     <a href="{{ route('landing') }}">Walisantri.com</a>
                 </h1>
-                <p class="text-teal-200 text-sm mt-1">Masuk ke akun Anda</p>
+                <p class="text-teal-200 dark:text-teal-500 text-sm mt-1">Masuk ke akun Anda</p>
             @endif
         </div>
 
@@ -102,7 +103,7 @@
         </div>
 
         <p class="text-center text-xs mt-6
-            {{ $pesantren ? 'text-blue-200' : 'text-teal-200' }}">
+            {{ $pesantren ? 'text-blue-200 dark:text-blue-700' : 'text-teal-200 dark:text-teal-500' }}">
             Admin & Ustadz masuk melalui tautan yang sama.<br>
             Wali santri? Gunakan Magic Link dari pesantren.
         </p>

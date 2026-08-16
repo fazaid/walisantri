@@ -26,13 +26,17 @@ class LandingController extends Controller
             };
         }
 
+        $tahunan = DurasiLangganan::DuabelasBulan;
+
         return view('landing', [
             'registrationOpen' => PlatformSetting::registrationOpen(),
             'demoOpen' => PlatformSetting::demoOpen(),
             'demoWaliUrl' => SandboxDemo::waliUrl(),
             'paketList' => $this->paketList(),
             'bonusEnam' => DurasiLangganan::EnamBulan->bonusBulan(),
-            'bonusTahunan' => DurasiLangganan::DuabelasBulan->bonusBulan(),
+            'bonusTahunan' => $tahunan->bonusBulan(),
+            'bulanBayarTahunan' => $tahunan->bulanBayar(),
+            'totalBulanTahunan' => $tahunan->totalBulan(),
         ]);
     }
 
@@ -43,14 +47,32 @@ class LandingController extends Controller
      */
     private function paketList(): array
     {
+        $tahunan = DurasiLangganan::DuabelasBulan;
+
         return collect(PaketLangganan::cases())
-            ->map(function (PaketLangganan $paket) {
+            ->map(function (PaketLangganan $paket) use ($tahunan) {
                 $hitung = $this->kalkulator->hitungUntukTarget($paket->value, $paket->maxSantri());
+                $perBulan = $hitung['total_biaya'];
+                $kuota = $hitung['kuota_maksimal'];
+                $totalTahunan = $perBulan * $tahunan->bulanBayar();
+
+                // Bonus tahunan dibayarkan sebagai bulan gratis, bukan potongan harga:
+                // wali membayar bulanBayar() bulan dan langganan aktif totalBulan().
+                $hemat = $perBulan * $tahunan->bonusBulan();
 
                 return [
                     'nama' => $paket->label(),
                     'harga' => $hitung['formatted'],
-                    'kuota' => $hitung['kuota_maksimal'],
+                    'hargaTahunan' => $this->rupiah($totalTahunan),
+                    'hargaTahunanNormal' => $this->rupiah($perBulan * $tahunan->totalBulan()),
+                    'hematTahunan' => $this->rupiah($hemat),
+                    'adaHematTahunan' => $hemat > 0,
+                    // Angka yang ditonjolkan di kartu. Ini tarif setara pada kuota
+                    // penuh, bukan cara penagihan: tagihannya tetap per paket, jadi
+                    // salinan di Blade wajib menyebut kuota yang dipakai membaginya.
+                    'perSantriBulanan' => $this->perSantri($perBulan, $kuota),
+                    'perSantriTahunan' => $this->perSantri($totalTahunan, $kuota),
+                    'kuota' => $kuota,
                     'populer' => $paket === PaketLangganan::Tumbuh,
                     'deskripsi' => $this->deskripsi($paket),
                     // Kuota paket Maju bisa dinaikkan lewat add-on, jadi CTA-nya
@@ -59,6 +81,21 @@ class LandingController extends Controller
                 ];
             })
             ->all();
+    }
+
+    private function rupiah(int $nominal): string
+    {
+        return 'Rp '.number_format($nominal, 0, ',', '.');
+    }
+
+    /**
+     * Kuota dibaca dari BillingSetting lewat BillingCalculatorService, jadi nilainya
+     * bisa saja tidak habis membagi harga — dibulatkan, dan salinan di Blade menyebut
+     * "setara" supaya angka ini tidak terbaca sebagai tarif yang benar-benar ditagih.
+     */
+    private function perSantri(int $nominal, int $kuota): string
+    {
+        return $kuota > 0 ? $this->rupiah((int) round($nominal / $kuota)) : '-';
     }
 
     private function deskripsi(PaketLangganan $paket): string

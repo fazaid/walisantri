@@ -7,48 +7,38 @@
     <title>Walisantri.com — Pesantren Transparan, Wali Santri Tenang</title>
     <link rel="icon" type="image/svg+xml" href="{{ \App\Models\PlatformBrandingSetting::faviconUrl() }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('partials.tema')
     @include('partials.analytics-head')
     <style>
         details summary::-webkit-details-marker { display: none; }
         details summary { list-style: none; }
         details[open] .faq-icon-plus { display: none; }
         details:not([open]) .faq-icon-minus { display: none; }
+
+        /* Pemilih siklus harga: radio tersembunyi + selector sibling, supaya
+           landing tetap bebas JavaScript seperti FAQ di atas. */
+        #siklus-bulanan:checked ~ * .harga-tahunan,
+        #siklus-tahunan:checked ~ * .harga-bulanan { display: none; }
+        /* Pakai variabel palet, bukan heksa mati: keduanya ikut membalik saat
+           mode gelap menyala (lihat resources/css/app.css). */
+        #siklus-bulanan:checked ~ .siklus-tab label[for="siklus-bulanan"],
+        #siklus-tahunan:checked ~ .siklus-tab label[for="siklus-tahunan"] {
+            background-color: var(--color-white);
+            color: var(--color-teal-700);
+            box-shadow: 0 1px 2px rgb(0 0 0 / 0.1);
+        }
+        /* Input-nya sr-only, jadi fokus keyboard harus terlihat lewat label. */
+        #siklus-bulanan:focus-visible ~ .siklus-tab label[for="siklus-bulanan"],
+        #siklus-tahunan:focus-visible ~ .siklus-tab label[for="siklus-tahunan"] {
+            outline: 2px solid var(--color-teal-600);
+            outline-offset: 2px;
+        }
     </style>
 </head>
 <body class="bg-white text-gray-800 font-sans">
 @include('partials.analytics-body')
 
-    {{-- Nav --}}
-    <nav class="bg-white border-b border-gray-100 sticky top-0 z-50">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2">
-            <span class="flex items-center gap-2 text-teal-700 font-bold text-base sm:text-xl tracking-tight shrink-0">
-                <img src="{{ \App\Models\PlatformBrandingSetting::logoUrl() }}" alt="Walisantri.com" class="h-8 sm:h-9 w-auto">
-                Walisantri.com
-            </span>
-            <div class="hidden md:flex items-center gap-6">
-                <a href="#fitur" class="text-sm text-gray-500 hover:text-teal-700 font-medium">Fitur</a>
-                <a href="#harga" class="text-sm text-gray-500 hover:text-teal-700 font-medium">Harga</a>
-                <a href="#cara-kerja" class="text-sm text-gray-500 hover:text-teal-700 font-medium">Cara Kerja</a>
-                <a href="#faq" class="text-sm text-gray-500 hover:text-teal-700 font-medium">FAQ</a>
-                @if($demoOpen)
-                    <a href="{{ route('demo') }}" class="text-sm text-gray-500 hover:text-teal-700 font-medium">Demo</a>
-                @endif
-                <a href="/panduan" class="text-sm text-gray-500 hover:text-teal-700 font-medium">Panduan</a>
-            </div>
-            <div class="flex items-center gap-2 shrink-0">
-                <a href="{{ route('login') }}"
-                   class="text-sm text-gray-600 hover:text-teal-700 font-medium px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap">
-                    Masuk
-                </a>
-                @if($registrationOpen)
-                    <a href="{{ route('register') }}" id="nav-daftar"
-                       class="text-sm bg-teal-700 text-white font-medium px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-teal-800 transition-colors whitespace-nowrap">
-                        Daftar
-                    </a>
-                @endif
-            </div>
-        </div>
-    </nav>
+    @include('partials.situs-nav')
 
     {{-- Hero --}}
     <section class="bg-gradient-to-b from-teal-50 to-white">
@@ -140,9 +130,9 @@
                     {{-- App Shell --}}
                     <div class="flex bg-gray-50">
                         {{-- Sidebar --}}
-                        <div class="w-36 bg-teal-800 text-white flex-shrink-0 hidden sm:flex flex-col">
-                            <div class="px-3 py-3 border-b border-teal-700">
-                                <div class="text-xs font-bold text-teal-300 uppercase tracking-wide">Walisantri</div>
+                        <div class="w-36 bg-teal-800 text-white dark:bg-teal-100 dark:text-gray-900 flex-shrink-0 hidden sm:flex flex-col">
+                            <div class="px-3 py-3 border-b border-teal-700 dark:border-teal-300">
+                                <div class="text-xs font-bold text-teal-300 dark:text-teal-500 uppercase tracking-wide">Walisantri</div>
                                 <div class="text-xs font-semibold mt-0.5">Dashboard Ustadz</div>
                             </div>
                             <nav class="px-1.5 py-2 space-y-0.5">
@@ -156,7 +146,7 @@
                                     ['🛡️', 'Kesantrian', false],
                                     ['📋', 'Rapor', false],
                                 ] as $menu)
-                                    <div class="flex items-center gap-1.5 px-2 py-1.5 rounded-lg {{ $menu[2] ? 'bg-teal-700 text-white' : 'text-teal-200' }} cursor-default">
+                                    <div class="flex items-center gap-1.5 px-2 py-1.5 rounded-lg {{ $menu[2] ? 'bg-teal-700 text-white dark:bg-teal-200 dark:text-gray-900' : 'text-teal-200 dark:text-gray-500' }} cursor-default">
                                         <span class="text-xs">{{ $menu[0] }}</span>
                                         <span class="text-xs">{{ $menu[1] }}</span>
                                     </div>
@@ -224,9 +214,9 @@
             <div class="flex flex-col items-center gap-3 order-1">
                 <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide text-center">📱 Portal Wali Santri</p>
                 {{-- Phone Frame --}}
-                <div class="relative bg-gray-800 rounded-[2.5rem] p-2.5 shadow-2xl border-4 border-gray-700 w-64">
+                <div class="relative bg-gray-800 dark:bg-gray-200 rounded-[2.5rem] p-2.5 shadow-2xl border-4 border-gray-700 dark:border-gray-300 w-64">
                     {{-- Notch --}}
-                    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-5 bg-gray-800 rounded-b-xl z-10"></div>
+                    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-5 bg-gray-800 dark:bg-gray-200 rounded-b-xl z-10"></div>
                     {{-- Screen --}}
                     <div class="bg-gray-100 rounded-[2rem] overflow-hidden">
                         {{-- Status bar --}}
@@ -335,13 +325,13 @@
     </section>
 
     {{-- Presensi & Kartu QR --}}
-    <section id="presensi" class="bg-gray-900 py-20">
+    <section id="presensi" class="bg-gray-900 dark:bg-gray-50 py-20">
         <div class="max-w-6xl mx-auto px-6">
             <div class="text-center mb-14">
-                <div class="inline-flex items-center gap-2 bg-teal-900/60 text-teal-300 text-xs font-semibold px-3 py-1.5 rounded-full mb-5 uppercase tracking-wide">
+                <div class="inline-flex items-center gap-2 bg-teal-900/60 dark:bg-teal-100/60 text-teal-300 dark:text-teal-500 text-xs font-semibold px-3 py-1.5 rounded-full mb-5 uppercase tracking-wide">
                     Modul Terbaru
                 </div>
-                <h2 class="text-3xl font-bold text-white mb-4">Absensi Santri, Selesai Sebelum Kelas Dimulai</h2>
+                <h2 class="text-3xl font-bold text-white dark:text-gray-900 mb-4">Absensi Santri, Selesai Sebelum Kelas Dimulai</h2>
                 <p class="text-gray-400 max-w-2xl mx-auto leading-relaxed">
                     Cukup pindai kartu santri — presensi tercatat, rekapnya jadi sendiri, dan wali bisa
                     melihat kehadiran anaknya tanpa perlu bertanya.
@@ -357,9 +347,9 @@
                     ['📨', 'Pengajuan Izin dari Wali', 'Wali mengajukan izin atau sakit dari HP beserta surat keterangannya. Pengurus tinggal menyetujui, dan presensi hari itu terisi otomatis.'],
                     ['📊', 'Rekap & Rapor Kehadiran', 'Persentase kehadiran per santri dan per kelas, bisa diekspor ke Excel, dan ikut tercetak di rapor PDF yang dibaca wali.'],
                 ] as $item)
-                    <div class="bg-gray-800/60 border border-gray-700 rounded-2xl p-6">
+                    <div class="bg-gray-800/60 dark:bg-gray-100/60 border border-gray-700 dark:border-gray-200 rounded-2xl p-6">
                         <div class="text-3xl mb-4">{{ $item[0] }}</div>
-                        <h3 class="font-bold text-white text-lg mb-2">{{ $item[1] }}</h3>
+                        <h3 class="font-bold text-white dark:text-gray-900 text-lg mb-2">{{ $item[1] }}</h3>
                         <p class="text-gray-400 text-sm leading-relaxed">{{ $item[2] }}</p>
                     </div>
                 @endforeach
@@ -605,6 +595,27 @@
             </p>
         </div>
 
+        {{-- Pemilih siklus. Radio-nya sengaja jadi saudara langsung <section> agar
+             CSS di <head> bisa menyembunyikan harga yang tidak dipilih tanpa JS. --}}
+        <input type="radio" name="siklus-harga" id="siklus-bulanan" class="sr-only" checked>
+        <input type="radio" name="siklus-harga" id="siklus-tahunan" class="sr-only">
+
+        <div class="siklus-tab flex justify-center mb-10">
+            <div class="inline-flex items-center gap-1 bg-gray-100 p-1 rounded-full">
+                <label for="siklus-bulanan"
+                       class="cursor-pointer rounded-full px-5 py-2 text-sm font-semibold text-gray-500 transition-colors">
+                    Bulanan
+                </label>
+                <label for="siklus-tahunan"
+                       class="cursor-pointer rounded-full px-5 py-2 text-sm font-semibold text-gray-500 transition-colors whitespace-nowrap">
+                    Tahunan
+                    @if($bonusTahunan > 0)
+                        <span class="ml-1 text-xs font-bold text-teal-600">{{ $bonusTahunan }} bulan gratis</span>
+                    @endif
+                </label>
+            </div>
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
             @foreach($paketList as $paket)
                 <div class="relative border rounded-2xl p-6 flex flex-col gap-4 h-full
@@ -621,9 +632,38 @@
                         <div class="text-gray-500 text-sm leading-relaxed">{{ $paket['deskripsi'] }}</div>
                     </div>
 
-                    <div>
-                        <span class="text-3xl font-bold text-gray-900">{{ $paket['harga'] }}</span>
-                        <span class="text-gray-500 text-sm">/bulan</span>
+                    {{-- Yang ditonjolkan tarif per santri; harga paket tetap ditulis di
+                         bawahnya karena itulah yang ditagih. min-h menahan tinggi kartu
+                         supaya tidak melompat saat siklus diganti. --}}
+                    <div class="min-h-[7.5rem]">
+                        <div class="harga-bulanan">
+                            <span class="text-3xl font-bold text-gray-900">{{ $paket['perSantriBulanan'] }}</span>
+                            <span class="text-gray-500 text-sm">/santri/bulan</span>
+                            <div class="text-sm text-gray-700 mt-1.5">
+                                <span class="font-semibold">{{ $paket['harga'] }}</span>/bulan per pesantren
+                            </div>
+                            <div class="text-xs text-gray-500 mt-0.5">
+                                Setara pada kuota {{ number_format($paket['kuota'], 0, ',', '.') }} santri; tagihannya per paket.
+                            </div>
+                        </div>
+                        <div class="harga-tahunan">
+                            <span class="text-3xl font-bold text-gray-900">{{ $paket['perSantriTahunan'] }}</span>
+                            <span class="text-gray-500 text-sm">/santri/tahun</span>
+                            <div class="text-sm text-gray-700 mt-1.5">
+                                <span class="font-semibold">{{ $paket['hargaTahunan'] }}</span>/tahun per pesantren
+                                @if($paket['adaHematTahunan'])
+                                    <span class="text-gray-400 line-through">{{ $paket['hargaTahunanNormal'] }}</span>
+                                @endif
+                            </div>
+                            @if($paket['adaHematTahunan'])
+                                <div class="text-xs font-semibold text-teal-700 mt-0.5">
+                                    Hemat {{ $paket['hematTahunan'] }} — bayar {{ $bulanBayarTahunan }} bulan, aktif {{ $totalBulanTahunan }} bulan.
+                                </div>
+                            @endif
+                            <div class="text-xs text-gray-500 mt-0.5">
+                                Setara pada kuota {{ number_format($paket['kuota'], 0, ',', '.') }} santri; tagihannya per paket.
+                            </div>
+                        </div>
                     </div>
 
                     <div class="text-sm text-gray-600 border-t border-gray-100 pt-4">
@@ -665,9 +705,9 @@
         </div>
 
         <p class="text-center text-sm text-gray-500 mt-8 leading-relaxed">
-            Berlangganan 6 bulan dapat <span class="font-semibold text-gray-700">{{ $bonusEnam }} bulan gratis</span> ·
-            berlangganan 12 bulan dapat <span class="font-semibold text-gray-700">{{ $bonusTahunan }} bulan gratis</span>.
-            Pembayaran lewat transfer bank, tanpa kontrak jangka panjang.
+            Tersedia juga durasi 6 bulan dengan <span class="font-semibold text-gray-700">{{ $bonusEnam }} bulan gratis</span>.
+            Pembayaran lewat transfer bank.
+            Harga dapat berubah sewaktu-waktu — yang tercantum di halaman ini adalah harga yang berlaku hari ini.
         </p>
     </section>
 
@@ -806,9 +846,9 @@
     </section>
 
     {{-- CTA Demo --}}
-    <section class="bg-gray-900 py-20">
+    <section class="bg-gray-900 dark:bg-gray-50 py-20">
         <div class="max-w-2xl mx-auto px-6 text-center">
-            <h2 class="text-3xl font-bold text-white mb-4">Ingin Lihat Langsung?</h2>
+            <h2 class="text-3xl font-bold text-white dark:text-gray-900 mb-4">Ingin Lihat Langsung?</h2>
             @if($registrationOpen)
                 <p class="text-gray-400 mb-8 leading-relaxed">
                     Daftarkan pesantren Anda hari ini — akun aktif seketika dengan fitur penuh,
@@ -841,30 +881,7 @@
     </section>
 
     {{-- Footer --}}
-    <footer class="border-t border-gray-100 py-10">
-        <div class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
-            <span class="flex items-center gap-2 text-teal-700 font-bold text-lg">
-                <img src="{{ \App\Models\PlatformBrandingSetting::logoUrl() }}" alt="Walisantri.com" class="h-7 w-auto">
-                Walisantri.com
-            </span>
-            <p class="text-sm text-gray-400 text-center">
-                Menghubungkan Pesantren & Wali Santri di Seluruh Indonesia
-            </p>
-            <div class="flex gap-6">
-                <a href="#harga" class="text-sm text-gray-500 hover:text-teal-700">Harga</a>
-                <a href="#faq" class="text-sm text-gray-500 hover:text-teal-700">FAQ</a>
-                @if($registrationOpen)
-                    <a href="{{ route('register') }}" class="text-sm text-gray-500 hover:text-teal-700">Daftar</a>
-                @elseif($demoOpen)
-                    <a href="{{ route('demo') }}" class="text-sm text-gray-500 hover:text-teal-700">Demo</a>
-                @endif
-                <a href="{{ route('login') }}" class="text-sm text-gray-500 hover:text-teal-700">Masuk</a>
-            </div>
-        </div>
-        <div class="text-center mt-6 text-xs text-gray-400">
-            © {{ date('Y') }} Walisantri.com · Hak Cipta Dilindungi
-        </div>
-    </footer>
+    @include('partials.situs-footer')
 
 </body>
 </html>
