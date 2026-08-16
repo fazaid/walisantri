@@ -9,19 +9,19 @@ Halaman ini menjawab pertanyaan yang paling sering kami terima dari pengurus pes
 ## Keamanan dan Kerahasiaan Data
 
 **Apakah data santri kami aman? Bisakah dilihat pesantren lain?**
-Tidak bisa. Setiap pesantren memiliki ruang data yang terpisah dan dikunci sistem di dua lapis — di aplikasi dan di database. Pengguna dari pesantren lain tidak memiliki jalan untuk melihatnya.
+Tidak bisa. Setiap baris data terikat ke pesantren pemiliknya, dan sistem menyaringnya di setiap permintaan — pengguna dari pesantren lain tidak punya jalan untuk melihatnya. Pemisahan ini ditegakkan di aplikasi dan diuji otomatis setiap kali kodenya berubah, jadi kebocoran akan menggagalkan rilis sebelum sampai ke server.
 
 **Siapa saja yang bisa melihat data anak kami?**
 Hanya pengurus pesantren itu sendiri dan wali santri yang bersangkutan. Wali hanya melihat data anaknya, tidak melihat santri lain.
 
 **Apakah tim Walisantri bisa membaca data kami?**
-Secara teknis, admin platform memiliki akses untuk keperluan pemeliharaan sistem dan bantuan teknis. Setiap akses tercatat di log aktivitas, dan kami tidak menggunakannya untuk keperluan lain.
+Secara teknis, admin platform memiliki akses untuk keperluan pemeliharaan sistem dan bantuan teknis. Setiap perubahan data tercatat di log aktivitas, dan kami tidak menggunakannya untuk keperluan lain.
 
 **Rekam medis dan catatan karakter santri adalah data sensitif. Bagaimana perlakuannya?**
 Data ini diperlakukan khusus: hanya bisa diakses pengurus pesantren dan wali terkait, tidak pernah melintasi batas antar pesantren, dan setiap perubahannya tercatat.
 
 **Kalau ada yang mengubah atau menghapus data, apakah ketahuan?**
-Ketahuan. Sistem mencatat siapa mengubah apa dan kapan. Catatan aktivitas ini tidak bisa dihapus.
+Ketahuan. Sistem mencatat siapa mengubah apa dan kapan. Catatan itu tidak bisa dihapus dari dalam aplikasi, dan disimpan dua tahun — lima tahun untuk catatan yang berkaitan dengan pembayaran.
 
 **Di mana data kami disimpan?**
 Di server yang kami kelola, dengan cadangan terenkripsi di penyimpanan awan.
@@ -53,7 +53,7 @@ Kami tidak ingin menjanjikan yang berlebihan. Yang bisa kami tunjukkan: modelnya
 ## Harga dan Pembayaran
 
 **Berapa harganya?**
-Mulai Rp 150.000 per bulan untuk kapasitas sampai 100 santri.
+Mulai Rp 159.000 per bulan untuk kapasitas sampai 100 santri.
 
 **Ada biaya pemasangan atau biaya awal?**
 Tidak ada.
@@ -71,10 +71,10 @@ Ada. Untuk 12 bulan: bayar 10 bulan, aktif 12 bulan. Untuk 6 bulan: bayar 5 bula
 Transfer manual ke rekening yang tertera, lalu unggah bukti transfer melalui panel. Tidak perlu kartu kredit.
 
 **Bisakah mencoba dulu sebelum membayar?**
-Bisa. Tersedia masa coba 14 hari gratis dengan fitur penuh, kapasitas sampai 100 santri.
+Pendaftaran mandiri dan akunnya aktif seketika dengan fitur penuh, tanpa kartu kredit — jadi bisa langsung dicoba dengan data pesantren sendiri. Untuk ketentuan masa awal dan pembayarannya, hubungi tim kami.
 
 **Kalau di tengah jalan kami merasa tidak cocok?**
-Bisa berhenti kapan saja. Tidak ada ikatan kontrak jangka panjang untuk paket bulanan.
+Langganan dibayar di muka untuk durasi yang dipilih dan tidak diperpanjang otomatis. Bila tidak diperpanjang, akun masuk masa tenggang tujuh hari — akses pengurus dibatasi dan wali hanya bisa melihat — lalu dinonaktifkan. Datanya tidak ikut hilang; lihat bagian Kepemilikan dan Keberlangsungan.
 
 ---
 
@@ -89,8 +89,8 @@ Tidak. Cukup dibuka lewat browser di HP atau komputer.
 **Apakah wali santri harus punya HP canggih?**
 Cukup HP yang bisa membuka WhatsApp dan browser. Wali menerima tautan khusus dari pengurus dan bisa langsung masuk tanpa perlu mengingat kata sandi.
 
-**Kalau wali santri lupa kata sandi?**
-Bisa diatur ulang melalui kode yang dikirim ke WhatsApp.
+**Kalau wali santri kehilangan tautan masuknya?**
+Wali tidak memakai kata sandi sama sekali — mereka masuk lewat tautan khusus dari pengurus. Bila tautannya hilang atau perlu diganti, pengurus tinggal mengirim ulang atau membuat tautan baru dari panel.
 
 **Berapa lama sampai sistem bisa dipakai?**
 Bisa dipakai hari itu juga. Yang membutuhkan waktu adalah memasukkan data santri, dan itu bisa dipercepat dengan impor dari Excel.

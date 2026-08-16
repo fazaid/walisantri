@@ -4,7 +4,25 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Agustus 2026 — v4.46
+**Last Updated:** Agustus 2026 — v4.47
+
+**Changelog v4.47:** **Tiga pekerjaan rumah dari audit pasca-v4.46: dokumen yang bertentangan dengan produk, pengukuran `real_ip` di production, dan mode gelap portal wali.**
+
+**`docs/faq-walisantri.md` diaudit utuh — enam jawaban salah, bukan dua.** Dokumen ini tidak dirender aplikasi, tapi dipakai menjawab calon pelanggan, dan tidak pernah dibandingkan dengan landing sejak v4.41. Yang diperbaiki: (1) klaim data "dikunci sistem di dua lapis — di aplikasi **dan di database**" padahal RLS tercatat di-skip dan middleware-nya masih menulis *"aktifkan saat RLS ready"* — ini klaim sekelas yang dicabut dari landing di v4.41; (2) "Setiap **akses** tercatat di log aktivitas" padahal yang tercatat perubahan data, bukan pembacaan halaman; (3) "Catatan aktivitas ini **tidak bisa dihapus**" padahal `PurgeAuditLogs` memangkasnya (2 tahun; 5 tahun untuk peristiwa billing); (4) janji **trial 14 hari** yang sudah dicabut dari pemasaran di v4.45; (5) janji **"tanpa ikatan kontrak jangka panjang"** yang dicabut di v4.46; (6) "wali lupa kata sandi → kode lewat WhatsApp" padahal wali **tidak punya kata sandi sama sekali** (`ResetPasswordController` menolak mereka dengan penjelasan) dan OTP WhatsApp tidak pernah dibangun — integrasi WhatsApp-nya sendiri sengaja dimatikan (§12.1). Salinan penggantinya dicocokkan ke halaman production yang sedang tayang, bukan ke ingatan.
+
+**Angka versi PRD diseragamkan lagi.** Header v4.46 tapi §22 menulis "PRD ini v4.40" dan footer v4.40 — pola yang persis sama pernah terjadi di v4.21 (header v4.21 / §22 v4.20 / footer v4.17). Ketiganya kini satu angka, dan sebaran tes di §17 ikut diperbarui (658 → 694).
+
+**Mode gelap masuk ke portal wali, memakai pilihan yang sama dengan halaman publik.** `partials/tema` dipasang di layout wali sehingga pilihan pembaca **terbawa** dari landing ke portal, bukan dua setelan terpisah; tombolnya di header, dan tetap tampil di mode preview (admin/ustadz melihat tampilan wali). Palet `app.css` membalik sendiri seluruh 774 pemakaian kelas warna di 20 view, jadi yang dikerjakan hanya mengunci permukaan yang **tidak boleh** ikut membalik — aturan yang sama seperti v4.46: header teal, kartu identitas santri, kartu saldo uang saku, dan spanduk mode preview (indigo). Tombol dan lencana kecil sengaja dibiarkan membalik. PDF wali tidak disentuh (dompdf tidak pernah punya kelas `dark`). **Panel admin Filament juga tidak disentuh** — ia sudah punya mode gelap bawaan dengan penyimpan preferensi sendiri; menyatukan kuncinya dengan `tema` masih terbuka. `partials/tema-tombol` kini menerima `$kelasWarna` yang **mengganti** warna bawaan: menumpuk warna lewat `$kelasTambahan` tidak bisa diandalkan karena dua utilitas di layer yang sama dimenangkan urutan di berkas CSS, bukan urutan penulisan di atribut.
+
+**Landing production menampilkan CTA berbeda dari lokal — datanya, bukan kodenya.** Dilaporkan sebagai "tombolnya beda": lokal *"Lihat Portal Wali"*, production *"Lihat Fitur Lengkap"*. Penyebabnya `SandboxDemo::waliUrl()` mengembalikan `NULL` di production karena **tenant ber-slug `demo` belum pernah dibuat di sana** — dan itu bukan kegagalan, melainkan jadwal: fitur sandbox baru rilis hari yang sama, sementara datanya hanya disemai job mingguan `sandbox:segarkan` (Senin 04.00 WIB). Scheduler-nya sendiri sehat (`schedule:run` ada di crontab user **`fazaweb`**, bukan root — sempat terbaca "tidak ada" karena hanya crontab root yang diperiksa).
+
+**Konsekuensinya diperbaiki di langkah deploy, bukan ditunggu.** `deploy.yml` kini memanggil `php artisan sandbox:segarkan` setelah `php artisan up` — server yang belum punya tenant demo tidak lagi menunggu sampai seminggu dengan tombol yang diam-diam jatuh ke tautan cadangan. Dijalankan setelah situs dibuka kembali supaya penyemaian tidak memperpanjang masa pemeliharaan, dan digerbangi `|| echo WARN` supaya kegagalan penyemaian demo tidak pernah menggagalkan deploy.
+
+**Selain itu, kedua environment terverifikasi setara.** Diff HTML ternormalisasi untuk landing, `/panduan`, dan `/register` hanya menyisakan aset Vite, skrip analitik (memang khusus production), dan token CSRF. `platform_settings`, `billing_settings`, dan branding identik.
+
+**Harga di dokumen diselaraskan ke daftar yang berlaku (159/349/599/999, naik 16 Agustus 2026).** Yang diperbarui hanya pernyataan keadaan **sekarang** — Product Vision, tabel §5.1, formula §5.3 berikut contohnya, ringkasan §22, simulasi §21, FAQ, dan materi promosi. **Changelog historis sengaja tidak disentuh**: v4.6 tetap mencatat penurunan 450k → 350k, dan contoh angka di changelog v4.46 tetap memakai 150k karena itulah harga yang berlaku saat ia ditulis. Tabel milestone §21 diberi peringatan, bukan dihitung ulang — memilih bauran dan target adalah keputusan pemilik produk, bukan turunan aritmetika.
+
+**Temuan `real_ip` di production: paparan nyata, belum diperbaiki.** Rinciannya di **§6.1** — ringkasnya, seluruh rate limiter hari ini mengunci per edge Cloudflare, bukan per pengunjung. Perbaikannya menunggu keputusan karena origin masih terbuka langsung, sehingga pilihan yang salah justru membuat pembatasnya bisa dipalsukan.
 
 **Changelog v4.46:** **Seksi #harga landing kini menawarkan dua siklus — bulanan dan tahunan — lengkap dengan bonus yang didapat.** Ini membalik keputusan v4.41 yang menulis seksi itu "tanpa toggle"; alasan penolakannya waktu itu teknis, bukan produk (landing nol JavaScript), dan alasan itu ternyata tidak mengikat. Toggle-nya dibangun **tetap tanpa JavaScript**: dua `<input type="radio">` ber-`sr-only` menjadi saudara langsung `<section id="harga">`, lalu CSS di `<head>` (`#siklus-tahunan:checked ~ * .harga-bulanan { display: none }`) menyembunyikan harga yang tidak dipilih — pola sibling selector yang sama dengan FAQ `<details>` di halaman yang sama. Karena input-nya `sr-only`, fokus keyboard dipinjamkan ke label lewat `:focus-visible`.
 
@@ -414,7 +432,7 @@ Cakupan tes ditambah: `tests/Feature/SuperAdminPanelTest.php` (21 tes) dan kasus
 | Pilar | Maksud | Implikasi Produk |
 |---|---|---|
 | Terlengkap | Satu platform: akademik, pengasuhan, kesehatan, inventaris, komunikasi | Tidak perlu sistem lain di samping Walisantri |
-| Terjangkau | Mulai Rp 150.000/bulan | Paket Rintisan fungsional penuh, bukan fitur terpotong |
+| Terjangkau | Mulai Rp 159.000/bulan | Paket Rintisan fungsional penuh, bukan fitur terpotong |
 | Dipercaya | Data aman, terisolasi per lembaga, akuntabel | Isolasi tenant & audit log = fondasi, bukan fitur tambahan |
 
 **Filter keputusan fitur** (jika >1 jawaban "tidak" → antrian rendah/ditolak): (1) Meningkatkan kredibilitas/akuntabilitas pesantren? (2) Bisa dirasakan paket Rintisan? (3) Mendekatkan ke posisi standar digitalisasi pesantren?
@@ -1257,7 +1275,7 @@ Matriks fitur — paket di kolom, fitur/kuota/modul di baris (✓ = termasuk, �
 
 | Fitur | Rintisan | Tumbuh | Berkembang | Maju |
 |---|---|---|---|---|
-| **Harga / bulan** | Rp 150.000 | Rp 299.000 | Rp 350.000 | Rp 750.000 |
+| **Harga / bulan** | Rp 159.000 | Rp 349.000 | Rp 599.000 | Rp 999.000 |
 | **Trial gratis** | ✓ 14 hari | — | — | — |
 | **Posisi** | Starter | **Paling Populer** | Menengah | Enterprise |
 | **Kuota santri** | ≤ 100 | ≤ 250 | ≤ 500 | ≤ 1.000 (+ add-on) |
@@ -1292,7 +1310,7 @@ Menegakkan matriks paket adalah **keputusan bisnis yang belum diambil**, bukan b
 
 **Catatan (v4.9, koreksi):** modul Prestasi, SPP, Ekstrakurikuler, dan Uang Saku & Tarif SPP memang tidak pernah punya Gate — sejalan filosofi Product Vision "paket Rintisan fungsional penuh, bukan fitur terpotong". Export Rekam Medis sebelumnya tertulis dibatasi "Berkembang+" — dikoreksi karena `ExportController::rekamMedis()` hanya memvalidasi role.
 
-> *Tidak ada paket Gratis — konversi didorong via trial Rintisan 14 hari gratis (fitur penuh, 100 santri). Paket **Tumbuh** (250 santri, Rp 299.000) adalah paket paling populer — sweet spot antara harga terjangkau dan kapasitas nyata untuk mayoritas pesantren. Setelah trial berakhir: grace period 7 hari → suspended.*
+> *Tidak ada paket Gratis — konversi didorong via trial Rintisan 14 hari gratis (fitur penuh, 100 santri). Paket **Tumbuh** (250 santri, Rp 349.000) adalah paket paling populer — sweet spot antara harga terjangkau dan kapasitas nyata untuk mayoritas pesantren. Setelah trial berakhir: grace period 7 hari → suspended.*
 
 ## 5.2 Kebijakan Harga Tahunan
 
@@ -1311,8 +1329,8 @@ Kebijakan yang sama dipajang di seksi #harga landing sebagai dua siklus (bulanan
 
 ## 5.3 Formula Kuota Custom Maju (`BillingCalculatorService`)
 
-Base paket Maju: 1.000 santri = Rp 750.000/bulan (X=0). Add-on per blok 100 santri di atas 1.000: `X = CEIL((N - 1000) / 100)` · `Total = Rp 750.000 + (X × Rp 100.000)` · `Kuota = 1000 + (X × 100)`.
-Contoh: 1.200 santri → X=2 → kuota 1.200 → Rp 950.000/bulan. Contoh X=0: 1.000 santri → Rp 750.000/bulan, kuota 1.000.
+Base paket Maju: 1.000 santri = Rp 999.000/bulan (X=0). Add-on per blok 100 santri di atas 1.000: `X = CEIL((N - 1000) / 100)` · `Total = Rp 999.000 + (X × Rp 100.000)` · `Kuota = 1000 + (X × 100)`.
+Contoh: 1.200 santri → X=2 → kuota 1.200 → Rp 1.199.000/bulan. Contoh X=0: 1.000 santri → Rp 999.000/bulan, kuota 1.000.
 
 ## 5.4 Penugasan Ustadz
 
@@ -1403,6 +1421,8 @@ Satu ustadz hanya dapat membimbing **maks 20 santri aktif** (`status_aktif = tru
 ## 6.1 Stack Server
 
 VPS Debian 12 (~1GB RAM) · Nginx wildcard vhost `*.walisantri.com` · PHP 8.4-FPM · PostgreSQL 17 · Redis (≤512MB, Supervisor queue worker) · Let's Encrypt wildcard (Certbot + Cloudflare DNS-01) · Cloudflare Free (WAF/DDoS/wildcard A record) · Cloudflare R2 (zero egress) · **Brevo** (SMTP relay `smtp-relay.brevo.com:587`, paket gratis 300 email/hari, §12.2) · UptimeRobot Free.
+
+⚠️ **`$request->ip()` di production hari ini berisi IP edge Cloudflare, bukan pengunjung (terukur 16 Agustus 2026).** Nginx tidak memuat konfigurasi `real_ip` apa pun (`nginx -T | grep real_ip` → nol baris) dan aplikasi tidak menyetel `trustProxies` sama sekali (`bootstrap/app.php`), sementara DNS memang diproksikan Cloudflare (`walisantri.com` → 172.67.151.3 / 104.21.90.16) dan access log mencatat alamat seperti `162.158.108.109`. Dampaknya di §9: seluruh rate limiter (`register` 5/jam, `check-slug` 30/menit, `magic-link` 30/menit, `demo` 5/jam) mengunci **per edge Cloudflare**, bukan per pengunjung — kuotanya dipakai bersama semua orang yang lewat edge yang sama — dan `ip_address` di audit log tidak menunjuk siapa pun. Belum pernah memicu 429 (nol di access log, trafik masih kecil), jadi ini paparan, bukan insiden. **Origin juga terbuka langsung** (`ufw`: 80/443 dari Anywhere, dan access log memuat IP pemindai non-Cloudflare), sehingga perbaikan yang naif — `trustProxies(at: '*')` — justru membuat header `X-Forwarded-For` bisa dipalsukan dengan menembak IP origin. Perbaikan yang benar: `set_real_ip_from` rentang Cloudflare + `real_ip_header CF-Connecting-IP` di Nginx, sebaiknya berbarengan dengan mengunci 80/443 hanya ke rentang Cloudflare. **Belum dikerjakan — menunggu keputusan pemilik produk.**
 
 **Model deploy: host-langsung (bukan kontainer).** Nginx/PHP-FPM/PostgreSQL/Redis berjalan langsung di host — dipilih demi efisiensi resource di VPS ~1GB (Coolify & Docker ditolak karena overhead idle). Environment dijaga reproducible lewat PHP 8.4 di server (Herd lokal pin `^8.3` sesuai `composer.json`, kompatibel). *Rencana `setup-server.sh` idempotent yang di-version-control belum dibuat* — `scripts/` saat ini hanya berisi `backup.sh` dan `restore.sh`, jadi provisioning server masih manual (§22). Pemicu pindah ke Docker Compose dicatat di §22.
 
@@ -1908,7 +1928,7 @@ Sisanya: `PresensiIzinTest`, `PresensiHariLiburTest`, `PresensiRekapPageTest`, `
 
 **Konfigurasi:** unit test pakai PostgreSQL ephemeral (mis. service container `postgres` di GitHub Actions) atau SQLite in-memory untuk test yang tidak bergantung fitur PostgreSQL; `CACHE_DRIVER=array`, `QUEUE_CONNECTION=sync`. Test isolasi tenant & RLS **wajib** pakai PostgreSQL (bukan SQLite) agar policy ikut teruji.
 
-**Sebaran nyata (v4.40):** 658 tes / 2.574 asersi (terhadap PostgreSQL; di SQLite 10 tes isolasi tenant di-skip).
+**Sebaran nyata (v4.47):** 694 tes / 2.710 asersi (terhadap PostgreSQL; di SQLite 13 tes isolasi tenant di-skip).
 
 ```
 tests/Feature/                                52 berkas  ← tulang punggung: alur panel Filament,
@@ -1996,7 +2016,7 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 
 **Bagi hasil 50:50:** Faza (Developer — full-stack, server, keamanan, maintenance) · Mitra Bisnis (Marketing — penetrasi pasar, presentasi, support, feedback lapangan).
 
-**Simulasi (ilustratif, 11 klien berbayar):** 3 Rintisan (3 × 150rb = 450rb) + 4 Tumbuh (4 × 299rb = 1.196rb) + 2 Berkembang (2 × 350rb = 700rb) + 2 Maju (2 × 750rb = 1.500rb) = **Gross Rp 3.846rb** − operasional 840rb = **Net Rp 3.006rb** → masing-masing Rp 1.503rb. *(Tidak ada tier Gratis — konversi digerakkan via trial 14 hari. Paket Tumbuh diasumsikan jadi mayoritas karena posisinya sebagai paket paling populer.)*
+**Simulasi (ilustratif, 11 klien berbayar):** 3 Rintisan (3 × 159rb = 477rb) + 4 Tumbuh (4 × 349rb = 1.396rb) + 2 Berkembang (2 × 599rb = 1.198rb) + 2 Maju (2 × 999rb = 1.998rb) = **Gross Rp 5.069rb** − operasional 840rb = **Net Rp 4.229rb** → masing-masing Rp 2.115rb. *(Tidak ada tier Gratis — konversi digerakkan via trial 14 hari. Paket Tumbuh diasumsikan jadi mayoritas karena posisinya sebagai paket paling populer.)*
 
 **Target milestone klien (anchor perencanaan):**
 
@@ -2006,13 +2026,15 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 | Bagi hasil layak (≥ UMR/orang) | ~35 klien | Rp 300rb/klien rata-rata | ~Rp 2,4jt/orang |
 | Target 12 bulan pertama | **20 klien berbayar** | — | Anchor marketing mitra |
 
+⚠️ **Asumsi "Rp 300rb/klien rata-rata" di tabel ini mendahului kenaikan harga 16 Agustus 2026** (159/349/599/999 — lihat §5.1). Dengan bauran yang sama seperti simulasi di atas, rata-ratanya kini ~Rp 461rb/klien, sehingga kedua ambang milestone bergeser turun cukup jauh. Angkanya sengaja **tidak** dihitung ulang di sini: memilih bauran dan target adalah keputusan pemilik produk, bukan turunan aritmetika.
+
 > *Target 20 klien berbayar di 12 bulan pertama adalah anchor perencanaan — bukan jaminan, tapi angka konkret untuk mengukur apakah strategi marketing berjalan. Revisi bersama mitra bisnis setiap kuartal.*
 
 ---
 
 # 22. Catatan Implementasi Aktual
 
-**PRD ini v4.40.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 750k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 299k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
+**PRD ini v4.47.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 999k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 349k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
 
 **Bug & fix:** `HasUuids` isi `id` jika tak di-override → `uniqueIds(): ['uuid']` · `$navigationGroup` `?string` error → `string|UnitEnum|null` · index name >63 char (batas PostgreSQL) → nama eksplisit pendek · ingat PostgreSQL tak punya unsigned int (kolom unsigned → signed bigint) · (v4.7) `tahun_ajaran` di form Nilai Akademik/Rapor Tahfidz semula `TextInput` bebas → mismatch format antar input & filter rapor bikin data tidak muncul → diganti `Select` dropdown seragam (service `TahunAjaranOptions`) · (v4.7) Filament cluster default merender sub-navigation tab di bawah header & dropdown khusus mobile → di-override via render hook + CSS agar tab tampil di atas breadcrumbs, konsisten desktop/mobile (detail di §7).
 
@@ -2083,4 +2105,4 @@ Daftar tiga cacat yang dicatat v4.20 sudah habis dikerjakan, dan dua lagi ditemu
 
 ---
 
-*Confidential — Internal Document | Walisantri.com v4.40 | Agustus 2026*
+*Confidential — Internal Document | Walisantri.com v4.47 | Agustus 2026*
