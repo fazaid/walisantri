@@ -61,7 +61,7 @@ Layout: 3 kolom/kartu sejajar, ikon di atas tiap kartu, teks singkat di bawahnya
 Headline: "Standar Digitalisasi Pesantren Indonesia"
 3 pilar berdampingan dengan ikon berbeda:
 - "Terlengkap" — satu platform untuk akademik, pengasuhan, kesehatan, keuangan, komunikasi
-- "Terjangkau" — mulai dari Rp150.000/bulan
+- "Terjangkau" — mulai dari Rp159.000/bulan
 - "Dipercaya" — isolasi data per pesantren & audit log keamanan
 Layout: 3 pilar simetris dengan garis emas tipis pemisah antar kolom.
 ```
@@ -160,10 +160,10 @@ Teks singkat di bawah tiap peran menjelaskan akses masing-masing.
 [Style Guide] + Slide "Paket Harga".
 Headline: "Pilih Paket Sesuai Kebutuhan Pesantren Anda"
 4 kartu harga sejajar:
-- "Rintisan — Rp150.000/bulan"
-- "Tumbuh — Rp299.000/bulan" (beri badge emas "Paling Populer")
-- "Berkembang — Rp350.000/bulan"
-- "Maju — Rp750.000/bulan"
+- "Rintisan — Rp159.000/bulan"
+- "Tumbuh — Rp349.000/bulan" (beri badge emas "Paling Populer")
+- "Berkembang — Rp599.000/bulan"
+- "Maju — Rp999.000/bulan"
 Tambahkan teks kecil di bawah: "Coba gratis 14 hari, tanpa kartu kredit".
 Layout: 4 kartu vertikal sejajar, kartu "Tumbuh" sedikit lebih menonjol/tinggi.
 ```

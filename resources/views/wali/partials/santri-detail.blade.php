@@ -2,14 +2,16 @@
 <div class="space-y-5">
 
     {{-- Info Card Santri --}}
-    <div class="bg-teal-700 text-white rounded-2xl p-4 shadow">
+    {{-- Kartu identitas: permukaan besar berwarna merek, bukan tombol. Dikunci
+         tetap teal gelap di mode gelap (aturan yang sama dengan header). --}}
+    <div class="bg-teal-700 text-white dark:bg-teal-100 dark:text-gray-900 rounded-2xl p-4 shadow">
         <div class="flex items-center gap-4">
             @if($santri->foto_profil)
             <img src="{{ Storage::disk('public')->url($santri->foto_profil) }}"
                  alt="{{ $santri->nama_lengkap }}"
                  class="w-14 h-14 rounded-full object-cover flex-shrink-0 border-2 border-teal-400">
             @else
-            <div class="w-14 h-14 rounded-full bg-teal-500 flex items-center justify-center flex-shrink-0">
+            <div class="w-14 h-14 rounded-full bg-teal-500 dark:bg-teal-300 flex items-center justify-center flex-shrink-0">
                 <span class="text-2xl font-bold">
                     {{ strtoupper(substr($santri->nama_lengkap, 0, 1)) }}
                 </span>
@@ -19,15 +21,15 @@
                 <p class="font-bold text-lg leading-tight">
                     {{ $santri->nama_lengkap }}
                     @if($santri->nama_panggilan)
-                        <span class="font-normal text-teal-200">({{ $santri->nama_panggilan }})</span>
+                        <span class="font-normal text-teal-200 dark:text-teal-500">({{ $santri->nama_panggilan }})</span>
                     @endif
                 </p>
-                <p class="text-teal-200 text-sm">NIS: {{ $santri->nis }}</p>
+                <p class="text-teal-200 dark:text-teal-500 text-sm">NIS: {{ $santri->nis }}</p>
                 @if($santri->kelas)
-                <p class="text-teal-200 text-sm">Kelas: {{ $santri->kelas->nama_kelas }}</p>
+                <p class="text-teal-200 dark:text-teal-500 text-sm">Kelas: {{ $santri->kelas->nama_kelas }}</p>
                 @endif
                 @if($santri->kamar)
-                <p class="text-teal-200 text-sm">Kamar: {{ $santri->kamar->nama_kamar }}</p>
+                <p class="text-teal-200 dark:text-teal-500 text-sm">Kamar: {{ $santri->kamar->nama_kamar }}</p>
                 @endif
             </div>
         </div>

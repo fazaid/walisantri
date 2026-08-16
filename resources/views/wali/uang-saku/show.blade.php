@@ -7,11 +7,11 @@
 @section('content')
 
     {{-- Kartu saldo --}}
-    <div class="bg-teal-700 text-white rounded-2xl px-5 py-5 mb-6">
-        <p class="text-teal-200 text-xs mb-1">Saldo Saat Ini</p>
+    <div class="bg-teal-700 text-white dark:bg-teal-100 dark:text-gray-900 rounded-2xl px-5 py-5 mb-6">
+        <p class="text-teal-200 dark:text-teal-500 text-xs mb-1">Saldo Saat Ini</p>
         <p class="text-3xl font-bold">Rp {{ number_format($saldo, 0, ',', '.') }}</p>
         @if($santri->kelas)
-            <p class="text-teal-200 text-xs mt-2">{{ $santri->kelas->nama_kelas }}</p>
+            <p class="text-teal-200 dark:text-teal-500 text-xs mt-2">{{ $santri->kelas->nama_kelas }}</p>
         @endif
     </div>
 

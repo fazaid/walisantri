@@ -17,6 +17,7 @@
     <title>@yield('title', 'Portal Wali Santri') — {{ config('app.name') }}</title>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('partials.tema')
     @include('partials.analytics-head')
     @stack('head')
 </head>
@@ -33,17 +34,17 @@
 
     {{-- Preview mode banner (admin/ustadz melihat tampilan wali) --}}
     @if($previewMode ?? false)
-    <div class="bg-indigo-600 text-white text-center text-sm py-2 px-4">
+    <div class="bg-indigo-600 text-white dark:text-gray-900 text-center text-sm py-2 px-4">
         👁 Mode Preview — tampilan ini seperti yang dilihat wali santri
     </div>
     @endif
 
     {{-- Header --}}
-    <header class="bg-teal-700 text-white sticky top-0 z-10 shadow-md">
+    <header class="bg-teal-700 text-white dark:bg-teal-100 dark:text-gray-900 sticky top-0 z-10 shadow-md">
         <div class="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
             <div class="flex items-center gap-3">
                 @hasSection('back_url')
-                <a href="@yield('back_url')" class="text-white/80 hover:text-white">
+                <a href="@yield('back_url')" class="text-white/80 hover:text-white dark:text-gray-900/80 dark:hover:text-gray-900">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                     </svg>
@@ -51,15 +52,21 @@
                 @endif
                 <div>
                     <h1 class="text-base font-semibold leading-tight">@yield('title', 'Portal Wali Santri')</h1>
-                    <p class="text-xs text-teal-200">@yield('subtitle', config('app.name'))</p>
+                    <p class="text-xs text-teal-200 dark:text-teal-500">@yield('subtitle', config('app.name'))</p>
                 </div>
             </div>
-            @unless($previewMode ?? false)
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit" class="text-xs text-teal-200 hover:text-white">Keluar</button>
-            </form>
-            @endunless
+            <div class="flex items-center gap-2 shrink-0">
+                @include('partials.tema-tombol', [
+                    'kelasWarna' => 'text-white/80 hover:text-white hover:bg-white/10 dark:text-gray-900/80 dark:hover:text-gray-900 dark:hover:bg-gray-900/10',
+                ])
+
+                @unless($previewMode ?? false)
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="text-xs text-teal-200 dark:text-teal-500 hover:text-white dark:hover:text-gray-900">Keluar</button>
+                </form>
+                @endunless
+            </div>
         </div>
     </header>
 
