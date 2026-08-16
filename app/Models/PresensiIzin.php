@@ -36,8 +36,13 @@ class PresensiIzin extends Model
     protected function casts(): array
     {
         return [
-            'tanggal_mulai' => 'date',
-            'tanggal_selesai' => 'date',
+            // Format ditulis eksplisit: cast 'date' polos menyerialkan nilainya
+            // sebagai 'Y-m-d H:i:s'. Postgres memotong jam itu karena kolomnya DATE,
+            // SQLite (dipakai phpunit.xml lokal) menyimpannya apa adanya — sehingga
+            // pencocokan tanggal meleset dan modul ini merah secara lokal padahal
+            // hijau di CI. Lihat komentar di phpunit.pgsql.xml.
+            'tanggal_mulai' => 'date:Y-m-d',
+            'tanggal_selesai' => 'date:Y-m-d',
             'jenis' => JenisIzin::class,
             'status' => StatusPengajuanIzin::class,
             'diproses_at' => 'datetime',
