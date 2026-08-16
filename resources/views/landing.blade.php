@@ -77,7 +77,7 @@
                 @if($registrationOpen)
                     <a href="{{ route('register') }}"
                        class="inline-block bg-teal-700 text-white font-semibold px-8 py-3.5 rounded-xl text-base hover:bg-teal-800 transition-colors shadow-sm">
-                        Coba Gratis {{ $trialDays }} Hari →
+                        Daftar Sekarang →
                     </a>
                 @elseif($demoOpen)
                     <a href="{{ route('demo') }}"
@@ -652,7 +652,7 @@
                         <a href="{{ route('register') }}"
                            class="mt-auto block text-center font-semibold px-4 py-2.5 rounded-xl text-sm transition-colors
                                {{ $paket['populer'] ? 'bg-teal-700 text-white hover:bg-teal-800' : 'border border-teal-200 text-teal-700 hover:bg-teal-50' }}">
-                            Mulai Trial
+                            Daftar Sekarang
                         </a>
                     @elseif($demoOpen)
                         <a href="{{ route('demo') }}"
@@ -817,7 +817,7 @@
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
                     <a href="{{ route('register') }}"
                        class="inline-block bg-teal-600 text-white font-semibold px-8 py-3.5 rounded-xl text-base hover:bg-teal-500 transition-colors">
-                        Coba Gratis {{ $trialDays }} Hari →
+                        Daftar Sekarang →
                     </a>
                 </div>
             @elseif($demoOpen)
