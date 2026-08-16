@@ -31,15 +31,17 @@ class RegistrationSettingsPage extends Page implements HasForms
 
     protected static ?int $navigationSort = 1;
 
-    protected static ?string $navigationLabel = 'Registrasi';
+    protected static ?string $navigationLabel = 'Pendaftaran';
 
-    protected static ?string $title = 'Pengaturan Registrasi';
+    protected static ?string $title = 'Pengaturan Pendaftaran';
 
     protected string $view = 'filament.pages.registration-settings';
 
     protected static ?string $slug = 'registration-settings-page';
 
     public bool $registration_open = true;
+
+    public bool $demo_open = true;
 
     public static function canAccess(): bool
     {
@@ -49,7 +51,8 @@ class RegistrationSettingsPage extends Page implements HasForms
     public function mount(): void
     {
         $this->form->fill([
-            'registration_open' => PlatformSetting::get('registration_open', config('app.registration_open', true)),
+            'registration_open' => PlatformSetting::registrationOpen(),
+            'demo_open' => PlatformSetting::demoOpen(),
         ]);
     }
 
@@ -62,6 +65,15 @@ class RegistrationSettingsPage extends Page implements HasForms
                     Toggle::make('registration_open')
                         ->label('Buka halaman pendaftaran mandiri (/register)')
                         ->helperText('Matikan sebagai kill-switch cepat, misalnya saat onboarding sengaja dialihkan lewat Antrean Demo, tanpa perlu ubah .env atau deploy ulang.')
+                        ->default(true),
+                ]),
+
+            Section::make('Ajukan Demo')
+                ->description('Mengatur akses ke halaman /demo, tempat calon pesantren meninggalkan datanya untuk masuk ke Antrean Demo.')
+                ->schema([
+                    Toggle::make('demo_open')
+                        ->label('Buka halaman ajukan demo (/demo)')
+                        ->helperText('Kalau keduanya dimatikan, landing page tidak lagi menampilkan tombol ajakan apa pun — hanya pemberitahuan bahwa pendaftaran sedang ditutup.')
                         ->default(true),
                 ]),
         ]);
@@ -88,6 +100,7 @@ class RegistrationSettingsPage extends Page implements HasForms
         $state = $this->form->getState();
 
         PlatformSetting::set('registration_open', (bool) $state['registration_open']);
+        PlatformSetting::set('demo_open', (bool) $state['demo_open']);
 
         Notification::make()
             ->title('Pengaturan registrasi berhasil disimpan')

@@ -53,6 +53,22 @@ class RegisterControllerTest extends TestCase
             ->assertSee('Daftarkan Pesantren');
     }
 
+    /**
+     * Saran subdomain otomatis dirakit di sisi klien dan mengaitkan dua kolom
+     * lewat id-nya. Menghapus salah satu id tidak akan memunculkan galat apa
+     * pun — form tetap tampil, sarannya saja yang diam-diam mati.
+     */
+    public function test_kolom_nama_dan_slug_punya_id_yang_dipakai_saran_subdomain(): void
+    {
+        $this->withoutVite();
+
+        $this->get($this->registerUrl())
+            ->assertOk()
+            ->assertSee('id="nama-pesantren"', false)
+            ->assertSee('id="slug"', false)
+            ->assertSee("getElementById('nama-pesantren')", false);
+    }
+
     public function test_wali_santri_yang_sudah_login_diarahkan_ke_dashboard_wali(): void
     {
         $wali = User::factory()->waliSantri()->create();

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\DemoRequest;
+use App\Models\PlatformSetting;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
@@ -16,6 +17,8 @@ class DemoController extends Controller
 
     public function show()
     {
+        abort_if(! PlatformSetting::demoOpen(), 404);
+
         return view('demo', [
             'formToken' => Crypt::encryptString((string) now()->timestamp),
         ]);
@@ -23,6 +26,8 @@ class DemoController extends Controller
 
     public function store(Request $request)
     {
+        abort_if(! PlatformSetting::demoOpen(), 404);
+
         $validated = $request->validate([
             'nama_pesantren' => ['required', 'string', 'max:200'],
             'nama_kontak' => ['required', 'string', 'max:200'],

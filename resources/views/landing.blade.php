@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Walisantri.com menghubungkan wali santri dengan pesantren — pantau ibadah, hafalan Al-Quran, nilai, kesehatan, dan SPP anak langsung dari HP, lengkap dengan alat evaluasi untuk pengurus & ustadz.">
+    <meta name="description" content="Walisantri.com menghubungkan wali santri dengan pesantren — pantau kehadiran, ibadah, hafalan Al-Quran, nilai, kesehatan, dan SPP anak langsung dari HP. Pengurus dapat presensi kartu QR, rapor, dan alat evaluasi lengkap.">
     <title>Walisantri.com — Pesantren Transparan, Wali Santri Tenang</title>
     <link rel="icon" type="image/svg+xml" href="{{ \App\Models\PlatformBrandingSetting::faviconUrl() }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -27,9 +27,12 @@
             </span>
             <div class="hidden md:flex items-center gap-6">
                 <a href="#fitur" class="text-sm text-gray-500 hover:text-teal-700 font-medium">Fitur</a>
+                <a href="#harga" class="text-sm text-gray-500 hover:text-teal-700 font-medium">Harga</a>
                 <a href="#cara-kerja" class="text-sm text-gray-500 hover:text-teal-700 font-medium">Cara Kerja</a>
                 <a href="#faq" class="text-sm text-gray-500 hover:text-teal-700 font-medium">FAQ</a>
-                <a href="{{ route('demo') }}" class="text-sm text-gray-500 hover:text-teal-700 font-medium">Demo</a>
+                @if($demoOpen)
+                    <a href="{{ route('demo') }}" class="text-sm text-gray-500 hover:text-teal-700 font-medium">Demo</a>
+                @endif
                 <a href="/panduan" class="text-sm text-gray-500 hover:text-teal-700 font-medium">Panduan</a>
             </div>
             <div class="flex items-center gap-2 shrink-0">
@@ -71,34 +74,31 @@
                 @endforeach
             </div>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="{{ route('register') }}"
-                   class="inline-block bg-teal-700 text-white font-semibold px-8 py-3.5 rounded-xl text-base hover:bg-teal-800 transition-colors shadow-sm">
-                    Daftar Gratis →
-                </a>
+                @if($registrationOpen)
+                    <a href="{{ route('register') }}"
+                       class="inline-block bg-teal-700 text-white font-semibold px-8 py-3.5 rounded-xl text-base hover:bg-teal-800 transition-colors shadow-sm">
+                        Coba Gratis {{ $trialDays }} Hari →
+                    </a>
+                @elseif($demoOpen)
+                    <a href="{{ route('demo') }}"
+                       class="inline-block bg-teal-700 text-white font-semibold px-8 py-3.5 rounded-xl text-base hover:bg-teal-800 transition-colors shadow-sm">
+                        Ajukan Demo →
+                    </a>
+                @endif
                 <a href="#fitur"
                    class="inline-block bg-white text-teal-700 font-semibold px-8 py-3.5 rounded-xl text-base border border-teal-200 hover:bg-teal-50 transition-colors">
                     Lihat Fitur Lengkap ↓
                 </a>
             </div>
+            @unless($registrationOpen || $demoOpen)
+                <p class="mt-8 inline-flex items-center gap-2 text-sm text-gray-600 bg-gray-100 border border-gray-200 rounded-xl px-5 py-3">
+                    <span aria-hidden="true">🔒</span>
+                    Pendaftaran pesantren baru sedang ditutup sementara.
+                </p>
+            @endunless
         </div>
     </section>
 
-    {{-- Stats --}}
-    <section class="border-y border-gray-100 bg-white">
-        <div class="max-w-4xl mx-auto px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            @foreach([
-                ['298+', 'Wali Terdaftar'],
-                ['10+', 'Pesantren Bergabung'],
-                ['8+', 'Modul Lengkap'],
-                ['3 Menit', 'Setup Awal'],
-            ] as $stat)
-                <div>
-                    <div class="text-2xl font-bold text-teal-700 mb-1">{{ $stat[0] }}</div>
-                    <div class="text-sm text-gray-500">{{ $stat[1] }}</div>
-                </div>
-            @endforeach
-        </div>
-    </section>
 
     {{-- UI Mockup --}}
     <section class="max-w-6xl mx-auto px-6 py-20">
@@ -143,6 +143,7 @@
                                     ['👦', 'Santri', false],
                                     ['📚', 'Akademik', false],
                                     ['📖', 'Tahfidz', false],
+                                    ['✅', 'Presensi', false],
                                     ['🕌', 'Mutaba\'ah', false],
                                     ['🛡️', 'Kesantrian', false],
                                     ['📋', 'Rapor', false],
@@ -159,7 +160,7 @@
                         <div class="flex-1 p-4 overflow-hidden">
                             <div class="mb-3">
                                 <h3 class="text-xs font-bold text-gray-800">Selamat Datang, Ust. Fauzan 👋</h3>
-                                <p class="text-xs text-gray-400">Pesantren Al-Hikmah · Senin, 29 Juni 2026</p>
+                                <p class="text-xs text-gray-400">Pesantren Al-Hikmah · Halaqah 2A</p>
                             </div>
 
                             {{-- Stats Cards --}}
@@ -267,7 +268,7 @@
                                 <span class="text-xs text-teal-600">Lihat →</span>
                             </div>
                             <div class="px-3 py-2">
-                                <p class="text-xs font-medium text-gray-800">Al-Baqarah · Ayat 1–10</p>
+                                <p class="text-xs font-medium text-gray-800">Juz 1 · Halaman 3–5</p>
                                 <div class="flex gap-1 mt-1">
                                     <span class="text-xs bg-green-50 text-green-700 px-1.5 py-0.5 rounded-full font-medium">Sabaq</span>
                                     <span class="text-xs bg-green-50 text-green-700 px-1.5 py-0.5 rounded-full font-medium">Mumtaz</span>
@@ -322,6 +323,39 @@
                     <p class="text-gray-500 text-xs leading-relaxed">{{ $highlight[2] }}</p>
                 </div>
             @endforeach
+        </div>
+    </section>
+
+    {{-- Presensi & Kartu QR --}}
+    <section id="presensi" class="bg-gray-900 py-20">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="text-center mb-14">
+                <div class="inline-flex items-center gap-2 bg-teal-900/60 text-teal-300 text-xs font-semibold px-3 py-1.5 rounded-full mb-5 uppercase tracking-wide">
+                    Modul Terbaru
+                </div>
+                <h2 class="text-3xl font-bold text-white mb-4">Absensi Santri, Selesai Sebelum Kelas Dimulai</h2>
+                <p class="text-gray-400 max-w-2xl mx-auto leading-relaxed">
+                    Cukup pindai kartu santri — presensi tercatat, rekapnya jadi sendiri, dan wali bisa
+                    melihat kehadiran anaknya tanpa perlu bertanya.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                @foreach([
+                    ['📷', 'Pindai Kartu QR', 'Setiap santri punya kartu QR yang bisa dicetak per kelas. Pindai lewat kamera HP petugas atau alat scanner USB/Bluetooth — keduanya didukung.'],
+                    ['🕌', 'Harian atau Per Jam Pelajaran', 'Catat kehadiran sekali sehari, atau per jam pelajaran lengkap dengan mata pelajarannya. Pesantren memilih sendiri di pengaturan.'],
+                    ['📅', 'Kalender Hari Libur', 'Tandai libur mingguan dan tanggal merah pesantren. Hari libur tidak pernah ikut dihitung sebagai ketidakhadiran.'],
+                    ['📝', 'Tujuh Status Kehadiran', 'Hadir, Terlambat, Sakit, Izin, Alpa, Pulang, dan Dispensasi — bukan sekadar hadir atau tidak, karena alasannya penting saat dibicarakan dengan wali.'],
+                    ['📨', 'Pengajuan Izin dari Wali', 'Wali mengajukan izin atau sakit dari HP beserta surat keterangannya. Pengurus tinggal menyetujui, dan presensi hari itu terisi otomatis.'],
+                    ['📊', 'Rekap & Rapor Kehadiran', 'Persentase kehadiran per santri dan per kelas, bisa diekspor ke Excel, dan ikut tercetak di rapor PDF yang dibaca wali.'],
+                ] as $item)
+                    <div class="bg-gray-800/60 border border-gray-700 rounded-2xl p-6">
+                        <div class="text-3xl mb-4">{{ $item[0] }}</div>
+                        <h3 class="font-bold text-white text-lg mb-2">{{ $item[1] }}</h3>
+                        <p class="text-gray-400 text-sm leading-relaxed">{{ $item[2] }}</p>
+                    </div>
+                @endforeach
+            </div>
         </div>
     </section>
 
@@ -418,7 +452,7 @@
                     Amalan harian santri — shalat, puasa, tilawah — dicatat ustadz dan bisa dipantau wali secara real-time, tanpa perlu bertanya lewat telepon.
                 </p>
                 <ul class="mt-4 space-y-1.5">
-                    @foreach(['Monitoring ibadah harian', 'Grafik perkembangan', 'Notifikasi ke wali'] as $item)
+                    @foreach(['Monitoring ibadah harian', 'Grafik perkembangan', 'Rekap bulanan & rapor'] as $item)
                         <li class="flex items-center gap-2 text-sm text-gray-600">
                             <span class="text-teal-500">✓</span> {{ $item }}
                         </li>
@@ -433,10 +467,10 @@
                 </div>
                 <h3 class="font-bold text-gray-900 text-lg mb-2">Akademik</h3>
                 <p class="text-gray-500 text-sm leading-relaxed">
-                    Ustadz input nilai dengan mudah, rekap otomatis, dan rapor bisa diekspor PDF — wali bisa cek nilai anak kapan saja lewat portal.
+                    Ustadz input nilai dengan mudah, lalu satu halaman rapor menggabungkan nilai akademik, tahfidz, mutaba'ah, karakter, dan kehadiran jadi satu PDF.
                 </p>
                 <ul class="mt-4 space-y-1.5">
-                    @foreach(['Manajemen kelas & mapel', 'Input & rekap nilai', 'Ekspor rapor PDF'] as $item)
+                    @foreach(['Manajemen kelas & mapel', 'Input nilai massal per kelas', 'Rapor gabungan 5 modul, ekspor PDF'] as $item)
                         <li class="flex items-center gap-2 text-sm text-gray-600">
                             <span class="text-teal-500">✓</span> {{ $item }}
                         </li>
@@ -473,6 +507,42 @@
                 </p>
                 <ul class="mt-4 space-y-1.5">
                     @foreach(['Katalog aset pesantren', 'Status & kondisi barang', 'Riwayat peminjaman'] as $item)
+                        <li class="flex items-center gap-2 text-sm text-gray-600">
+                            <span class="text-teal-500">✓</span> {{ $item }}
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+
+            {{-- Uang Saku --}}
+            <div class="border border-gray-100 rounded-2xl p-6 hover:shadow-md hover:border-teal-200 transition-all group">
+                <div class="w-12 h-12 bg-lime-50 rounded-xl flex items-center justify-center mb-4 text-2xl group-hover:bg-lime-100 transition-colors">
+                    👛
+                </div>
+                <h3 class="font-bold text-gray-900 text-lg mb-2">Uang Saku Santri</h3>
+                <p class="text-gray-500 text-sm leading-relaxed">
+                    Setoran dan pengambilan uang saku dicatat sebagai buku kas per santri — wali bisa melihat sisa saldo anaknya kapan saja tanpa perlu menelepon pengurus.
+                </p>
+                <ul class="mt-4 space-y-1.5">
+                    @foreach(['Catat setoran & pengambilan', 'Saldo berjalan per santri', 'Wali pantau dari portal'] as $item)
+                        <li class="flex items-center gap-2 text-sm text-gray-600">
+                            <span class="text-teal-500">✓</span> {{ $item }}
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+
+            {{-- Ekstrakurikuler --}}
+            <div class="border border-gray-100 rounded-2xl p-6 hover:shadow-md hover:border-teal-200 transition-all group">
+                <div class="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center mb-4 text-2xl group-hover:bg-orange-100 transition-colors">
+                    ⚽
+                </div>
+                <h3 class="font-bold text-gray-900 text-lg mb-2">Ekstrakurikuler</h3>
+                <p class="text-gray-500 text-sm leading-relaxed">
+                    Kelola daftar ekskul beserta pembinanya, catat siapa ikut apa dan sampai level mana — semuanya ikut tampil di halaman santri yang dibuka wali.
+                </p>
+                <ul class="mt-4 space-y-1.5">
+                    @foreach(['Master ekskul & pembina', 'Level Pemula sampai Mahir', 'Tampil di portal wali'] as $item)
                         <li class="flex items-center gap-2 text-sm text-gray-600">
                             <span class="text-teal-500">✓</span> {{ $item }}
                         </li>
@@ -517,58 +587,122 @@
         </div>
     </section>
 
-    {{-- Testimonial --}}
+    {{-- Harga --}}
+    <section id="harga" class="max-w-6xl mx-auto px-6 py-20">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-bold text-gray-900 mb-4">Harga Transparan, Sesuai Jumlah Santri</h2>
+            <p class="text-gray-500 max-w-2xl mx-auto leading-relaxed">
+                Coba gratis {{ $trialDays }} hari dengan fitur penuh — tanpa kartu kredit.
+                Semua modul terbuka di semua paket; yang membedakan hanya kuota santri.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
+            @foreach($paketList as $paket)
+                <div class="relative border rounded-2xl p-6 flex flex-col gap-4 h-full
+                    {{ $paket['populer'] ? 'border-teal-500 shadow-lg shadow-teal-100 ring-1 ring-teal-500' : 'border-gray-200 hover:border-gray-300' }}">
+
+                    @if($paket['populer'])
+                        <div class="absolute -top-3 left-1/2 -translate-x-1/2">
+                            <span class="bg-teal-600 text-white text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap">Paling Populer</span>
+                        </div>
+                    @endif
+
+                    <div>
+                        <div class="font-bold text-gray-900 text-lg mb-1">{{ $paket['nama'] }}</div>
+                        <div class="text-gray-500 text-sm leading-relaxed">{{ $paket['deskripsi'] }}</div>
+                    </div>
+
+                    <div>
+                        <span class="text-3xl font-bold text-gray-900">{{ $paket['harga'] }}</span>
+                        <span class="text-gray-500 text-sm">/bulan</span>
+                    </div>
+
+                    <div class="text-sm text-gray-600 border-t border-gray-100 pt-4">
+                        <span class="font-semibold text-gray-900">
+                            Sampai {{ number_format($paket['kuota'], 0, ',', '.') }} santri
+                        </span>
+                        @if($paket['hubungiKami'])
+                            <div class="text-xs text-gray-500 mt-1">Kuota bisa ditambah per 100 santri.</div>
+                        @endif
+                    </div>
+
+                    <ul class="space-y-1.5 text-sm text-gray-600">
+                        @foreach(['Seluruh modul terbuka', 'Portal wali & Magic Link', 'Website profil pesantren', 'Ekspor PDF & Excel'] as $fitur)
+                            <li class="flex items-start gap-2">
+                                <span class="text-teal-500 shrink-0">✓</span> {{ $fitur }}
+                            </li>
+                        @endforeach
+                    </ul>
+
+                    @if($paket['hubungiKami'] && $demoOpen)
+                        <a href="{{ route('demo') }}"
+                           class="mt-auto block text-center border border-teal-200 text-teal-700 font-semibold px-4 py-2.5 rounded-xl text-sm hover:bg-teal-50 transition-colors">
+                            Hubungi Kami
+                        </a>
+                    @elseif($registrationOpen)
+                        <a href="{{ route('register') }}"
+                           class="mt-auto block text-center font-semibold px-4 py-2.5 rounded-xl text-sm transition-colors
+                               {{ $paket['populer'] ? 'bg-teal-700 text-white hover:bg-teal-800' : 'border border-teal-200 text-teal-700 hover:bg-teal-50' }}">
+                            Mulai Trial
+                        </a>
+                    @elseif($demoOpen)
+                        <a href="{{ route('demo') }}"
+                           class="mt-auto block text-center border border-teal-200 text-teal-700 font-semibold px-4 py-2.5 rounded-xl text-sm hover:bg-teal-50 transition-colors">
+                            Ajukan Demo
+                        </a>
+                    @endif
+                </div>
+            @endforeach
+        </div>
+
+        <p class="text-center text-sm text-gray-500 mt-8 leading-relaxed">
+            Berlangganan 6 bulan dapat <span class="font-semibold text-gray-700">{{ $bonusEnam }} bulan gratis</span> ·
+            berlangganan 12 bulan dapat <span class="font-semibold text-gray-700">{{ $bonusTahunan }} bulan gratis</span>.
+            Pembayaran lewat transfer bank, tanpa kontrak jangka panjang.
+        </p>
+    </section>
+
+    {{-- Masalah yang Diselesaikan --}}
     <section class="max-w-6xl mx-auto px-6 py-20">
         <div class="text-center mb-12">
-            <h2 class="text-3xl font-bold text-gray-900 mb-4">Apa Kata Mereka?</h2>
+            <h2 class="text-3xl font-bold text-gray-900 mb-4">Masalah yang Diselesaikan</h2>
             <p class="text-gray-500 max-w-xl mx-auto">
-                Wali santri dan pengurus pesantren yang bergabung dalam program beta testing kami berbagi pengalamannya.
+                Tiga keluhan yang hampir selalu muncul di pesantren — dan bagaimana Walisantri menutupnya.
             </p>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             @foreach([
                 [
-                    'AF',
-                    'bg-teal-100 text-teal-700',
-                    '"Sebelumnya kami pakai spreadsheet untuk rekap ibadah santri — sekarang semua otomatis dan wali bisa pantau langsung. Sangat membantu!"',
-                    'Ust. Ahmad Fauzi',
-                    'Pesantren Al-Hikmah · Bandung',
+                    '📑',
+                    'Rekap menumpuk di spreadsheet',
+                    'Data setoran, ibadah, dan nilai tersebar di banyak file dan hanya dimengerti orang yang membuatnya. Saat dibutuhkan untuk rapat atau rapor, semuanya harus disalin ulang.',
+                    'Semua tercatat di satu tempat, rekap dan rapornya jadi sendiri.',
                 ],
                 [
-                    'YA',
-                    'bg-amber-100 text-amber-700',
-                    '"Sekarang saya nggak perlu telepon-telepon pesantren cuma buat tanya kabar anak. Tinggal buka link dari HP, langsung lihat hafalan, nilai, sampai tagihan SPP-nya. Tenang rasanya."',
-                    'Bu Yuli Astuti',
-                    'Wali Santri · Pesantren Darul Ulum, Malang',
+                    '📞',
+                    'Wali menelepon untuk menanyakan kabar anak',
+                    'Pertanyaan yang sama datang berulang lewat telepon dan grup WhatsApp — sudah setor berapa, sakit tidak, SPP sudah masuk belum — dan pengurus menjawabnya satu per satu.',
+                    'Wali membuka portalnya sendiri kapan saja, cukup dari satu tautan.',
                 ],
                 [
-                    'SA',
-                    'bg-blue-100 text-blue-700',
-                    '"Portal wali santrinya simpel sekali. Wali yang tidak melek teknologi pun bisa pakai — cukup klik link, langsung bisa pantau anak."',
-                    'Ust. Siti Aminah',
-                    'Pesantren Nurul Falah · Surabaya',
+                    '🗒️',
+                    'Absensi kertas yang tidak pernah jadi laporan',
+                    'Daftar hadir diisi di buku, lalu berhenti di situ. Menghitung persentase kehadiran satu semester berarti membuka kembali puluhan lembar.',
+                    'Pindai kartu QR, persentase kehadiran langsung terhitung sampai ke rapor.',
                 ],
-            ] as $t)
-                <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="w-10 h-10 {{ $t[1] }} rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
-                            {{ $t[0] }}
-                        </div>
-                        <div>
-                            <div class="font-semibold text-gray-800 text-sm">{{ $t[3] }}</div>
-                            <div class="text-xs text-gray-400">{{ $t[4] }}</div>
-                        </div>
-                    </div>
-                    <div class="flex gap-0.5 mb-3">
-                        @for($i = 0; $i < 5; $i++)
-                            <span class="text-amber-400 text-sm">★</span>
-                        @endfor
-                    </div>
-                    <p class="text-gray-600 text-sm leading-relaxed italic">{{ $t[2] }}</p>
+            ] as $m)
+                <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col">
+                    <div class="text-3xl mb-4">{{ $m[0] }}</div>
+                    <h3 class="font-bold text-gray-900 mb-2">{{ $m[1] }}</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed mb-4">{{ $m[2] }}</p>
+                    <p class="mt-auto flex items-start gap-2 text-sm text-teal-800 bg-teal-50 rounded-xl px-4 py-3 leading-relaxed">
+                        <span class="text-teal-500 font-bold shrink-0">✓</span>
+                        <span>{{ $m[3] }}</span>
+                    </p>
                 </div>
             @endforeach
         </div>
-        <p class="text-center text-xs text-gray-400 mt-6">* Sedang dalam fase beta testing. Kutipan berdasarkan feedback dari peserta program beta.</p>
     </section>
 
     {{-- Cara Kerja --}}
@@ -580,8 +714,8 @@
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 @foreach([
-                    ['1', 'Daftar Demo Gratis', 'Isi form singkat dengan nama pesantren Anda. Tim kami akan menghubungi untuk setup awal.', 'bg-teal-100 text-teal-700'],
-                    ['2', 'Input Data Santri', 'Tambahkan data santri, buat kelas, dan atur modul yang ingin digunakan.', 'bg-emerald-100 text-emerald-700'],
+                    ['1', 'Daftar & Aktifkan Trial', 'Isi form singkat, akun pesantren Anda langsung aktif dengan trial '.$trialDays.' hari fitur penuh — tanpa menunggu persetujuan.', 'bg-teal-100 text-teal-700'],
+                    ['2', 'Input Data Santri', 'Tambahkan santri satu per satu atau impor sekaligus dari file Excel, lalu buat kelas dan kamarnya.', 'bg-emerald-100 text-emerald-700'],
                     ['3', 'Aktifkan Portal Wali', 'Bagikan link magic ke wali santri — mereka langsung bisa pantau ibadah, hafalan, dan nilai anak dari HP.', 'bg-blue-100 text-blue-700'],
                 ] as $step)
                     <div class="text-center">
@@ -600,13 +734,15 @@
     <section id="faq" class="max-w-3xl mx-auto px-6 py-20">
         <div class="text-center mb-12">
             <h2 class="text-3xl font-bold text-gray-900 mb-4">Pertanyaan yang Sering Ditanyakan</h2>
-            <p class="text-gray-500">Ada pertanyaan lain? Hubungi kami lewat form pendaftaran demo.</p>
+            @if($demoOpen)
+                <p class="text-gray-500">Ada pertanyaan lain? <a href="{{ route('demo') }}" class="text-teal-700 font-medium hover:underline">Hubungi kami lewat form demo</a>.</p>
+            @endif
         </div>
         <div class="space-y-3">
             @foreach([
                 [
                     'Apakah Walisantri gratis?',
-                    'Saat ini Walisantri masih dalam fase beta testing dan tersedia gratis untuk pesantren yang bergabung. Setelah fase beta selesai, akan ada paket berbayar dengan fitur lengkap. Pesantren beta akan mendapatkan penawaran khusus.'
+                    'Setiap pesantren yang mendaftar mendapat trial '.$trialDays.' hari gratis dengan fitur penuh untuk 100 santri — tanpa kartu kredit. Setelah itu berlangganan mulai Rp 150.000/bulan sesuai jumlah santri; rinciannya ada di bagian Harga.'
                 ],
                 [
                     'Bagaimana cara wali santri mengakses portal?',
@@ -618,11 +754,11 @@
                 ],
                 [
                     'Apakah data pesantren aman?',
-                    'Data disimpan di server terenkripsi dan diakses dengan HTTPS. Setiap pesantren memiliki subdomain dan database yang terisolasi satu sama lain. Data Anda tidak pernah dibagikan ke pihak ketiga.'
+                    'Semua akses lewat HTTPS. Data tiap pesantren dipisahkan dan hanya bisa dijangkau oleh akun pesantren itu sendiri — pengurus satu pesantren tidak pernah bisa melihat data pesantren lain. Backup berjalan otomatis setiap hari dan disalin ke penyimpanan luar dalam keadaan terenkripsi, dan setiap perubahan data penting tercatat di audit log. Data Anda tidak pernah dibagikan ke pihak ketiga.'
                 ],
                 [
                     'Berapa lama proses setup awal?',
-                    'Setelah pendaftaran disetujui, tim kami akan membantu setup dalam waktu 1-2 hari kerja. Input data santri bisa dilakukan secara mandiri dan umumnya selesai dalam beberapa jam.'
+                    'Akun aktif seketika setelah Anda mendaftar — tidak ada proses persetujuan. Yang memakan waktu hanya memasukkan data santri, dan itu pun bisa dipercepat dengan impor dari file Excel. Panduan langkah demi langkah tersedia di dalam aplikasi.'
                 ],
                 [
                     'Apakah cocok untuk pesantren kecil dengan sedikit santri?',
@@ -631,6 +767,14 @@
                 [
                     'Apakah bisa ekspor data ke Excel atau PDF?',
                     'Ya. Laporan akademik, kesehatan, ibadah, dan keuangan bisa diekspor ke PDF maupun Excel. Fitur ini berguna untuk evaluasi bulanan, rapat dewan guru, atau laporan ke wali santri.'
+                ],
+                [
+                    'Bagaimana cara absensi santri?',
+                    'Presensi bisa dicatat sekali sehari atau per jam pelajaran — pesantren memilih sendiri. Pengisiannya manual lewat daftar kelas, atau dengan memindai kartu QR santri memakai kamera HP maupun alat scanner. Wali juga bisa mengajukan izin atau sakit dari portal beserta surat keterangannya, dan begitu disetujui pengurus, presensi hari itu terisi otomatis.'
+                ],
+                [
+                    'Apa yang terjadi setelah masa trial habis?',
+                    'Ada masa tenggang 7 hari: pengurus diarahkan ke halaman langganan saat masuk, sementara wali santri tetap bisa membuka portal untuk melihat data. Lewat masa itu akun ditangguhkan sampai berlangganan. Data pesantren Anda tidak dihapus.'
                 ],
                 [
                     'Bagaimana jika koneksi internet di pesantren tidak stabil?',
@@ -657,16 +801,34 @@
     <section class="bg-gray-900 py-20">
         <div class="max-w-2xl mx-auto px-6 text-center">
             <h2 class="text-3xl font-bold text-white mb-4">Ingin Lihat Langsung?</h2>
-            <p class="text-gray-400 mb-8 leading-relaxed">
-                Tim kami siap memberikan demo eksklusif dan membantu setup awal pesantren Anda secara gratis —
-                supaya wali santri Anda bisa mulai memantau perkembangan anak sejak hari pertama.
-            </p>
-            <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="{{ route('register') }}"
-                   class="inline-block bg-teal-600 text-white font-semibold px-8 py-3.5 rounded-xl text-base hover:bg-teal-500 transition-colors">
-                    Daftar Gratis →
-                </a>
-            </div>
+            @if($registrationOpen)
+                <p class="text-gray-400 mb-8 leading-relaxed">
+                    Daftarkan pesantren Anda dan coba seluruh fiturnya gratis {{ $trialDays }} hari —
+                    supaya wali santri Anda bisa mulai memantau perkembangan anak sejak hari pertama.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="{{ route('register') }}"
+                       class="inline-block bg-teal-600 text-white font-semibold px-8 py-3.5 rounded-xl text-base hover:bg-teal-500 transition-colors">
+                        Coba Gratis {{ $trialDays }} Hari →
+                    </a>
+                </div>
+            @elseif($demoOpen)
+                <p class="text-gray-400 mb-8 leading-relaxed">
+                    Pendaftaran mandiri sedang ditutup sementara. Tinggalkan data pesantren Anda —
+                    tim kami akan menghubungi begitu kuota pendaftaran dibuka kembali.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="{{ route('demo') }}"
+                       class="inline-block bg-teal-600 text-white font-semibold px-8 py-3.5 rounded-xl text-base hover:bg-teal-500 transition-colors">
+                        Ajukan Demo →
+                    </a>
+                </div>
+            @else
+                <p class="text-gray-400 leading-relaxed">
+                    Pendaftaran pesantren baru sedang ditutup sementara, dan untuk saat ini kami belum
+                    membuka antrean demo. Pesantren yang sudah terdaftar tetap bisa masuk seperti biasa.
+                </p>
+            @endif
         </div>
     </section>
 
@@ -681,8 +843,13 @@
                 Menghubungkan Pesantren & Wali Santri di Seluruh Indonesia
             </p>
             <div class="flex gap-6">
+                <a href="#harga" class="text-sm text-gray-500 hover:text-teal-700">Harga</a>
                 <a href="#faq" class="text-sm text-gray-500 hover:text-teal-700">FAQ</a>
-                <a href="{{ route('register') }}" class="text-sm text-gray-500 hover:text-teal-700">Daftar Gratis</a>
+                @if($registrationOpen)
+                    <a href="{{ route('register') }}" class="text-sm text-gray-500 hover:text-teal-700">Daftar</a>
+                @elseif($demoOpen)
+                    <a href="{{ route('demo') }}" class="text-sm text-gray-500 hover:text-teal-700">Demo</a>
+                @endif
                 <a href="{{ route('login') }}" class="text-sm text-gray-500 hover:text-teal-700">Masuk</a>
             </div>
         </div>

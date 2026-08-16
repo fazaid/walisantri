@@ -24,14 +24,21 @@
                 <div class="text-center py-4">
                     <div class="text-4xl mb-3">🛠️</div>
                     <h2 class="font-bold text-gray-900 mb-2">Pendaftaran Mandiri Sedang Nonaktif Sementara</h2>
-                    <p class="text-sm text-gray-500 mb-6">
-                        Untuk saat ini, pendaftaran pesantren baru hanya bisa lewat tim kami.
-                        Isi form demo singkat dan kami akan bantu proses pendaftarannya.
-                    </p>
-                    <a href="{{ route('demo') }}"
-                       class="inline-block bg-teal-700 hover:bg-teal-800 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors">
-                        Isi Form Demo
-                    </a>
+                    @if($demoOpen)
+                        <p class="text-sm text-gray-500 mb-6">
+                            Untuk saat ini, pendaftaran pesantren baru hanya bisa lewat tim kami.
+                            Isi form demo singkat dan kami akan bantu proses pendaftarannya.
+                        </p>
+                        <a href="{{ route('demo') }}"
+                           class="inline-block bg-teal-700 hover:bg-teal-800 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors">
+                            Isi Form Demo
+                        </a>
+                    @else
+                        <p class="text-sm text-gray-500">
+                            Pendaftaran pesantren baru sedang ditutup sementara dan antrean demo juga
+                            belum dibuka. Pesantren yang sudah terdaftar tetap bisa masuk seperti biasa.
+                        </p>
+                    @endif
                 </div>
             @else
 
@@ -51,7 +58,7 @@
                 {{-- Nama Pesantren --}}
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nama Pesantren</label>
-                    <input type="text" name="nama_pesantren" value="{{ old('nama_pesantren') }}"
+                    <input type="text" name="nama_pesantren" id="nama-pesantren" value="{{ old('nama_pesantren') }}"
                            required autofocus
                            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                            placeholder="Pesantren Al-Hidayah">
@@ -132,23 +139,63 @@
     </div>
 
     <script>
+    const namaInput = document.getElementById('nama-pesantren');
     const slugInput = document.getElementById('slug');
     const statusEl  = document.getElementById('slug-status');
+    const PETUNJUK  = '3–30 karakter, huruf kecil, angka, tanda hubung';
     let timer;
 
-    slugInput?.addEventListener('input', () => {
+    // Selama user belum menyunting subdomain sendiri, kolomnya mengikuti nama
+    // pesantren. Kalau halaman dimuat ulang setelah gagal validasi, old('slug')
+    // sudah terisi — itu ketikan user, jangan ditimpa.
+    let slugDisuntingManual = (slugInput?.value ?? '').trim().length > 0;
+
+    // Cerminan ValidTenantSlug: huruf kecil, angka, tanda hubung tunggal, tidak
+    // diawali/diakhiri tanda hubung, maksimal 30 karakter. Awalan generik dibuang
+    // supaya "Pondok Pesantren Al-Hidayah" jadi "al-hidayah", bukan
+    // "pondok-pesantren-al-hidayah" — hampir semua pendaftar memakainya.
+    function jadikanSlug(teks) {
+        return teks
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/^(pondok\s+pesantren|pesantren|pondok|ponpes|pp)\s+/, '')
+            .replace(/['’`]/g, '')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/-{2,}/g, '-')
+            .replace(/^-+|-+$/g, '')
+            .slice(0, 30)
+            .replace(/-+$/, '');
+    }
+
+    function setStatus(pesan, warna) {
+        statusEl.textContent = pesan;
+        statusEl.className = `text-xs mt-1 ${warna}`;
+    }
+
+    function periksaSlug() {
         clearTimeout(timer);
         const val = slugInput.value;
-        if (val.length < 3) { statusEl.textContent = '3–30 karakter, huruf kecil, angka, tanda hubung'; statusEl.className = 'text-xs mt-1 text-gray-400'; return; }
-        statusEl.textContent = 'Memeriksa…'; statusEl.className = 'text-xs mt-1 text-gray-400';
+        if (val.length < 3) { setStatus(PETUNJUK, 'text-gray-400'); return; }
+        setStatus('Memeriksa…', 'text-gray-400');
         timer = setTimeout(async () => {
             try {
                 const r = await fetch(`/check-slug/${encodeURIComponent(val)}`);
                 const d = await r.json();
-                statusEl.textContent = d.message;
-                statusEl.className = `text-xs mt-1 ${d.available ? 'text-green-600' : 'text-red-500'}`;
-            } catch { statusEl.textContent = 'Gagal memeriksa slug.'; }
+                setStatus(d.message, d.available ? 'text-green-600' : 'text-red-500');
+            } catch { setStatus('Gagal memeriksa slug.', 'text-red-500'); }
         }, 400);
+    }
+
+    namaInput?.addEventListener('input', () => {
+        if (slugDisuntingManual) return;
+        slugInput.value = jadikanSlug(namaInput.value);
+        periksaSlug();
+    });
+
+    slugInput?.addEventListener('input', () => {
+        // Dikosongkan lagi = minta saran otomatis kembali.
+        slugDisuntingManual = slugInput.value.trim().length > 0;
+        periksaSlug();
     });
     </script>
 

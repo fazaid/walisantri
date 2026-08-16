@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\VerifikasiEmailController;
 use App\Http\Controllers\Auth\WaliLoginController;
 use App\Http\Controllers\DemoController;
+use App\Http\Controllers\LandingController;
 use App\Http\Controllers\PublicProfileController;
 use App\Http\Controllers\SlugCheckController;
 use App\Http\Controllers\Wali\DashboardController;
@@ -22,7 +23,6 @@ use App\Http\Controllers\Wali\SppController;
 use App\Http\Controllers\Wali\TahfidzStatsController;
 use App\Http\Controllers\Wali\UangSakuController;
 use App\Models\Order;
-use App\Models\PlatformSetting;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -40,18 +40,7 @@ $sameDomain = $baseDomain === $appDomain;
 // LANDING — walisantri.com / walisantri.test (§1.6)
 // =============================================================================
 Route::domain($baseDomain)->group(function () use ($sameDomain) {
-    Route::get('/', function () use ($sameDomain) {
-        if ($sameDomain && auth()->check()) {
-            return match (auth()->user()->role) {
-                'wali_santri' => redirect()->route('wali.dashboard'),
-                default => redirect('/admin'),
-            };
-        }
-
-        return view('landing', [
-            'registrationOpen' => PlatformSetting::registrationOpen(),
-        ]);
-    })->name('landing');
+    Route::get('/', fn (LandingController $landing) => $landing($sameDomain))->name('landing');
 
     // Slug check diakses dari halaman register di landing domain
     Route::get('/check-slug/{slug}', SlugCheckController::class)

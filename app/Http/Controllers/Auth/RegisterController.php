@@ -29,6 +29,7 @@ class RegisterController extends Controller
 
         return view('auth.register', [
             'registrationOpen' => PlatformSetting::registrationOpen(),
+            'demoOpen' => PlatformSetting::demoOpen(),
             'trialDays' => BillingSetting::get('trial_days', 14),
         ]);
     }
