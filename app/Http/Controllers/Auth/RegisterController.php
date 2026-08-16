@@ -20,9 +20,28 @@ use Illuminate\Validation\Rules\Password;
 
 class RegisterController extends Controller
 {
+    /**
+     * Sesi magic link BUKAN "pengguna yang sudah login" di corong pendaftaran.
+     *
+     * Pengunjung yang mengetuk /coba benar-benar di-login-kan sebagai wali tenant
+     * demo (`VerifyMagicToken` memanggil `Auth::login()`) — sifat read-only-nya
+     * ditegakkan `BlockMagicLinkSession`, bukan oleh ketiadaan sesi. Kalau sesi itu
+     * sampai terlihat di apex, calon pelanggan yang baru mencoba demo tidak akan
+     * pernah bisa membuka form pendaftaran: ia dipantulkan ke portal demo.
+     *
+     * Hari ini yang menahannya cookie ber-scope host (§1.8 Fase 1) — tapi itu satu
+     * variabel env dari rusak, dan `SESSION_DOMAIN=.walisantri.test` di lingkungan
+     * lokal membuktikannya secara langsung. Pagar ini tidak bergantung pada scope
+     * cookie sama sekali.
+     */
+    private function sedangMencobaDemo(): bool
+    {
+        return (bool) session('magic_link_session');
+    }
+
     public function showForm()
     {
-        if (Auth::check()) {
+        if (Auth::check() && ! $this->sedangMencobaDemo()) {
             return $this->redirectAuthenticated();
         }
 
@@ -34,6 +53,15 @@ class RegisterController extends Controller
 
     public function store(Request $request, OnboardPesantren $onboard)
     {
+        // Pendaftar yang datang dari demo harus benar-benar keluar dari sesi itu
+        // sebelum tenant barunya dibuat — kalau tidak, ia mendaftar sambil masih
+        // "login" sebagai wali pesantren contoh.
+        if (Auth::check() && $this->sedangMencobaDemo()) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
+
         if (Auth::check()) {
             return $this->redirectAuthenticated();
         }
@@ -70,15 +98,19 @@ class RegisterController extends Controller
 
         $this->kirimEmailSambutan($result);
 
-        Auth::login($result['admin']);
-
-        return redirect($this->adminUrl());
+        // Sengaja TIDAK Auth::login() di sini: sesi yang lahir di apex tidak akan
+        // pernah terbaca di host panel (cookie ber-scope host, §1.8). Sesinya
+        // dipindahkan lewat tautan sekali pakai — lihat SerahTerimaSesiController.
+        return redirect()->away(SerahTerimaSesiController::untuk($result['admin']));
     }
 
     private function redirectAuthenticated()
     {
         if (Auth::user()->role === 'wali_santri') {
-            return redirect()->route('wali.dashboard');
+            // Portal wali hidup di host pesantren (§1.8 Fase 1) dan konteks ini berjalan
+            // di host platform — route('wali.dashboard') di sini akan gagal karena tidak
+            // punya default slug. Bangun URL-nya dari tenant-nya sendiri.
+            return redirect()->away(Auth::user()->urlPortalWali());
         }
 
         return redirect($this->adminUrl());

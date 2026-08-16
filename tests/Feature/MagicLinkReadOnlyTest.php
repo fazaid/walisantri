@@ -17,6 +17,9 @@ class MagicLinkReadOnlyTest extends TestCase
     private function santriDenganWali(): Santri
     {
         $pesantren = Pesantren::factory()->create();
+        // §1.8 Fase 1: permukaan wali hidup di host pesantren, jadi seluruh
+        // route('wali.*') di berkas ini harus menunjuk ke sana.
+        $this->pakaiHostTenant($pesantren);
         $wali = User::factory()->waliSantri()->create(['pesantren_id' => $pesantren->id]);
 
         return Santri::factory()->create([
@@ -30,7 +33,7 @@ class MagicLinkReadOnlyTest extends TestCase
     {
         $santri = $this->santriDenganWali();
 
-        $this->get("/report/{$santri->uuid}")
+        $this->get(route('wali.magic.report', $santri->uuid))
             ->assertOk()
             // Halaman report harus menautkan ke inventaris — satu-satunya pintu
             // masuk pemegang magic link ke halaman inventaris yang di-whitelist.
@@ -50,7 +53,7 @@ class MagicLinkReadOnlyTest extends TestCase
             'target_audience' => 'wali',
         ]);
 
-        $this->get("/report/{$santri->uuid}")
+        $this->get(route('wali.magic.report', $santri->uuid))
             ->assertOk()
             ->assertSee('Libur Idul Adha PENGUMUMAN_MAGIC');
     }
@@ -60,11 +63,11 @@ class MagicLinkReadOnlyTest extends TestCase
         $santri = $this->santriDenganWali();
 
         // Masuk lewat magic link → set flag magic_link_session di sesi.
-        $this->get("/report/{$santri->uuid}")->assertOk();
+        $this->get(route('wali.magic.report', $santri->uuid))->assertOk();
 
         // Halaman portal agregat harus dialihkan kembali ke halaman laporan,
         // bukan menampilkan dashboard penuh.
-        $this->get('/wali/dashboard')
+        $this->get(route('wali.dashboard'))
             ->assertRedirect(route('wali.magic.report', $santri->uuid));
     }
 
@@ -72,18 +75,18 @@ class MagicLinkReadOnlyTest extends TestCase
     {
         $santri = $this->santriDenganWali();
 
-        $this->get("/report/{$santri->uuid}")->assertOk();
+        $this->get(route('wali.magic.report', $santri->uuid))->assertOk();
 
         // Halaman yang render penuh di SQLite: dibuktikan tampil (200).
-        $this->get("/wali/santri/{$santri->id}")->assertOk();
-        $this->get("/wali/santri/{$santri->id}/inventaris")->assertOk();
+        $this->get(route('wali.santri.show', $santri->id))->assertOk();
+        $this->get(route('wali.santri.inventaris', $santri->id))->assertOk();
 
         // Halaman statistik memakai SQL khusus Postgres (TO_CHAR) yang tak jalan
         // di SQLite test, jadi cukup buktikan MIDDLEWARE meloloskannya —
         // tidak dialihkan balik ke report seperti halaman portal agregat.
         $reportUrl = route('wali.magic.report', $santri->uuid);
         foreach (['tahfidz', 'kesehatan', 'mutabaah'] as $bagian) {
-            $lokasi = $this->get("/wali/santri/{$santri->id}/{$bagian}")
+            $lokasi = $this->get(route("wali.santri.{$bagian}", $santri->id))
                 ->headers->get('Location');
             $this->assertNotSame($reportUrl, $lokasi, "Route {$bagian} tidak boleh dialihkan ke report");
         }
@@ -95,11 +98,16 @@ class MagicLinkReadOnlyTest extends TestCase
         // Santri lain (wali/pesantren berbeda) — id ditebak lewat URL.
         $santriLain = $this->santriDenganWali();
 
-        $this->get("/report/{$santri->uuid}")->assertOk();
+        // santriDenganWali() membuat pesantren baru tiap panggilan, jadi konteks
+        // host harus dikembalikan ke pesantren santri PERTAMA — di situlah sesi
+        // magic link-nya hidup (§1.8 Fase 1: sesi ber-scope host).
+        $this->pakaiHostTenant($santri->pesantren);
+
+        $this->get(route('wali.magic.report', $santri->uuid))->assertOk();
 
         // Route detail diizinkan, tapi santri di luar tautan ini dialihkan
         // ke report yang benar — bukan membocorkan data santri lain.
-        $this->get("/wali/santri/{$santriLain->id}/tahfidz")
+        $this->get(route('wali.santri.tahfidz', $santriLain->id))
             ->assertRedirect(route('wali.magic.report', $santri->uuid));
     }
 
@@ -118,10 +126,10 @@ class MagicLinkReadOnlyTest extends TestCase
             'status' => 'belum_bayar',
         ]);
 
-        $this->get("/report/{$santri->uuid}")->assertOk();
+        $this->get(route('wali.magic.report', $santri->uuid))->assertOk();
 
         // Route POST wali.* harus ditolak untuk sesi magic link.
-        $this->post("/wali/spp/{$tagihan->id}/konfirmasi")
+        $this->post(route('wali.spp.konfirmasi', $tagihan->id))
             ->assertForbidden();
 
         // Pastikan tidak ada mutasi yang terjadi.
@@ -141,7 +149,7 @@ class MagicLinkReadOnlyTest extends TestCase
         $wali->forceFill(['password' => bcrypt('RahasiaKuat123')])->save();
 
         // Kunjungi magic link dulu — persis alur calon pelanggan yang mencoba demo.
-        $this->get("/report/{$santri->uuid}")->assertOk();
+        $this->get(route('wali.magic.report', $santri->uuid))->assertOk();
         $this->assertTrue(session('magic_link_session'));
 
         $this->post('/login', [
@@ -152,7 +160,7 @@ class MagicLinkReadOnlyTest extends TestCase
         $this->assertNull(session('magic_link_session'));
         $this->assertNull(session('magic_link_santri_id'));
 
-        $this->get('/wali/dashboard')->assertOk();
+        $this->get(route('wali.dashboard'))->assertOk();
     }
 
     public function test_wali_login_normal_tetap_bisa_buka_dashboard(): void
@@ -162,7 +170,7 @@ class MagicLinkReadOnlyTest extends TestCase
 
         // Login normal (tanpa flag magic_link_session) tidak boleh terpengaruh.
         $this->actingAs($wali)
-            ->get('/wali/dashboard')
+            ->get(route('wali.dashboard'))
             ->assertOk();
     }
 }

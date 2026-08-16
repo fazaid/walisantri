@@ -69,6 +69,33 @@ class Pesantren extends Model
         return $this->hasMany(TenantDomain::class);
     }
 
+    /**
+     * Hostname yang melayani pesantren ini (§1.8 Fase 1) — satu-satunya tempat
+     * host tenant diturunkan, supaya magic link, portal wali, dan pengalihan
+     * pintu kanonik tidak pernah menghasilkan alamat yang berbeda.
+     *
+     * Diambil dari `tenant_domains` (baris `is_primary`), BUKAN dirakit dari slug:
+     * hostname adalah alamat yang benar-benar dilayani, slug hanya bahan bakunya
+     * dan bisa berganti. Fallback ke host platform saat tenant belum punya baris
+     * domain — pintu kanonik di app host tetap melayani dan mengalihkan.
+     */
+    public function hostname(): string
+    {
+        return $this->domains()->where('is_primary', true)->value('hostname')
+            ?? config('app.domain', 'app.walisantri.com');
+    }
+
+    /**
+     * URL absolut di host pesantren ini. Aman dipakai dari konteks tanpa request
+     * (job queue, perintah artisan) — tidak menyentuh host request sama sekali.
+     */
+    public function url(string $path = '/'): string
+    {
+        $skema = app()->environment('production') ? 'https' : 'http';
+
+        return $skema.'://'.$this->hostname().'/'.ltrim($path, '/');
+    }
+
     public function activityLogs(): HasMany
     {
         return $this->hasMany(ActivityLog::class);

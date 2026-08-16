@@ -21,7 +21,8 @@ class LandingController extends Controller
     {
         if ($sameDomain && auth()->check()) {
             return match (auth()->user()->role) {
-                'wali_santri' => redirect()->route('wali.dashboard'),
+                // Lihat catatan di WaliLoginController::redirectAfterLogin().
+                'wali_santri' => redirect()->away(auth()->user()->urlPortalWali()),
                 default => redirect('/admin'),
             };
         }

@@ -28,6 +28,9 @@ class WaliRaporTest extends TestCase
         parent::setUp();
 
         $this->pesantren = Pesantren::factory()->create();
+        // §1.8 Fase 1: permukaan wali hidup di host pesantren, jadi seluruh
+        // route('wali.*') di berkas ini harus menunjuk ke sana.
+        $this->pakaiHostTenant($this->pesantren);
         $this->wali = User::factory()->waliSantri()->create(['pesantren_id' => $this->pesantren->id]);
         $this->santri = Santri::factory()->create([
             'pesantren_id' => $this->pesantren->id,

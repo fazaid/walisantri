@@ -53,6 +53,30 @@ class PublicTenantResolverTest extends TestCase
             ->assertViewHas('pesantren', fn (Pesantren $viewPesantren) => $viewPesantren->is($pesantren));
     }
 
+    /**
+     * Tautan "Masuk Portal Wali Santri" di profil (tombol header + CTA) harus
+     * tinggal di host pesantren. Sebelum §1.8 Fase 1 keduanya menunjuk
+     * app.walisantri.com — melempar wali ke domain vendor persis di titik paling
+     * terlihat, yaitu kebocoran merek yang §1.8 ada untuk menutupnya.
+     */
+    public function test_tautan_login_di_profil_tinggal_di_host_pesantren(): void
+    {
+        $pesantren = Pesantren::factory()->create(['slug' => 'al-barokah']);
+
+        TenantDomain::create([
+            'pesantren_id' => $pesantren->id,
+            'hostname' => $this->hostFor('al-barokah'),
+            'type' => 'subdomain',
+            'is_primary' => true,
+            'ssl_status' => 'active',
+        ]);
+
+        $this->get('http://'.$this->hostFor('al-barokah').'/')
+            ->assertOk()
+            ->assertViewHas('loginUrl', $pesantren->url('/login'))
+            ->assertDontSee(config('app.domain').'/login', false);
+    }
+
     public function test_request_attribute_pesantren_id_diisi_sesuai_tenant_domain(): void
     {
         $pesantren = Pesantren::factory()->create(['slug' => 'darul-ilmi']);

@@ -113,6 +113,22 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, MustVerif
         return $this->role === 'wali_santri';
     }
 
+    /**
+     * Pintu masuk portal wali untuk user ini (§1.8 Fase 1).
+     *
+     * Portal wali hidup di host pesantren, jadi setiap pengalihan yang berangkat
+     * dari host platform (register, landing, root app) bersifat lintas host — dan
+     * `route('wali.dashboard')` di sana akan gagal karena tidak punya default slug.
+     *
+     * Wali tanpa pesantren adalah keadaan data yang rusak, bukan mustahil
+     * (`users.pesantren_id` nullable). Ia diantar ke pintu login platform alih-alih
+     * ke host yang tidak pernah ada.
+     */
+    public function urlPortalWali(): string
+    {
+        return $this->pesantren?->url('/wali/dashboard') ?? route('login');
+    }
+
     // --- Relations ---
 
     // Santri yang diasuh (sebagai wali)

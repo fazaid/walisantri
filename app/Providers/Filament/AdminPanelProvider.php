@@ -92,6 +92,25 @@ class AdminPanelProvider extends PanelProvider
                 PanelsRenderHook::PAGE_START,
                 fn (): string => view('filament.admin.verifikasi-email-banner')->render(),
             )
+            // Pencarian global dimatikan dan ditukar tautan profil pesantren
+            // (keputusan pemilik produk). Pencarian itu tidak pernah dikurasi:
+            // lima resource ikut terindeks lewat id/tanggal/jam, sehingga mengetik
+            // angka memunculkan hasil sampah. Lihat tautan-profil.blade.php.
+            ->globalSearch(false)
+            // GLOBAL_SEARCH_AFTER, bukan TOPBAR_END: hook itu dirender di LUAR
+            // .fi-topbar-end sehingga tautannya selalu terlempar paling kanan,
+            // melewati lonceng notifikasi dan menu pengguna. Hook ini tetap
+            // dirender meski pencarian globalnya dimatikan.
+            ->renderHook(
+                PanelsRenderHook::GLOBAL_SEARCH_AFTER,
+                fn (): string => view('filament.admin.tautan-profil')->render(),
+            )
+            // Urutan topbar ditentukan urutan pendaftaran hook: profil → bantuan →
+            // lonceng notifikasi → menu pengguna.
+            ->renderHook(
+                PanelsRenderHook::GLOBAL_SEARCH_AFTER,
+                fn (): string => view('filament.admin.tombol-bantuan')->render(),
+            )
             ->renderHook(
                 PanelsRenderHook::BODY_END,
                 fn (): string => view('filament.admin.bottom-nav')->render(),

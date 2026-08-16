@@ -17,6 +17,9 @@ class WaliReportPreviewTest extends TestCase
     private function santriDanAdmin(): array
     {
         $pesantren = Pesantren::factory()->create();
+        // §1.8 Fase 1: permukaan wali hidup di host pesantren, jadi seluruh
+        // route('wali.*') di berkas ini harus menunjuk ke sana.
+        $this->pakaiHostTenant($pesantren);
         $wali = User::factory()->waliSantri()->create(['pesantren_id' => $pesantren->id]);
         $admin = User::factory()->adminPesantren()->create(['pesantren_id' => $pesantren->id]);
 

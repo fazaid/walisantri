@@ -5,6 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
     <meta name="theme-color" content="{{ $pesantren ? '#1d4ed8' : '#0f766e' }}">
     <title>
         @if($pesantren)
@@ -62,7 +63,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('wali.login.submit') }}" class="space-y-4">
+            <form method="POST" action="{{ $aksiLogin ?? route('login.submit') }}" class="space-y-4">
                 @csrf
 
                 <div>

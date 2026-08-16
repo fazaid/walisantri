@@ -30,6 +30,31 @@ class PlatformBrandingSetting extends Model
         Cache::forget("platform_branding:{$key}");
     }
 
+    /**
+     * Nomor WhatsApp dukungan dalam bentuk siap-pakai untuk wa.me (62xxx, tanpa
+     * tanda baca). Mengembalikan null bila belum diisi — tombol Bantuan di panel
+     * ikut menghilang, bukan mengarah ke tautan rusak.
+     *
+     * Perapiannya di sini, bukan di form: super admin boleh mengetik
+     * "0812-3456-7890" atau "+62 812 3456 7890" dan keduanya tetap benar.
+     */
+    public static function waDukungan(): ?string
+    {
+        $mentah = static::get('wa_dukungan');
+
+        if (blank($mentah)) {
+            return null;
+        }
+
+        $angka = preg_replace('/\D/', '', $mentah);
+
+        if (str_starts_with($angka, '0')) {
+            $angka = '62'.substr($angka, 1);
+        }
+
+        return $angka !== '' ? $angka : null;
+    }
+
     // URL untuk <img src> di web. Fallback ke logo statis bawaan selama belum
     // pernah di-upload lewat panel super admin.
     public static function logoUrl(): string
