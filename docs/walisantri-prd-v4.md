@@ -4,7 +4,25 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Agustus 2026 — v4.43
+**Last Updated:** Agustus 2026 — v4.44
+
+**Changelog v4.44:** **§1.8 diperiksa ulang terhadap kode dan production — satu klaim prasyarat gugur, satu asumsi infrastruktur terbalik, tiga lubang ditutup, cakupan white-label diberi batas.** Tidak ada perubahan kode; §1.8 tetap rancangan. Dua prasyarat yang v4.43 hanya duga-duga kini **diukur langsung ke production (16 Agustus 2026)**, dan keduanya meleset — satu ke arah lebih buruk, satu ke arah lebih baik.
+
+**Klaim `SESSION_DOMAIN` gugur — terverifikasi TIDAK disetel di production.** v4.43 mencentang cookie sesi sebagai prasyarat Fase 1 yang *sudah* terpenuhi. Buktinya tidak pernah ada di repo (`.env.example:44` justru `SESSION_DOMAIN=null`), dan pengukuran langsung memastikannya: `walisantri.com`, `app.walisantri.com`, dan `demo.walisantri.com` sama-sama mengirim `Set-Cookie: walisantri-session=…; path=/; secure; httponly; samesite=lax` — **tanpa atribut `Domain=`**, artinya cookie host-only. Prasyarat ini **belum terpenuhi**, dan mengisinya tidak gratis: mengganti scope cookie **memutus semua sesi aktif** sekaligus. Harus dijadwalkan, bukan disisipkan di deploy rutin. Umur sesi `Max-Age=7200` (2 jam) menahan dampaknya tetap kecil.
+
+**Pagar tenant dipindah dari login ke setiap request.** v4.43 menulis aturannya sebagai *"login di host tenant hanya menerima akun tenant itu"*. Justru karena cookie dibagi lintas subdomain, kasus yang bocor bukan login: sesi yang **sudah** ada ikut terbawa. Admin pesantren B yang login di `app.` lalu mengetuk `pesantren-a.walisantri.com/wali/...` datang membawa sesi aktif tanpa pernah menyentuh form login. Cek di `WaliLoginController` tidak pernah jalan di jalur itu.
+
+**Model cookie Fase 1 naik jadi keputusan arsitektur terbuka, bukan detail yang sudah diputus.** Cookie `.walisantri.com` dipilih v4.43 karena gratis, tapi konsekuensinya: seluruh halaman ber-cookie jadi **satu origin dengan konten yang dikelola tenant sendiri** (deskripsi, galeri, dan nanti CMS artikel/kegiatan §1.4). Satu XSS di profil satu pesantren = pencurian sesi seluruh platform. Hari ini risikonya nol karena profil publik tanpa auth; setelah Fase 1 tidak lagi. Alternatif host-scoped cookie sejak Fase 1 menutup kelas serangan itu **dan** menyamakan jalur Fase 2 — lapisan auth yang §1.8 sendiri sebut "butuh tes sendiri, bukan tempat coba-coba" tidak lagi ditunda ke fase yang berhadapan dengan domain pelanggan.
+
+**Dan cookie berbagi mematikan corong pendaftaran lewat sandbox — ini bukan hipotesis, jalurnya sudah ada di kode.** `VerifyMagicToken` menjalankan `Auth::login()` sungguhan, jadi pengunjung yang klik `/coba` **benar-benar login** sebagai wali tenant demo. Dengan cookie `.walisantri.com`, sesi itu ikut berlaku di apex — tempat form pendaftaran hidup — sehingga `RegisterController::showForm()` baris 26 melihat `Auth::check()` true, memanggil `redirectAuthenticated()` (baris 82, role `wali_santri`), melempar ke `wali.dashboard`, lalu `BlockMagicLinkSession` memantulkannya ke halaman santri demo. **Form pendaftaran tidak pernah bisa dibuka**, dan `store()` dijaga cek yang sama di baris 39 sehingga submit pun tertelan. Sandbox dibangun untuk konversi, lalu memblokir tombol konversinya. Hari ini aman **hanya karena** cookie masih host-only — bug ini akan **diciptakan** oleh perubahan `SESSION_DOMAIN`, bukan ditemukan.
+
+**Cakupan white-label diberi batas eksplisit — host saja tidak menutup janjinya.** `WhatsAppGatewaySetting` adalah tabel key-value **global tanpa `pesantren_id`**: token Fonnte satu untuk seluruh platform, jadi magic link sampai ke wali dari nomor WA platform. `MAIL_FROM_ADDRESS/NAME` juga global. Ditambah sisa merek di permukaan wali: `wali/layouts/app.blade.php:13` dan footer *"Dicetak via Walisantri.com"* di PDF yang diunduh wali (`wali/pdf/laporan.blade.php:136`). Argumen "titik sentuh harian" yang melahirkan §1.8 berlaku satu lapis lebih dalam dari host.
+
+**Asumsi infrastruktur Fase 2 terbalik: trafik production SUDAH lewat proxy Cloudflare.** Dugaan awal (wildcard cert lewat DNS-01 ⇒ A record DNS-only) salah. Pengukuran 16 Agustus 2026: `walisantri.com` dan `app.walisantri.com` sama-sama resolve ke IP anycast Cloudflare (`104.21.90.16`, `172.67.151.3`), response membawa `server: cloudflare` + `cf-ray`. Artinya prasyarat terberat Fase 2 sudah berdiri — Cloudflare for SaaS jadi langkah yang **lebih kecil** dari yang ditulis v4.43, bukan lebih besar. Tapi konsekuensinya berpindah dari "nanti" ke "sekarang": **`TrustProxies` tidak dikonfigurasi sama sekali** di `bootstrap/app.php`, sementara seluruh rate limiter dikunci per IP (`register`, `demo`, `check-slug`, login, magic link, reset password). Kalau Nginx di VPS tidak menegakkan `set_real_ip_from` untuk rentang Cloudflare, maka `$request->ip()` **hari ini** sudah berisi IP edge Cloudflare, bukan IP pengunjung — limiter jadi ember bersama dan `activity_logs` mencatat IP yang salah. Satu perintah di VPS menuntaskannya: `grep -rn real_ip /etc/nginx/`.
+
+**Dua sinkronisasi kecil:** daftar reserved slug §1.4 usang sejak v4.42 (kode menambah `demo, sandbox, coba, contoh`), dan `SandboxDemo::waliUrl()` ikut berubah host begitu `linkWali()` jadi per-tenant.
+
+**Keputusan produk terbuka kini tiga**, bukan satu: perilaku host tenant saat langganan berakhir (sejak v4.43), cakupan white-label di WhatsApp/email, dan model cookie Fase 1.
 
 **Changelog v4.43:** **Host per-tenant & white-label — spesifikasi dua fase, nol kode.** Seksi baru **§1.8 — Host Per-Tenant & White-Label**, disusun dalam dua fase. ⚠️ Ditulis eksplisit sebagai **rancangan, bukan status**, karena dokumen ini sudah dua kali jatuh ke kesalahan yang sama (§8 dan §15 sempat mendeskripsikan halaman presensi wali sebagai fitur yang ada, dikoreksi v4.40). Yang benar-benar ada hari ini hanya kolomnya — `tenant_domains.type/verified_at/ssl_status`; `grep "'custom'"` di seluruh `app/` mengembalikan nol hasil.
 
@@ -12,7 +30,7 @@
 
 **Yang membuat itu terjangkau:** seluruh permukaan yang dilihat wali (`/login`, `/wali/*`, `/report/{uuid}`) adalah route Laravel biasa dengan view Blade — **bukan Filament**. Panel staf sebaliknya terikat `->domain()` yang hanya menerima satu nilai, jadi ia **tetap** di `app.walisantri.com`. Itu bukan kompromi yang merusak tujuan: pengurus menandatangani kontraknya dan sudah tahu vendornya; yang dijanjikan white-label adalah komunitas, bukan staf.
 
-**Dipecah dua fase, dan pemecahannya bukan sekadar pentahapan pekerjaan.** **Fase 1** memindahkan permukaan wali ke `{slug}.walisantri.com` — di sana tiga dari empat prasyarat **sudah terpenuhi gratis**: wildcard cert `*.walisantri.com` berlaku sampai 2041, wildcard A record sudah ada (§1.5), dan `SESSION_DOMAIN=.walisantri.com` sudah berbagi cookie ke seluruh subdomain. Artinya seluruh kesulitan arsitekturnya (routing per-host, `linkWali()` per-tenant, 38 call site `route('wali.*')`) dibuktikan lebih dulu di keluarga host yang kita kuasai penuh. **Fase 2** tinggal menambahkan TLS Cloudflare for SaaS + verifikasi kepemilikan. Efek sampingnya: peningkatan branding jadi **gratis untuk semua pesantren**, bukan hanya pembeli add-on.
+**Dipecah dua fase, dan pemecahannya bukan sekadar pentahapan pekerjaan.** **Fase 1** memindahkan permukaan wali ke `{slug}.walisantri.com` — di sana tiga dari empat prasyarat **sudah terpenuhi gratis**: wildcard cert `*.walisantri.com` berlaku sampai 2041, wildcard A record sudah ada (§1.5), dan `SESSION_DOMAIN=.walisantri.com` sudah berbagi cookie ke seluruh subdomain *(⚠️ klaim ketiga **gugur di v4.44** — diukur ke production 16 Agu 2026, `SESSION_DOMAIN` ternyata tidak disetel)*. Artinya seluruh kesulitan arsitekturnya (routing per-host, `linkWali()` per-tenant, 38 call site `route('wali.*')`) dibuktikan lebih dulu di keluarga host yang kita kuasai penuh. **Fase 2** tinggal menambahkan TLS Cloudflare for SaaS + verifikasi kepemilikan. Efek sampingnya: peningkatan branding jadi **gratis untuk semua pesantren**, bukan hanya pembeli add-on.
 
 **Pintu kanonik permanen adalah kunci yang membuat Fase 1 aman.** `app.walisantri.com/report/{uuid}` tetap ada selamanya dan hanya mengalihkan ke host tenant saat ini — tujuannya dihitung dari **tenant milik santri**, bukan dari URL. Ini menjaga jaminan §1.4 (*slug mutable itu aman*) tetap utuh meski portal wali kini tinggal di subdomain: tanpa mekanisme itu, mengganti slug akan mematikan seluruh magic link yang sudah dibagikan, karena `PesantrenObserver` **menimpa** hostname alih-alih menambah baris. Yang memungkinkannya: `VerifyMagicToken` mencari uuid secara global, tidak terikat host.
 
@@ -409,7 +427,7 @@ Tiap pesantren **otomatis** mendapat situs profil publik di `{slug}.walisantri.c
 
 **Feed pengumuman publik:** sempat ada di MVP awal, **dihapus** (Changelog v4.13) atas keputusan produk — pengumuman internal dinilai tidak cocok dibuka ke pengunjung publik. Pengumuman tetap berjalan normal di portal wali santri & dashboard admin.
 
-**Slug rules:** huruf kecil/angka/tanda hubung, 3–30 char, tidak diawali/diakhiri hubung. Validasi real-time via `GET /check-slug/{slug}`. **Mutable** — bisa diubah kapanpun dari panel admin (aman karena tidak ada auth/magic-link yang bergantung pada subdomain; identitas kanonik = `pesantrens.id`). ⚠️ **Jaminan ini bergantung pada satu mekanisme begitu §1.8 Fase 1 dibangun:** `app.walisantri.com/report/{uuid}` wajib tetap ada sebagai pengalih kanonik permanen yang menghitung tujuan dari tenant santri, bukan dari URL. Tanpa itu, mengganti slug akan mematikan seluruh magic link yang sudah dibagikan — `PesantrenObserver` **menimpa** hostname, bukan menambah baris. Tiap perubahan kena validasi reserved/format + dicatat audit (`pesantren.slug_changed`). Slug lama masuk **cooldown 90 hari** sebelum bisa diklaim tenant lain (cegah pembajakan brand). Reserved (Rule `SlugNotReserved`): `www app api admin central dash mail billing status docs blog support panel dashboard static cdn`.
+**Slug rules:** huruf kecil/angka/tanda hubung, 3–30 char, tidak diawali/diakhiri hubung. Validasi real-time via `GET /check-slug/{slug}`. **Mutable** — bisa diubah kapanpun dari panel admin (aman karena tidak ada auth/magic-link yang bergantung pada subdomain; identitas kanonik = `pesantrens.id`). ⚠️ **Jaminan ini bergantung pada satu mekanisme begitu §1.8 Fase 1 dibangun:** `app.walisantri.com/report/{uuid}` wajib tetap ada sebagai pengalih kanonik permanen yang menghitung tujuan dari tenant santri, bukan dari URL. Tanpa itu, mengganti slug akan mematikan seluruh magic link yang sudah dibagikan — `PesantrenObserver` **menimpa** hostname, bukan menambah baris. Tiap perubahan kena validasi reserved/format + dicatat audit (`pesantren.slug_changed`). Slug lama masuk **cooldown 90 hari** sebelum bisa diklaim tenant lain (cegah pembajakan brand). Reserved (Rule `SlugNotReserved`): `www app api admin central dash mail billing status docs blog support panel dashboard static cdn` + `demo sandbox coba contoh` *(empat terakhir ditambahkan v4.42 untuk sandbox publik; daftar di dokumen ini baru diselaraskan v4.44)*.
 
 **Custom domain (roadmap, add-on Maju) — spesifikasi lengkap pindah ke §1.8 Fase 2 (v4.43).** Ringkasnya: pesantren pakai domain sendiri (mis. `www.pesantrenfulan.sch.id`), butuh verifikasi kepemilikan DNS (CNAME/TXT) + SSL otomatis per domain (di luar wildcard `*.walisantri.com`). **Cloudflare for SaaS / Custom Hostnames ditetapkan sebagai default** (v4.43); Caddy on-demand TLS turun jadi cadangan. Subdomain bawaan tetap pakai wildcard cert yang sudah ada.
 
@@ -465,7 +483,7 @@ Setelah autentikasi, `role` dibaca lalu di-redirect — dilakukan di `WaliLoginC
 | `ustadz` | `app.../admin` | Input mutaba'ah, tahfidz, nilai mapel yang diampu, rekam medis santri binaan; **presensi harian kelas yang ia walikan** dan **presensi jam pelajaran mapel yang ia ampu** (§5.4, v4.25) |
 | `wali_santri` | `app.../wali/dashboard` | Portal read-only perkembangan santri |
 
-## 1.8 Host Per-Tenant & White-Label *(v4.43 — RANCANGAN, BELUM DIBANGUN)*
+## 1.8 Host Per-Tenant & White-Label *(v4.43, direvisi v4.44 — RANCANGAN, BELUM DIBANGUN)*
 
 > ⚠️ **Seluruh seksi ini adalah rancangan, bukan status.** Tidak ada satu baris kode pun yang mengimplementasikannya per v4.43. Penegasan ini ditulis eksplisit karena dokumen ini sudah dua kali jatuh ke kesalahan yang sama — §8 dan §15 sempat mendeskripsikan halaman presensi wali sebagai fitur yang ada padahal belum, dan baru dikoreksi di v4.40. Yang benar-benar ada hari ini hanya **kolomnya**: `tenant_domains.type enum('subdomain','custom')`, `verified_at`, dan `ssl_status`. `grep "'custom'"` di seluruh `app/` mengembalikan **nol hasil**; `ssl_status` hanya pernah ditulis `'pending'` sekali di `ProvisionTenant::jalankan()` dan tidak pernah berubah; `verified_at` tidak pernah ditulis sama sekali.
 
@@ -499,7 +517,7 @@ Pemisahan ini bukan sekadar pentahapan pekerjaan. **Fase 1 memindahkan seluruh k
 |---|---|---|
 | TLS | **Sudah ada** — wildcard cert `*.walisantri.com` (berlaku s/d 2041) + wildcard A record (§1.5) | **Baru** — Cloudflare for SaaS, per hostname |
 | Verifikasi kepemilikan | **Tidak perlu** — domainnya milik platform | **Baru** — TXT/CNAME → `verified_at` |
-| Cookie sesi | **Sudah cocok** — `SESSION_DOMAIN=.walisantri.com` sudah berbagi ke semua subdomain | **Baru** — cookie ber-scope host, disetel per request |
+| Cookie sesi | ❌ **Belum terpenuhi** — terverifikasi 16 Agu 2026: cookie production host-only, `SESSION_DOMAIN` tidak disetel (lihat di bawah) | **Baru** — cookie ber-scope host, disetel per request |
 | Route group per-host + `linkWali()` per-tenant | **Perlu** | Sudah selesai di Fase 1 |
 | Biaya | Rp 0 | Berbayar per hostname (add-on Maju, §5.1) |
 | Cakupan pengguna | **Semua pesantren** | Pembeli add-on saja |
@@ -508,7 +526,21 @@ Pemisahan ini bukan sekadar pentahapan pekerjaan. **Fase 1 memindahkan seluruh k
 
 ### Fase 1 — Portal wali di `{slug}.walisantri.com`
 
-Tiga dari empat prasyarat sudah terpenuhi sejak awal. Yang tersisa hanya memindahkan rute wali ke grup domain berparameter dan membuat `Santri::linkWali()` membaca hostname tenant (`tenant_domains.is_primary` sudah ada untuk itu).
+Dua dari empat prasyarat sudah terpenuhi sejak awal (TLS wildcard + wildcard A record); yang ketiga — cookie sesi — **belum terverifikasi** (lihat di bawah). Yang tersisa: memindahkan rute wali ke grup domain berparameter dan membuat `Santri::linkWali()` membaca hostname tenant (`tenant_domains.is_primary` sudah ada untuk itu).
+
+❌ **`SESSION_DOMAIN` tidak disetel — terverifikasi di production, 16 Agustus 2026 (v4.44).** v4.43 mencatatnya sebagai prasyarat yang sudah terpenuhi. Ternyata tidak. Buktinya di repo sudah mengarah ke sana (`.env.example:44` → `SESSION_DOMAIN=null`, tidak ada skrip deploy/test/dokumen yang menyetelnya), dan response production memastikannya:
+
+```
+Set-Cookie: walisantri-session=…; expires=…; Max-Age=7200; path=/; secure; httponly; samesite=lax
+```
+
+Header yang sama — **tanpa atribut `Domain=`** — dikirim oleh `walisantri.com`, `app.walisantri.com`, maupun `demo.walisantri.com`. Tanpa `Domain=`, cookie host-only: ia tidak pernah menyeberang antar-host. Itu wajar, karena sampai hari ini tidak ada permukaan terautentikasi di luar `app.walisantri.com`.
+
+Konsekuensinya untuk Fase 1:
+
+- Prasyarat ini **berbiaya**, bukan gratis. Mengisi `SESSION_DOMAIN=.walisantri.com` mengganti scope cookie, sehingga **semua sesi aktif langsung terputus** (cookie lama tidak lagi terbaca). Dijadwalkan di jendela sepi, bukan disisipkan di deploy rutin — `Max-Age=7200` (2 jam) membatasi dampaknya, tapi tidak menghapusnya.
+- `SESSION_SECURE_COOKIE` dan `SESSION_SAME_SITE` ditinjau di kesempatan yang sama.
+- **Dan perubahan itu membawa serta bug corong pendaftaran di bawah** — jadi ia tidak boleh dikerjakan sendirian.
 
 **Pintu kanonik permanen — ini inti rancangannya.**
 
@@ -526,7 +558,45 @@ Ini menyelesaikan tiga masalah sekaligus, dan tanpanya Fase 1 tidak boleh dikerj
 
 ⚠️ **Biaya yang terukur: 38 call site.** `grep -rn "route('wali\." resources/views/ app/` mengembalikan **38 hasil**. Begitu rute wali masuk grup domain berparameter, semuanya butuh parameter `{slug}` — atau `URL::defaults()`, yang saat ini **tidak dipakai di mana pun** di repo ini. Masalah ini belum pernah muncul karena URL profil publik dibangun dengan **concat string** (`PesantrenObserver`, `ProvisionTenant`, `PesantrenSettingsPage`), bukan lewat `route('public.profile')`.
 
-⚠️ **Asimetri keamanan yang berlawanan intuisi.** Subdomain lebih mudah secara operasional tapi **lebih lemah isolasinya**: cookie `.walisantri.com` dikirim ke *semua* subdomain tenant, sedangkan domain pelanggan di Fase 2 otomatis ber-scope host. Jadi aturan "login di host tenant hanya menerima akun tenant itu" (lihat Aturan Bersama) justru **lebih genting di Fase 1**, bukan kurang.
+⚠️ **Asimetri keamanan yang berlawanan intuisi.** Subdomain lebih mudah secara operasional tapi **lebih lemah isolasinya**: cookie `.walisantri.com` dikirim ke *semua* subdomain tenant, sedangkan domain pelanggan di Fase 2 otomatis ber-scope host. Jadi aturan "hanya akun tenant itu yang dilayani di host tenant" (lihat Aturan Bersama) justru **lebih genting di Fase 1**, bukan kurang.
+
+**Keputusan arsitektur yang masih terbuka: cookie berbagi vs host-scoped sejak Fase 1** *(v4.44)*
+
+Fase 1 dirancang memakai cookie `.walisantri.com` karena gratis. Konsekuensinya belum pernah ditulis: seluruh halaman ber-cookie kini hidup **satu origin dengan konten yang dikelola tenant sendiri** — deskripsi, galeri, dan (roadmap §1.4) CMS artikel & kegiatan. Satu XSS di halaman profil satu pesantren berarti pencurian cookie sesi **seluruh platform**, bukan satu tenant. Hari ini risiko itu nol karena profil publik tidak pernah bersentuhan dengan sesi; setelah Fase 1 tidak lagi.
+
+| | Cookie berbagi `.walisantri.com` | Cookie ber-scope host sejak Fase 1 |
+|---|---|---|
+| Biaya Fase 1 | Menyetel `SESSION_DOMAIN` + memutus semua sesi aktif sekali | Menyetel cookie per request + tes auth tersendiri |
+| Isolasi antar-tenant | Satu origin untuk semua tenant | Terisolasi per host, seperti Fase 2 |
+| Dampak XSS di konten tenant | Sesi seluruh platform | Terbatas satu tenant |
+| Jalur ke Fase 2 | Mekanisme cookie **berubah** di Fase 2 | Identik — Fase 2 tinggal TLS + verifikasi |
+
+Argumen untuk yang kedua: §1.8 sendiri menyebut cookie ber-scope host sebagai "lapisan auth: butuh tes sendiri, bukan tempat coba-coba". Justru karena itu, mengerjakannya di Fase 1 — di keluarga host yang kita kuasai penuh — lebih aman daripada menundanya ke fase yang sekaligus berhadapan dengan TLS dan domain milik pelanggan. Kalau opsi ini dipilih, mitigasi XSS (sanitasi konten tenant + CSP) tetap perlu, tapi tidak lagi menjadi satu-satunya penghalang.
+
+⛔ **Cookie berbagi mematikan corong pendaftaran lewat sandbox.** Ini bukan risiko teoretis — seluruh jalurnya sudah ada di kode hari ini, dan yang menahannya cuma scope cookie yang barusan diverifikasi masih host-only.
+
+`VerifyMagicToken:47` menjalankan `Auth::login($wali, remember: false)` **sungguhan**: pengunjung yang mengetuk `/coba` benar-benar login sebagai wali tenant demo. Sifat read-only-nya ditegakkan `BlockMagicLinkSession`, bukan oleh ketiadaan sesi. Begitu cookie berlaku se-`.walisantri.com`, sesi itu ikut hidup di apex — tempat form pendaftaran berada:
+
+```
+walisantri.com/coba          → Auth::login(wali demo)      [VerifyMagicToken:47]
+walisantri.com/register      → Auth::check() == true        [RegisterController:26]
+  → redirectAuthenticated()  → role 'wali_santri'           [RegisterController:82]
+  → redirect wali.dashboard  → bukan route yang diizinkan   [BlockMagicLinkSession]
+  → dipantulkan ke halaman santri demo
+```
+
+**Form pendaftaran tidak pernah bisa dibuka**, dan `store()` dijaga cek yang sama di `RegisterController:39` sehingga submit pun tertelan. Sandbox dibangun untuk konversi, lalu memblokir tombol konversinya — dan penyebabnya bukan logika sandbox, melainkan cookie yang membuat "pengunjung sedang mencoba demo" tak bisa dibedakan dari "wali yang sudah login".
+
+Kalau opsi cookie berbagi tetap dipilih, dua hal wajib menyertainya:
+
+1. `redirectAuthenticated()` memperlakukan sesi magic link sebagai **tamu** di corong pendaftaran. Polanya sudah ada di repo — `WaliLoginController:57` sengaja `forget(['magic_link_session', 'magic_link_santri_id'])` saat login sungguhan, dengan komentar bahwa `regenerate()` tidak membuang isi sesi. Jalur register tidak pernah dapat perlakuan itu.
+2. Tombol **"Keluar dari demo"** yang eksplisit di permukaan sandbox, bukan hanya "Keluar" generik.
+
+Dengan cookie ber-scope host, kelas masalah ini tidak pernah lahir: sesi demo terkunci di `demo.walisantri.com` dan apex tidak pernah melihatnya.
+
+⚠️ **Efek ke sandbox publik (v4.42).** `Santri::linkWali()` (`app/Models/Santri.php:86`) meng-hardcode `config('app.domain')`, dan `SandboxDemo::waliUrl()` memanggilnya. Begitu `linkWali()` jadi per-tenant, tombol `/coba` di landing otomatis mengarah ke `demo.walisantri.com/report/{uuid}` — kebetulan menguntungkan (sandbox jadi etalase white-label yang hidup), tapi harus diniatkan dan diuji, bukan ditemukan setelah deploy. Dua ekor yang menyertainya: hasil `waliUrl()` di-cache 1 jam (`sandbox:wali_url`), jadi `SandboxDemo::lupakanCache()` ikut dipanggil di langkah deploy; dan materi promosi yang menyebut host demo ditinjau.
+
+⚠️ **Tombol "Keluar" di portal wali akan patah.** `resources/views/wali/layouts/app.blade.php:58` mem-POST ke `route('logout')`, sementara `/logout` (dan `/login`) terdaftar di grup domain app (`routes/web.php`). Begitu portal wali pindah host, rute itu harus ikut dilayani di host tenant — kalau tidak, satu-satunya jalan keluar dari sesi (termasuk sesi demo) hilang. Ini bagian dari 38 call site `route('wali.*')`, tapi luput kalau daftarnya disusun hanya dari prefix `wali.`.
 
 ---
 
@@ -534,10 +604,16 @@ Ini menyelesaikan tiga masalah sekaligus, dan tanpanya Fase 1 tidak boleh dikerj
 
 Menambahkan dua hal di atas fondasi Fase 1:
 
-1. **TLS — Cloudflare for SaaS (Custom Hostnames).** Keputusan ditetapkan v4.43; alternatif Caddy on-demand TLS di §1.4 turun jadi cadangan. Gratis ≤100 hostname, lalu berbayar per hostname — sejalan dengan posisinya sebagai add-on paket Maju (§5.1). Sertifikat origin yang ada (`*.walisantri.com` + `walisantri.com`, s/d 2041) **tidak** mencakup domain pelanggan.
+1. **TLS — Cloudflare for SaaS (Custom Hostnames).** Keputusan ditetapkan v4.43; alternatif Caddy on-demand TLS di §1.4 turun jadi cadangan. Gratis ≤100 hostname, lalu berbayar per hostname — sejalan dengan posisinya sebagai add-on paket Maju (§5.1). *(Kuota gratis, harga per hostname, dan syarat plan diverifikasi ulang ke dokumentasi Cloudflare sebelum harga add-on dikunci — angka di atas berasal dari v4.43 dan belum dicek ulang.)* Sertifikat origin yang ada (`*.walisantri.com` + `walisantri.com`, s/d 2041) **tidak** mencakup domain pelanggan.
+
+   ✅ **Prasyarat terberatnya sudah berdiri — terverifikasi 16 Agustus 2026** *(v4.44)*. Cloudflare for SaaS menuntut trafik lewat proxy Cloudflare + sebuah **fallback origin** (hostname yang di-CNAME-kan pelanggan). Dugaan v4.44 awal — wildcard cert lewat DNS-01 ⇒ A record DNS-only — **salah**: `walisantri.com` dan `app.walisantri.com` sama-sama resolve ke IP anycast Cloudflare (`104.21.90.16`, `172.67.151.3`), dan response membawa `server: cloudflare` + `cf-ray`. Trafik production **sudah** proxied hari ini. Jadi Fase 2 adalah langkah yang lebih kecil dari yang ditulis v4.43; yang tersisa hanya fallback origin + pendaftaran custom hostname.
+
+   ⛔ **Tapi satu konsekuensinya berpindah dari "nanti" ke "sekarang".** **`TrustProxies` tidak dikonfigurasi sama sekali** di `bootstrap/app.php`, sedangkan seluruh rate limiter dikunci per IP (`AppServiceProvider`, `Limit::…->by($request->ip())` untuk `register`, `demo`, `check-slug`, login, magic link, reset password). Karena proxy sudah menyala, `$request->ip()` hanya berisi IP pengunjung sungguhan bila **Nginx** menegakkan `set_real_ip_from` untuk rentang Cloudflare — konfigurasi yang tidak ada di repo (server-side). Kalau ternyata tidak dipasang, hari ini seluruh limiter sudah jadi ember bersama per edge Cloudflare (satu penyalahguna mengunci pengunjung lain, dan proteksi brute-force melemah), serta `activity_logs` mencatat IP yang salah. **Satu perintah menuntaskannya:** `grep -rn real_ip /etc/nginx/` di VPS. Ini bukan pekerjaan Fase 2 — ini utang yang sudah jatuh tempo.
+   - **Nginx** butuh `server_name` catch-all / `default_server` untuk hostname pelanggan; server block `*.walisantri.com` yang ada (§1.5) tidak akan cocok.
+   - **Apex vs `www`.** Pelanggan yang ingin memakai domain telanjang (`pesantrenfulan.sch.id`) butuh CNAME flattening di sisi DNS mereka. Tetapkan apakah yang didukung hanya `www.`/subdomain, atau apex juga.
 2. **Verifikasi kepemilikan.** TXT/CNAME record → isi `tenant_domains.verified_at`. ⚠️ Hostname dengan `verified_at` NULL **tidak boleh dilayani sama sekali**, dan tidak boleh didaftarkan ke Cloudflare. Tanpa pagar ini siapa pun bisa mengarahkan domainnya ke platform dan mengklaim tenant orang lain.
 
-Plus **cookie sesi ber-scope host**, disetel dinamis per request — di Fase 1 hal ini gratis karena `SESSION_DOMAIN` yang ada sudah mencakup seluruh subdomain. Ini lapisan auth: butuh tes sendiri, bukan tempat coba-coba.
+Plus **cookie sesi ber-scope host**, disetel dinamis per request — kecuali kalau ini sudah dikerjakan lebih dulu di Fase 1 (keputusan terbuka, lihat Fase 1). Ini lapisan auth: butuh tes sendiri, bukan tempat coba-coba — dan itu justru alasan untuk mengerjakannya di host yang kita kuasai penuh, bukan sambil berhadapan dengan TLS dan domain pelanggan.
 
 ⚠️ **Pencabutan wajib dua sisi.** Saat pesantren melepas domain atau berhenti berlangganan, hostname harus dihapus dari `tenant_domains` **dan** dari Cloudflare. Custom hostname yang menggantung di Cloudflare setelah domainnya dijual ke pihak lain adalah versi lain dari risiko subdomain takeover yang sudah pernah dicatat proyek ini (lihat catatan `staging.walisantri.com`, §18).
 
@@ -545,7 +621,9 @@ Plus **cookie sesi ber-scope host**, disetel dinamis per request — di Fase 1 h
 
 ### Aturan bersama (berlaku di kedua fase)
 
-**Login di host tenant hanya menerima akun tenant itu.** Tenant tetap di-resolve dari akun (§1.3, email unik global), bukan dari host. Tanpa pagar tambahan, user pesantren B bisa login lewat host pesantren A dan melihat datanya sendiri di halaman ber-merek orang lain — membingungkan, dan terlihat seperti kebocoran meski bukan.
+**Host tenant hanya melayani akun tenant itu — dicek di setiap request, bukan saat login** *(diperketat v4.44)*. Tenant tetap di-resolve dari akun (§1.3, email unik global), bukan dari host. Tanpa pagar tambahan, user pesantren B bisa membuka host pesantren A dan melihat datanya sendiri di halaman ber-merek orang lain — membingungkan, dan terlihat seperti kebocoran meski bukan.
+
+⚠️ **Menaruh pagar ini di `WaliLoginController` tidak cukup, dan justru meleset dari kasus yang sebenarnya bocor.** Dengan cookie berbagi (`.walisantri.com`), sesi yang **sudah ada** ikut terbawa ke setiap subdomain tenant: admin pesantren B yang sudah login di `app.walisantri.com` lalu mengetuk `pesantren-a.walisantri.com/wali/...` datang membawa sesi aktif **tanpa pernah menyentuh form login** — jalur cek di controller login tidak pernah dilewati. Pagarnya harus middleware yang membandingkan tenant sesi dengan tenant host di setiap request, dipasang pada grup rute host tenant. Kalau opsi cookie ber-scope host dipilih, kelas kasus ini hilang dengan sendirinya di Fase 1 — pagarnya tetap dipasang sebagai lapis kedua.
 
 **Subdomain bawaan tidak pernah dihapus.** `{slug}.walisantri.com` tetap ada meski pesantren memakai domain sendiri, sebagai jalur cadangan saat domain pelanggan bermasalah (DNS salah, sertifikat gagal terbit, domain kedaluwarsa). Satu `is_primary` per pesantren menentukan hostname mana yang dipakai untuk membangun URL.
 
@@ -553,9 +631,42 @@ Plus **cookie sesi ber-scope host**, disetel dinamis per request — di Fase 1 h
 
 **Tenant expired/suspended.** `SaaSLifecycleLock` bekerja pada sesi, bukan host. Perilakunya saat langganan berakhir harus ditetapkan sebelum implementasi: ikut terkunci seperti host platform, atau berhenti dilayani sama sekali. **Keputusan produk ini masih terbuka.**
 
+**Portal wali & login tidak boleh terindeks** *(v4.44)*. Halaman profil publik memang ingin ditemukan mesin pencari; `/login` dan `/wali/*` tidak. Setelah keduanya pindah ke host yang sama dengan profil, `noindex` harus dipasang eksplisit (pola `resources/views/panduan.blade.php:7` sudah ada). Di Fase 2, profil yang sama tersaji di dua host sekaligus (subdomain bawaan + domain pelanggan) → butuh `canonical` ke hostname `is_primary`, kalau tidak keduanya bersaing sebagai duplicate content.
+
+---
+
+### Batas cakupan white-label *(v4.44)*
+
+Memindahkan host **tidak** menutup seluruh janji white-label. Tiga permukaan tetap membawa merek platform setelah kedua fase selesai, dan dua di antaranya justru titik sentuh yang jadi alasan §1.8 ditulis:
+
+| Permukaan | Keadaan hari ini | Kalau ingin ditutup |
+|---|---|---|
+| **Pengirim WhatsApp** | `WhatsAppGatewaySetting` adalah tabel key-value **global tanpa `pesantren_id`** — satu token Fonnte untuk seluruh platform. Magic link sampai ke wali dari nomor platform. | Token/gateway per tenant + `pesantren_id` di tabelnya; biaya & dukungan gateway jadi urusan pesantren |
+| **Pengirim email** | `email_gateway_settings` juga tabel key-value **global** (PK `key`, tanpa `pesantren_id`) — satu `from_address`/`from_name` untuk semua tenant (verifikasi email §12.2, reset password §9.1) | Pengirim per tenant, **tapi** §12.2 mensyaratkan `from_address` berada di domain yang terverifikasi di Brevo: tiap domain pelanggan harus diverifikasi + SPF/DKIM sendiri. Ini pekerjaan deliverability berulang per tenant, bukan sekali |
+| **Jejak merek di permukaan wali** | `layouts/app.blade.php:53` — subtitle header tiap halaman portal default ke `config('app.name')`, jadi "Walisantri" tampil di bawah judul di **setiap** layar wali; `layouts/app.blade.php:13` (`apple-mobile-web-app-title: "Walisantri"`); footer *"Dicetak via Walisantri.com"* di PDF yang diunduh wali (`wali/pdf/laporan.blade.php:136`) | Audit tuntas string merek di `resources/views/wali/**` + PDF, lalu jadikan konfigurasi per tenant |
+
+**Keputusan produk yang belum diambil:** ketiganya masuk cakupan add-on, atau dinyatakan **di luar cakupan** dan dikomunikasikan apa adanya saat penjualan. Sekalian tetapkan definisi white-label yang dijual: mengganti merek platform dengan merek pesantren, atau sekadar menghilangkan merek platform — dan apakah baris "Powered by Walisantri" tetap boleh muncul. Menjual "white-label" tanpa keputusan ini mengulang persis kesalahan yang v4.43 perbaiki: menutup permukaan yang jarang dilihat, membiarkan yang harian.
+
 ### Identitas kanonik
 
 Host per-tenant menambah identitas **ketiga** untuk satu pesantren, setelah `pesantrens.id` (kanonik, tidak pernah berubah) dan `slug` (mutable, cooldown 90 hari). Aturannya tetap: **`pesantrens.id` satu-satunya identitas kanonik**; slug dan hostname keduanya hanya alamat. Tidak ada logika yang boleh bergantung pada keduanya untuk otorisasi.
+
+### Yang harus tuntas sebelum baris kode pertama *(v4.44)*
+
+**Verifikasi — dua sudah selesai (16 Agustus 2026):**
+1. ✅ **`SESSION_DOMAIN` tidak disetel.** Cookie production host-only (`Set-Cookie` tanpa `Domain=` di ketiga host). Prasyarat cookie Fase 1 **belum terpenuhi** dan berbiaya: memutus semua sesi aktif.
+2. ✅ **DNS sudah proxied Cloudflare** (IP anycast `104.21.90.16`/`172.67.151.3`, `server: cloudflare`, `cf-ray`). Prasyarat terberat Fase 2 sudah berdiri — dan `TrustProxies` yang kosong jadi utang hari ini, bukan pekerjaan Fase 2.
+3. ⬜ **`grep -rn real_ip /etc/nginx/` di VPS** — menentukan apakah `$request->ip()` hari ini berisi IP pengunjung atau IP edge Cloudflare (lihat Fase 2 butir 1). Ini satu-satunya yang menentukan apakah ada bug yang sudah hidup sekarang.
+4. ⬜ Kuota gratis & harga per hostname Cloudflare for SaaS terkini — sebelum harga add-on dikunci di §5.2.
+
+> **Catatan status deploy:** production menjalankan `main`, sementara sandbox v4.42 (`/coba`, `demo.walisantri.com`) masih di `dev` — `/coba` dan `demo.walisantri.com` sama-sama 404 di production saat verifikasi ini dilakukan. Jadi bug corong pendaftaran di atas belum bisa muncul di production dari dua arah sekaligus: cookie masih host-only, dan sandbox-nya sendiri belum ter-deploy.
+
+**Keputusan produk yang masih terbuka:**
+1. Perilaku host tenant saat langganan berakhir — ikut terkunci seperti host platform, atau berhenti dilayani sama sekali *(v4.43)*.
+2. Cakupan white-label di pengirim WhatsApp & email — masuk add-on, atau dinyatakan di luar cakupan *(v4.44)*.
+3. Model cookie Fase 1 — berbagi `.walisantri.com` (murah, satu origin untuk semua tenant) atau ber-scope host sejak awal (jalur identik dengan Fase 2) *(v4.44)*.
+
+**Kriteria terima teknis** (mengikuti §1.7 langkah 8, tapi untuk host, bukan tabel): satu berkas tes yang membuktikan (a) sesi tenant B ditolak di host tenant A, (b) `app.../report/{uuid}` mengalihkan ke host tenant santri walau slug sudah diganti, (c) grup rute host tenant tidak menangkap `app.walisantri.com`, (d) `route('wali.*')` menghasilkan host yang benar dari konteks queue (job WhatsApp berjalan tanpa request), (e) **pengunjung dengan sesi magic link tetap bisa membuka `/register` dan mendaftar**, dan (f) tombol "Keluar" di portal wali berfungsi dari host tenant.
 
 ---
 
