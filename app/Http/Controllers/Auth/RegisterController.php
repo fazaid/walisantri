@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Mail\SambutanPendaftaran;
-use App\Models\BillingSetting;
 use App\Models\EmailSetting;
 use App\Models\Pesantren;
 use App\Models\PlatformSetting;
@@ -29,7 +28,7 @@ class RegisterController extends Controller
 
         return view('auth.register', [
             'registrationOpen' => PlatformSetting::registrationOpen(),
-            'trialDays' => BillingSetting::get('trial_days', 14),
+            'demoOpen' => PlatformSetting::demoOpen(),
         ]);
     }
 

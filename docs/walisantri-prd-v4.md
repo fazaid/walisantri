@@ -4,7 +4,133 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Agustus 2026 — v4.40
+**Last Updated:** Agustus 2026 — v4.46
+
+**Changelog v4.46:** **Seksi #harga landing kini menawarkan dua siklus — bulanan dan tahunan — lengkap dengan bonus yang didapat.** Ini membalik keputusan v4.41 yang menulis seksi itu "tanpa toggle"; alasan penolakannya waktu itu teknis, bukan produk (landing nol JavaScript), dan alasan itu ternyata tidak mengikat. Toggle-nya dibangun **tetap tanpa JavaScript**: dua `<input type="radio">` ber-`sr-only` menjadi saudara langsung `<section id="harga">`, lalu CSS di `<head>` (`#siklus-tahunan:checked ~ * .harga-bulanan { display: none }`) menyembunyikan harga yang tidak dipilih — pola sibling selector yang sama dengan FAQ `<details>` di halaman yang sama. Karena input-nya `sr-only`, fokus keyboard dipinjamkan ke label lewat `:focus-visible`.
+
+**Harga tahunan adalah turunan, bukan angka kedua.** `LandingController` menghitungnya dari harga bulanan × `DurasiLangganan::DuabelasBulan->bulanBayar()`, harga coret dari `totalBulan()`, dan nominal hemat dari `bonusBulan()` — jadi mengubah `harga_*` atau `bonus_bulan_tahunan` di `BillingSettingsPage` menggeser ketiga angka itu sekaligus, dan tidak ada tabel harga tahunan terpisah yang bisa diam-diam menyimpang (alasan yang sama dengan §5.2 dan v4.41). Bila bonus tahunan disetel **0**, harga coret dan klaim "N bulan gratis" hilang sendirinya alih-alih merosot jadi "0 bulan gratis"; dua tes baru di `LandingPageTest` mengunci keduanya. Catatan kaki tetap menyebut durasi 6 bulan — bonusnya setelan terpisah (`bonus_bulan_enam`), jadi mematikan bonus tahunan tidak boleh ikut menghapusnya.
+
+**Angka yang ditonjolkan di kartu adalah tarif per santri, bukan harga paket.** Keputusan pemilik produk: Rp 150.000/bulan terbaca mahal, Rp 1.500/santri/bulan terbaca murah, padahal keduanya angka yang sama. Harga paket **tidak** dihapus — ia tetap tertulis di baris bawahnya ("Rp 150.000/bulan per pesantren"), karena itulah yang benar-benar ditagih. Siklus tahunan memakai pasangannya, tarif per santri **per tahun** (Rp 15.000 pada Rintisan).
+
+⚠️ **Tarif per santri itu setara, bukan cara penagihan — dan bedanya nyata.** Pembaginya kuota paket, bukan jumlah santri yang sesungguhnya, jadi pesantren berisi 60 santri di paket Rintisan membayar Rp 2.500/santri, bukan Rp 1.500. Karena itu setiap kartu wajib menutup angkanya dengan "Setara pada kuota N santri; tagihannya per paket" — tanpa kalimat itu, angka ini masuk kategori klaim yang dicabut v4.41, bukan sekadar penyederhanaan. Sistem juga tidak punya penagihan per santri di mana pun (`BillingCalculatorService` hanya mengenal harga paket + add-on blok 100 di Maju, §5.3), jadi janji itu tidak boleh menguat jadi "bayar per santri". Pembaginya sendiri ikut `BillingSetting` (`kuota_*`) dan dibulatkan ke rupiah terdekat; `LandingPageTest::test_tarif_per_santri_ikut_kuota_bukan_pembagi_tetap` menggeser kuotanya untuk memastikan pembaginya bukan angka mati.
+
+**Catatan kaki #harga: "tanpa kontrak jangka panjang" dicabut, "harga dapat berubah sewaktu-waktu" masuk.** Keputusan pemilik produk. Yang dicabut sebenarnya benar (tidak ada ikatan kontrak), tapi ia menjanjikan sesuatu yang tidak ingin dipegang; yang masuk menutup celah sebaliknya — angka di kartu tidak boleh terbaca sebagai tarif terkunci selamanya. Dijaga `LandingPageTest::test_catatan_harga_menyebut_bisa_berubah_tanpa_janji_bebas_kontrak` dengan pola `assertDontSee` yang sama seperti v4.41 dan v4.45. ⚠️ **`docs/faq-walisantri.md:77` masih menulis "Tidak ada ikatan kontrak jangka panjang untuk paket bulanan"** — dokumen itu sengaja tidak ikut disunting di rilis ini, jadi kalau isinya dipakai untuk menjawab calon pelanggan, ia berselisih dengan landing. Lihat juga §5.6.
+
+⚠️ **Landing memajang harga, tidak menjual durasi.** Durasi 3 bulan sengaja tidak ditampilkan (bonusnya nol — tidak ada yang bisa ditawarkan), dan memilih siklus di landing tidak membuat order apa pun: CTA-nya tetap ke `/register`. Pemilihan durasi yang sesungguhnya tetap di `UpgradePage` (§16.1), dan mekaniknya tetap §5.2.
+
+**Mode gelap dipasang di seluruh halaman publik, dengan tombolnya di nav.** Landing, `/panduan`, `/demo`, `/register`, `/login`, dan halaman kata sandi memakai satu palet dan satu pilihan. Defaultnya ikut setelan perangkat; pembaca boleh menimpanya lewat tombol di nav, dan pilihannya diingat lintas halaman (`localStorage`).
+
+**Yang dibalik paletnya, bukan markup-nya — ini keputusan yang menentukan biaya perawatan seterusnya.** Halaman publik memakai >300 utilitas warna; menempelkan `dark:` satu per satu berarti setiap salinan copy baru harus ingat melakukannya, dan yang lupa akan tampil belang. Karena di Tailwind v4 `bg-white` menjadi `background-color: var(--color-white)`, `resources/css/app.css` cukup menimpa **variabel paletnya** di `:root.dark` — skalanya dibalik (gray-900 jadi paling terang, white jadi paling gelap), sehingga pasangan seperti `bg-teal-700 text-white` tetap kontras: ia menjadi teal terang dengan teks gelap. Varian `dark:` tetap tersedia (`@custom-variant dark` berbasis kelas) dan dipakai **hanya untuk pengecualian**.
+
+⚠️ **Pengecualiannya adalah permukaan yang memang disengaja lebih gelap dari halaman**, dan ini yang paling mudah terlewat saat menambah seksi baru: seksi `#presensi`, CTA penutup, sidebar mockup dashboard, bodi HP mockup, serta latar penuh `/login` dan halaman kata sandi. Dibalik apa adanya, semuanya berubah jadi slab terang menyilaukan di mode gelap; keenamnya karena itu dikunci dengan `dark:` eksplisit. **Aturannya:** warna yang menggambarkan *benda* atau *panel kontras* tidak ikut membalik, warna yang menggambarkan *permukaan situs* ikut.
+
+**Landing tidak lagi nol JavaScript — dan hanya ini alasannya.** Skripnya ~30 baris tanpa pustaka, wajib sinkron di `<head>` (`partials/tema`): kelasnya harus terpasang sebelum halaman dilukis, kalau tidak pembaca bermode gelap kena kedip putih tiap membuka halaman. Setelan perangkat yang berubah saat halaman terbuka hanya diikuti selama pembaca belum pernah memilih sendiri. Logikanya diuji terpisah di luar test suite PHP (DOM tiruan, tujuh kasus: default ikut perangkat, tombol menyimpan pilihan, pilihan manual tidak ditimpa perangkat); yang dijaga `LandingPageTest` adalah bagian yang bisa hilang diam-diam saat menyunting `<head>` — skrip dan tombolnya ikut ter-render. `/panduan` yang tadinya memakai `prefers-color-scheme` ikut pindah ke kelas yang sama, dan penimpa `.site-chrome` di sana **dihapus** — paletnya sudah membalik sendiri, penimpa itu justru akan membuat nav berbeda dari landing. Pembungkus `<div class="site-chrome">`-nya sendiri ikut dicabut belakangan; lihat catatan nav di bawah.
+
+**Suite SQLite lokal bisa dipercaya lagi: cast tanggal presensi diberi format eksplisit.** Sembilan tes + satu error di modul Presensi/Rapor merah secara lokal tapi hijau di CI, dan itu berlangsung cukup lama sampai dianggap "kegagalan bawaan". Penyebabnya satu: cast `'date'` polos menyerialkan nilai sebagai `Y-m-d H:i:s`. Postgres memotong jamnya karena kolomnya memang `DATE`; SQLite tidak punya tipe tanggal sungguhan sehingga menyimpan `2026-09-07 00:00:00` apa adanya — lalu `whereIn('tanggal', …)`, pencarian baris `(pesantren_id, tanggal)`, dan `assertDatabaseHas` sama-sama meleset. Gejalanya menyebar (rekap menghitung 0, persentase 75 alih-alih 100, "Hari Efektif" hilang dari Rapor, izin yang disetujui gagal menimpa presensi manual, unique constraint hari libur dilanggar) padahal akarnya cuma imbuhan `00:00:00` itu.
+
+Diperbaiki dengan menulis formatnya: `'date:Y-m-d'` di `Presensi::tanggal`, `PresensiHariLibur::tanggal`, dan `PresensiIzin::tanggal_mulai`/`tanggal_selesai`. Postgres tidak terpengaruh (kolomnya sudah `DATE`), SQLite ikut menyimpan tanggal murni. Hasilnya **692/692 lulus di PostgreSQL dan 679 lulus + 13 dilewati di SQLite, nol gagal di keduanya**. ⚠️ Ini **tidak** membatalkan anjuran di `phpunit.pgsql.xml`: SQLite masih longgar soal CHECK constraint dan tipe kolom, jadi `--configuration=phpunit.pgsql.xml` tetap wajib sebelum push. Yang berubah, suite lokal tidak lagi punya kegagalan permanen yang menutupi regresi baru.
+
+**Nav punya menu untuk layar HP, dan `/panduan` header-nya benar-benar menempel.** Dua cacat yang dilaporkan setelah nav dijadikan partial bersama.
+
+**(1) Menu utama tidak terjangkau di HP.** Keenam tautan nav hidup di `hidden md:flex` — di bawah 768px mereka hilang **tanpa pengganti**, jadi pengunjung HP tidak punya jalan ke seksi Harga atau FAQ, dan pembaca `/panduan` tidak punya jalan kembali ke landing sama sekali. Sekarang ada panel menu: checkbox `sr-only` + `peer-checked`, tanpa JavaScript untuk buka/tutupnya (pola yang sama dengan pemilih siklus harga dan drawer daftar isi). Skrip 4 baris hanya untuk menutup panel setelah tautan diketuk — tanpa itu panel tetap menutupi seksi yang baru dituju. **Bar HP berisi logo · ☾ · Daftar · ☰**; hanya "Masuk" yang pindah ke dalam panel. Tombol mode gelap sengaja **tetap di bar** (permintaan pemilik produk) — ia satu ketukan, bukan dua. Konsekuensinya bar butuh 340px, jadi di bawah 360px tulisan merek "Walisantri.com" disembunyikan dan menyisakan logonya saja (turun ke 230px); `min-w-0` + `truncate` jadi jaring terakhir supaya sisa kesempitan berakhir sebagai teks terpotong, bukan halaman yang bisa digeser ke samping. Angka-angka itu diukur dari halaman yang dirender, bukan ditaksir. Daftar tautannya dirakit sekali di satu array lalu dipakai bar desktop dan panel HP, supaya keduanya tidak bisa berbeda isi — termasuk saat gerbang demo ditutup.
+
+**(2) Header `/panduan` tidak menempel — penyebabnya pembungkus, bukan CSS sticky-nya.** `@include`-nya dibungkus `<div class="site-chrome">`, dan **elemen `position: sticky` terkurung di blok induknya**: pembungkus yang tingginya persis setinggi nav membuat nav tidak punya ruang untuk menempel, jadi ia langsung tergulir hilang. Gejalanya justru muncul di tempat lain — sidebar daftar isi menempel di `top: var(--nav-h)`, di ruang yang kini kosong, sehingga terlihat mengambang. Pembungkusnya dicabut (penimpa yang dulu membenarkannya sudah hilang saat mode gelap masuk), dan `PanduanPageTest` mengunci agar nav tetap jadi elemen tampak pertama di `<body>`.
+
+⚠️ **`--nav-h` di `/panduan` sekarang diukur, bukan ditebak.** Angka statis di CSS (57px/69px) ternyata meleset 8px begitu nav mendapat tombol ☰ — tinggi nav itu milik partial bersama dan bisa berubah tanpa `/panduan` tahu. Skrip di akhir `<body>` menyetel `--nav-h` dari `nav.offsetHeight` saat muat dan saat layar diubah ukurannya; nilai CSS-nya tinggal cadangan bila JavaScript mati. Terverifikasi di tiga lebar (485/700/1280px): nav menempel di `top: 0`, sidebar dan bar daftar isi tepat di bawahnya tanpa celah.
+
+⚠️ **Jebakan Blade yang memakan waktu di rilis ini:** menulis `@include` sebagai teks biasa di dalam komentar **CSS** membuat Blade tetap mengompilasinya (`$__env->make(, …)` → `ParseError`, halaman 500). Di dalam komentar Blade `{{-- --}}` aman; di dalam `<style>` tidak.
+
+**`/panduan` disatukan tampilannya dengan landing.** Halaman itu selama ini berdiri sendiri: palet krem-serif, dan header/footer versinya sendiri. Sekarang paletnya memakai warna landing (putih + teal Tailwind) dan nav/footer-nya **partial yang sama** — `partials/situs-nav` & `partials/situs-footer`, dipakai landing maupun panduan, sehingga tidak ada lagi dua salinan yang bisa menyimpang. Identitas dokumennya (serif untuk judul, sidebar daftar isi) sengaja dipertahankan; yang disamakan warna dan chrome-nya, bukan tipografinya.
+
+**Rutenya pindah dari `Route::view` ke `PanduanController` — dan itu memperbaiki lubang, bukan sekadar rapi-rapi.** Nav bersama ikut gerbang `registration_open`/`demo_open`, dan gerbang itu butuh controller. Sebelumnya /panduan menautkan `/demo` dan `/register` tanpa gerbang apa pun: menutup pendaftaran menyisakan pintu yang masih terbuka di halaman ini. `PanduanPageTest` (4 kasus) menjaganya, termasuk memastikan anchor nav (`#harga`, `#faq`) absolut ke landing — kalau relatif ia menggantung di /panduan dan tidak membawa pembaca ke mana pun.
+
+⚠️ **Tiga jebakan teknis yang harus diingat sebelum menyunting `panduan.blade.php`.** (1) Tailwind kini ikut dimuat di sana demi partial bersama, dan **preflight-nya** mematikan penanda daftar serta garis bawah tautan — dokumen ini penuh `<li>`, jadi keduanya dikembalikan di blok "Preflight" dan jangan dihapus. (2) Utilitas Tailwind hidup di `@layer` sehingga **selalu kalah** dari aturan tak berlapis di `<style>` halaman itu, berapa pun specificity-nya; karena itu `a` dan `p` polos dibatasi jadi `:where(.page) a` / `:where(.page) p` — tanpa itu tautan abu-abu di nav bersama berubah teal. `:where()` dipakai supaya specificity-nya tetap 0,0,1 dan `.backlink`/`.doc-lede` tetap menang. (3) Nav landing **sticky**, sementara sidebar panduan juga menempel di atas; tinggi nav dicatat di variabel `--nav-h` dan dipakai menggeser sidebar, drawer, scrim, serta `scroll-margin-top` anchor.
+
+**Mode gelap /panduan dipertahankan** (keputusan pemilik produk) padahal landing tidak punya — dokumen ini panjang dan sering dibaca di HP. Paletnya diselaraskan ke teal yang sama, dan karena nav/footer bersama itu terang-saja, warnanya ditimpa **hanya di dalam `.site-chrome`** di halaman ini. Konsekuensinya: menambah warna baru di nav bersama berarti menambah penimpanya di sini juga, kalau tidak nav-nya belang saat mode gelap.
+
+**Satu cacat lama ikut ditutup:** checkbox pengendali drawer daftar isi (`#nav-toggle`) hanya disembunyikan di dalam `@media (max-width:900px)`, jadi di layar desktop kotak centangnya benar-benar tampil menggantung di pojok kiri atas halaman. Terverifikasi ada sebelum rilis ini (tangkapan layar `git stash`), bukan efek samping penyatuan tampilan.
+
+**Changelog v4.45:** **Trial dicabut dari corong akuisisi — pemasarannya, bukan mekaniknya.** Keputusan pemilik produk. Tiga CTA landing yang menjual masa trial ("Coba Gratis 14 Hari" ×2, "Mulai Trial") kini berbunyi **"Daftar Sekarang"**, dan seluruh salinan pendukungnya ikut dicabut: subjudul Harga, langkah 1 Cara Kerja, dua butir FAQ, paragraf CTA penutup, dan subjudul `/register`. Dua FAQ diganti **pertanyaannya**, bukan hanya jawabannya — "Apakah Walisantri gratis?" mengandaikan jawaban "gratis dulu" yang justru sedang dicabut, dan "Apa yang terjadi setelah masa trial habis?" menjadi "…kalau masa langganan berakhir?" (isi jawabannya berlaku untuk kedua kasus).
+
+⚠️ **Mekanik trial tidak disentuh, dan ini yang paling mudah salah dibaca di sesi berikutnya.** `OnboardPesantren` tetap mengaktifkan trial Rintisan sepanjang `BillingSetting::trial_days`, lifecycle trial → grace 7 hari → suspended tetap berlaku, dan email sambutan masih menyebutnya. Pendaftar tetap mendapat trial — ia hanya tidak lagi dijanjikan sebelum mendaftar. `$trialDays` dilepas dari `LandingController` dan `RegisterController` semata karena tidak ada lagi view yang memakainya. Rinciannya di **§4.1**.
+
+`LandingPageTest::test_lama_trial_mengikuti_billing_setting` diganti `test_landing_tidak_menjanjikan_trial`, dan `RegisterControllerTest` mendapat pasangannya. Yang dijaga membalik arah: dulu memastikan lama trial ikut `BillingSetting` (bukan angka mati di Blade), sekarang memastikan janji itu tidak kembali lewat penyuntingan copy berikutnya — pola `assertDontSee` yang sama dengan empat klaim yang dicabut v4.41. **Keputusan model masuk (trial/freemium/demo-led) tetap terbuka** — rilis ini berhenti menjual dengan trial, tapi tidak memilih penggantinya.
+
+**Changelog v4.44:** **§1.8 diperiksa ulang terhadap kode dan production — satu klaim prasyarat gugur, satu asumsi infrastruktur terbalik, tiga lubang ditutup, cakupan white-label diberi batas.** Tidak ada perubahan kode; §1.8 tetap rancangan. Dua prasyarat yang v4.43 hanya duga-duga kini **diukur langsung ke production (16 Agustus 2026)**, dan keduanya meleset — satu ke arah lebih buruk, satu ke arah lebih baik.
+
+**Klaim `SESSION_DOMAIN` gugur — terverifikasi TIDAK disetel di production.** v4.43 mencentang cookie sesi sebagai prasyarat Fase 1 yang *sudah* terpenuhi. Buktinya tidak pernah ada di repo (`.env.example:44` justru `SESSION_DOMAIN=null`), dan pengukuran langsung memastikannya: `walisantri.com`, `app.walisantri.com`, dan `demo.walisantri.com` sama-sama mengirim `Set-Cookie: walisantri-session=…; path=/; secure; httponly; samesite=lax` — **tanpa atribut `Domain=`**, artinya cookie host-only. Prasyarat ini **belum terpenuhi**, dan mengisinya tidak gratis: mengganti scope cookie **memutus semua sesi aktif** sekaligus. Harus dijadwalkan, bukan disisipkan di deploy rutin. Umur sesi `Max-Age=7200` (2 jam) menahan dampaknya tetap kecil.
+
+**Pagar tenant dipindah dari login ke setiap request.** v4.43 menulis aturannya sebagai *"login di host tenant hanya menerima akun tenant itu"*. Justru karena cookie dibagi lintas subdomain, kasus yang bocor bukan login: sesi yang **sudah** ada ikut terbawa. Admin pesantren B yang login di `app.` lalu mengetuk `pesantren-a.walisantri.com/wali/...` datang membawa sesi aktif tanpa pernah menyentuh form login. Cek di `WaliLoginController` tidak pernah jalan di jalur itu.
+
+**Model cookie Fase 1 naik jadi keputusan arsitektur terbuka, bukan detail yang sudah diputus.** Cookie `.walisantri.com` dipilih v4.43 karena gratis, tapi konsekuensinya: seluruh halaman ber-cookie jadi **satu origin dengan konten yang dikelola tenant sendiri** (deskripsi, galeri, dan nanti CMS artikel/kegiatan §1.4). Satu XSS di profil satu pesantren = pencurian sesi seluruh platform. Hari ini risikonya nol karena profil publik tanpa auth; setelah Fase 1 tidak lagi. Alternatif host-scoped cookie sejak Fase 1 menutup kelas serangan itu **dan** menyamakan jalur Fase 2 — lapisan auth yang §1.8 sendiri sebut "butuh tes sendiri, bukan tempat coba-coba" tidak lagi ditunda ke fase yang berhadapan dengan domain pelanggan.
+
+**Dan cookie berbagi mematikan corong pendaftaran lewat sandbox — ini bukan hipotesis, jalurnya sudah ada di kode.** `VerifyMagicToken` menjalankan `Auth::login()` sungguhan, jadi pengunjung yang klik `/coba` **benar-benar login** sebagai wali tenant demo. Dengan cookie `.walisantri.com`, sesi itu ikut berlaku di apex — tempat form pendaftaran hidup — sehingga `RegisterController::showForm()` baris 26 melihat `Auth::check()` true, memanggil `redirectAuthenticated()` (baris 82, role `wali_santri`), melempar ke `wali.dashboard`, lalu `BlockMagicLinkSession` memantulkannya ke halaman santri demo. **Form pendaftaran tidak pernah bisa dibuka**, dan `store()` dijaga cek yang sama di baris 39 sehingga submit pun tertelan. Sandbox dibangun untuk konversi, lalu memblokir tombol konversinya. Hari ini aman **hanya karena** cookie masih host-only — bug ini akan **diciptakan** oleh perubahan `SESSION_DOMAIN`, bukan ditemukan.
+
+**Cakupan white-label diberi batas eksplisit — host saja tidak menutup janjinya.** `WhatsAppGatewaySetting` adalah tabel key-value **global tanpa `pesantren_id`**: token Fonnte satu untuk seluruh platform, jadi magic link sampai ke wali dari nomor WA platform. `MAIL_FROM_ADDRESS/NAME` juga global. Ditambah sisa merek di permukaan wali: `wali/layouts/app.blade.php:13` dan footer *"Dicetak via Walisantri.com"* di PDF yang diunduh wali (`wali/pdf/laporan.blade.php:136`). Argumen "titik sentuh harian" yang melahirkan §1.8 berlaku satu lapis lebih dalam dari host.
+
+**Asumsi infrastruktur Fase 2 terbalik: trafik production SUDAH lewat proxy Cloudflare.** Dugaan awal (wildcard cert lewat DNS-01 ⇒ A record DNS-only) salah. Pengukuran 16 Agustus 2026: `walisantri.com` dan `app.walisantri.com` sama-sama resolve ke IP anycast Cloudflare (`104.21.90.16`, `172.67.151.3`), response membawa `server: cloudflare` + `cf-ray`. Artinya prasyarat terberat Fase 2 sudah berdiri — Cloudflare for SaaS jadi langkah yang **lebih kecil** dari yang ditulis v4.43, bukan lebih besar. Tapi konsekuensinya berpindah dari "nanti" ke "sekarang": **`TrustProxies` tidak dikonfigurasi sama sekali** di `bootstrap/app.php`, sementara seluruh rate limiter dikunci per IP (`register`, `demo`, `check-slug`, login, magic link, reset password). Kalau Nginx di VPS tidak menegakkan `set_real_ip_from` untuk rentang Cloudflare, maka `$request->ip()` **hari ini** sudah berisi IP edge Cloudflare, bukan IP pengunjung — limiter jadi ember bersama dan `activity_logs` mencatat IP yang salah. Satu perintah di VPS menuntaskannya: `grep -rn real_ip /etc/nginx/`.
+
+**Dua sinkronisasi kecil:** daftar reserved slug §1.4 usang sejak v4.42 (kode menambah `demo, sandbox, coba, contoh`), dan `SandboxDemo::waliUrl()` ikut berubah host begitu `linkWali()` jadi per-tenant.
+
+**Keputusan produk terbuka kini tiga**, bukan satu: perilaku host tenant saat langganan berakhir (sejak v4.43), cakupan white-label di WhatsApp/email, dan model cookie Fase 1.
+
+**Changelog v4.43:** **Host per-tenant & white-label — spesifikasi dua fase, nol kode.** Seksi baru **§1.8 — Host Per-Tenant & White-Label**, disusun dalam dua fase. ⚠️ Ditulis eksplisit sebagai **rancangan, bukan status**, karena dokumen ini sudah dua kali jatuh ke kesalahan yang sama (§8 dan §15 sempat mendeskripsikan halaman presensi wali sebagai fitur yang ada, dikoreksi v4.40). Yang benar-benar ada hari ini hanya kolomnya — `tenant_domains.type/verified_at/ssl_status`; `grep "'custom'"` di seluruh `app/` mengembalikan nol hasil.
+
+**Cakupannya diperluas, dan itu perubahan keputusan yang sebenarnya.** Sampai v4.42, custom domain tersirat hanya menyangkut halaman profil. Itu terlalu sempit untuk add-on berbayar: wali membuka halaman profil paling banyak sekali, sementara titik sentuh hariannya adalah portal. Custom domain yang berhenti di halaman profil membiarkan merek platform muncul persis di tempat yang paling sering dilihat — janji white-label yang tidak ditepati. Cakupan barunya mencakup **login wali, portal wali, dan Magic Link**.
+
+**Yang membuat itu terjangkau:** seluruh permukaan yang dilihat wali (`/login`, `/wali/*`, `/report/{uuid}`) adalah route Laravel biasa dengan view Blade — **bukan Filament**. Panel staf sebaliknya terikat `->domain()` yang hanya menerima satu nilai, jadi ia **tetap** di `app.walisantri.com`. Itu bukan kompromi yang merusak tujuan: pengurus menandatangani kontraknya dan sudah tahu vendornya; yang dijanjikan white-label adalah komunitas, bukan staf.
+
+**Dipecah dua fase, dan pemecahannya bukan sekadar pentahapan pekerjaan.** **Fase 1** memindahkan permukaan wali ke `{slug}.walisantri.com` — di sana tiga dari empat prasyarat **sudah terpenuhi gratis**: wildcard cert `*.walisantri.com` berlaku sampai 2041, wildcard A record sudah ada (§1.5), dan `SESSION_DOMAIN=.walisantri.com` sudah berbagi cookie ke seluruh subdomain *(⚠️ klaim ketiga **gugur di v4.44** — diukur ke production 16 Agu 2026, `SESSION_DOMAIN` ternyata tidak disetel)*. Artinya seluruh kesulitan arsitekturnya (routing per-host, `linkWali()` per-tenant, 38 call site `route('wali.*')`) dibuktikan lebih dulu di keluarga host yang kita kuasai penuh. **Fase 2** tinggal menambahkan TLS Cloudflare for SaaS + verifikasi kepemilikan. Efek sampingnya: peningkatan branding jadi **gratis untuk semua pesantren**, bukan hanya pembeli add-on.
+
+**Pintu kanonik permanen adalah kunci yang membuat Fase 1 aman.** `app.walisantri.com/report/{uuid}` tetap ada selamanya dan hanya mengalihkan ke host tenant saat ini — tujuannya dihitung dari **tenant milik santri**, bukan dari URL. Ini menjaga jaminan §1.4 (*slug mutable itu aman*) tetap utuh meski portal wali kini tinggal di subdomain: tanpa mekanisme itu, mengganti slug akan mematikan seluruh magic link yang sudah dibagikan, karena `PesantrenObserver` **menimpa** hostname alih-alih menambah baris. Yang memungkinkannya: `VerifyMagicToken` mencari uuid secara global, tidak terikat host.
+
+**Cloudflare for SaaS ditetapkan sebagai jalur TLS** (keputusan pemilik produk); Caddy on-demand TLS turun jadi cadangan. Gratis ≤100 hostname lalu berbayar per hostname — sejalan dengan posisinya sebagai add-on paket Maju.
+
+**Empat jebakan dinamai di depan, bukan ditemukan belakangan:** (1) magic link lama (`app.walisantri.com/report/{uuid}`) sudah tersimpan di HP ribuan wali dan **wajib dilayani selamanya**; (2) hostname dengan `verified_at` NULL tidak boleh dilayani maupun didaftarkan ke Cloudflare — tanpa itu siapa pun bisa mengklaim tenant orang lain; (3) login di domain tenant harus menolak akun tenant lain, kalau tidak user pesantren B melihat datanya sendiri di halaman ber-merek pesantren A; (4) pencabutan wajib dua sisi — custom hostname menggantung di Cloudflare setelah domainnya dijual adalah versi lain dari risiko subdomain takeover yang sudah pernah dicatat proyek ini (§18, `staging.walisantri.com`).
+
+§1.3, §1.4, §1.6, dan matriks §5.1 diselaraskan; tidak ada perubahan kode.
+
+**Changelog v4.42:** **Sandbox demo publik — `demo.walisantri.com`.** Sampai rilis ini, satu-satunya cara melihat produk adalah mendaftar. Sandbox menutup kebutuhan "boleh saya lihat dulu?" tanpa melahirkan tenant kosong. ⚠️ Ia **bukan** pengganti keputusan model masuk (trial/freemium/demo-led): ia tidak menjawab "bagaimana pesantren saya mulai memakainya dengan data sendiri", hanya menurunkan tekanannya.
+
+**Dibangun sebagai tenant sungguhan, bukan permukaan baru.** `routes/web.php` sudah mendaftarkan `Route::domain('{slug}.'.$baseDomain)`, jadi tenant ber-slug `demo` otomatis mendapat profil publiknya tanpa satu baris routing baru — sekaligus menjadi contoh hidup pertama untuk klaim "Website Profil Pesantren Sendiri" di landing. `sandbox:segarkan` memanggil `ProvisionTenant::jalankan()`, jadi `tenant_domains`, amalan Mutaba'ah, pengaturan presensi, dan jam pelajaran terisi lewat jalur yang sama dengan tenant nyata.
+
+**Empat slug dikunci: `demo`, `sandbox`, `coba`, `contoh`.** Sebelumnya keempatnya bisa didaftarkan siapa saja — satu pesantren yang kebetulan memilih slug `demo` akan mengambil alamat itu, lalu menguncinya 90 hari lewat `slug_releases` saat dilepas.
+
+**Perintah, bukan seeder, karena datanya bertanggal.** Setoran, presensi, dan SPP semuanya punya tanggal; di-seed sekali, sebulan kemudian demo terlihat ditinggalkan. `sandbox:segarkan` dijadwalkan mingguan dan menghitung ulang seluruh tanggal relatif terhadap hari ia jalan. Pembagiannya yang menentukan: baris **struktural** (pesantren, user, santri, kelas, kamar, mapel, ekskul) idempoten dan **tidak pernah dibuat ulang** — `santri.uuid` adalah token magic link, dan membuat ulang santri akan mematikan setiap tautan demo yang sudah dibagikan; baris **transaksional** dihapus lalu ditulis ulang. Dikunci tes yang membandingkan uuid dan jumlah baris sebelum/sesudah penyegaran kedua.
+
+**Tautannya tidak pernah di-hardcode.** `App\Support\SandboxDemo` menurunkan URL portal wali dari `santri.uuid` saat dibutuhkan (di-cache satu jam, dibersihkan perintah), dan rute `/coba` mengalihkan ke sana. Tombol kedua hero landing yang tadinya cuma menggulir ke `#fitur` diganti "Lihat Portal Wali →" — menukar tautan lemah dengan produk sungguhan, dan kembali ke perilaku lama bila tenant demo belum ada.
+
+**Dua perbaikan keamanan yang dipicu publikasi tautan ini.** (1) `WaliLoginController` memanggil `session()->regenerate()`, yang **mempertahankan** isi sesi — sehingga bendera `magic_link_session` sisa mencoba demo **bertahan melewati login wali sungguhan** di browser yang sama dan mengunci wali itu ke mode laporan baca-saja sampai logout. Nyaris mustahil terjadi sebelumnya; begitu tautannya dipasang di landing, setiap calon pelanggan yang juga wali santri bisa kena. Diperbaiki dengan `session()->forget()`, dan tesnya diverifikasi **gagal** tanpa perbaikan itu. (2) `/report/{uuid}` tidak punya rate limit sama sekali; kini memakai limiter `magic-link` (30/menit/IP) — uuid v4 tidak praktis dienumerasi, tapi keberadaan endpointnya bukan lagi rahasia.
+
+**Kontak sandbox sengaja tidak menjangkau manusia:** email `@demo.invalid` (TLD cadangan RFC 2606), `phone_number` null, kata sandi diacak dan tidak pernah ditampilkan. Nol email/WA bisa terkirim gara-gara tenant ini.
+
+**Yang sengaja TIDAK dikerjakan:** akses panel admin untuk publik (butuh kredensial bersama + reset terjadwal atau mode read-only yang belum ada) dan foto galeri (butuh berkas gambar sungguhan — diserahkan ke pemilik produk, bukan dikarang).
+
+Cakupan tes naik jadi **680 tes / 2.642 asersi** — `SandboxDemoTest` baru (9 kasus) plus satu regresi kebocoran bendera sesi di `MagicLinkReadOnlyTest`.
+
+**Changelog v4.41:** **Landing page diselaraskan dengan produk yang benar-benar ada.** Copy `resources/views/landing.blade.php` terakhir berubah 2026-07-03; sejak itu aplikasi menumbuhkan modul Presensi tujuh fase, email transaksional, Uang Saku, dan Ekstrakurikuler — sementara halaman depan masih menjual produk versi Juli.
+
+**Empat klaim dicabut karena tidak benar, dan itu bagian terpenting rilis ini.** (1) FAQ menulis *"masih dalam fase beta testing dan tersedia gratis"* padahal billing sudah hidup dan `/register` di funnel yang sama sudah menulis "Trial 14 hari gratis" — satu calon pelanggan bisa membaca dua harga di dua halaman berurutan. (2) FAQ menjanjikan *"database yang terisolasi satu sama lain"*; tenancy-nya single-DB dengan scoping per baris (§1), dan klaim keamanan yang dilebihkan adalah utang yang ditagih saat audit pelanggan, bukan saat ditulis. (3) Kartu Mutaba'ah menjanjikan *"Notifikasi ke wali"* — nol notifikasi menyasar wali: empat titik dispatch `KirimNotifikasiWhatsapp` dan tujuh mailable di `app/Mail/` semuanya untuk staf/billing. (4) FAQ dan "Cara Kerja" menjanjikan setup dibantu tim *"1-2 hari kerja"* setelah *"pendaftaran disetujui"*, padahal registrasi self-serve dan tenant aktif seketika. Keempatnya dikunci `assertDontSee` di `LandingPageTest` supaya tidak kembali lewat penyuntingan copy berikutnya.
+
+**Presensi naik jadi seksi tersendiri, bukan kartu kesembilan.** `grep -i 'presensi|absen|kehadiran|qr'` pada landing sebelumnya mengembalikan nol hasil — tujuh fase pekerjaan tidak terjual sama sekali. Seksinya menyebut hanya yang ada di kode: harian & per jam pelajaran, kartu QR cetak, pindai kamera/scanner, kalender libur, tujuh status, pengajuan izin dua pintu, rekap & ekspor. **Yang sengaja TIDAK ditulis:** notifikasi kehadiran ke wali (tidak ada) dan presensi per jam pelajaran untuk wali (sengaja tidak ditampilkan, §v4.40).
+
+**Seksi #harga kembali, tanpa toggle.** Angkanya wajib lewat `BillingCalculatorService::hitungUntukTarget()` + `BillingSetting`, bukan ditulis di Blade — harga hardcode akan diam-diam menyimpang begitu super admin mengubahnya di `BillingSettingsPage`, dan tesnya mengunci ini dengan menyetel harga ke nilai tidak lazim lalu memeriksa nilai itu yang muncul. Toggle bulanan/tahunan **tidak** dibangun: `resources/js/app.js` kosong dan landing ini nol JavaScript, jadi bonus 6/12 bulan ditulis sebagai satu kalimat statis dari `DurasiLangganan::bonusBulan()` *(catatan v4.46: toggle-nya akhirnya dibangun — landing tetap nol JavaScript, togglenya radio `sr-only` + selector sibling CSS; lihat changelog v4.46)*. Kartu harga juga tidak boleh mencoret fitur per paket — kelima Gate dihapus di v4.20 dan semua modul terbuka di semua paket; yang membedakan hanya kuota.
+
+**Tiga testimoni karangan dihapus.** Nama orang dan pesantren yang tidak nyata (Ust. Ahmad Fauzi/Al-Hikmah Bandung dkk) berikut rating lima bintang diganti seksi "Masalah yang Diselesaikan" — problem-solution tanpa mengarang siapa pun. Disclaimer kecil "sedang dalam fase beta" di bawahnya tidak pernah menutupi masalah itu. Stats bar hardcode (`298+ wali`, `10+ pesantren`) dihapus, bukan diperbarui: angka yang tidak punya sumber akan basi lagi dalam sebulan.
+
+**Route `landing` pindah dari closure ke `LandingController`** (pola `DemoController`), dengan guard `$sameDomain` ikut pindah utuh — komentar di `routes/web.php` menjelaskan kenapa `/` tidak boleh terdaftar dua kali. Tiga CTA daftar di hero/CTA/footer yang dulu mengabaikan `registrationOpen` kini ikut tergerbang, dengan fallback ke form demo.
+
+**Kill-switch `/demo` ditambahkan — sebelumnya halaman itu tidak bisa dimatikan sama sekali.** Satu-satunya toggle yang ada adalah `registration_open`; `/demo` tidak punya penjaga apa pun, sehingga tidak ada cara menghentikan intake calon pelanggan tanpa deploy. Asimetri itu baru terasa justru setelah landing memakai `/demo` sebagai fallback ketika pendaftaran ditutup. Sekarang `demo_open` hidup di `platform_settings` dan tampil sebagai section kedua di `RegistrationSettingsPage` (label navigasi diganti "Registrasi" → "Pendaftaran"; slug **tidak** diubah supaya tautan lama tidak mati).
+
+**`show()` dan `store()` dijaga terpisah.** Menyembunyikan formulir tidak menutup endpoint-nya — POST `/demo` tetap bisa dirakit tangan dan akan menulis lead baru berikut notifikasi WA ke super admin. Keduanya `abort_if(! PlatformSetting::demoOpen(), 404)`, dan tesnya menembak POST langsung, bukan hanya memeriksa GET.
+
+**Saat kedua pintu tertutup, landing tidak menawarkan apa pun.** Tujuh tautan daftar dan tujuh tautan demo hilang, digantikan satu kalimat pemberitahuan di hero dan di CTA penutup. Tombol **Masuk** sengaja tetap ada di nav dan footer: pesantren yang sudah berlangganan tidak boleh ikut terkunci hanya karena intake sedang dihentikan. Halaman `/register` yang tertutup juga tidak lagi menyodorkan tombol "Isi Form Demo" ke halaman yang mungkin 404. Keempat kombinasi toggle diverifikasi langsung terhadap halaman yang dirender.
+
+**Kolom Alamat Subdomain kini terisi otomatis dari Nama Pesantren.** Slug wajib diisi (`RegisterController` + `ValidTenantSlug`) tapi tidak pernah punya saran, sehingga pendaftar harus mengarang subdomainnya sendiri di kolom kedua form — gesekan pertama yang mahal, karena mengganti slug belakangan mengubah URL profil publik dan mengunci slug lama 90 hari (`slug_releases`). Saran dirakit di sisi klien (`register.blade.php`), mencerminkan `ValidTenantSlug` persis: huruf kecil, tanda hubung tunggal, tidak diawali/diakhiri tanda hubung, maksimal 30 karakter, diakritik dibuang. **Awalan generik dibuang** — "Pondok Pesantren Darul Ulum" → `darul-ulum`, bukan `pondok-pesantren-darul-ulum`; ini menegaskan pasangan placeholder yang sudah ada di form sejak awal.
+
+**Sarannya berhenti begitu user menyunting slug sendiri, dan hidup lagi kalau kolomnya dikosongkan.** `old('slug')` sesudah gagal validasi dihitung sebagai suntingan manual, jadi ketikan user tidak pernah ditimpa saat halaman dimuat ulang. Tidak ada validasi baru di server: ini murni bantuan pengisian, dan `SlugCheckController` yang sudah ada tetap memvalidasi hasilnya secara realtime dengan aturan yang sama.
+
+Cakupan tes naik jadi **670 tes / 2.607 asersi** — lima kasus baru di `LandingPageTest` (sebelumnya hanya dua, keduanya soal visibilitas tombol nav), dua kasus lagi untuk toggle demo, `DemoPageTest` baru (4 kasus), dan satu kasus di `RegisterControllerTest` yang mengunci id kedua kolom yang dikaitkan saran subdomain — menghapus salah satunya tidak memunculkan galat apa pun, sarannya saja yang diam-diam mati.
 
 **Changelog v4.40:** **Modul Presensi Fase 7 — angkanya sampai ke wali.** Fase terakhir modul ini menutup jarak antara data yang sudah dikumpulkan enam fase sebelumnya dan orang yang paling ingin membacanya.
 
@@ -263,7 +389,7 @@ Cakupan tes ditambah: `tests/Feature/SuperAdminPanelTest.php` (21 tes) dan kasus
 
 **Changelog v4.7:** Perubahan operasional & UX panel admin, tidak ada perubahan model bisnis. (1) **Git workflow** — branch `dev` ditambahkan sebagai branch kerja; CI (job `test`) jalan di push ke `dev` maupun `main`, tapi job `deploy` (SSH ke VPS) hanya jalan dari `main`; branch `main` diberi **branch protection** (wajib PR, wajib status check `Test` lolos & up-to-date, tanpa approval review wajib karena solo-dev) — lihat §6.4 & §18. (2) **Biodata Santri** — tambah kolom `nama_panggilan`, `nama_ayah`, `nama_ibu`, `alamat_lengkap`, `jumlah_saudara`, `ciri_fisik`, `cita_cita` pada tabel `santri` (lihat §3.2); tampil di form & halaman detail Filament. "Karakter dominan/Kelebihan/Kekurangan" sengaja tidak ditambahkan (tumpang tindih dengan modul Karakter Rapor yang sudah dinamis/periodik); "Suku" sengaja tidak ditambahkan (data sensitif, tanpa kebutuhan operasional jelas). (3) **Restrukturisasi navigasi Filament** — 3 resource Tahfidz (Setoran/Ujian/Nilai, sebelumnya flat di grup Akademik) digabung jadi satu **Filament Cluster "Tahfidz"** dengan navigasi tab (dipindah ke atas breadcrumbs via render hook, tampil konsisten desktop & mobile); halaman **Rapor Akademik** kini menampilkan section Nilai Akademik **dan** Nilai Tahfidz sekaligus (satu rekap + satu PDF gabungan, model data tetap terpisah); menu **Pengumuman** dipindah ke grup **Manajemen**; menu **Prestasi Santri** diberi label tampilan **Prestasi** (slug `prestasi-santris` → `prestasi`; nama tabel/model tidak berubah — URL penuhnya jadi `/admin/santri/prestasi` sejak resource ini masuk Cluster Santri di v4.9) — lihat §7. (4) **Bug fix** — field `tahun_ajaran` pada input Nilai Akademik & Rapor Tahfidz diubah dari teks bebas jadi dropdown standar (mencegah mismatch format yang menyebabkan nilai tidak muncul di rapor). (5) Landing page: hapus klaim "Tidak perlu kartu kredit · Setup 5 menit" (tidak relevan, sistem ini berbasis trial+konfirmasi manual, bukan kartu kredit otomatis).
 
-**Changelog v4.6:** Revisi **model bisnis & harga** — (1) harga paket **Berkembang** diturunkan Rp 450.000 → **Rp 350.000**/bulan agar lompatan harga lebih gradual (rasio ×2,3 vs ×3 sebelumnya); (2) **paket Gratis dihapus** — diganti model **trial Rintisan 30 hari gratis** (kuota 100 santri, fitur penuh Rintisan) agar calon pelanggan merasakan nilai nyata sebelum berkomitmen; (3) **Modul Kesehatan** dipindah ke **Rintisan+** (sebelumnya Berkembang+) — rekam medis adalah kebutuhan keselamatan dasar boarding school, bukan fitur premium; (4) lifecycle baru: trial 30 hari → expired → **grace period 7 hari** (admin/ustadz redirect `/billing`, wali read-only) → **suspended**; (5) **paket Maju** izinkan X=0 — 1.000 santri = Rp 750.000/bulan (base price, tanpa add-on); (6) opsi durasi **6 bulan** ditambah ke §5.2 (bayar 5, aktif 6); (7) **§5.6 baru** — Kebijakan Retensi (jaminan harga terkunci, program referral); (8) simulasi bisnis & **target milestone klien** di §21 diperbarui; (9) landing page kini memiliki **seksi #harga** dengan toggle bulanan/tahunan dan 4 kartu paket; (10) **paket Tumbuh** ditambah — 250 santri, Rp 299.000/bulan, posisi "Paling Populer" (lihat §5.1); (11) **kebijakan minimum durasi upgrade** — sisa aktif > 6 bulan wajib minimum 6 bulan, sisa > 9 bulan wajib 12 bulan (lihat §16).
+**Changelog v4.6:** Revisi **model bisnis & harga** — (1) harga paket **Berkembang** diturunkan Rp 450.000 → **Rp 350.000**/bulan agar lompatan harga lebih gradual (rasio ×2,3 vs ×3 sebelumnya); (2) **paket Gratis dihapus** — diganti model **trial Rintisan 30 hari gratis** (kuota 100 santri, fitur penuh Rintisan) agar calon pelanggan merasakan nilai nyata sebelum berkomitmen; (3) **Modul Kesehatan** dipindah ke **Rintisan+** (sebelumnya Berkembang+) — rekam medis adalah kebutuhan keselamatan dasar boarding school, bukan fitur premium; (4) lifecycle baru: trial 30 hari → expired → **grace period 7 hari** (admin/ustadz redirect `/billing`, wali read-only) → **suspended**; (5) **paket Maju** izinkan X=0 — 1.000 santri = Rp 750.000/bulan (base price, tanpa add-on); (6) opsi durasi **6 bulan** ditambah ke §5.2 (bayar 5, aktif 6); (7) **§5.6 baru** — Kebijakan Retensi (jaminan harga terkunci, program referral); (8) simulasi bisnis & **target milestone klien** di §21 diperbarui; (9) landing page kini memiliki **seksi #harga** dengan 4 kartu paket *(catatan v4.41: seksi ini sempat dihapus di `238f210` saat pivot waiting-list lalu dikembalikan; toggle bulanan/tahunan yang tertulis di sini tidak pernah ada — lihat changelog v4.41)*; (10) **paket Tumbuh** ditambah — 250 santri, Rp 299.000/bulan, posisi "Paling Populer" (lihat §5.1); (11) **kebijakan minimum durasi upgrade** — sisa aktif > 6 bulan wajib minimum 6 bulan, sisa > 9 bulan wajib 12 bulan (lihat §16).
 
 **Changelog v4.5:** Modul **Akademik Formal** — entitas baru `mata_pelajaran` (kelas + ustadz pengampu tetap, master data `admin_pesantren`) dan `nilai_akademik` (nilai tunggal per santri/mapel/periode, input `admin_pesantren` + `ustadz` pengampu, unique `(santri_id, mata_pelajaran_id, tahun_ajaran, periode)`); halaman **Rapor Akademik** agregasi nilai per santri dengan ekspor PDF (reuse `barryvdh/laravel-dompdf`). Grup navigasi Filament **Akademik** baru — menggabungkan Mata Pelajaran, Nilai Akademik, Rapor Akademik dengan 3 resource Tahfidz yang dipindah dari grup Kesantrian (selaras nama modul §3.2 & §5.1). Tersedia di semua paket (gate `access-modul-akademik` sudah ada sejak v4.x). Closes gap landing page yang sejak awal menjanjikan modul ini (lihat §22 — "akademik formal" kini bukan lagi item ditunda). **Selain itu:** halaman **Rapor** portal wali (`/wali/rapor` + ekspor PDF) — yang ternyata sudah lama dibangun penuh namun belum tertaut navigasi & masih tercatat keliru sebagai "roadmap/di-skip" di §8/§22 — kini ditautkan sebagai tab ke-5 bottom nav wali (Beranda · Santri · SPP · Pengumuman · **Rapor**) dan PRD diselaraskan ke status "selesai" (lihat §8); view duplikat mati `wali/pengumuman/index.blade.php` turut dibersihkan.
 
@@ -329,10 +455,11 @@ Empat jenis host dengan peran berbeda:
 | Host | Sifat | Fungsi |
 |---|---|---|
 | `walisantri.com` | Publik | Landing + `/register` |
-| `{slug}.walisantri.com` | Publik, tanpa auth (cacheable) | **Website profil pesantren** — subdomain **mutable** |
-| `app.walisantri.com` | Terautentikasi | Login tunggal semua role → panel admin/ustadz/super_admin & portal wali |
+| `{slug}.walisantri.com` | Publik, tanpa auth (cacheable) | **Website profil pesantren** — subdomain **mutable**. *(Rancangan §1.8 Fase 1: login wali, portal wali, dan Magic Link ikut pindah ke sini — host jadi terautentikasi. Belum dibangun.)* |
+| `app.walisantri.com` | Terautentikasi | Login tunggal semua role → panel admin/ustadz/super_admin & portal wali. *(Setelah §1.8 Fase 1: panel staf tetap di sini, dan `/report/{uuid}` tetap ada sebagai pengalih kanonik permanen.)* |
+| `pesantrenfulan.sch.id` | *(rancangan)* Publik + terautentikasi | **§1.8 Fase 2** — permukaan wali yang sama, di domain pesantren sendiri (add-on Maju). Belum dibangun. |
 
-**Login terpusat:** Semua role login di `app.walisantri.com` (satu host tetap). Tenant **di-resolve dari akun**, bukan dari host: lookup `users` by email → ambil `pesantren_id` → set konteks tenant (`app()->instance('current_pesantren', …)` + `SET app.current_pesantren` untuk RLS). Sejalan dengan model multi-tenancy native Filament v5 (satu panel, tenant dari user).
+**Login terpusat:** Semua role login di `app.walisantri.com` (satu host tetap). *(Rancangan v4.43 §1.8: login **wali** dipindah ke host tenant — Fase 1 ke `{slug}.walisantri.com`, Fase 2 ke domain pesantren. Panel staf tetap di `app`. Belum dibangun.)* Tenant **di-resolve dari akun**, bukan dari host: lookup `users` by email → ambil `pesantren_id` → set konteks tenant (`app()->instance('current_pesantren', …)` + `SET app.current_pesantren` untuk RLS). Sejalan dengan model multi-tenancy native Filament v5 (satu panel, tenant dari user).
 
 **Pintu masuk & branding wali:** Wali santri masuk **dari situs profil pesantren** — tombol "Portal Wali Santri" di `{slug}.walisantri.com` mengarah ke `app.walisantri.com/login?tenant={slug}`. Halaman login membaca `tenant` dari query dan **dirender penuh ber-brand pesantren** (logo, nama, warna) sehingga terasa seperti gerbang pesantren itu, bukan platform generik — meski host auth tetap `app`. Ini memberi keterikatan brand tanpa menduplikasi mekanisme auth atau mengikat sesi ke subdomain yang bisa berubah. **Magic Link WhatsApp (§4.3) tetap jalur utama wali** (klik langsung masuk read-only); form login adalah jalur sekunder bagi wali yang menyetel password. Tombol login admin/ustadz juga memakai `?tenant={slug}` agar branding konsisten.
 
@@ -350,9 +477,11 @@ Tiap pesantren **otomatis** mendapat situs profil publik di `{slug}.walisantri.c
 
 **Feed pengumuman publik:** sempat ada di MVP awal, **dihapus** (Changelog v4.13) atas keputusan produk — pengumuman internal dinilai tidak cocok dibuka ke pengunjung publik. Pengumuman tetap berjalan normal di portal wali santri & dashboard admin.
 
-**Slug rules:** huruf kecil/angka/tanda hubung, 3–30 char, tidak diawali/diakhiri hubung. Validasi real-time via `GET /check-slug/{slug}`. **Mutable** — bisa diubah kapanpun dari panel admin (aman karena tidak ada auth/magic-link yang bergantung pada subdomain; identitas kanonik = `pesantrens.id`). Tiap perubahan kena validasi reserved/format + dicatat audit (`pesantren.slug_changed`). Slug lama masuk **cooldown 90 hari** sebelum bisa diklaim tenant lain (cegah pembajakan brand). Reserved (Rule `SlugNotReserved`): `www app api admin central dash mail billing status docs blog support panel dashboard static cdn`.
+**Slug rules:** huruf kecil/angka/tanda hubung, 3–30 char, tidak diawali/diakhiri hubung. Validasi real-time via `GET /check-slug/{slug}`. **Mutable** — bisa diubah kapanpun dari panel admin (aman karena tidak ada auth/magic-link yang bergantung pada subdomain; identitas kanonik = `pesantrens.id`). ⚠️ **Jaminan ini bergantung pada satu mekanisme begitu §1.8 Fase 1 dibangun:** `app.walisantri.com/report/{uuid}` wajib tetap ada sebagai pengalih kanonik permanen yang menghitung tujuan dari tenant santri, bukan dari URL. Tanpa itu, mengganti slug akan mematikan seluruh magic link yang sudah dibagikan — `PesantrenObserver` **menimpa** hostname, bukan menambah baris. Tiap perubahan kena validasi reserved/format + dicatat audit (`pesantren.slug_changed`). Slug lama masuk **cooldown 90 hari** sebelum bisa diklaim tenant lain (cegah pembajakan brand). Reserved (Rule `SlugNotReserved`): `www app api admin central dash mail billing status docs blog support panel dashboard static cdn` + `demo sandbox coba contoh` *(empat terakhir ditambahkan v4.42 untuk sandbox publik; daftar di dokumen ini baru diselaraskan v4.44)*.
 
-**Custom domain (roadmap, add-on Maju):** pesantren pakai domain sendiri (mis. `www.pesantrenfulan.sch.id`). Butuh verifikasi kepemilikan DNS (CNAME/TXT) + SSL otomatis per domain (di luar wildcard `*.walisantri.com`). **Default: Cloudflare for SaaS / Custom Hostnames** (gratis ≤100 hostname, lalu berbayar per hostname; cert otomatis, ops paling ringan). **Fallback: Caddy on-demand TLS** (gratis penuh, untuk volume besar; wajib endpoint "ask" agar cert hanya terbit untuk hostname terverifikasi di `tenant_domains`). Subdomain bawaan tetap pakai wildcard cert yang sudah ada.
+**Custom domain (roadmap, add-on Maju) — spesifikasi lengkap pindah ke §1.8 Fase 2 (v4.43).** Ringkasnya: pesantren pakai domain sendiri (mis. `www.pesantrenfulan.sch.id`), butuh verifikasi kepemilikan DNS (CNAME/TXT) + SSL otomatis per domain (di luar wildcard `*.walisantri.com`). **Cloudflare for SaaS / Custom Hostnames ditetapkan sebagai default** (v4.43); Caddy on-demand TLS turun jadi cadangan. Subdomain bawaan tetap pakai wildcard cert yang sudah ada.
+
+⚠️ **Cakupannya bukan halaman profil saja.** Sampai v4.42 seksi ini menyiratkan custom domain hanya menyangkut situs profil. Itu terlalu sempit untuk sebuah add-on berbayar: titik sentuh harian wali adalah portal, bukan halaman profil, sehingga custom domain yang berhenti di sini tidak menepati janji white-label-nya. Lihat §1.8.
 
 ## 1.5 Infrastruktur Wildcard
 
@@ -369,6 +498,8 @@ Subdomain profil baru aktif otomatis tanpa sentuh DNS/config:
 | `{slug}.walisantri.com` (+ custom domain) | `/` · `/kegiatan` · `/artikel` | Website profil publik (read-only, tanpa auth); `/kegiatan` & `/artikel` saat ini placeholder "Segera Hadir" |
 | `app.walisantri.com` | `/login` · `/admin` | Login tunggal · panel Filament (Super Admin, Admin Pesantren, Ustadz) — menu per role via `canAccess()` |
 | `app.walisantri.com` | `/wali/dashboard` · `/report/{uuid}` · `/admin/billing-page` | Portal wali · Magic Link read-only · billing (halaman Filament, bukan route `/billing`) |
+| *(rancangan)* `{slug}.walisantri.com` | `/` · `/login` · `/wali/*` · `/report/{uuid}` | **§1.8 Fase 1** — seluruh permukaan wali pindah ke subdomain tenant; `app.../report/{uuid}` tetap jadi pengalih kanonik permanen. Belum dibangun. |
+| *(rancangan)* domain pesantren | sama seperti di atas | **§1.8 Fase 2** — permukaan yang sama di domain sendiri (add-on Maju). Panel `/admin` **tidak** ikut pindah di kedua fase. Belum dibangun. |
 
 ## 1.7 Pola Penambahan Modul
 
@@ -401,6 +532,191 @@ Setelah autentikasi, `role` dibaca lalu di-redirect — dilakukan di `WaliLoginC
 | `admin_pesantren` | `app.../admin` | Kontrol penuh data lembaga, user, impor, pemetaan kelas/kamar, profil publik, billing |
 | `ustadz` | `app.../admin` | Input mutaba'ah, tahfidz, nilai mapel yang diampu, rekam medis santri binaan; **presensi harian kelas yang ia walikan** dan **presensi jam pelajaran mapel yang ia ampu** (§5.4, v4.25) |
 | `wali_santri` | `app.../wali/dashboard` | Portal read-only perkembangan santri |
+
+## 1.8 Host Per-Tenant & White-Label *(v4.43, direvisi v4.44 — RANCANGAN, BELUM DIBANGUN)*
+
+> ⚠️ **Seluruh seksi ini adalah rancangan, bukan status.** Tidak ada satu baris kode pun yang mengimplementasikannya per v4.43. Penegasan ini ditulis eksplisit karena dokumen ini sudah dua kali jatuh ke kesalahan yang sama — §8 dan §15 sempat mendeskripsikan halaman presensi wali sebagai fitur yang ada padahal belum, dan baru dikoreksi di v4.40. Yang benar-benar ada hari ini hanya **kolomnya**: `tenant_domains.type enum('subdomain','custom')`, `verified_at`, dan `ssl_status`. `grep "'custom'"` di seluruh `app/` mengembalikan **nol hasil**; `ssl_status` hanya pernah ditulis `'pending'` sekali di `ProvisionTenant::jalankan()` dan tidak pernah berubah; `verified_at` tidak pernah ditulis sama sekali.
+
+### Tujuan: white-label untuk komunitas, bukan untuk staf
+
+Nilai host per-tenant bagi pesantren adalah **wali santri tidak melihat merek vendor**. Karena itu cakupan yang benar bukan sekadar halaman profil.
+
+Host per-tenant yang hanya menutupi halaman profil sebagian besar **kosmetik**: wali membuka halaman profil paling banyak sekali, saat mencari informasi sebelum mendaftar. Titik sentuh hariannya adalah portal wali — dan kalau portal itu tetap di `app.walisantri.com`, merek platform justru muncul persis di tempat yang paling sering dilihat. Menjual add-on yang tidak menutup permukaan itu berarti menjual janji yang tidak ditepati.
+
+### Pembagian permukaan (berlaku untuk kedua fase)
+
+| Permukaan | Host | Teknologi | Dipindah? |
+|---|---|---|---|
+| Profil publik (`/`, `/kegiatan`, `/artikel`) | host tenant | Blade | ✅ Ya |
+| Login wali (`/login`) | host tenant | Blade | ✅ Ya |
+| Portal wali (`/wali/*`) | host tenant | Blade | ✅ Ya |
+| Magic Link (`/report/{uuid}`) | host tenant | Blade | ✅ Ya |
+| Panel staf (`/admin`) | `app.walisantri.com` | **Filament** | ❌ Tetap |
+
+**Kenapa portal wali bisa dipindah, panel staf tidak.** Seluruh permukaan yang dilihat wali — `/login`, `/wali/*`, `/report/{uuid}` — adalah route Laravel biasa dengan view Blade (`routes/web.php`, grup `Route::domain($appDomain)`); Filament tidak terlibat sama sekali di situ. Panel staf sebaliknya didaftarkan lewat `AdminPanelProvider` dengan `->domain(config('app.domain'))`, dan Filament hanya menerima **satu** nilai domain. Melepas batasan itu membuat panel merespons di setiap host — termasuk subdomain tenant lain — yaitu permukaan kebocoran baru yang harus dijaga sendiri.
+
+Menyisakan panel staf di domain platform bukan kompromi yang merusak tujuan: pengurus adalah pihak yang menandatangani kontrak dan sudah tahu vendornya. Yang dijanjikan white-label adalah **komunitas**, bukan staf.
+
+---
+
+### Dua fase
+
+Pemisahan ini bukan sekadar pentahapan pekerjaan. **Fase 1 memindahkan seluruh kesulitan arsitekturnya ke keluarga host yang sudah kita kuasai penuh dan gratis**, sehingga Fase 2 tinggal menambahkan TLS dan verifikasi kepemilikan — bukan lagi merombak routing, sesi, dan pembangkitan URL sambil berhadapan dengan domain milik pelanggan.
+
+| Prasyarat | Fase 1 — `{slug}.walisantri.com` | Fase 2 — domain pesantren |
+|---|---|---|
+| TLS | **Sudah ada** — wildcard cert `*.walisantri.com` (berlaku s/d 2041) + wildcard A record (§1.5) | **Baru** — Cloudflare for SaaS, per hostname |
+| Verifikasi kepemilikan | **Tidak perlu** — domainnya milik platform | **Baru** — TXT/CNAME → `verified_at` |
+| Cookie sesi | ❌ **Belum terpenuhi** — terverifikasi 16 Agu 2026: cookie production host-only, `SESSION_DOMAIN` tidak disetel (lihat di bawah) | **Baru** — cookie ber-scope host, disetel per request |
+| Route group per-host + `linkWali()` per-tenant | **Perlu** | Sudah selesai di Fase 1 |
+| Biaya | Rp 0 | Berbayar per hostname (add-on Maju, §5.1) |
+| Cakupan pengguna | **Semua pesantren** | Pembeli add-on saja |
+
+---
+
+### Fase 1 — Portal wali di `{slug}.walisantri.com`
+
+Dua dari empat prasyarat sudah terpenuhi sejak awal (TLS wildcard + wildcard A record); yang ketiga — cookie sesi — **belum terverifikasi** (lihat di bawah). Yang tersisa: memindahkan rute wali ke grup domain berparameter dan membuat `Santri::linkWali()` membaca hostname tenant (`tenant_domains.is_primary` sudah ada untuk itu).
+
+❌ **`SESSION_DOMAIN` tidak disetel — terverifikasi di production, 16 Agustus 2026 (v4.44).** v4.43 mencatatnya sebagai prasyarat yang sudah terpenuhi. Ternyata tidak. Buktinya di repo sudah mengarah ke sana (`.env.example:44` → `SESSION_DOMAIN=null`, tidak ada skrip deploy/test/dokumen yang menyetelnya), dan response production memastikannya:
+
+```
+Set-Cookie: walisantri-session=…; expires=…; Max-Age=7200; path=/; secure; httponly; samesite=lax
+```
+
+Header yang sama — **tanpa atribut `Domain=`** — dikirim oleh `walisantri.com`, `app.walisantri.com`, maupun `demo.walisantri.com`. Tanpa `Domain=`, cookie host-only: ia tidak pernah menyeberang antar-host. Itu wajar, karena sampai hari ini tidak ada permukaan terautentikasi di luar `app.walisantri.com`.
+
+Konsekuensinya untuk Fase 1:
+
+- Prasyarat ini **berbiaya**, bukan gratis. Mengisi `SESSION_DOMAIN=.walisantri.com` mengganti scope cookie, sehingga **semua sesi aktif langsung terputus** (cookie lama tidak lagi terbaca). Dijadwalkan di jendela sepi, bukan disisipkan di deploy rutin — `Max-Age=7200` (2 jam) membatasi dampaknya, tapi tidak menghapusnya.
+- `SESSION_SECURE_COOKIE` dan `SESSION_SAME_SITE` ditinjau di kesempatan yang sama.
+- **Dan perubahan itu membawa serta bug corong pendaftaran di bawah** — jadi ia tidak boleh dikerjakan sendirian.
+
+**Pintu kanonik permanen — ini inti rancangannya.**
+
+> `app.walisantri.com/report/{uuid}` **tetap ada selamanya** dan tugasnya hanya **mengalihkan** ke host tenant saat ini.
+
+Ini menyelesaikan tiga masalah sekaligus, dan tanpanya Fase 1 tidak boleh dikerjakan:
+
+1. **Tautan lama tidak pernah mati.** Magic link tidak punya kedaluwarsa (§4.3) — tautan yang tersimpan di HP wali bisa dipakai bertahun-tahun. Domain platform yang tetap melayani rute itu membuat perpindahan ini **aditif**, bukan merusak.
+2. **Slug tetap aman diganti.** Pengalihan dihitung dari **tenant milik santri-nya**, bukan dari URL yang diketuk. Jadi jaminan §1.4 — *slug mutable, aman karena tidak ada auth/magic-link yang bergantung pada subdomain* — tetap utuh meski portalnya kini memang tinggal di subdomain. Tanpa mekanisme ini, mengganti slug akan mematikan seluruh magic link yang sudah dibagikan, dan `PesantrenObserver` **menimpa** hostname (bukan menambah baris) sehingga subdomain lama mati seketika.
+3. **Fase 2 memakai mekanisme yang sama persis** — hanya sumber hostname-nya yang berubah dari slug ke domain pelanggan.
+
+**Yang memungkinkan ini:** `VerifyMagicToken` mencari uuid secara **global** (`Santri::withoutGlobalScope('pesantren')->where('uuid', …)`), tidak terikat host sama sekali. Tautan berfungsi di host mana pun yang melayani rutenya.
+
+⚠️ **Efek samping yang harus dinamai.** Karena lookup-nya global, tautan lama yang menunjuk subdomain yang sudah **diklaim ulang** pesantren lain (setelah cooldown 90 hari) akan tetap membuka santri yang benar — **di host ber-merek pesantren yang salah**. Bukan kebocoran data (santri di-resolve dari uuid, bukan dari host), tapi terlihat seperti kebocoran. Pertimbangkan menolak request `/report/{uuid}` bila host-nya bukan host tenant santri itu, lalu alihkan ke host yang benar.
+
+⚠️ **Biaya yang terukur: 38 call site.** `grep -rn "route('wali\." resources/views/ app/` mengembalikan **38 hasil**. Begitu rute wali masuk grup domain berparameter, semuanya butuh parameter `{slug}` — atau `URL::defaults()`, yang saat ini **tidak dipakai di mana pun** di repo ini. Masalah ini belum pernah muncul karena URL profil publik dibangun dengan **concat string** (`PesantrenObserver`, `ProvisionTenant`, `PesantrenSettingsPage`), bukan lewat `route('public.profile')`.
+
+⚠️ **Asimetri keamanan yang berlawanan intuisi.** Subdomain lebih mudah secara operasional tapi **lebih lemah isolasinya**: cookie `.walisantri.com` dikirim ke *semua* subdomain tenant, sedangkan domain pelanggan di Fase 2 otomatis ber-scope host. Jadi aturan "hanya akun tenant itu yang dilayani di host tenant" (lihat Aturan Bersama) justru **lebih genting di Fase 1**, bukan kurang.
+
+**Keputusan arsitektur yang masih terbuka: cookie berbagi vs host-scoped sejak Fase 1** *(v4.44)*
+
+Fase 1 dirancang memakai cookie `.walisantri.com` karena gratis. Konsekuensinya belum pernah ditulis: seluruh halaman ber-cookie kini hidup **satu origin dengan konten yang dikelola tenant sendiri** — deskripsi, galeri, dan (roadmap §1.4) CMS artikel & kegiatan. Satu XSS di halaman profil satu pesantren berarti pencurian cookie sesi **seluruh platform**, bukan satu tenant. Hari ini risiko itu nol karena profil publik tidak pernah bersentuhan dengan sesi; setelah Fase 1 tidak lagi.
+
+| | Cookie berbagi `.walisantri.com` | Cookie ber-scope host sejak Fase 1 |
+|---|---|---|
+| Biaya Fase 1 | Menyetel `SESSION_DOMAIN` + memutus semua sesi aktif sekali | Menyetel cookie per request + tes auth tersendiri |
+| Isolasi antar-tenant | Satu origin untuk semua tenant | Terisolasi per host, seperti Fase 2 |
+| Dampak XSS di konten tenant | Sesi seluruh platform | Terbatas satu tenant |
+| Jalur ke Fase 2 | Mekanisme cookie **berubah** di Fase 2 | Identik — Fase 2 tinggal TLS + verifikasi |
+
+Argumen untuk yang kedua: §1.8 sendiri menyebut cookie ber-scope host sebagai "lapisan auth: butuh tes sendiri, bukan tempat coba-coba". Justru karena itu, mengerjakannya di Fase 1 — di keluarga host yang kita kuasai penuh — lebih aman daripada menundanya ke fase yang sekaligus berhadapan dengan TLS dan domain milik pelanggan. Kalau opsi ini dipilih, mitigasi XSS (sanitasi konten tenant + CSP) tetap perlu, tapi tidak lagi menjadi satu-satunya penghalang.
+
+⛔ **Cookie berbagi mematikan corong pendaftaran lewat sandbox.** Ini bukan risiko teoretis — seluruh jalurnya sudah ada di kode hari ini, dan yang menahannya cuma scope cookie yang barusan diverifikasi masih host-only.
+
+`VerifyMagicToken:47` menjalankan `Auth::login($wali, remember: false)` **sungguhan**: pengunjung yang mengetuk `/coba` benar-benar login sebagai wali tenant demo. Sifat read-only-nya ditegakkan `BlockMagicLinkSession`, bukan oleh ketiadaan sesi. Begitu cookie berlaku se-`.walisantri.com`, sesi itu ikut hidup di apex — tempat form pendaftaran berada:
+
+```
+walisantri.com/coba          → Auth::login(wali demo)      [VerifyMagicToken:47]
+walisantri.com/register      → Auth::check() == true        [RegisterController:26]
+  → redirectAuthenticated()  → role 'wali_santri'           [RegisterController:82]
+  → redirect wali.dashboard  → bukan route yang diizinkan   [BlockMagicLinkSession]
+  → dipantulkan ke halaman santri demo
+```
+
+**Form pendaftaran tidak pernah bisa dibuka**, dan `store()` dijaga cek yang sama di `RegisterController:39` sehingga submit pun tertelan. Sandbox dibangun untuk konversi, lalu memblokir tombol konversinya — dan penyebabnya bukan logika sandbox, melainkan cookie yang membuat "pengunjung sedang mencoba demo" tak bisa dibedakan dari "wali yang sudah login".
+
+Kalau opsi cookie berbagi tetap dipilih, dua hal wajib menyertainya:
+
+1. `redirectAuthenticated()` memperlakukan sesi magic link sebagai **tamu** di corong pendaftaran. Polanya sudah ada di repo — `WaliLoginController:57` sengaja `forget(['magic_link_session', 'magic_link_santri_id'])` saat login sungguhan, dengan komentar bahwa `regenerate()` tidak membuang isi sesi. Jalur register tidak pernah dapat perlakuan itu.
+2. Tombol **"Keluar dari demo"** yang eksplisit di permukaan sandbox, bukan hanya "Keluar" generik.
+
+Dengan cookie ber-scope host, kelas masalah ini tidak pernah lahir: sesi demo terkunci di `demo.walisantri.com` dan apex tidak pernah melihatnya.
+
+⚠️ **Efek ke sandbox publik (v4.42).** `Santri::linkWali()` (`app/Models/Santri.php:86`) meng-hardcode `config('app.domain')`, dan `SandboxDemo::waliUrl()` memanggilnya. Begitu `linkWali()` jadi per-tenant, tombol `/coba` di landing otomatis mengarah ke `demo.walisantri.com/report/{uuid}` — kebetulan menguntungkan (sandbox jadi etalase white-label yang hidup), tapi harus diniatkan dan diuji, bukan ditemukan setelah deploy. Dua ekor yang menyertainya: hasil `waliUrl()` di-cache 1 jam (`sandbox:wali_url`), jadi `SandboxDemo::lupakanCache()` ikut dipanggil di langkah deploy; dan materi promosi yang menyebut host demo ditinjau.
+
+⚠️ **Tombol "Keluar" di portal wali akan patah.** `resources/views/wali/layouts/app.blade.php:58` mem-POST ke `route('logout')`, sementara `/logout` (dan `/login`) terdaftar di grup domain app (`routes/web.php`). Begitu portal wali pindah host, rute itu harus ikut dilayani di host tenant — kalau tidak, satu-satunya jalan keluar dari sesi (termasuk sesi demo) hilang. Ini bagian dari 38 call site `route('wali.*')`, tapi luput kalau daftarnya disusun hanya dari prefix `wali.`.
+
+---
+
+### Fase 2 — Domain pesantren sendiri
+
+Menambahkan dua hal di atas fondasi Fase 1:
+
+1. **TLS — Cloudflare for SaaS (Custom Hostnames).** Keputusan ditetapkan v4.43; alternatif Caddy on-demand TLS di §1.4 turun jadi cadangan. Gratis ≤100 hostname, lalu berbayar per hostname — sejalan dengan posisinya sebagai add-on paket Maju (§5.1). *(Kuota gratis, harga per hostname, dan syarat plan diverifikasi ulang ke dokumentasi Cloudflare sebelum harga add-on dikunci — angka di atas berasal dari v4.43 dan belum dicek ulang.)* Sertifikat origin yang ada (`*.walisantri.com` + `walisantri.com`, s/d 2041) **tidak** mencakup domain pelanggan.
+
+   ✅ **Prasyarat terberatnya sudah berdiri — terverifikasi 16 Agustus 2026** *(v4.44)*. Cloudflare for SaaS menuntut trafik lewat proxy Cloudflare + sebuah **fallback origin** (hostname yang di-CNAME-kan pelanggan). Dugaan v4.44 awal — wildcard cert lewat DNS-01 ⇒ A record DNS-only — **salah**: `walisantri.com` dan `app.walisantri.com` sama-sama resolve ke IP anycast Cloudflare (`104.21.90.16`, `172.67.151.3`), dan response membawa `server: cloudflare` + `cf-ray`. Trafik production **sudah** proxied hari ini. Jadi Fase 2 adalah langkah yang lebih kecil dari yang ditulis v4.43; yang tersisa hanya fallback origin + pendaftaran custom hostname.
+
+   ⛔ **Tapi satu konsekuensinya berpindah dari "nanti" ke "sekarang".** **`TrustProxies` tidak dikonfigurasi sama sekali** di `bootstrap/app.php`, sedangkan seluruh rate limiter dikunci per IP (`AppServiceProvider`, `Limit::…->by($request->ip())` untuk `register`, `demo`, `check-slug`, login, magic link, reset password). Karena proxy sudah menyala, `$request->ip()` hanya berisi IP pengunjung sungguhan bila **Nginx** menegakkan `set_real_ip_from` untuk rentang Cloudflare — konfigurasi yang tidak ada di repo (server-side). Kalau ternyata tidak dipasang, hari ini seluruh limiter sudah jadi ember bersama per edge Cloudflare (satu penyalahguna mengunci pengunjung lain, dan proteksi brute-force melemah), serta `activity_logs` mencatat IP yang salah. **Satu perintah menuntaskannya:** `grep -rn real_ip /etc/nginx/` di VPS. Ini bukan pekerjaan Fase 2 — ini utang yang sudah jatuh tempo.
+   - **Nginx** butuh `server_name` catch-all / `default_server` untuk hostname pelanggan; server block `*.walisantri.com` yang ada (§1.5) tidak akan cocok.
+   - **Apex vs `www`.** Pelanggan yang ingin memakai domain telanjang (`pesantrenfulan.sch.id`) butuh CNAME flattening di sisi DNS mereka. Tetapkan apakah yang didukung hanya `www.`/subdomain, atau apex juga.
+2. **Verifikasi kepemilikan.** TXT/CNAME record → isi `tenant_domains.verified_at`. ⚠️ Hostname dengan `verified_at` NULL **tidak boleh dilayani sama sekali**, dan tidak boleh didaftarkan ke Cloudflare. Tanpa pagar ini siapa pun bisa mengarahkan domainnya ke platform dan mengklaim tenant orang lain.
+
+Plus **cookie sesi ber-scope host**, disetel dinamis per request — kecuali kalau ini sudah dikerjakan lebih dulu di Fase 1 (keputusan terbuka, lihat Fase 1). Ini lapisan auth: butuh tes sendiri, bukan tempat coba-coba — dan itu justru alasan untuk mengerjakannya di host yang kita kuasai penuh, bukan sambil berhadapan dengan TLS dan domain pelanggan.
+
+⚠️ **Pencabutan wajib dua sisi.** Saat pesantren melepas domain atau berhenti berlangganan, hostname harus dihapus dari `tenant_domains` **dan** dari Cloudflare. Custom hostname yang menggantung di Cloudflare setelah domainnya dijual ke pihak lain adalah versi lain dari risiko subdomain takeover yang sudah pernah dicatat proyek ini (lihat catatan `staging.walisantri.com`, §18).
+
+---
+
+### Aturan bersama (berlaku di kedua fase)
+
+**Host tenant hanya melayani akun tenant itu — dicek di setiap request, bukan saat login** *(diperketat v4.44)*. Tenant tetap di-resolve dari akun (§1.3, email unik global), bukan dari host. Tanpa pagar tambahan, user pesantren B bisa membuka host pesantren A dan melihat datanya sendiri di halaman ber-merek orang lain — membingungkan, dan terlihat seperti kebocoran meski bukan.
+
+⚠️ **Menaruh pagar ini di `WaliLoginController` tidak cukup, dan justru meleset dari kasus yang sebenarnya bocor.** Dengan cookie berbagi (`.walisantri.com`), sesi yang **sudah ada** ikut terbawa ke setiap subdomain tenant: admin pesantren B yang sudah login di `app.walisantri.com` lalu mengetuk `pesantren-a.walisantri.com/wali/...` datang membawa sesi aktif **tanpa pernah menyentuh form login** — jalur cek di controller login tidak pernah dilewati. Pagarnya harus middleware yang membandingkan tenant sesi dengan tenant host di setiap request, dipasang pada grup rute host tenant. Kalau opsi cookie ber-scope host dipilih, kelas kasus ini hilang dengan sendirinya di Fase 1 — pagarnya tetap dipasang sebagai lapis kedua.
+
+**Subdomain bawaan tidak pernah dihapus.** `{slug}.walisantri.com` tetap ada meski pesantren memakai domain sendiri, sebagai jalur cadangan saat domain pelanggan bermasalah (DNS salah, sertifikat gagal terbit, domain kedaluwarsa). Satu `is_primary` per pesantren menentukan hostname mana yang dipakai untuk membangun URL.
+
+**Route group tanpa batasan domain itu berbahaya.** `PublicTenantResolver` **sudah** generik (mencocokkan `$request->getHost()` ke `tenant_domains`). Yang menghalangi hanyalah `Route::domain('{slug}.'.$baseDomain)` yang hanya cocok untuk `*.walisantri.com`. ⚠️ Grup pengganti tanpa batasan domain akan menangkap **semua** host termasuk `app.walisantri.com` — urutan pendaftaran route menjadi kritis.
+
+**Tenant expired/suspended.** `SaaSLifecycleLock` bekerja pada sesi, bukan host. Perilakunya saat langganan berakhir harus ditetapkan sebelum implementasi: ikut terkunci seperti host platform, atau berhenti dilayani sama sekali. **Keputusan produk ini masih terbuka.**
+
+**Portal wali & login tidak boleh terindeks** *(v4.44)*. Halaman profil publik memang ingin ditemukan mesin pencari; `/login` dan `/wali/*` tidak. Setelah keduanya pindah ke host yang sama dengan profil, `noindex` harus dipasang eksplisit (pola `resources/views/panduan.blade.php:7` sudah ada). Di Fase 2, profil yang sama tersaji di dua host sekaligus (subdomain bawaan + domain pelanggan) → butuh `canonical` ke hostname `is_primary`, kalau tidak keduanya bersaing sebagai duplicate content.
+
+---
+
+### Batas cakupan white-label *(v4.44)*
+
+Memindahkan host **tidak** menutup seluruh janji white-label. Tiga permukaan tetap membawa merek platform setelah kedua fase selesai, dan dua di antaranya justru titik sentuh yang jadi alasan §1.8 ditulis:
+
+| Permukaan | Keadaan hari ini | Kalau ingin ditutup |
+|---|---|---|
+| **Pengirim WhatsApp** | `WhatsAppGatewaySetting` adalah tabel key-value **global tanpa `pesantren_id`** — satu token Fonnte untuk seluruh platform. Magic link sampai ke wali dari nomor platform. | Token/gateway per tenant + `pesantren_id` di tabelnya; biaya & dukungan gateway jadi urusan pesantren |
+| **Pengirim email** | `email_gateway_settings` juga tabel key-value **global** (PK `key`, tanpa `pesantren_id`) — satu `from_address`/`from_name` untuk semua tenant (verifikasi email §12.2, reset password §9.1) | Pengirim per tenant, **tapi** §12.2 mensyaratkan `from_address` berada di domain yang terverifikasi di Brevo: tiap domain pelanggan harus diverifikasi + SPF/DKIM sendiri. Ini pekerjaan deliverability berulang per tenant, bukan sekali |
+| **Jejak merek di permukaan wali** | `layouts/app.blade.php:53` — subtitle header tiap halaman portal default ke `config('app.name')`, jadi "Walisantri" tampil di bawah judul di **setiap** layar wali; `layouts/app.blade.php:13` (`apple-mobile-web-app-title: "Walisantri"`); footer *"Dicetak via Walisantri.com"* di PDF yang diunduh wali (`wali/pdf/laporan.blade.php:136`) | Audit tuntas string merek di `resources/views/wali/**` + PDF, lalu jadikan konfigurasi per tenant |
+
+**Keputusan produk yang belum diambil:** ketiganya masuk cakupan add-on, atau dinyatakan **di luar cakupan** dan dikomunikasikan apa adanya saat penjualan. Sekalian tetapkan definisi white-label yang dijual: mengganti merek platform dengan merek pesantren, atau sekadar menghilangkan merek platform — dan apakah baris "Powered by Walisantri" tetap boleh muncul. Menjual "white-label" tanpa keputusan ini mengulang persis kesalahan yang v4.43 perbaiki: menutup permukaan yang jarang dilihat, membiarkan yang harian.
+
+### Identitas kanonik
+
+Host per-tenant menambah identitas **ketiga** untuk satu pesantren, setelah `pesantrens.id` (kanonik, tidak pernah berubah) dan `slug` (mutable, cooldown 90 hari). Aturannya tetap: **`pesantrens.id` satu-satunya identitas kanonik**; slug dan hostname keduanya hanya alamat. Tidak ada logika yang boleh bergantung pada keduanya untuk otorisasi.
+
+### Yang harus tuntas sebelum baris kode pertama *(v4.44)*
+
+**Verifikasi — dua sudah selesai (16 Agustus 2026):**
+1. ✅ **`SESSION_DOMAIN` tidak disetel.** Cookie production host-only (`Set-Cookie` tanpa `Domain=` di ketiga host). Prasyarat cookie Fase 1 **belum terpenuhi** dan berbiaya: memutus semua sesi aktif.
+2. ✅ **DNS sudah proxied Cloudflare** (IP anycast `104.21.90.16`/`172.67.151.3`, `server: cloudflare`, `cf-ray`). Prasyarat terberat Fase 2 sudah berdiri — dan `TrustProxies` yang kosong jadi utang hari ini, bukan pekerjaan Fase 2.
+3. ⬜ **`grep -rn real_ip /etc/nginx/` di VPS** — menentukan apakah `$request->ip()` hari ini berisi IP pengunjung atau IP edge Cloudflare (lihat Fase 2 butir 1). Ini satu-satunya yang menentukan apakah ada bug yang sudah hidup sekarang.
+4. ⬜ Kuota gratis & harga per hostname Cloudflare for SaaS terkini — sebelum harga add-on dikunci di §5.2.
+
+> **Catatan status deploy:** production menjalankan `main`, sementara sandbox v4.42 (`/coba`, `demo.walisantri.com`) masih di `dev` — `/coba` dan `demo.walisantri.com` sama-sama 404 di production saat verifikasi ini dilakukan. Jadi bug corong pendaftaran di atas belum bisa muncul di production dari dua arah sekaligus: cookie masih host-only, dan sandbox-nya sendiri belum ter-deploy.
+
+**Keputusan produk yang masih terbuka:**
+1. Perilaku host tenant saat langganan berakhir — ikut terkunci seperti host platform, atau berhenti dilayani sama sekali *(v4.43)*.
+2. Cakupan white-label di pengirim WhatsApp & email — masuk add-on, atau dinyatakan di luar cakupan *(v4.44)*.
+3. Model cookie Fase 1 — berbagi `.walisantri.com` (murah, satu origin untuk semua tenant) atau ber-scope host sejak awal (jalur identik dengan Fase 2) *(v4.44)*.
+
+**Kriteria terima teknis** (mengikuti §1.7 langkah 8, tapi untuk host, bukan tabel): satu berkas tes yang membuktikan (a) sesi tenant B ditolak di host tenant A, (b) `app.../report/{uuid}` mengalihkan ke host tenant santri walau slug sudah diganti, (c) grup rute host tenant tidak menangkap `app.walisantri.com`, (d) `route('wali.*')` menghasilkan host yang benar dari konteks queue (job WhatsApp berjalan tanpa request), (e) **pengunjung dengan sesi magic link tetap bisa membuka `/register` dan mendaftar**, dan (f) tombol "Keluar" di portal wali berfungsi dari host tenant.
 
 ---
 
@@ -691,7 +1007,7 @@ erDiagram
 
 ## 3.1 DB Central
 
-**`pesantrens`** — `id` PK · `nama_pesantren` · `slug` (unique, **mutable** + cooldown 90 hari, sumber subdomain default) · `paket_langganan` enum(`rintisan`/`tumbuh`/`berkembang`/`maju`) · `max_santri_kuota` int · `status_berlangganan` enum(`trial`/`active`/`suspended`/`expired`) · `expired_at` ts null · `santri_count_cache` int default 0 · `onboarding_completed_steps` jsonb null · `profil` jsonb null (konten situs publik: deskripsi, alamat, kontak, galeri) · timestamps. *Index: `(status_berlangganan, expired_at)`.*
+**`pesantrens`** — `id` PK · `nama_pesantren` · `slug` (unique, **mutable** + cooldown 90 hari, sumber subdomain default) · `paket_langganan` enum(`rintisan`/`tumbuh`/`berkembang`/`maju`) · `max_santri_kuota` int · `status_berlangganan` enum(`trial`/`active`/`suspended`/`expired`) · `expired_at` ts null · `santri_count_cache` int default 0 · `onboarding_completed_steps` jsonb null · `profil` jsonb null (konten situs publik: deskripsi, alamat, kontak, galeri; `program` berbentuk array of `['nama','jenjang']`, **bukan** daftar string — daftar string merender kartu kosong) · `is_demo` bool default `false` *(v4.42)* · timestamps. *Index: `(status_berlangganan, expired_at)`.* `is_demo` menandai tenant sandbox publik; dikecualikan dari seluruh hitungan & daftar super admin lewat `Pesantren::scopePelanggan()`. Digabung `expired_at = null`, tenant itu juga tak pernah disentuh `SaaSLifecycleLock` maupun ketiga job kedaluwarsa (semuanya mensyaratkan `whereNotNull('expired_at')`).
 
 **`users`** — `id` PK · `pesantren_id` FK null (null = Super Admin) · `name` · `email` unique **tapi NULLABLE** (v4.9, `central/2026_07_09_100001`) · `email_verified_at` ts null (**dipakai sejak v4.23** — verifikasi lunak §12.2; sebelumnya kolom mati) · `phone_number` null (WhatsApp) · `foto_profil` string null (v4.9, `central/2026_07_08_000001`, dipakai `User::getFilamentAvatarUrl()`) · `password` · `role` enum(`super_admin`/`admin_pesantren`/`ustadz`/`wali_santri`) · `remember_token` · timestamps. *Index: `(pesantren_id, role)`.*
 
@@ -706,6 +1022,8 @@ erDiagram
 **`invoices`** *(v4.22)* — `id` PK · `order_id` FK unique · `nomor_invoice` unique · `bukti_transfer_path` string null (disk `local`, bukan `public` — bukti transfer tidak boleh bisa diakses publik) · `bukti_transfer_uploaded_at` ts null · timestamps. Satu invoice per order; nomor digenerate `UpgradeOrderService::generateNomor()` dengan prefix dari `config('billing.nomor_invoice_prefix')`.
 
 **`email_gateway_settings`** *(v4.23)* — `key` PK string · `value` text **terenkripsi** (cast `encrypted`) · timestamps. Kredensial SMTP Brevo: `smtp_host`, `smtp_port`, `smtp_scheme`, `smtp_username`, `smtp_password`, `from_address`, `from_name`, `reply_to_address`, `reply_to_name`. Pola identik `whatsapp_gateway_settings` (§3.1) — disimpan di DB, bukan `.env`, supaya super admin bisa berganti provider tanpa akses server; disuntikkan ke `config('mail.mailers.smtp')` saat boot. Bila tabel kosong, nilai `.env` yang berlaku (itulah yang membuat CI & tes lokal tetap memakai mailer `log`/`array` tanpa konfigurasi tambahan). ⚠️ Pembacaan **wajib** lewat `static::find($key)?->value`, bukan query builder `->value('value')` — jalur kedua melewati hydration Eloquent sehingga mengembalikan ciphertext mentah.
+
+**`platform_settings`** *(v4.7; `demo_open` ditambahkan v4.41)* — `key` PK string · `value` boolean · `keterangan` · timestamps. Dua kill-switch pintu masuk calon pelanggan: `registration_open` (halaman `/register`) dan `demo_open` (halaman `/demo`). Pola identik `email_settings`/`whatsapp_settings`; dibaca lewat `PlatformSetting::registrationOpen()`/`demoOpen()` yang jatuh ke `config('app.registration_open')`/`config('app.demo_open')` bila barisnya belum ada, dan di-cache 1 jam per key. Dikelola `RegistrationSettingsPage` hanya `super_admin`. ⚠️ **Nilai DB menang atas `.env`** — begitu barisnya ada, `REGISTRATION_OPEN`/`DEMO_OPEN` di `.env` hanya berlaku sebagai default saat baris itu belum pernah dibuat. Ini sudah pernah menyesatkan: `.env` lokal menulis `REGISTRATION_OPEN=false` sementara pendaftaran sebenarnya terbuka.
 
 **`email_settings`** *(v4.23)* — `key` PK string · `value` boolean · `keterangan` · timestamps. Lima kill-switch, satu per jenis email (§12.2): `email_sambutan_enabled`, `email_reset_password_enabled`, `email_invoice_enabled`, `email_pembayaran_enabled`, `email_reminder_expired_enabled`. Pola identik `whatsapp_settings`; default `true`, di-seed lewat migrasi. Dikelola `EmailSettingsPage` hanya `super_admin`.
 
@@ -828,6 +1146,21 @@ Via `walisantri.com/register`. Sistem otomatis: (1) validasi slug (format, unik,
 
 > **Zero-Self Registration:** Santri/Ustadz/Wali tidak bisa daftar mandiri. **Multi-Anak Logic:** jika nomor WhatsApp wali sudah terdaftar, santri baru dikaitkan ke `wali_santri_id` yang ada.
 
+⚠️ **Trial tetap berjalan, tapi tidak lagi dipasarkan *(v4.45)*.** Langkah (6) di atas **tidak berubah**: tiap pendaftar tetap mendapat trial Rintisan sepanjang `BillingSetting::trial_days`, lifecycle trial → grace 7 hari → suspended tetap berlaku, dan email sambutan (`SambutanPendaftaran`) masih menyebut status trial-nya. Yang dicabut adalah **janjinya di corong akuisisi**, atas keputusan pemilik produk:
+
+| Permukaan | Sebelum | Sesudah |
+|---|---|---|
+| Tiga CTA landing | "Coba Gratis 14 Hari" / "Mulai Trial" | "Daftar Sekarang" |
+| Subjudul Harga | "Coba gratis 14 hari dengan fitur penuh" | "Semua modul terbuka di semua paket…" |
+| Cara Kerja langkah 1 | "Daftar & Aktifkan Trial" | "Daftar Akun Pesantren" |
+| FAQ | "Apakah Walisantri gratis?" · "…setelah masa trial habis?" | "Berapa biaya Walisantri?" · "…kalau masa langganan berakhir?" |
+| Paragraf CTA penutup | "coba seluruh fiturnya gratis 14 hari" | "akun aktif seketika dengan fitur penuh" |
+| Subjudul `/register` | "Trial 14 hari gratis" | "Akun aktif seketika dengan fitur penuh" |
+
+**Jangan dibaca sebagai "trial dihapus dari produk".** Ini murni perubahan pemasaran; `$trialDays` dilepas dari `LandingController` dan `RegisterController` hanya karena tidak ada lagi yang memakainya di view. Dijaga dua tes yang meniru pola `assertDontSee` v4.41: `LandingPageTest::test_landing_tidak_menjanjikan_trial` dan `RegisterControllerTest::test_form_registrasi_tidak_menjanjikan_trial` — keduanya menyetel `trial_days=21` lalu memastikan angka maupun kata "trial" tidak muncul.
+
+**Keputusan model masuk tetap terbuka** (dicatat sejak v4.42): trial, freemium, atau demo-led. Rilis ini hanya berhenti *menjual* dengan trial; ia tidak memilih penggantinya. Selama belum diputuskan, ada asimetri yang disengaja — pendaftar menemukan trial-nya setelah masuk, bukan dijanjikan sebelum masuk.
+
 ## 4.2 Grid Input Massal
 
 UI grid Livewire untuk mengisi mutaba'ah banyak santri dalam satu layar — `App\Filament\Pages\MutabaahHarianPage` (slug `/admin/kesantrian/isi-harian`, di dalam Cluster Kesantrian tanpa entri navigasi; dicapai dari tabel Mutaba'ah).
@@ -944,7 +1277,8 @@ Matriks fitur — paket di kolom, fitur/kuota/modul di baris (✓ = termasuk, �
 | Modul Presensi *(v4.25)* | ✓ | ✓ | ✓ | ✓ |
 | Modul Inventaris *(niat: Maju saja — belum ditegakkan, lihat catatan)* | ✓ | ✓ | ✓ | ✓ |
 | Fitur AI *(post v1.0 — belum ada kodenya)* | — | — | — | ✓ |
-| Custom domain *(roadmap, add-on)* | — | — | — | ✓ (add-on) |
+| Portal wali di subdomain pesantren *(roadmap — §1.8 Fase 1)* | ✓ | ✓ | ✓ | ✓ |
+| Custom domain pesantren *(roadmap, add-on — §1.8 Fase 2)* | — | — | — | ✓ (add-on) |
 | Kuota custom (> 1.000, add-on per +100) | — | — | — | ✓ |
 
 **Tidak ada feature lock berbasis paket (v4.20).** Kelima Gate (`access-modul-akademik`, `access-modul-kesehatan`, `access-modul-inventaris`, `access-modul-ai`, `access-billing`) pernah *didefinisikan* di `AppServiceProvider`, tapi **tidak pernah sekali pun dipanggil** — tidak ada `Gate::allows`/`->can()`/`@can`/`authorize()` di seluruh `app/` maupun `resources/views/`. Karena itu Gate-nya dihapus di v4.20 daripada dibiarkan sebagai fondasi yang menyesatkan.
@@ -972,6 +1306,8 @@ Diskon berlangganan tahunan via enum `DurasiLangganan`:
 | 12 Bulan | 10 | 12 | Bayar 10, gratis 2 bulan (~16,7%) |
 
 Bonus bulan tidak hardcode — dibaca dari `BillingSetting` (`bonus_bulan_enam`, `bonus_bulan_tahunan`), jadi super admin bisa mengubahnya tanpa deploy. Kalkulasi memakai `bulanBayar()` (bukan `value`) untuk total harga dan `totalBulan()` untuk menambah `expired_at` — keduanya method di **`App\Enums\DurasiLangganan`** dan dipanggil dari `UpgradeOrderService` serta `UpgradePage`, bukan dari `BillingCalculatorService`. UI billing menampilkan "Durasi bayar: X bulan · Gratis: +Y bulan · Total aktif: Z bulan."
+
+Kebijakan yang sama dipajang di seksi #harga landing sebagai dua siklus (bulanan/tahunan) sejak v4.46, dengan tarif setara per santri sebagai angka utama dan harga paket di bawahnya: kartu tahunan menampilkan harga coret (`totalBulan()` × harga bulanan), harga yang dibayar (`bulanBayar()` × harga bulanan), dan nominal bulan yang digratiskan. Angkanya diturunkan di `LandingController`, bukan ditulis di Blade — dan seluruh klaim bonusnya lenyap sendiri bila `bonus_bulan_tahunan` disetel 0.
 
 ## 5.3 Formula Kuota Custom Maju (`BillingCalculatorService`)
 
@@ -1054,7 +1390,7 @@ Satu ustadz hanya dapat membimbing **maks 20 santri aktif** (`status_aktif = tru
 
 ## 5.6 Kebijakan Retensi
 
-**Jaminan harga terkunci:** Tenant yang aktif berlangganan berbayar tidak dikenai kenaikan harga selama masa aktif — harga terkunci pada saat pertama kali berlangganan. Kenaikan harga hanya berlaku untuk pelanggan baru atau setelah jeda berlangganan (status `expired`/`suspended`). *Kebijakan ini belum ditulis di mana pun di aplikasi — halaman Langganan tidak memuat teks jaminan harga maupun program referral, jadi keduanya masih murni komitmen manual Super Admin (§22).*
+**Jaminan harga terkunci:** Tenant yang aktif berlangganan berbayar tidak dikenai kenaikan harga selama masa aktif — harga terkunci pada saat pertama kali berlangganan. Kenaikan harga hanya berlaku untuk pelanggan baru atau setelah jeda berlangganan (status `expired`/`suspended`). *Kebijakan ini belum ditulis di mana pun di aplikasi — halaman Langganan tidak memuat teks jaminan harga maupun program referral, jadi keduanya masih murni komitmen manual Super Admin (§22).* **Sejak v4.46 landing menyatakan "harga dapat berubah sewaktu-waktu" tanpa menyebut jaminan terkunci ini** — sisi yang membatasi sudah publik, sisi yang menenangkan belum. Menuliskan jaminannya di landing atau halaman Langganan adalah keputusan pemilik produk yang masih terbuka.
 
 **Program Referral:** Admin pesantren yang berhasil mereferensikan 1 pesantren baru hingga berlangganan berbayar mendapatkan **1 bulan gratis** (dikreditkan ke tagihan bulan berikutnya). Dikelola manual oleh Super Admin via panel Filament — tidak ada otomasi tracking kode referral di MVP.
 

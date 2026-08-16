@@ -50,7 +50,7 @@ class SlugRulesTest extends TestCase
 
     public function test_reserved_slug_fails(): void
     {
-        foreach (['www', 'app', 'api', 'admin', 'dash', 'billing'] as $reserved) {
+        foreach (['www', 'app', 'api', 'admin', 'dash', 'billing', 'demo', 'sandbox', 'coba', 'contoh'] as $reserved) {
             $v = Validator::make(['slug' => $reserved], ['slug' => [new SlugNotReserved]]);
             $this->assertTrue($v->fails(), "Slug '{$reserved}' seharusnya ditolak");
         }

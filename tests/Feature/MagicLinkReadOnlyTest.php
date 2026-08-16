@@ -128,6 +128,33 @@ class MagicLinkReadOnlyTest extends TestCase
         $this->assertSame('belum_bayar', $tagihan->fresh()->status->value);
     }
 
+    /**
+     * session()->regenerate() saat login hanya mengganti ID sesi — ISINYA
+     * dipertahankan. Tanpa pembersihan eksplisit, bendera magic_link_session
+     * yang tertinggal (mis. sisa mencoba sandbox publik di /coba) bertahan
+     * melewati login dan mengunci wali ke mode laporan baca-saja.
+     */
+    public function test_bendera_magic_link_tidak_bertahan_setelah_login_normal(): void
+    {
+        $santri = $this->santriDenganWali();
+        $wali = $santri->wali;
+        $wali->forceFill(['password' => bcrypt('RahasiaKuat123')])->save();
+
+        // Kunjungi magic link dulu — persis alur calon pelanggan yang mencoba demo.
+        $this->get("/report/{$santri->uuid}")->assertOk();
+        $this->assertTrue(session('magic_link_session'));
+
+        $this->post('/login', [
+            'email' => $wali->email,
+            'password' => 'RahasiaKuat123',
+        ]);
+
+        $this->assertNull(session('magic_link_session'));
+        $this->assertNull(session('magic_link_santri_id'));
+
+        $this->get('/wali/dashboard')->assertOk();
+    }
+
     public function test_wali_login_normal_tetap_bisa_buka_dashboard(): void
     {
         $santri = $this->santriDenganWali();

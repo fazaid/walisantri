@@ -12,18 +12,19 @@
     <title>@yield('judul') · Walisantri.com</title>
     <link rel="icon" type="image/svg+xml" href="{{ \App\Models\PlatformBrandingSetting::faviconUrl() }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('partials.tema')
 </head>
-<body class="min-h-screen flex items-center justify-center px-4 bg-teal-700">
+<body class="min-h-screen flex items-center justify-center px-4 bg-teal-700 dark:bg-teal-100">
     <div class="w-full max-w-sm">
 
         <div class="text-center mb-8">
             <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
                 <img src="{{ \App\Models\PlatformBrandingSetting::logoUrl() }}" alt="Walisantri.com" class="w-10 h-10 object-contain">
             </div>
-            <h1 class="text-white text-2xl font-bold">
+            <h1 class="text-white dark:text-gray-900 text-2xl font-bold">
                 <a href="{{ route('landing') }}">Walisantri.com</a>
             </h1>
-            <p class="text-teal-200 text-sm mt-1">@yield('subjudul')</p>
+            <p class="text-teal-200 dark:text-teal-500 text-sm mt-1">@yield('subjudul')</p>
         </div>
 
         <div class="bg-white rounded-2xl shadow-xl p-6">
@@ -42,7 +43,7 @@
             @yield('isi')
         </div>
 
-        <p class="text-center text-xs mt-6 text-teal-200">
+        <p class="text-center text-xs mt-6 text-teal-200 dark:text-teal-500">
             @yield('catatan')
         </p>
     </div>

@@ -26,7 +26,7 @@ class ExpiringTenantsWidget extends TableWidget
         return $table
             ->heading('Pesantren Akan Expired (7 Hari)')
             ->query(
-                Pesantren::withoutGlobalScope('pesantren')
+                Pesantren::withoutGlobalScope('pesantren')->pelanggan()
                     // Filter status disamakan dengan kartu "Akan Expired" di atasnya —
                     // dulu tabel ini tanpa filter status sama sekali, sehingga angka
                     // kartu dan jumlah baris tabel bisa berbeda di layar yang sama.

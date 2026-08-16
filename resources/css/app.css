@@ -9,3 +9,93 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+/* Mode gelap dikendalikan kelas `dark` di <html>, bukan prefers-color-scheme:
+   pembaca boleh menimpa setelan perangkatnya lewat tombol di nav, dan pilihan
+   itu diingat (lihat partials/tema.blade.php). Panel Filament tidak terpengaruh —
+   ia memakai theme.css sendiri. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root { color-scheme: light; }
+:root.dark { color-scheme: dark; }
+
+/* ---------------------------------------------------------------------------
+   Palet mode gelap.
+
+   Halaman publik memakai >300 utilitas warna. Alih-alih menempelkan `dark:` di
+   tiap titik — yang berarti tiap salinan copy baru harus ingat melakukannya —
+   yang dibalik adalah PALETNYA: di Tailwind v4 `bg-white` menjadi
+   `background-color: var(--color-white)`, jadi menimpa variabelnya membalik
+   seluruh halaman sekaligus. Blok ini sengaja TIDAK berlapis (@layer) supaya
+   menang atas nilai bawaan @theme.
+
+   Skalanya dibalik, bukan digelapkan: gray-900 (judul) menjadi paling terang,
+   white (latar) menjadi paling gelap. Karena itu pasangan seperti
+   `bg-teal-700 text-white` tetap kontras — ia berubah jadi teal terang dengan
+   teks gelap, bukan teal terang dengan teks putih yang menyilaukan.
+   --------------------------------------------------------------------------- */
+:root.dark {
+    --color-white: #0b1220;
+    --color-gray-50: #111a2b;
+    --color-gray-100: #1f2937;
+    --color-gray-200: #374151;
+    --color-gray-300: #4b5563;
+    --color-gray-400: #8b95a7;
+    --color-gray-500: #a3adbe;
+    --color-gray-600: #c0c8d4;
+    --color-gray-700: #d6dce5;
+    --color-gray-800: #e6eaf0;
+    --color-gray-900: #f3f5f8;
+
+    --color-teal-50: #0e2e2c;
+    --color-teal-100: #14403c;
+    --color-teal-200: #1c554e;
+    --color-teal-300: #23716a;
+    --color-teal-400: #2dd4bf;
+    --color-teal-500: #2dd4bf;
+    --color-teal-600: #34e0ca;
+    --color-teal-700: #5eead4;
+    --color-teal-800: #7ff0e0;
+    --color-teal-900: #99f6e4;
+
+    --color-green-50: #0f2a1e;
+    --color-green-100: #14532d;
+    --color-green-400: #4ade80;
+    --color-green-600: #4ade80;
+    --color-green-700: #6ee7a0;
+
+    --color-emerald-50: #0f2a22;
+    --color-emerald-100: #14532d;
+    --color-emerald-700: #6ee7a0;
+
+    --color-red-50: #2a1216;
+    --color-red-100: #3b1d1d;
+    --color-red-200: #5b2a2a;
+    --color-red-400: #fca5a5;
+    --color-red-500: #f87171;
+    --color-red-700: #fca5a5;
+
+    --color-blue-50: #0f1e33;
+    --color-blue-100: #16294a;
+    --color-blue-200: #1e3a5f;
+    --color-blue-700: #93c5fd;
+    --color-blue-800: #bfdbfe;
+
+    --color-amber-50: #2a1f0b;
+    --color-amber-100: #3a2e17;
+    --color-amber-600: #fbbf24;
+    --color-amber-700: #fcd34d;
+
+    --color-yellow-50: #2a2408;
+    --color-yellow-100: #3a3417;
+    --color-yellow-400: #facc15;
+
+    --color-orange-50: #2a1a0b;
+    --color-orange-100: #3a2617;
+
+    --color-purple-50: #211b33;
+    --color-purple-100: #2e2547;
+
+    --color-lime-50: #1c2a0b;
+    --color-lime-100: #2b3a17;
+}

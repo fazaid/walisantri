@@ -105,6 +105,13 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('demo', fn ($request) => Limit::perHour(5)->by($request->ip())
         );
 
+        // Magic link wali. Longgar (satu wali wajar membuka laporan anaknya
+        // berkali-kali sehari), tapi tetap ada pagarnya: sejak tautan sandbox
+        // dipublikasikan di landing, keberadaan endpoint ini bukan lagi rahasia
+        // dan uuid-nya adalah kredensial pembawa.
+        RateLimiter::for('magic-link', fn ($request) => Limit::perMinute(30)->by($request->ip())
+        );
+
         // Dikunci ke email+IP, bukan IP saja, dengan alasan yang sama seperti login:
         // satu pesantren di balik satu IP publik tidak boleh saling mengunci.
         // Melengkapi throttle broker (config/auth.php) yang hanya menahan

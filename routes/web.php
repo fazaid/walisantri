@@ -6,6 +6,8 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\VerifikasiEmailController;
 use App\Http\Controllers\Auth\WaliLoginController;
 use App\Http\Controllers\DemoController;
+use App\Http\Controllers\LandingController;
+use App\Http\Controllers\PanduanController;
 use App\Http\Controllers\PublicProfileController;
 use App\Http\Controllers\SlugCheckController;
 use App\Http\Controllers\Wali\DashboardController;
@@ -22,7 +24,7 @@ use App\Http\Controllers\Wali\SppController;
 use App\Http\Controllers\Wali\TahfidzStatsController;
 use App\Http\Controllers\Wali\UangSakuController;
 use App\Models\Order;
-use App\Models\PlatformSetting;
+use App\Support\SandboxDemo;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -40,18 +42,18 @@ $sameDomain = $baseDomain === $appDomain;
 // LANDING — walisantri.com / walisantri.test (§1.6)
 // =============================================================================
 Route::domain($baseDomain)->group(function () use ($sameDomain) {
-    Route::get('/', function () use ($sameDomain) {
-        if ($sameDomain && auth()->check()) {
-            return match (auth()->user()->role) {
-                'wali_santri' => redirect()->route('wali.dashboard'),
-                default => redirect('/admin'),
-            };
-        }
+    Route::get('/', fn (LandingController $landing) => $landing($sameDomain))->name('landing');
 
-        return view('landing', [
-            'registrationOpen' => PlatformSetting::registrationOpen(),
-        ]);
-    })->name('landing');
+    // Sandbox publik: mengalihkan ke portal wali contoh. UUID-nya diturunkan
+    // saat request, bukan di-hardcode, jadi penyegaran data mingguan tidak
+    // pernah mematikan tautan ini.
+    Route::get('/coba', function () {
+        $url = SandboxDemo::waliUrl();
+
+        abort_if($url === null, 404);
+
+        return redirect()->away($url);
+    })->name('sandbox.coba');
 
     // Slug check diakses dari halaman register di landing domain
     Route::get('/check-slug/{slug}', SlugCheckController::class)
@@ -70,7 +72,7 @@ Route::domain($baseDomain)->group(function () use ($sameDomain) {
     // identik membuat definisi kedua menimpa yang pertama (lihat catatan
     // $sameDomain untuk rute '/' di atas).
     if (! $sameDomain) {
-        Route::view('/panduan', 'panduan');
+        Route::get('/panduan', PanduanController::class);
     }
 });
 
@@ -122,7 +124,7 @@ Route::domain($appDomain)->group(function () use ($sameDomain) {
         ->name('verification.send');
 
     // --- Panduan penggunaan untuk Admin Pesantren & Ustadz — statis, tanpa login ---
-    Route::view('/panduan', 'panduan')->name('panduan');
+    Route::get('/panduan', PanduanController::class)->name('panduan');
 
     // --- Portal Wali Santri (§1.6) ---
     Route::middleware(['auth', 'magic.block', 'tenant.resolve', 'saas.lifecycle'])
@@ -152,7 +154,7 @@ Route::domain($appDomain)->group(function () use ($sameDomain) {
 
     // --- Magic Link — /report/{uuid} (§4.3) ---
     Route::get('/report/{uuid}', [ReportController::class, 'showByUuid'])
-        ->middleware('magic.token')
+        ->middleware(['magic.token', 'throttle:magic-link'])
         ->name('wali.magic.report');
 
     // --- Bukti transfer order — hanya super_admin ---

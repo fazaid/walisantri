@@ -12,6 +12,9 @@ class SlugNotReserved implements ValidationRule
         'www', 'app', 'api', 'admin', 'central', 'dash', 'mail',
         'billing', 'status', 'docs', 'blog', 'support', 'panel',
         'dashboard', 'static', 'cdn',
+        // Dipakai sandbox publik. Tanpa ini, pesantren mana pun bisa mengambil
+        // demo.walisantri.com lebih dulu — lalu slugnya terkunci cooldown 90 hari.
+        'demo', 'sandbox', 'coba', 'contoh',
     ];
 
     public function validate(string $attribute, mixed $value, Closure $fail): void

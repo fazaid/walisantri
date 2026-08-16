@@ -50,6 +50,12 @@ class WaliLoginController extends Controller
             RateLimiter::clear($throttleKey);
             $request->session()->regenerate();
 
+            // regenerate() hanya mengganti ID sesi — ISINYA dipertahankan. Tanpa
+            // baris ini, bendera dari sesi magic link (mis. sisa mencoba sandbox
+            // publik di /coba) bertahan melewati login, dan BlockMagicLinkSession
+            // akan mengunci wali yang baru saja login ke mode laporan baca-saja.
+            $request->session()->forget(['magic_link_session', 'magic_link_santri_id']);
+
             return $this->redirectAfterLogin(Auth::user());
         }
 

@@ -38,4 +38,9 @@ class PlatformSetting extends Model
     {
         return static::get('registration_open', config('app.registration_open', true));
     }
+
+    public static function demoOpen(): bool
+    {
+        return static::get('demo_open', config('app.demo_open', true));
+    }
 }

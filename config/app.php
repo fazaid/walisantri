@@ -57,6 +57,8 @@ return [
     'base_domain' => env('APP_BASE_DOMAIN', 'walisantri.com'),
     'registration_open' => env('REGISTRATION_OPEN', true),
 
+    'demo_open' => env('DEMO_OPEN', true),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

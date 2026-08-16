@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\BillingSetting;
 use App\Models\Pesantren;
 use App\Models\PlatformSetting;
 use App\Models\User;
@@ -51,6 +52,40 @@ class RegisterControllerTest extends TestCase
         $this->get($this->registerUrl())
             ->assertOk()
             ->assertSee('Daftarkan Pesantren');
+    }
+
+    /**
+     * Pasangan dari test_landing_tidak_menjanjikan_trial: janji trial dicabut dari
+     * seluruh corong, bukan hanya landing. Mekaniknya sendiri tetap jalan
+     * (OnboardPesantren mengaktifkan trial Rintisan, PRD §4.1) — yang dijaga di
+     * sini adalah janjinya tidak muncul kembali lewat penyuntingan copy.
+     */
+    public function test_form_registrasi_tidak_menjanjikan_trial(): void
+    {
+        $this->withoutVite();
+        BillingSetting::set('trial_days', 21);
+
+        $this->get($this->registerUrl())
+            ->assertOk()
+            ->assertDontSee('21 hari')
+            ->assertDontSee('Trial')
+            ->assertDontSee('trial');
+    }
+
+    /**
+     * Saran subdomain otomatis dirakit di sisi klien dan mengaitkan dua kolom
+     * lewat id-nya. Menghapus salah satu id tidak akan memunculkan galat apa
+     * pun — form tetap tampil, sarannya saja yang diam-diam mati.
+     */
+    public function test_kolom_nama_dan_slug_punya_id_yang_dipakai_saran_subdomain(): void
+    {
+        $this->withoutVite();
+
+        $this->get($this->registerUrl())
+            ->assertOk()
+            ->assertSee('id="nama-pesantren"', false)
+            ->assertSee('id="slug"', false)
+            ->assertSee("getElementById('nama-pesantren')", false);
     }
 
     public function test_wali_santri_yang_sudah_login_diarahkan_ke_dashboard_wali(): void

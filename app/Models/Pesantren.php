@@ -8,6 +8,7 @@ use App\Enums\OnboardingStep;
 use App\Enums\StatusBerlangganan;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -18,6 +19,7 @@ use Illuminate\Support\Facades\Storage;
 #[Fillable([
     'nama_pesantren',
     'slug',
+    'is_demo',
     'paket_langganan',
     'max_santri_kuota',
     'status_berlangganan',
@@ -34,10 +36,22 @@ class Pesantren extends Model
     {
         return [
             'expired_at' => 'datetime',
+            'is_demo' => 'boolean',
             'santri_count_cache' => 'integer',
             'onboarding_completed_steps' => 'array',
             'profil' => 'array',
         ];
+    }
+
+    /**
+     * Hanya pesantren pelanggan — tenant sandbox publik (is_demo) dikecualikan.
+     *
+     * Dipakai setiap hitungan & daftar di dashboard super admin: tenant demo
+     * yang ikut terhitung membuat angka pertumbuhan berbohong ke diri sendiri.
+     */
+    public function scopePelanggan(Builder $query): Builder
+    {
+        return $query->where('is_demo', false);
     }
 
     public function users(): HasMany
