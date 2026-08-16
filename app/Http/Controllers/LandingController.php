@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Enums\DurasiLangganan;
 use App\Enums\PaketLangganan;
-use App\Models\BillingSetting;
 use App\Models\PlatformSetting;
 use App\Services\BillingCalculatorService;
 use App\Support\SandboxDemo;
@@ -31,7 +30,6 @@ class LandingController extends Controller
             'registrationOpen' => PlatformSetting::registrationOpen(),
             'demoOpen' => PlatformSetting::demoOpen(),
             'demoWaliUrl' => SandboxDemo::waliUrl(),
-            'trialDays' => BillingSetting::get('trial_days', 14),
             'paketList' => $this->paketList(),
             'bonusEnam' => DurasiLangganan::EnamBulan->bonusBulan(),
             'bonusTahunan' => DurasiLangganan::DuabelasBulan->bonusBulan(),

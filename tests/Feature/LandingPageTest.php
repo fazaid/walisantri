@@ -62,15 +62,25 @@ class LandingPageTest extends TestCase
             ->assertSee('Rp 288.000');
     }
 
-    public function test_lama_trial_mengikuti_billing_setting(): void
+    /**
+     * Landing tidak lagi menjual masa trial: tombol dan seluruh salinannya bicara
+     * pendaftaran, bukan "coba gratis N hari". Tes ini menggantikan
+     * test_lama_trial_mengikuti_billing_setting — dulu ia menjaga agar lama trial
+     * tidak di-hardcode di Blade; sekarang yang perlu dijaga adalah janji itu tidak
+     * muncul kembali diam-diam, berapa pun nilai trial_days di BillingSetting.
+     */
+    public function test_landing_tidak_menjanjikan_trial(): void
     {
         $this->withoutVite();
+        PlatformSetting::set('registration_open', true);
         BillingSetting::set('trial_days', 21);
 
         $this->get($this->landingUrl())
             ->assertOk()
-            ->assertSee('21 hari')
-            ->assertDontSee('14 hari');
+            ->assertSee('Daftar Sekarang')
+            ->assertDontSee('21 hari')
+            ->assertDontSee('Trial')
+            ->assertDontSee('trial');
     }
 
     public function test_modul_presensi_dipromosikan_di_landing(): void

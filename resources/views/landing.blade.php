@@ -600,8 +600,8 @@
         <div class="text-center mb-12">
             <h2 class="text-3xl font-bold text-gray-900 mb-4">Harga Transparan, Sesuai Jumlah Santri</h2>
             <p class="text-gray-500 max-w-2xl mx-auto leading-relaxed">
-                Coba gratis {{ $trialDays }} hari dengan fitur penuh — tanpa kartu kredit.
                 Semua modul terbuka di semua paket; yang membedakan hanya kuota santri.
+                Pendaftaran tidak meminta kartu kredit.
             </p>
         </div>
 
@@ -722,7 +722,7 @@
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 @foreach([
-                    ['1', 'Daftar & Aktifkan Trial', 'Isi form singkat, akun pesantren Anda langsung aktif dengan trial '.$trialDays.' hari fitur penuh — tanpa menunggu persetujuan.', 'bg-teal-100 text-teal-700'],
+                    ['1', 'Daftar Akun Pesantren', 'Isi form singkat — akun pesantren Anda langsung aktif dengan fitur penuh, tanpa menunggu persetujuan.', 'bg-teal-100 text-teal-700'],
                     ['2', 'Input Data Santri', 'Tambahkan santri satu per satu atau impor sekaligus dari file Excel, lalu buat kelas dan kamarnya.', 'bg-emerald-100 text-emerald-700'],
                     ['3', 'Aktifkan Portal Wali', 'Bagikan link magic ke wali santri — mereka langsung bisa pantau ibadah, hafalan, dan nilai anak dari HP.', 'bg-blue-100 text-blue-700'],
                 ] as $step)
@@ -749,8 +749,8 @@
         <div class="space-y-3">
             @foreach([
                 [
-                    'Apakah Walisantri gratis?',
-                    'Setiap pesantren yang mendaftar mendapat trial '.$trialDays.' hari gratis dengan fitur penuh untuk 100 santri — tanpa kartu kredit. Setelah itu berlangganan mulai Rp 150.000/bulan sesuai jumlah santri; rinciannya ada di bagian Harga.'
+                    'Berapa biaya Walisantri?',
+                    'Walisantri berlangganan, mulai Rp 150.000/bulan sesuai jumlah santri — rinciannya ada di bagian Harga. Semua modul terbuka di semua paket; yang membedakan hanya kuota santri. Pendaftaran tidak meminta kartu kredit dan akun aktif seketika.'
                 ],
                 [
                     'Bagaimana cara wali santri mengakses portal?',
@@ -781,8 +781,8 @@
                     'Presensi bisa dicatat sekali sehari atau per jam pelajaran — pesantren memilih sendiri. Pengisiannya manual lewat daftar kelas, atau dengan memindai kartu QR santri memakai kamera HP maupun alat scanner. Wali juga bisa mengajukan izin atau sakit dari portal beserta surat keterangannya, dan begitu disetujui pengurus, presensi hari itu terisi otomatis.'
                 ],
                 [
-                    'Apa yang terjadi setelah masa trial habis?',
-                    'Ada masa tenggang 7 hari: pengurus diarahkan ke halaman langganan saat masuk, sementara wali santri tetap bisa membuka portal untuk melihat data. Lewat masa itu akun ditangguhkan sampai berlangganan. Data pesantren Anda tidak dihapus.'
+                    'Apa yang terjadi kalau masa langganan berakhir?',
+                    'Ada masa tenggang 7 hari: pengurus diarahkan ke halaman langganan saat masuk, sementara wali santri tetap bisa membuka portal untuk melihat data. Lewat masa itu akun ditangguhkan sampai langganan diperpanjang. Data pesantren Anda tidak dihapus.'
                 ],
                 [
                     'Bagaimana jika koneksi internet di pesantren tidak stabil?',
@@ -811,7 +811,7 @@
             <h2 class="text-3xl font-bold text-white mb-4">Ingin Lihat Langsung?</h2>
             @if($registrationOpen)
                 <p class="text-gray-400 mb-8 leading-relaxed">
-                    Daftarkan pesantren Anda dan coba seluruh fiturnya gratis {{ $trialDays }} hari —
+                    Daftarkan pesantren Anda hari ini — akun aktif seketika dengan fitur penuh,
                     supaya wali santri Anda bisa mulai memantau perkembangan anak sejak hari pertama.
                 </p>
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
