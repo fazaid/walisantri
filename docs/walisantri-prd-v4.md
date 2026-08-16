@@ -4,7 +4,25 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Agustus 2026 — v4.41
+**Last Updated:** Agustus 2026 — v4.42
+
+**Changelog v4.42:** **Sandbox demo publik — `demo.walisantri.com`.** Sampai rilis ini, satu-satunya cara melihat produk adalah mendaftar. Sandbox menutup kebutuhan "boleh saya lihat dulu?" tanpa melahirkan tenant kosong. ⚠️ Ia **bukan** pengganti keputusan model masuk (trial/freemium/demo-led): ia tidak menjawab "bagaimana pesantren saya mulai memakainya dengan data sendiri", hanya menurunkan tekanannya.
+
+**Dibangun sebagai tenant sungguhan, bukan permukaan baru.** `routes/web.php` sudah mendaftarkan `Route::domain('{slug}.'.$baseDomain)`, jadi tenant ber-slug `demo` otomatis mendapat profil publiknya tanpa satu baris routing baru — sekaligus menjadi contoh hidup pertama untuk klaim "Website Profil Pesantren Sendiri" di landing. `sandbox:segarkan` memanggil `ProvisionTenant::jalankan()`, jadi `tenant_domains`, amalan Mutaba'ah, pengaturan presensi, dan jam pelajaran terisi lewat jalur yang sama dengan tenant nyata.
+
+**Empat slug dikunci: `demo`, `sandbox`, `coba`, `contoh`.** Sebelumnya keempatnya bisa didaftarkan siapa saja — satu pesantren yang kebetulan memilih slug `demo` akan mengambil alamat itu, lalu menguncinya 90 hari lewat `slug_releases` saat dilepas.
+
+**Perintah, bukan seeder, karena datanya bertanggal.** Setoran, presensi, dan SPP semuanya punya tanggal; di-seed sekali, sebulan kemudian demo terlihat ditinggalkan. `sandbox:segarkan` dijadwalkan mingguan dan menghitung ulang seluruh tanggal relatif terhadap hari ia jalan. Pembagiannya yang menentukan: baris **struktural** (pesantren, user, santri, kelas, kamar, mapel, ekskul) idempoten dan **tidak pernah dibuat ulang** — `santri.uuid` adalah token magic link, dan membuat ulang santri akan mematikan setiap tautan demo yang sudah dibagikan; baris **transaksional** dihapus lalu ditulis ulang. Dikunci tes yang membandingkan uuid dan jumlah baris sebelum/sesudah penyegaran kedua.
+
+**Tautannya tidak pernah di-hardcode.** `App\Support\SandboxDemo` menurunkan URL portal wali dari `santri.uuid` saat dibutuhkan (di-cache satu jam, dibersihkan perintah), dan rute `/coba` mengalihkan ke sana. Tombol kedua hero landing yang tadinya cuma menggulir ke `#fitur` diganti "Lihat Portal Wali →" — menukar tautan lemah dengan produk sungguhan, dan kembali ke perilaku lama bila tenant demo belum ada.
+
+**Dua perbaikan keamanan yang dipicu publikasi tautan ini.** (1) `WaliLoginController` memanggil `session()->regenerate()`, yang **mempertahankan** isi sesi — sehingga bendera `magic_link_session` sisa mencoba demo **bertahan melewati login wali sungguhan** di browser yang sama dan mengunci wali itu ke mode laporan baca-saja sampai logout. Nyaris mustahil terjadi sebelumnya; begitu tautannya dipasang di landing, setiap calon pelanggan yang juga wali santri bisa kena. Diperbaiki dengan `session()->forget()`, dan tesnya diverifikasi **gagal** tanpa perbaikan itu. (2) `/report/{uuid}` tidak punya rate limit sama sekali; kini memakai limiter `magic-link` (30/menit/IP) — uuid v4 tidak praktis dienumerasi, tapi keberadaan endpointnya bukan lagi rahasia.
+
+**Kontak sandbox sengaja tidak menjangkau manusia:** email `@demo.invalid` (TLD cadangan RFC 2606), `phone_number` null, kata sandi diacak dan tidak pernah ditampilkan. Nol email/WA bisa terkirim gara-gara tenant ini.
+
+**Yang sengaja TIDAK dikerjakan:** akses panel admin untuk publik (butuh kredensial bersama + reset terjadwal atau mode read-only yang belum ada) dan foto galeri (butuh berkas gambar sungguhan — diserahkan ke pemilik produk, bukan dikarang).
+
+Cakupan tes naik jadi **680 tes / 2.642 asersi** — `SandboxDemoTest` baru (9 kasus) plus satu regresi kebocoran bendera sesi di `MagicLinkReadOnlyTest`.
 
 **Changelog v4.41:** **Landing page diselaraskan dengan produk yang benar-benar ada.** Copy `resources/views/landing.blade.php` terakhir berubah 2026-07-03; sejak itu aplikasi menumbuhkan modul Presensi tujuh fase, email transaksional, Uang Saku, dan Ekstrakurikuler — sementara halaman depan masih menjual produk versi Juli.
 
@@ -715,7 +733,7 @@ erDiagram
 
 ## 3.1 DB Central
 
-**`pesantrens`** — `id` PK · `nama_pesantren` · `slug` (unique, **mutable** + cooldown 90 hari, sumber subdomain default) · `paket_langganan` enum(`rintisan`/`tumbuh`/`berkembang`/`maju`) · `max_santri_kuota` int · `status_berlangganan` enum(`trial`/`active`/`suspended`/`expired`) · `expired_at` ts null · `santri_count_cache` int default 0 · `onboarding_completed_steps` jsonb null · `profil` jsonb null (konten situs publik: deskripsi, alamat, kontak, galeri) · timestamps. *Index: `(status_berlangganan, expired_at)`.*
+**`pesantrens`** — `id` PK · `nama_pesantren` · `slug` (unique, **mutable** + cooldown 90 hari, sumber subdomain default) · `paket_langganan` enum(`rintisan`/`tumbuh`/`berkembang`/`maju`) · `max_santri_kuota` int · `status_berlangganan` enum(`trial`/`active`/`suspended`/`expired`) · `expired_at` ts null · `santri_count_cache` int default 0 · `onboarding_completed_steps` jsonb null · `profil` jsonb null (konten situs publik: deskripsi, alamat, kontak, galeri; `program` berbentuk array of `['nama','jenjang']`, **bukan** daftar string — daftar string merender kartu kosong) · `is_demo` bool default `false` *(v4.42)* · timestamps. *Index: `(status_berlangganan, expired_at)`.* `is_demo` menandai tenant sandbox publik; dikecualikan dari seluruh hitungan & daftar super admin lewat `Pesantren::scopePelanggan()`. Digabung `expired_at = null`, tenant itu juga tak pernah disentuh `SaaSLifecycleLock` maupun ketiga job kedaluwarsa (semuanya mensyaratkan `whereNotNull('expired_at')`).
 
 **`users`** — `id` PK · `pesantren_id` FK null (null = Super Admin) · `name` · `email` unique **tapi NULLABLE** (v4.9, `central/2026_07_09_100001`) · `email_verified_at` ts null (**dipakai sejak v4.23** — verifikasi lunak §12.2; sebelumnya kolom mati) · `phone_number` null (WhatsApp) · `foto_profil` string null (v4.9, `central/2026_07_08_000001`, dipakai `User::getFilamentAvatarUrl()`) · `password` · `role` enum(`super_admin`/`admin_pesantren`/`ustadz`/`wali_santri`) · `remember_token` · timestamps. *Index: `(pesantren_id, role)`.*
 

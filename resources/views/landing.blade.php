@@ -85,10 +85,18 @@
                         Ajukan Demo →
                     </a>
                 @endif
-                <a href="#fitur"
-                   class="inline-block bg-white text-teal-700 font-semibold px-8 py-3.5 rounded-xl text-base border border-teal-200 hover:bg-teal-50 transition-colors">
-                    Lihat Fitur Lengkap ↓
-                </a>
+                @if($demoWaliUrl)
+                    {{-- Menukar tautan lemah (sekadar scroll) dengan produk sungguhan. --}}
+                    <a href="{{ route('sandbox.coba') }}"
+                       class="inline-block bg-white text-teal-700 font-semibold px-8 py-3.5 rounded-xl text-base border border-teal-200 hover:bg-teal-50 transition-colors">
+                        Lihat Portal Wali →
+                    </a>
+                @else
+                    <a href="#fitur"
+                       class="inline-block bg-white text-teal-700 font-semibold px-8 py-3.5 rounded-xl text-base border border-teal-200 hover:bg-teal-50 transition-colors">
+                        Lihat Fitur Lengkap ↓
+                    </a>
+                @endif
             </div>
             @unless($registrationOpen || $demoOpen)
                 <p class="mt-8 inline-flex items-center gap-2 text-sm text-gray-600 bg-gray-100 border border-gray-200 rounded-xl px-5 py-3">

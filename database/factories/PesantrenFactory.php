@@ -32,6 +32,19 @@ class PesantrenFactory extends Factory
         return $this->state(['status_berlangganan' => 'active', 'expired_at' => now()->addYear()]);
     }
 
+    /**
+     * Tenant sandbox publik: aktif selamanya (expired_at null) supaya tidak
+     * pernah disentuh SaaSLifecycleLock maupun job kedaluwarsa.
+     */
+    public function demo(): static
+    {
+        return $this->state([
+            'is_demo' => true,
+            'status_berlangganan' => 'active',
+            'expired_at' => null,
+        ]);
+    }
+
     public function rintisan(): static
     {
         return $this->state(['paket_langganan' => 'rintisan', 'max_santri_kuota' => 100]);

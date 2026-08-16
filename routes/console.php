@@ -58,3 +58,14 @@ Schedule::job(PruneStaleCache::class)
     ->dailyAt('03:00')
     ->timezone(config('app.display_timezone'))
     ->withoutOverlapping();
+
+// Mingguan Senin 04.00 — Segarkan data sandbox publik (demo.walisantri.com).
+//
+// Datanya bertanggal (setoran, presensi, tagihan SPP). Tanpa penyegaran, sebulan
+// lagi calon pelanggan membuka demo dan melihat produk yang tampak ditinggalkan.
+// Perintahnya idempoten dan tidak menyentuh santri, jadi uuid magic link yang
+// sudah dipublikasikan tetap berlaku.
+Schedule::command('sandbox:segarkan')
+    ->weeklyOn(1, '04:00')
+    ->timezone(config('app.display_timezone'))
+    ->withoutOverlapping();

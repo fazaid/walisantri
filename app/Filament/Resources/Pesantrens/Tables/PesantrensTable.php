@@ -17,6 +17,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -94,6 +95,21 @@ class PesantrensTable
                     ->label('Status')
                     ->options(StatusBerlangganan::options())
                     ->multiple(),
+
+                // Tenant sandbox publik disembunyikan secara bawaan supaya daftar
+                // ini terbaca sebagai daftar pelanggan. Tetap bisa dimunculkan —
+                // menyembunyikannya tanpa jalan keluar akan membuat super admin
+                // tidak punya cara menyuntingnya lewat panel.
+                TernaryFilter::make('is_demo')
+                    ->label('Tenant demo')
+                    ->placeholder('Sembunyikan tenant demo')
+                    ->trueLabel('Hanya tenant demo')
+                    ->falseLabel('Hanya pelanggan')
+                    ->queries(
+                        true: fn (Builder $query): Builder => $query->where('is_demo', true),
+                        false: fn (Builder $query): Builder => $query->where('is_demo', false),
+                        blank: fn (Builder $query): Builder => $query->where('is_demo', false),
+                    ),
             ])
             ->recordActions([
                 ViewAction::make(),

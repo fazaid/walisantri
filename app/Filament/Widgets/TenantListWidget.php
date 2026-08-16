@@ -28,7 +28,7 @@ class TenantListWidget extends TableWidget
     {
         return $table
             ->heading('Semua Pesantren')
-            ->query(Pesantren::withoutGlobalScope('pesantren'))
+            ->query(Pesantren::withoutGlobalScope('pesantren')->pelanggan())
             // Tanpa ORDER BY eksplisit, Postgres tidak menjamin urutan antar halaman —
             // baris yang sudah tampil di halaman 1 bisa muncul lagi di halaman 2.
             ->defaultSort('nama_pesantren')

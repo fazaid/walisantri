@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Models\User;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Database\Eloquent\Builder;
 
 class SystemStatsWidget extends StatsOverviewWidget
 {
@@ -24,16 +25,23 @@ class SystemStatsWidget extends StatsOverviewWidget
 
     protected function getStats(): array
     {
+        // User milik tenant sandbox bukan pengguna pelanggan. Super admin
+        // ber-pesantren_id null tetap terhitung — dan itu memang benar.
+        $pelanggan = fn () => User::whereDoesntHave(
+            'pesantren',
+            fn (Builder $q) => $q->where('is_demo', true)
+        );
+
         return [
-            Stat::make('Total User', User::count())
+            Stat::make('Total User', $pelanggan()->count())
                 ->description('Semua role')
                 ->color('primary'),
 
-            Stat::make('Total Ustadz', User::where('role', UserRole::Ustadz->value)->count())
+            Stat::make('Total Ustadz', $pelanggan()->where('role', UserRole::Ustadz->value)->count())
                 ->description('Role ustadz')
                 ->color('success'),
 
-            Stat::make('Total Wali Santri', User::where('role', UserRole::WaliSantri->value)->count())
+            Stat::make('Total Wali Santri', $pelanggan()->where('role', UserRole::WaliSantri->value)->count())
                 ->description('Role wali santri')
                 ->color('info'),
         ];
