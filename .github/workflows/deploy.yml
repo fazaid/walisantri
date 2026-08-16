@@ -106,3 +106,13 @@ jobs:
 
             # Buka kembali situs (trap EXIT juga memanggil ini sebagai cadangan).
             php artisan up
+
+            # Sandbox publik disemai di sini, BUKAN hanya lewat jadwal mingguannya.
+            # Tanpa baris ini, server yang belum pernah punya tenant `demo` harus
+            # menunggu sampai Senin 04.00 WIB — sampai seminggu — dan selama itu
+            # tombol "Lihat Portal Wali" di landing diam-diam jatuh ke tautan
+            # cadangan "Lihat Fitur Lengkap". Persis itu yang terjadi setelah rilis
+            # v4.42. Perintahnya idempoten dan tidak menyentuh santri, jadi aman
+            # dijalankan tiap deploy; dijalankan setelah `up` supaya penyemaian
+            # datanya tidak memperpanjang masa pemeliharaan.
+            php artisan sandbox:segarkan || echo "WARN: penyemaian sandbox gagal, deploy tetap dianggap sukses"
