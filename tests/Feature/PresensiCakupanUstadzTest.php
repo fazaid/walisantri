@@ -6,6 +6,7 @@ use App\Enums\StatusKehadiran;
 use App\Filament\Pages\PresensiHarianPage;
 use App\Filament\Resources\Presensis\PresensiResource;
 use App\Models\Kelas;
+use App\Models\MataPelajaran;
 use App\Models\Pesantren;
 use App\Models\Presensi;
 use App\Models\Santri;
@@ -34,6 +35,19 @@ class PresensiCakupanUstadzTest extends TestCase
             'tanggal' => now()->toDateString(),
             'jam_ke' => Presensi::HARIAN,
             'kelas_id' => $kelas?->id ?? $santri->kelas_id,
+            'status' => StatusKehadiran::Hadir,
+        ]);
+    }
+
+    private function presensiJamUntuk(Santri $santri, MataPelajaran $mapel, int $jamKe = 1): Presensi
+    {
+        return Presensi::create([
+            'pesantren_id' => $santri->pesantren_id,
+            'santri_id' => $santri->id,
+            'tanggal' => now()->toDateString(),
+            'jam_ke' => $jamKe,
+            'mata_pelajaran_id' => $mapel->id,
+            'kelas_id' => $santri->kelas_id,
             'status' => StatusKehadiran::Hadir,
         ]);
     }
@@ -153,5 +167,110 @@ class PresensiCakupanUstadzTest extends TestCase
         $admin = User::factory()->adminPesantren()->create(['pesantren_id' => $pesantren->id]);
         $this->actingAs($admin);
         $this->assertTrue(PresensiResource::canDelete($presensi));
+    }
+
+    /**
+     * Cabang `jam_ke > 0` di ScopesQueryToPresensiUstadz akhirnya punya baris.
+     *
+     * Ia ditulis sejak Fase 1 meski belum ada satu pun presensi per jam; tes ini
+     * yang pertama kali benar-benar menjalankannya.
+     */
+    public function test_pengampu_mapel_melihat_presensi_jam_pelajaran_yang_ia_ampu(): void
+    {
+        $pesantren = Pesantren::factory()->create();
+        $pengampu = User::factory()->ustadz()->create(['pesantren_id' => $pesantren->id]);
+        $kelas = Kelas::factory()->create(['pesantren_id' => $pesantren->id]);
+
+        $mapelnya = MataPelajaran::factory()->create([
+            'pesantren_id' => $pesantren->id,
+            'kelas_id' => $kelas->id,
+            'ustadz_id' => $pengampu->id,
+            'nama_mapel' => 'Fiqih',
+        ]);
+        $mapelOrangLain = MataPelajaran::factory()->create([
+            'pesantren_id' => $pesantren->id,
+            'kelas_id' => $kelas->id,
+            'ustadz_id' => User::factory()->ustadz()->create(['pesantren_id' => $pesantren->id])->id,
+            'nama_mapel' => 'Tafsir',
+        ]);
+
+        $santri = Santri::factory()->create(['pesantren_id' => $pesantren->id, 'kelas_id' => $kelas->id]);
+
+        $miliknya = $this->presensiJamUntuk($santri, $mapelnya);
+        $milikOrangLain = $this->presensiJamUntuk($santri, $mapelOrangLain, jamKe: 2);
+        // Santri yang SAMA, kelas yang sama — tapi ini presensi harian, dan
+        // pengampu mapel tidak memegangnya.
+        $harian = $this->presensiUntuk($santri, $kelas);
+
+        $this->actingAs($pengampu);
+        $terlihat = PresensiResource::getEloquentQuery()->pluck('id');
+
+        $this->assertTrue($terlihat->contains($miliknya->id));
+        $this->assertFalse($terlihat->contains($milikOrangLain->id));
+        $this->assertFalse($terlihat->contains($harian->id), 'Pengampu mapel tidak memegang presensi harian');
+    }
+
+    /**
+     * Kebalikannya, dan sama pentingnya.
+     *
+     * Wali kelas memegang presensi HARIAN kelasnya. Ia tidak otomatis memegang
+     * presensi jam pelajaran di kelas yang sama — yang berdiri di depan kelas pada
+     * jam itu adalah pengampunya, bukan dia.
+     */
+    public function test_wali_kelas_tidak_melihat_presensi_jam_pelajaran_yang_bukan_mapelnya(): void
+    {
+        $pesantren = Pesantren::factory()->create();
+        $wali = User::factory()->ustadz()->create(['pesantren_id' => $pesantren->id]);
+        $kelas = Kelas::factory()->create([
+            'pesantren_id' => $pesantren->id,
+            'wali_kelas_id' => $wali->id,
+        ]);
+
+        $mapel = MataPelajaran::factory()->create([
+            'pesantren_id' => $pesantren->id,
+            'kelas_id' => $kelas->id,
+            'ustadz_id' => User::factory()->ustadz()->create(['pesantren_id' => $pesantren->id])->id,
+            'nama_mapel' => 'Tafsir',
+        ]);
+
+        $santri = Santri::factory()->create(['pesantren_id' => $pesantren->id, 'kelas_id' => $kelas->id]);
+
+        $harian = $this->presensiUntuk($santri, $kelas);
+        $perJam = $this->presensiJamUntuk($santri, $mapel);
+
+        $this->actingAs($wali);
+        $terlihat = PresensiResource::getEloquentQuery()->pluck('id');
+
+        $this->assertTrue($terlihat->contains($harian->id));
+        $this->assertFalse($terlihat->contains($perJam->id));
+    }
+
+    public function test_route_binding_menolak_presensi_jam_pelajaran_di_luar_cakupan(): void
+    {
+        $pesantren = Pesantren::factory()->create();
+        $pengampu = User::factory()->ustadz()->create(['pesantren_id' => $pesantren->id]);
+        $kelas = Kelas::factory()->create(['pesantren_id' => $pesantren->id]);
+
+        MataPelajaran::factory()->create([
+            'pesantren_id' => $pesantren->id,
+            'kelas_id' => $kelas->id,
+            'ustadz_id' => $pengampu->id,
+            'nama_mapel' => 'Fiqih',
+        ]);
+        $mapelOrangLain = MataPelajaran::factory()->create([
+            'pesantren_id' => $pesantren->id,
+            'kelas_id' => $kelas->id,
+            'ustadz_id' => User::factory()->ustadz()->create(['pesantren_id' => $pesantren->id])->id,
+            'nama_mapel' => 'Tafsir',
+        ]);
+
+        $santri = Santri::factory()->create(['pesantren_id' => $pesantren->id, 'kelas_id' => $kelas->id]);
+        $perJamOrangLain = $this->presensiJamUntuk($santri, $mapelOrangLain, jamKe: 2);
+
+        $this->actingAs($pengampu);
+
+        $this->assertNull(
+            PresensiResource::getRecordRouteBindingEloquentQuery()->find($perJamOrangLain->id)
+        );
     }
 }

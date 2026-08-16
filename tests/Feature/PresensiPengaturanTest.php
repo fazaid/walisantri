@@ -99,6 +99,40 @@ class PresensiPengaturanTest extends TestCase
         $this->assertSame([5], $pengaturan->hari_libur_mingguan);
     }
 
+    /**
+     * Toggle presensi per jam pelajaran (v4.39).
+     *
+     * Ia sempat lahir sebagai placeholder ber-`disabled()` di v4.28 lalu dibuang —
+     * dan salah satu placeholder itu bahkan memecahkan render halaman karena state
+     * `disabled` kembali sebagai `null` ke properti bertipe `bool`. Karena itu
+     * propertinya kini `?bool`, dan tes ini menjaga jalur nyala-matinya utuh.
+     */
+    public function test_admin_bisa_menyalakan_dan_mematikan_presensi_per_jam(): void
+    {
+        $pesantren = Pesantren::factory()->create();
+        $admin = User::factory()->adminPesantren()->create(['pesantren_id' => $pesantren->id]);
+
+        // Bawaannya mati — pesantren yang cukup dengan presensi harian tidak
+        // melihat perubahan apa pun.
+        $this->assertFalse(PresensiPengaturan::untuk($pesantren->id)->presensi_per_jam_aktif);
+
+        Livewire::actingAs($admin)
+            ->test(PresensiPengaturanPage::class)
+            ->set('presensi_per_jam_aktif', true)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertTrue(PresensiPengaturan::untuk($pesantren->id)->fresh()->presensi_per_jam_aktif);
+
+        Livewire::actingAs($admin)
+            ->test(PresensiPengaturanPage::class)
+            ->set('presensi_per_jam_aktif', false)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertFalse(PresensiPengaturan::untuk($pesantren->id)->fresh()->presensi_per_jam_aktif);
+    }
+
     public function test_batas_awal_edit_nol_berarti_tanpa_batas(): void
     {
         $pesantren = Pesantren::factory()->create();

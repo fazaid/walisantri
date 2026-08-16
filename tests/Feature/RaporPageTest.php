@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\StatusKehadiran;
 use App\Filament\Pages\RaporPage;
 use App\Models\Kelas;
 use App\Models\KesantrianAmalMaster;
@@ -10,11 +11,15 @@ use App\Models\KesantrianMutabaah;
 use App\Models\MataPelajaran;
 use App\Models\NilaiAkademik;
 use App\Models\Pesantren;
+use App\Models\Presensi;
 use App\Models\Santri;
 use App\Models\TahfidzUjian;
 use App\Models\User;
+use App\Services\Rapor\RaporPresensiData;
+use App\Support\Waktu;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -400,5 +405,90 @@ class RaporPageTest extends TestCase
         $this->assertStringStartsWith('%PDF', $berkas);
         // Empat modul dipisah page-break, jadi berkasnya wajib lebih dari satu halaman.
         $this->assertGreaterThan(1, substr_count($berkas, '/Type /Page'));
+    }
+
+    private function catatPresensi(string $tanggal, StatusKehadiran $status): void
+    {
+        Presensi::create([
+            'pesantren_id' => $this->pesantren->id,
+            'santri_id' => $this->santri->id,
+            'tanggal' => $tanggal,
+            'jam_ke' => Presensi::HARIAN,
+            'kelas_id' => $this->kelas->id,
+            'status' => $status,
+        ]);
+    }
+
+    public function test_modul_presensi_menampilkan_rekap_kehadiran(): void
+    {
+        $this->catatPresensi(Waktu::hariIni(), StatusKehadiran::Hadir);
+
+        Livewire::actingAs($this->admin)
+            ->test(RaporPage::class)
+            ->set('santriId', $this->santri->id)
+            ->set('tahunAjaran', '2026/2027')
+            ->set('periode', 'Semester_Ganjil')
+            ->set('modul', ['presensi'])
+            ->assertSee('Presensi')
+            ->assertSee('Hari Efektif')
+            // "Tanpa Keterangan" wajib dijelaskan di lembar yang sama: ia bukan
+            // ketidakhadiran yang dinyatakan, dan rapor disimpan bertahun-tahun.
+            ->assertSee('Tanpa Keterangan');
+    }
+
+    /**
+     * Pesantren yang belum mulai mengabsen tidak mendapat halaman "0% kehadiran".
+     *
+     * Mencetak nol persen untuk santri yang memang belum pernah diabsen adalah
+     * tuduhan, bukan laporan — jadi modulnya tidak ikut tercetak sama sekali.
+     */
+    public function test_modul_presensi_tidak_punya_data_saat_belum_pernah_diabsen(): void
+    {
+        $data = RaporPresensiData::untuk($this->santri->id, '2026/2027', 'Semester_Ganjil');
+
+        $this->assertFalse($data['ada_data']);
+        $this->assertSame(0, $data['total_tercatat']);
+    }
+
+    /**
+     * Rentang yang dicetak adalah rentang yang BENAR-BENAR dihitung.
+     *
+     * Semester Ganjil berakhir Desember, tapi rapor yang dicetak Agustus tidak
+     * boleh mengklaim mencakup sampai akhir tahun — sisa periode yang belum
+     * berjalan juga tidak boleh masuk penyebut "hari efektif".
+     */
+    public function test_rentang_presensi_dipotong_ke_hari_ini(): void
+    {
+        $this->catatPresensi(Waktu::hariIni(), StatusKehadiran::Hadir);
+
+        $data = RaporPresensiData::untuk($this->santri->id, '2026/2027', 'Semester_Ganjil');
+
+        $this->assertTrue($data['ada_data']);
+        $this->assertSame(Waktu::hariIni(), $data['akhir']);
+        $this->assertLessThanOrEqual(
+            Carbon::parse($data['awal'])->diffInDays(Waktu::hariIni()) + 1,
+            $data['hari_efektif'],
+        );
+    }
+
+    public function test_presensi_jam_pelajaran_tidak_ikut_rekap_rapor(): void
+    {
+        $this->catatPresensi(Waktu::hariIni(), StatusKehadiran::Hadir);
+
+        Presensi::create([
+            'pesantren_id' => $this->pesantren->id,
+            'santri_id' => $this->santri->id,
+            'tanggal' => Waktu::hariIni(),
+            'jam_ke' => 3,
+            'kelas_id' => $this->kelas->id,
+            'status' => StatusKehadiran::Alpa,
+        ]);
+
+        $data = RaporPresensiData::untuk($this->santri->id, '2026/2027', 'Semester_Ganjil');
+
+        // Satu baris tercatat, bukan dua: penyebut "hari efektif" tidak berlaku
+        // untuk jam pelajaran, dan mencampurnya membuat persentase tidak berarti.
+        $this->assertSame(1, $data['total_tercatat']);
+        $this->assertSame(0, collect($data['status'])->firstWhere('label', 'Alpa')['jumlah']);
     }
 }

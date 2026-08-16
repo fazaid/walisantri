@@ -364,6 +364,34 @@ class PresensiHarianPage extends Page implements HasForms
             return;
         }
 
+        // santri_id dan kelas_id dari klien tidak dipercaya. Repeater mengirim
+        // balik apa pun yang ada di state-nya, dan request Livewire yang dirakit
+        // tangan bisa memuat santri di luar kelompok yang sedang dipilih — bahkan
+        // di luar cakupan perwalian ustadz. Yang menentukan siapa yang boleh
+        // ditulis adalah query yang sama dengan pembangun barisnya.
+        // ?? null, bukan akses langsung: Select 'kelas_id' bersembunyi di mode
+        // "Semua santri" dan "Belum punya kelas", dan komponen tersembunyi memang
+        // TIDAK ikut di state form.
+        $santriSah = $this->getSantriQuery(
+            $data['kelompok'],
+            ($data['kelas_id'] ?? null) ? (int) $data['kelas_id'] : null,
+        )->pluck('kelas_id', 'id');
+
+        $rows = array_values(array_filter(
+            $rows,
+            fn (array $row): bool => $santriSah->has((int) $row['santri_id']),
+        ));
+
+        if ($rows === []) {
+            Notification::make()
+                ->title('Tidak ada santri untuk disimpan')
+                ->body('Pilih kelompok yang berisi santri lebih dulu.')
+                ->warning()
+                ->send();
+
+            return;
+        }
+
         $pesantrenId = Auth::user()->pesantren_id;
         $sekarang = now();
 
@@ -372,8 +400,9 @@ class PresensiHarianPage extends Page implements HasForms
             'santri_id' => $row['santri_id'],
             'tanggal' => $data['tanggal'],
             'jam_ke' => Presensi::HARIAN,
-            // Snapshot kelas saat dicatat — bukan dibaca ulang saat rekap.
-            'kelas_id' => $row['kelas_id'] ?? null,
+            // Snapshot kelas saat dicatat — bukan dibaca ulang saat rekap, dan
+            // bukan pula diambil dari kiriman klien.
+            'kelas_id' => $santriSah->get((int) $row['santri_id']),
             'status' => $row['status'],
             'catatan' => $row['catatan'] ?? null,
             'sumber' => SumberPresensi::Manual->value,

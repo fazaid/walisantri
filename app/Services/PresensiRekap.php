@@ -9,11 +9,13 @@ use App\Support\Waktu;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use LogicException;
 
 /**
  * Satu-satunya sumber agregasi rekap presensi.
  *
- * Dipakai bersama oleh halaman Rekap dan ekspor Excel — dan nanti oleh PDF rapor.
+ * Dipakai bersama oleh halaman Rekap, ekspor Excel, PDF rapor (v4.40), dan
+ * halaman presensi portal wali (v4.40).
  * Menaruhnya di satu tempat sejak awal adalah pelajaran v4.19: halaman rapor dan
  * PDF-nya dulu punya versi query masing-masing, lalu menyimpang, dan menyimpangnya
  * baru ketahuan setahun kemudian.
@@ -32,11 +34,19 @@ class PresensiRekap
         private readonly string $akhir,
         private readonly ?int $kelasId,
         private readonly ?int $ustadzId,
+        private readonly ?int $santriId,
     ) {}
 
     /**
      * @param  string  $awal  Y-m-d
      * @param  string  $akhir  Y-m-d — akan di-clamp ke hari ini, lihat batasAkhir()
+     * @param  int|null  $santriId  satu santri saja — dipakai portal wali & rapor PDF
+     *
+     * $santriId ditambahkan di v4.40, dan sengaja lewat service ini alih-alih
+     * query tersendiri di controller wali dan di RaporPresensiData. "Hari efektif"
+     * dan definisi "% kehadiran" akan berbeda di tiga tempat begitu ketiganya
+     * menghitung sendiri — dan menyimpangnya baru ketahuan saat wali membandingkan
+     * angka di portal dengan angka di rapor cetak.
      */
     public static function untuk(
         int $pesantrenId,
@@ -44,8 +54,9 @@ class PresensiRekap
         string $akhir,
         ?int $kelasId = null,
         ?int $ustadzId = null,
+        ?int $santriId = null,
     ): self {
-        return new self($pesantrenId, $awal, self::batasAkhir($akhir), $kelasId, $ustadzId);
+        return new self($pesantrenId, $awal, self::batasAkhir($akhir), $kelasId, $ustadzId, $santriId);
     }
 
     /**
@@ -112,6 +123,10 @@ class PresensiRekap
             $query->whereIn('santri.kelas_id', PenugasanUstadz::kelasIdsPerwalian($this->ustadzId));
         }
 
+        if ($this->santriId !== null) {
+            $query->where('santri.id', $this->santriId);
+        }
+
         $kolom = [
             'santri.id',
             'santri.nama_lengkap',
@@ -148,6 +163,23 @@ class PresensiRekap
 
                 return $baris;
             });
+    }
+
+    /**
+     * Rekap SATU santri, atau null bila ia di luar cakupan (non-aktif/terhapus).
+     *
+     * Melempar bila santriId tidak disetel, dan itu disengaja: tanpa filternya
+     * `perSantri()->first()` akan mengembalikan santri pertama pesantren dengan
+     * tenang — angka yang terlihat masuk akal untuk santri yang salah adalah
+     * kegagalan yang paling mahal untuk ditemukan.
+     */
+    public function satuSantri(): ?object
+    {
+        if ($this->santriId === null) {
+            throw new LogicException('PresensiRekap::satuSantri() butuh santriId.');
+        }
+
+        return $this->perSantri()->first();
     }
 
     /** Ringkasan seluruh santri dalam rentang — untuk kartu di atas tabel. */
@@ -202,6 +234,10 @@ class PresensiRekap
 
         if ($this->ustadzId !== null) {
             $query->whereIn('santri.kelas_id', PenugasanUstadz::kelasIdsPerwalian($this->ustadzId));
+        }
+
+        if ($this->santriId !== null) {
+            $query->where('santri.id', $this->santriId);
         }
 
         $alpa = $query

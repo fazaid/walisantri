@@ -6,6 +6,7 @@ use App\Models\Pesantren;
 use App\Models\PresensiPengaturan;
 use App\Models\TenantDomain;
 use App\Support\AmalanDefault;
+use App\Support\PresensiDefault;
 
 /**
  * Melengkapi pesantren yang baru dibuat agar siap dipakai.
@@ -46,5 +47,11 @@ class ProvisionTenant
         // justru karena satu-satunya pengisi datanya adalah migrasi yang hanya
         // jalan sekali.
         PresensiPengaturan::untuk($pesantren->id);
+
+        // Jam pelajaran bawaan. Sama seperti amalan Mutaba'ah: daftarnya milik
+        // aplikasi (App\Support\PresensiDefault), bukan milik satu migrasi yang
+        // hanya jalan sekali. Idempoten lewat firstOrCreate pada (pesantren_id, jam_ke),
+        // jadi jam yang sudah disunting admin tidak pernah tertimpa.
+        PresensiDefault::untukPesantren($pesantren->id);
     }
 }

@@ -20,7 +20,7 @@ use Symfony\Component\HttpFoundation\Response;
  * kosmetik — kontrol akses yang sebenarnya ditegakkan di sini.
  *
  * Sesi magic link boleh MEMBACA report santrinya beserta halaman detail/statistik
- * yang ditaut dari report itu (tahfidz, kesehatan, mutabaah, inventaris), tapi:
+ * yang ditaut dari report itu (tahfidz, kesehatan, mutabaah, inventaris, presensi), tapi:
  *   - semua mutasi (non-GET) diblok, dan
  *   - hanya untuk santri milik tautan ini (tidak bisa menebak id santri lain),
  *   - halaman portal agregat (dashboard, spp, pengumuman, rapor, uang-saku) —
@@ -38,6 +38,11 @@ class BlockMagicLinkSession
         'wali.santri.kesehatan',
         'wali.santri.mutabaah',
         'wali.santri.inventaris',
+        // Presensi (v4.40) ikut diizinkan karena ia halaman detail baca-saja yang
+        // ditaut LANGSUNG dari report — persis seperti empat di atasnya. Lupa
+        // memasukkannya berarti kartunya tampil di report lalu memantulkan wali
+        // kembali ke report saat ditekan, tanpa penjelasan apa pun.
+        'wali.santri.presensi',
     ];
 
     public function handle(Request $request, Closure $next): Response

@@ -15,6 +15,7 @@ use App\Http\Controllers\Wali\KesehatanStatsController;
 use App\Http\Controllers\Wali\LaporanController;
 use App\Http\Controllers\Wali\MutabaahStatsController;
 use App\Http\Controllers\Wali\PengumumanController;
+use App\Http\Controllers\Wali\PresensiController;
 use App\Http\Controllers\Wali\RaporController;
 use App\Http\Controllers\Wali\ReportController;
 use App\Http\Controllers\Wali\SppController;
@@ -134,6 +135,7 @@ Route::domain($appDomain)->group(function () use ($sameDomain) {
             Route::get('/santri/{santri}/kesehatan', [KesehatanStatsController::class, 'show'])->name('santri.kesehatan');
             Route::get('/santri/{santri}/mutabaah', [MutabaahStatsController::class, 'show'])->name('santri.mutabaah');
             Route::get('/santri/{santri}/inventaris', [InventarisController::class, 'show'])->name('santri.inventaris');
+            Route::get('/santri/{santri}/presensi', [PresensiController::class, 'show'])->name('santri.presensi');
             Route::get('/pengumuman', [PengumumanController::class, 'index'])->name('pengumuman');
             Route::get('/rapor', [RaporController::class, 'index'])->name('rapor');
             Route::get('/laporan/pdf', [LaporanController::class, 'exportPdf'])->name('laporan.pdf');
