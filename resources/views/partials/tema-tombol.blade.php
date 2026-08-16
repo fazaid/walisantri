@@ -1,11 +1,17 @@
 {{-- Tombol ganti mode. Butuh partials/tema di <head> halaman yang memuatnya.
 
-     Boleh dipakai lebih dari sekali di satu halaman (nav desktop + panel menu HP):
-     partials/tema menyetel aria-pressed lewat querySelectorAll, jadi semua instans
-     ikut diperbarui. $kelasTambahan untuk mengatur di lebar mana ia tampil. --}}
+     Boleh dipakai lebih dari sekali di satu halaman: partials/tema menyetel
+     aria-pressed lewat querySelectorAll, jadi semua instans ikut diperbarui.
+
+     $kelasTambahan untuk mengatur di lebar mana ia tampil.
+     $kelasWarna MENGGANTIKAN warna bawaan — dipakai portal wali yang menaruhnya di
+     header teal. Menumpuk warna lewat $kelasTambahan tidak bisa diandalkan: dua
+     utilitas warna di layer yang sama dimenangkan urutan di berkas CSS, bukan
+     urutan penulisan di atribut class. --}}
+@php($kelasWarna = $kelasWarna ?? 'text-gray-500 hover:text-teal-700 hover:bg-gray-50')
 <button type="button" data-tema-tombol onclick="gantiTema()" aria-pressed="false"
         title="Ganti mode terang/gelap" aria-label="Ganti mode terang/gelap"
-        class="text-gray-500 hover:text-teal-700 p-2 rounded-lg hover:bg-gray-50 transition-colors shrink-0 cursor-pointer {{ $kelasTambahan ?? '' }}">
+        class="p-2 rounded-lg transition-colors shrink-0 cursor-pointer {{ $kelasWarna }} {{ $kelasTambahan ?? '' }}">
     {{-- Ikonnya menawarkan tujuan, bukan keadaan sekarang: bulan saat mode terang,
          matahari saat mode gelap. --}}
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" class="w-5 h-5 dark:hidden" aria-hidden="true">
