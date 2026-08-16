@@ -4,7 +4,23 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Agustus 2026 — v4.42
+**Last Updated:** Agustus 2026 — v4.43
+
+**Changelog v4.43:** **Host per-tenant & white-label — spesifikasi dua fase, nol kode.** Seksi baru **§1.8 — Host Per-Tenant & White-Label**, disusun dalam dua fase. ⚠️ Ditulis eksplisit sebagai **rancangan, bukan status**, karena dokumen ini sudah dua kali jatuh ke kesalahan yang sama (§8 dan §15 sempat mendeskripsikan halaman presensi wali sebagai fitur yang ada, dikoreksi v4.40). Yang benar-benar ada hari ini hanya kolomnya — `tenant_domains.type/verified_at/ssl_status`; `grep "'custom'"` di seluruh `app/` mengembalikan nol hasil.
+
+**Cakupannya diperluas, dan itu perubahan keputusan yang sebenarnya.** Sampai v4.42, custom domain tersirat hanya menyangkut halaman profil. Itu terlalu sempit untuk add-on berbayar: wali membuka halaman profil paling banyak sekali, sementara titik sentuh hariannya adalah portal. Custom domain yang berhenti di halaman profil membiarkan merek platform muncul persis di tempat yang paling sering dilihat — janji white-label yang tidak ditepati. Cakupan barunya mencakup **login wali, portal wali, dan Magic Link**.
+
+**Yang membuat itu terjangkau:** seluruh permukaan yang dilihat wali (`/login`, `/wali/*`, `/report/{uuid}`) adalah route Laravel biasa dengan view Blade — **bukan Filament**. Panel staf sebaliknya terikat `->domain()` yang hanya menerima satu nilai, jadi ia **tetap** di `app.walisantri.com`. Itu bukan kompromi yang merusak tujuan: pengurus menandatangani kontraknya dan sudah tahu vendornya; yang dijanjikan white-label adalah komunitas, bukan staf.
+
+**Dipecah dua fase, dan pemecahannya bukan sekadar pentahapan pekerjaan.** **Fase 1** memindahkan permukaan wali ke `{slug}.walisantri.com` — di sana tiga dari empat prasyarat **sudah terpenuhi gratis**: wildcard cert `*.walisantri.com` berlaku sampai 2041, wildcard A record sudah ada (§1.5), dan `SESSION_DOMAIN=.walisantri.com` sudah berbagi cookie ke seluruh subdomain. Artinya seluruh kesulitan arsitekturnya (routing per-host, `linkWali()` per-tenant, 38 call site `route('wali.*')`) dibuktikan lebih dulu di keluarga host yang kita kuasai penuh. **Fase 2** tinggal menambahkan TLS Cloudflare for SaaS + verifikasi kepemilikan. Efek sampingnya: peningkatan branding jadi **gratis untuk semua pesantren**, bukan hanya pembeli add-on.
+
+**Pintu kanonik permanen adalah kunci yang membuat Fase 1 aman.** `app.walisantri.com/report/{uuid}` tetap ada selamanya dan hanya mengalihkan ke host tenant saat ini — tujuannya dihitung dari **tenant milik santri**, bukan dari URL. Ini menjaga jaminan §1.4 (*slug mutable itu aman*) tetap utuh meski portal wali kini tinggal di subdomain: tanpa mekanisme itu, mengganti slug akan mematikan seluruh magic link yang sudah dibagikan, karena `PesantrenObserver` **menimpa** hostname alih-alih menambah baris. Yang memungkinkannya: `VerifyMagicToken` mencari uuid secara global, tidak terikat host.
+
+**Cloudflare for SaaS ditetapkan sebagai jalur TLS** (keputusan pemilik produk); Caddy on-demand TLS turun jadi cadangan. Gratis ≤100 hostname lalu berbayar per hostname — sejalan dengan posisinya sebagai add-on paket Maju.
+
+**Empat jebakan dinamai di depan, bukan ditemukan belakangan:** (1) magic link lama (`app.walisantri.com/report/{uuid}`) sudah tersimpan di HP ribuan wali dan **wajib dilayani selamanya**; (2) hostname dengan `verified_at` NULL tidak boleh dilayani maupun didaftarkan ke Cloudflare — tanpa itu siapa pun bisa mengklaim tenant orang lain; (3) login di domain tenant harus menolak akun tenant lain, kalau tidak user pesantren B melihat datanya sendiri di halaman ber-merek pesantren A; (4) pencabutan wajib dua sisi — custom hostname menggantung di Cloudflare setelah domainnya dijual adalah versi lain dari risiko subdomain takeover yang sudah pernah dicatat proyek ini (§18, `staging.walisantri.com`).
+
+§1.3, §1.4, §1.6, dan matriks §5.1 diselaraskan; tidak ada perubahan kode.
 
 **Changelog v4.42:** **Sandbox demo publik — `demo.walisantri.com`.** Sampai rilis ini, satu-satunya cara melihat produk adalah mendaftar. Sandbox menutup kebutuhan "boleh saya lihat dulu?" tanpa melahirkan tenant kosong. ⚠️ Ia **bukan** pengganti keputusan model masuk (trial/freemium/demo-led): ia tidak menjawab "bagaimana pesantren saya mulai memakainya dengan data sendiri", hanya menurunkan tekanannya.
 
@@ -371,10 +387,11 @@ Empat jenis host dengan peran berbeda:
 | Host | Sifat | Fungsi |
 |---|---|---|
 | `walisantri.com` | Publik | Landing + `/register` |
-| `{slug}.walisantri.com` | Publik, tanpa auth (cacheable) | **Website profil pesantren** — subdomain **mutable** |
-| `app.walisantri.com` | Terautentikasi | Login tunggal semua role → panel admin/ustadz/super_admin & portal wali |
+| `{slug}.walisantri.com` | Publik, tanpa auth (cacheable) | **Website profil pesantren** — subdomain **mutable**. *(Rancangan §1.8 Fase 1: login wali, portal wali, dan Magic Link ikut pindah ke sini — host jadi terautentikasi. Belum dibangun.)* |
+| `app.walisantri.com` | Terautentikasi | Login tunggal semua role → panel admin/ustadz/super_admin & portal wali. *(Setelah §1.8 Fase 1: panel staf tetap di sini, dan `/report/{uuid}` tetap ada sebagai pengalih kanonik permanen.)* |
+| `pesantrenfulan.sch.id` | *(rancangan)* Publik + terautentikasi | **§1.8 Fase 2** — permukaan wali yang sama, di domain pesantren sendiri (add-on Maju). Belum dibangun. |
 
-**Login terpusat:** Semua role login di `app.walisantri.com` (satu host tetap). Tenant **di-resolve dari akun**, bukan dari host: lookup `users` by email → ambil `pesantren_id` → set konteks tenant (`app()->instance('current_pesantren', …)` + `SET app.current_pesantren` untuk RLS). Sejalan dengan model multi-tenancy native Filament v5 (satu panel, tenant dari user).
+**Login terpusat:** Semua role login di `app.walisantri.com` (satu host tetap). *(Rancangan v4.43 §1.8: login **wali** dipindah ke host tenant — Fase 1 ke `{slug}.walisantri.com`, Fase 2 ke domain pesantren. Panel staf tetap di `app`. Belum dibangun.)* Tenant **di-resolve dari akun**, bukan dari host: lookup `users` by email → ambil `pesantren_id` → set konteks tenant (`app()->instance('current_pesantren', …)` + `SET app.current_pesantren` untuk RLS). Sejalan dengan model multi-tenancy native Filament v5 (satu panel, tenant dari user).
 
 **Pintu masuk & branding wali:** Wali santri masuk **dari situs profil pesantren** — tombol "Portal Wali Santri" di `{slug}.walisantri.com` mengarah ke `app.walisantri.com/login?tenant={slug}`. Halaman login membaca `tenant` dari query dan **dirender penuh ber-brand pesantren** (logo, nama, warna) sehingga terasa seperti gerbang pesantren itu, bukan platform generik — meski host auth tetap `app`. Ini memberi keterikatan brand tanpa menduplikasi mekanisme auth atau mengikat sesi ke subdomain yang bisa berubah. **Magic Link WhatsApp (§4.3) tetap jalur utama wali** (klik langsung masuk read-only); form login adalah jalur sekunder bagi wali yang menyetel password. Tombol login admin/ustadz juga memakai `?tenant={slug}` agar branding konsisten.
 
@@ -392,9 +409,11 @@ Tiap pesantren **otomatis** mendapat situs profil publik di `{slug}.walisantri.c
 
 **Feed pengumuman publik:** sempat ada di MVP awal, **dihapus** (Changelog v4.13) atas keputusan produk — pengumuman internal dinilai tidak cocok dibuka ke pengunjung publik. Pengumuman tetap berjalan normal di portal wali santri & dashboard admin.
 
-**Slug rules:** huruf kecil/angka/tanda hubung, 3–30 char, tidak diawali/diakhiri hubung. Validasi real-time via `GET /check-slug/{slug}`. **Mutable** — bisa diubah kapanpun dari panel admin (aman karena tidak ada auth/magic-link yang bergantung pada subdomain; identitas kanonik = `pesantrens.id`). Tiap perubahan kena validasi reserved/format + dicatat audit (`pesantren.slug_changed`). Slug lama masuk **cooldown 90 hari** sebelum bisa diklaim tenant lain (cegah pembajakan brand). Reserved (Rule `SlugNotReserved`): `www app api admin central dash mail billing status docs blog support panel dashboard static cdn`.
+**Slug rules:** huruf kecil/angka/tanda hubung, 3–30 char, tidak diawali/diakhiri hubung. Validasi real-time via `GET /check-slug/{slug}`. **Mutable** — bisa diubah kapanpun dari panel admin (aman karena tidak ada auth/magic-link yang bergantung pada subdomain; identitas kanonik = `pesantrens.id`). ⚠️ **Jaminan ini bergantung pada satu mekanisme begitu §1.8 Fase 1 dibangun:** `app.walisantri.com/report/{uuid}` wajib tetap ada sebagai pengalih kanonik permanen yang menghitung tujuan dari tenant santri, bukan dari URL. Tanpa itu, mengganti slug akan mematikan seluruh magic link yang sudah dibagikan — `PesantrenObserver` **menimpa** hostname, bukan menambah baris. Tiap perubahan kena validasi reserved/format + dicatat audit (`pesantren.slug_changed`). Slug lama masuk **cooldown 90 hari** sebelum bisa diklaim tenant lain (cegah pembajakan brand). Reserved (Rule `SlugNotReserved`): `www app api admin central dash mail billing status docs blog support panel dashboard static cdn`.
 
-**Custom domain (roadmap, add-on Maju):** pesantren pakai domain sendiri (mis. `www.pesantrenfulan.sch.id`). Butuh verifikasi kepemilikan DNS (CNAME/TXT) + SSL otomatis per domain (di luar wildcard `*.walisantri.com`). **Default: Cloudflare for SaaS / Custom Hostnames** (gratis ≤100 hostname, lalu berbayar per hostname; cert otomatis, ops paling ringan). **Fallback: Caddy on-demand TLS** (gratis penuh, untuk volume besar; wajib endpoint "ask" agar cert hanya terbit untuk hostname terverifikasi di `tenant_domains`). Subdomain bawaan tetap pakai wildcard cert yang sudah ada.
+**Custom domain (roadmap, add-on Maju) — spesifikasi lengkap pindah ke §1.8 Fase 2 (v4.43).** Ringkasnya: pesantren pakai domain sendiri (mis. `www.pesantrenfulan.sch.id`), butuh verifikasi kepemilikan DNS (CNAME/TXT) + SSL otomatis per domain (di luar wildcard `*.walisantri.com`). **Cloudflare for SaaS / Custom Hostnames ditetapkan sebagai default** (v4.43); Caddy on-demand TLS turun jadi cadangan. Subdomain bawaan tetap pakai wildcard cert yang sudah ada.
+
+⚠️ **Cakupannya bukan halaman profil saja.** Sampai v4.42 seksi ini menyiratkan custom domain hanya menyangkut situs profil. Itu terlalu sempit untuk sebuah add-on berbayar: titik sentuh harian wali adalah portal, bukan halaman profil, sehingga custom domain yang berhenti di sini tidak menepati janji white-label-nya. Lihat §1.8.
 
 ## 1.5 Infrastruktur Wildcard
 
@@ -411,6 +430,8 @@ Subdomain profil baru aktif otomatis tanpa sentuh DNS/config:
 | `{slug}.walisantri.com` (+ custom domain) | `/` · `/kegiatan` · `/artikel` | Website profil publik (read-only, tanpa auth); `/kegiatan` & `/artikel` saat ini placeholder "Segera Hadir" |
 | `app.walisantri.com` | `/login` · `/admin` | Login tunggal · panel Filament (Super Admin, Admin Pesantren, Ustadz) — menu per role via `canAccess()` |
 | `app.walisantri.com` | `/wali/dashboard` · `/report/{uuid}` · `/admin/billing-page` | Portal wali · Magic Link read-only · billing (halaman Filament, bukan route `/billing`) |
+| *(rancangan)* `{slug}.walisantri.com` | `/` · `/login` · `/wali/*` · `/report/{uuid}` | **§1.8 Fase 1** — seluruh permukaan wali pindah ke subdomain tenant; `app.../report/{uuid}` tetap jadi pengalih kanonik permanen. Belum dibangun. |
+| *(rancangan)* domain pesantren | sama seperti di atas | **§1.8 Fase 2** — permukaan yang sama di domain sendiri (add-on Maju). Panel `/admin` **tidak** ikut pindah di kedua fase. Belum dibangun. |
 
 ## 1.7 Pola Penambahan Modul
 
@@ -443,6 +464,98 @@ Setelah autentikasi, `role` dibaca lalu di-redirect — dilakukan di `WaliLoginC
 | `admin_pesantren` | `app.../admin` | Kontrol penuh data lembaga, user, impor, pemetaan kelas/kamar, profil publik, billing |
 | `ustadz` | `app.../admin` | Input mutaba'ah, tahfidz, nilai mapel yang diampu, rekam medis santri binaan; **presensi harian kelas yang ia walikan** dan **presensi jam pelajaran mapel yang ia ampu** (§5.4, v4.25) |
 | `wali_santri` | `app.../wali/dashboard` | Portal read-only perkembangan santri |
+
+## 1.8 Host Per-Tenant & White-Label *(v4.43 — RANCANGAN, BELUM DIBANGUN)*
+
+> ⚠️ **Seluruh seksi ini adalah rancangan, bukan status.** Tidak ada satu baris kode pun yang mengimplementasikannya per v4.43. Penegasan ini ditulis eksplisit karena dokumen ini sudah dua kali jatuh ke kesalahan yang sama — §8 dan §15 sempat mendeskripsikan halaman presensi wali sebagai fitur yang ada padahal belum, dan baru dikoreksi di v4.40. Yang benar-benar ada hari ini hanya **kolomnya**: `tenant_domains.type enum('subdomain','custom')`, `verified_at`, dan `ssl_status`. `grep "'custom'"` di seluruh `app/` mengembalikan **nol hasil**; `ssl_status` hanya pernah ditulis `'pending'` sekali di `ProvisionTenant::jalankan()` dan tidak pernah berubah; `verified_at` tidak pernah ditulis sama sekali.
+
+### Tujuan: white-label untuk komunitas, bukan untuk staf
+
+Nilai host per-tenant bagi pesantren adalah **wali santri tidak melihat merek vendor**. Karena itu cakupan yang benar bukan sekadar halaman profil.
+
+Host per-tenant yang hanya menutupi halaman profil sebagian besar **kosmetik**: wali membuka halaman profil paling banyak sekali, saat mencari informasi sebelum mendaftar. Titik sentuh hariannya adalah portal wali — dan kalau portal itu tetap di `app.walisantri.com`, merek platform justru muncul persis di tempat yang paling sering dilihat. Menjual add-on yang tidak menutup permukaan itu berarti menjual janji yang tidak ditepati.
+
+### Pembagian permukaan (berlaku untuk kedua fase)
+
+| Permukaan | Host | Teknologi | Dipindah? |
+|---|---|---|---|
+| Profil publik (`/`, `/kegiatan`, `/artikel`) | host tenant | Blade | ✅ Ya |
+| Login wali (`/login`) | host tenant | Blade | ✅ Ya |
+| Portal wali (`/wali/*`) | host tenant | Blade | ✅ Ya |
+| Magic Link (`/report/{uuid}`) | host tenant | Blade | ✅ Ya |
+| Panel staf (`/admin`) | `app.walisantri.com` | **Filament** | ❌ Tetap |
+
+**Kenapa portal wali bisa dipindah, panel staf tidak.** Seluruh permukaan yang dilihat wali — `/login`, `/wali/*`, `/report/{uuid}` — adalah route Laravel biasa dengan view Blade (`routes/web.php`, grup `Route::domain($appDomain)`); Filament tidak terlibat sama sekali di situ. Panel staf sebaliknya didaftarkan lewat `AdminPanelProvider` dengan `->domain(config('app.domain'))`, dan Filament hanya menerima **satu** nilai domain. Melepas batasan itu membuat panel merespons di setiap host — termasuk subdomain tenant lain — yaitu permukaan kebocoran baru yang harus dijaga sendiri.
+
+Menyisakan panel staf di domain platform bukan kompromi yang merusak tujuan: pengurus adalah pihak yang menandatangani kontrak dan sudah tahu vendornya. Yang dijanjikan white-label adalah **komunitas**, bukan staf.
+
+---
+
+### Dua fase
+
+Pemisahan ini bukan sekadar pentahapan pekerjaan. **Fase 1 memindahkan seluruh kesulitan arsitekturnya ke keluarga host yang sudah kita kuasai penuh dan gratis**, sehingga Fase 2 tinggal menambahkan TLS dan verifikasi kepemilikan — bukan lagi merombak routing, sesi, dan pembangkitan URL sambil berhadapan dengan domain milik pelanggan.
+
+| Prasyarat | Fase 1 — `{slug}.walisantri.com` | Fase 2 — domain pesantren |
+|---|---|---|
+| TLS | **Sudah ada** — wildcard cert `*.walisantri.com` (berlaku s/d 2041) + wildcard A record (§1.5) | **Baru** — Cloudflare for SaaS, per hostname |
+| Verifikasi kepemilikan | **Tidak perlu** — domainnya milik platform | **Baru** — TXT/CNAME → `verified_at` |
+| Cookie sesi | **Sudah cocok** — `SESSION_DOMAIN=.walisantri.com` sudah berbagi ke semua subdomain | **Baru** — cookie ber-scope host, disetel per request |
+| Route group per-host + `linkWali()` per-tenant | **Perlu** | Sudah selesai di Fase 1 |
+| Biaya | Rp 0 | Berbayar per hostname (add-on Maju, §5.1) |
+| Cakupan pengguna | **Semua pesantren** | Pembeli add-on saja |
+
+---
+
+### Fase 1 — Portal wali di `{slug}.walisantri.com`
+
+Tiga dari empat prasyarat sudah terpenuhi sejak awal. Yang tersisa hanya memindahkan rute wali ke grup domain berparameter dan membuat `Santri::linkWali()` membaca hostname tenant (`tenant_domains.is_primary` sudah ada untuk itu).
+
+**Pintu kanonik permanen — ini inti rancangannya.**
+
+> `app.walisantri.com/report/{uuid}` **tetap ada selamanya** dan tugasnya hanya **mengalihkan** ke host tenant saat ini.
+
+Ini menyelesaikan tiga masalah sekaligus, dan tanpanya Fase 1 tidak boleh dikerjakan:
+
+1. **Tautan lama tidak pernah mati.** Magic link tidak punya kedaluwarsa (§4.3) — tautan yang tersimpan di HP wali bisa dipakai bertahun-tahun. Domain platform yang tetap melayani rute itu membuat perpindahan ini **aditif**, bukan merusak.
+2. **Slug tetap aman diganti.** Pengalihan dihitung dari **tenant milik santri-nya**, bukan dari URL yang diketuk. Jadi jaminan §1.4 — *slug mutable, aman karena tidak ada auth/magic-link yang bergantung pada subdomain* — tetap utuh meski portalnya kini memang tinggal di subdomain. Tanpa mekanisme ini, mengganti slug akan mematikan seluruh magic link yang sudah dibagikan, dan `PesantrenObserver` **menimpa** hostname (bukan menambah baris) sehingga subdomain lama mati seketika.
+3. **Fase 2 memakai mekanisme yang sama persis** — hanya sumber hostname-nya yang berubah dari slug ke domain pelanggan.
+
+**Yang memungkinkan ini:** `VerifyMagicToken` mencari uuid secara **global** (`Santri::withoutGlobalScope('pesantren')->where('uuid', …)`), tidak terikat host sama sekali. Tautan berfungsi di host mana pun yang melayani rutenya.
+
+⚠️ **Efek samping yang harus dinamai.** Karena lookup-nya global, tautan lama yang menunjuk subdomain yang sudah **diklaim ulang** pesantren lain (setelah cooldown 90 hari) akan tetap membuka santri yang benar — **di host ber-merek pesantren yang salah**. Bukan kebocoran data (santri di-resolve dari uuid, bukan dari host), tapi terlihat seperti kebocoran. Pertimbangkan menolak request `/report/{uuid}` bila host-nya bukan host tenant santri itu, lalu alihkan ke host yang benar.
+
+⚠️ **Biaya yang terukur: 38 call site.** `grep -rn "route('wali\." resources/views/ app/` mengembalikan **38 hasil**. Begitu rute wali masuk grup domain berparameter, semuanya butuh parameter `{slug}` — atau `URL::defaults()`, yang saat ini **tidak dipakai di mana pun** di repo ini. Masalah ini belum pernah muncul karena URL profil publik dibangun dengan **concat string** (`PesantrenObserver`, `ProvisionTenant`, `PesantrenSettingsPage`), bukan lewat `route('public.profile')`.
+
+⚠️ **Asimetri keamanan yang berlawanan intuisi.** Subdomain lebih mudah secara operasional tapi **lebih lemah isolasinya**: cookie `.walisantri.com` dikirim ke *semua* subdomain tenant, sedangkan domain pelanggan di Fase 2 otomatis ber-scope host. Jadi aturan "login di host tenant hanya menerima akun tenant itu" (lihat Aturan Bersama) justru **lebih genting di Fase 1**, bukan kurang.
+
+---
+
+### Fase 2 — Domain pesantren sendiri
+
+Menambahkan dua hal di atas fondasi Fase 1:
+
+1. **TLS — Cloudflare for SaaS (Custom Hostnames).** Keputusan ditetapkan v4.43; alternatif Caddy on-demand TLS di §1.4 turun jadi cadangan. Gratis ≤100 hostname, lalu berbayar per hostname — sejalan dengan posisinya sebagai add-on paket Maju (§5.1). Sertifikat origin yang ada (`*.walisantri.com` + `walisantri.com`, s/d 2041) **tidak** mencakup domain pelanggan.
+2. **Verifikasi kepemilikan.** TXT/CNAME record → isi `tenant_domains.verified_at`. ⚠️ Hostname dengan `verified_at` NULL **tidak boleh dilayani sama sekali**, dan tidak boleh didaftarkan ke Cloudflare. Tanpa pagar ini siapa pun bisa mengarahkan domainnya ke platform dan mengklaim tenant orang lain.
+
+Plus **cookie sesi ber-scope host**, disetel dinamis per request — di Fase 1 hal ini gratis karena `SESSION_DOMAIN` yang ada sudah mencakup seluruh subdomain. Ini lapisan auth: butuh tes sendiri, bukan tempat coba-coba.
+
+⚠️ **Pencabutan wajib dua sisi.** Saat pesantren melepas domain atau berhenti berlangganan, hostname harus dihapus dari `tenant_domains` **dan** dari Cloudflare. Custom hostname yang menggantung di Cloudflare setelah domainnya dijual ke pihak lain adalah versi lain dari risiko subdomain takeover yang sudah pernah dicatat proyek ini (lihat catatan `staging.walisantri.com`, §18).
+
+---
+
+### Aturan bersama (berlaku di kedua fase)
+
+**Login di host tenant hanya menerima akun tenant itu.** Tenant tetap di-resolve dari akun (§1.3, email unik global), bukan dari host. Tanpa pagar tambahan, user pesantren B bisa login lewat host pesantren A dan melihat datanya sendiri di halaman ber-merek orang lain — membingungkan, dan terlihat seperti kebocoran meski bukan.
+
+**Subdomain bawaan tidak pernah dihapus.** `{slug}.walisantri.com` tetap ada meski pesantren memakai domain sendiri, sebagai jalur cadangan saat domain pelanggan bermasalah (DNS salah, sertifikat gagal terbit, domain kedaluwarsa). Satu `is_primary` per pesantren menentukan hostname mana yang dipakai untuk membangun URL.
+
+**Route group tanpa batasan domain itu berbahaya.** `PublicTenantResolver` **sudah** generik (mencocokkan `$request->getHost()` ke `tenant_domains`). Yang menghalangi hanyalah `Route::domain('{slug}.'.$baseDomain)` yang hanya cocok untuk `*.walisantri.com`. ⚠️ Grup pengganti tanpa batasan domain akan menangkap **semua** host termasuk `app.walisantri.com` — urutan pendaftaran route menjadi kritis.
+
+**Tenant expired/suspended.** `SaaSLifecycleLock` bekerja pada sesi, bukan host. Perilakunya saat langganan berakhir harus ditetapkan sebelum implementasi: ikut terkunci seperti host platform, atau berhenti dilayani sama sekali. **Keputusan produk ini masih terbuka.**
+
+### Identitas kanonik
+
+Host per-tenant menambah identitas **ketiga** untuk satu pesantren, setelah `pesantrens.id` (kanonik, tidak pernah berubah) dan `slug` (mutable, cooldown 90 hari). Aturannya tetap: **`pesantrens.id` satu-satunya identitas kanonik**; slug dan hostname keduanya hanya alamat. Tidak ada logika yang boleh bergantung pada keduanya untuk otorisasi.
 
 ---
 
@@ -988,7 +1101,8 @@ Matriks fitur — paket di kolom, fitur/kuota/modul di baris (✓ = termasuk, �
 | Modul Presensi *(v4.25)* | ✓ | ✓ | ✓ | ✓ |
 | Modul Inventaris *(niat: Maju saja — belum ditegakkan, lihat catatan)* | ✓ | ✓ | ✓ | ✓ |
 | Fitur AI *(post v1.0 — belum ada kodenya)* | — | — | — | ✓ |
-| Custom domain *(roadmap, add-on)* | — | — | — | ✓ (add-on) |
+| Portal wali di subdomain pesantren *(roadmap — §1.8 Fase 1)* | ✓ | ✓ | ✓ | ✓ |
+| Custom domain pesantren *(roadmap, add-on — §1.8 Fase 2)* | — | — | — | ✓ (add-on) |
 | Kuota custom (> 1.000, add-on per +100) | — | — | — | ✓ |
 
 **Tidak ada feature lock berbasis paket (v4.20).** Kelima Gate (`access-modul-akademik`, `access-modul-kesehatan`, `access-modul-inventaris`, `access-modul-ai`, `access-billing`) pernah *didefinisikan* di `AppServiceProvider`, tapi **tidak pernah sekali pun dipanggil** — tidak ada `Gate::allows`/`->can()`/`@can`/`authorize()` di seluruh `app/` maupun `resources/views/`. Karena itu Gate-nya dihapus di v4.20 daripada dibiarkan sebagai fondasi yang menyesatkan.
