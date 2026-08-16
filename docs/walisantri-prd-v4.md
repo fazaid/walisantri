@@ -4,7 +4,13 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Agustus 2026 — v4.44
+**Last Updated:** Agustus 2026 — v4.45
+
+**Changelog v4.45:** **Trial dicabut dari corong akuisisi — pemasarannya, bukan mekaniknya.** Keputusan pemilik produk. Tiga CTA landing yang menjual masa trial ("Coba Gratis 14 Hari" ×2, "Mulai Trial") kini berbunyi **"Daftar Sekarang"**, dan seluruh salinan pendukungnya ikut dicabut: subjudul Harga, langkah 1 Cara Kerja, dua butir FAQ, paragraf CTA penutup, dan subjudul `/register`. Dua FAQ diganti **pertanyaannya**, bukan hanya jawabannya — "Apakah Walisantri gratis?" mengandaikan jawaban "gratis dulu" yang justru sedang dicabut, dan "Apa yang terjadi setelah masa trial habis?" menjadi "…kalau masa langganan berakhir?" (isi jawabannya berlaku untuk kedua kasus).
+
+⚠️ **Mekanik trial tidak disentuh, dan ini yang paling mudah salah dibaca di sesi berikutnya.** `OnboardPesantren` tetap mengaktifkan trial Rintisan sepanjang `BillingSetting::trial_days`, lifecycle trial → grace 7 hari → suspended tetap berlaku, dan email sambutan masih menyebutnya. Pendaftar tetap mendapat trial — ia hanya tidak lagi dijanjikan sebelum mendaftar. `$trialDays` dilepas dari `LandingController` dan `RegisterController` semata karena tidak ada lagi view yang memakainya. Rinciannya di **§4.1**.
+
+`LandingPageTest::test_lama_trial_mengikuti_billing_setting` diganti `test_landing_tidak_menjanjikan_trial`, dan `RegisterControllerTest` mendapat pasangannya. Yang dijaga membalik arah: dulu memastikan lama trial ikut `BillingSetting` (bukan angka mati di Blade), sekarang memastikan janji itu tidak kembali lewat penyuntingan copy berikutnya — pola `assertDontSee` yang sama dengan empat klaim yang dicabut v4.41. **Keputusan model masuk (trial/freemium/demo-led) tetap terbuka** — rilis ini berhenti menjual dengan trial, tapi tidak memilih penggantinya.
 
 **Changelog v4.44:** **§1.8 diperiksa ulang terhadap kode dan production — satu klaim prasyarat gugur, satu asumsi infrastruktur terbalik, tiga lubang ditutup, cakupan white-label diberi batas.** Tidak ada perubahan kode; §1.8 tetap rancangan. Dua prasyarat yang v4.43 hanya duga-duga kini **diukur langsung ke production (16 Agustus 2026)**, dan keduanya meleset — satu ke arah lebih buruk, satu ke arah lebih baik.
 
@@ -1095,6 +1101,21 @@ erDiagram
 Via `walisantri.com/register`. Sistem otomatis: (1) validasi slug (format, unik, reserved, cooldown) real-time; (2) buat baris `pesantrens` di central; (3) buat baris `tenant_domains` (`type=subdomain`, `{slug}.walisantri.com`); (4) **aktifkan situs profil publik** di subdomain itu (template minimal); (5) buat user pertama role `admin_pesantren`; (6) aktifkan **trial Rintisan 14 hari** (`paket_langganan='rintisan'`, `status_berlangganan='trial'`, `max_santri_kuota=100`, `expired_at=+14 hari`, durasi dibaca dari `BillingSetting::trial_days`, diatur lewat halaman Pengaturan Harga) — fitur penuh Rintisan tersedia selama trial; (7) **kirim email sambutan** ke admin pertama, berisi tautan konfirmasi alamat — di luar transaksi, setelah commit (§12.2); (8) redirect ke `app.walisantri.com/admin`.
 
 > **Zero-Self Registration:** Santri/Ustadz/Wali tidak bisa daftar mandiri. **Multi-Anak Logic:** jika nomor WhatsApp wali sudah terdaftar, santri baru dikaitkan ke `wali_santri_id` yang ada.
+
+⚠️ **Trial tetap berjalan, tapi tidak lagi dipasarkan *(v4.45)*.** Langkah (6) di atas **tidak berubah**: tiap pendaftar tetap mendapat trial Rintisan sepanjang `BillingSetting::trial_days`, lifecycle trial → grace 7 hari → suspended tetap berlaku, dan email sambutan (`SambutanPendaftaran`) masih menyebut status trial-nya. Yang dicabut adalah **janjinya di corong akuisisi**, atas keputusan pemilik produk:
+
+| Permukaan | Sebelum | Sesudah |
+|---|---|---|
+| Tiga CTA landing | "Coba Gratis 14 Hari" / "Mulai Trial" | "Daftar Sekarang" |
+| Subjudul Harga | "Coba gratis 14 hari dengan fitur penuh" | "Semua modul terbuka di semua paket…" |
+| Cara Kerja langkah 1 | "Daftar & Aktifkan Trial" | "Daftar Akun Pesantren" |
+| FAQ | "Apakah Walisantri gratis?" · "…setelah masa trial habis?" | "Berapa biaya Walisantri?" · "…kalau masa langganan berakhir?" |
+| Paragraf CTA penutup | "coba seluruh fiturnya gratis 14 hari" | "akun aktif seketika dengan fitur penuh" |
+| Subjudul `/register` | "Trial 14 hari gratis" | "Akun aktif seketika dengan fitur penuh" |
+
+**Jangan dibaca sebagai "trial dihapus dari produk".** Ini murni perubahan pemasaran; `$trialDays` dilepas dari `LandingController` dan `RegisterController` hanya karena tidak ada lagi yang memakainya di view. Dijaga dua tes yang meniru pola `assertDontSee` v4.41: `LandingPageTest::test_landing_tidak_menjanjikan_trial` dan `RegisterControllerTest::test_form_registrasi_tidak_menjanjikan_trial` — keduanya menyetel `trial_days=21` lalu memastikan angka maupun kata "trial" tidak muncul.
+
+**Keputusan model masuk tetap terbuka** (dicatat sejak v4.42): trial, freemium, atau demo-led. Rilis ini hanya berhenti *menjual* dengan trial; ia tidak memilih penggantinya. Selama belum diputuskan, ada asimetri yang disengaja — pendaftar menemukan trial-nya setelah masuk, bukan dijanjikan sebelum masuk.
 
 ## 4.2 Grid Input Massal
 
