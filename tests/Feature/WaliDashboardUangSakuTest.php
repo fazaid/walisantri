@@ -17,6 +17,9 @@ class WaliDashboardUangSakuTest extends TestCase
     private function santriDenganWali(): Santri
     {
         $pesantren = Pesantren::factory()->create();
+        // §1.8 Fase 1: permukaan wali hidup di host pesantren, jadi seluruh
+        // route('wali.*') di berkas ini harus menunjuk ke sana.
+        $this->pakaiHostTenant($pesantren);
         $wali = User::factory()->waliSantri()->create(['pesantren_id' => $pesantren->id]);
 
         return Santri::factory()->create([
@@ -46,7 +49,7 @@ class WaliDashboardUangSakuTest extends TestCase
         $this->catatUangSaku($santri, JenisUangSaku::Pengambilan, 30000);
 
         $this->actingAs($santri->wali)
-            ->get('/wali/dashboard')
+            ->get(route('wali.dashboard'))
             ->assertOk()
             ->assertSee('Uang Saku')
             ->assertSee('Rp 70.000')
@@ -60,7 +63,7 @@ class WaliDashboardUangSakuTest extends TestCase
 
         // Uang saku adalah data finansial yang sengaja login-only — tidak boleh
         // bocor lewat magic link yang bisa diteruskan.
-        $this->get("/report/{$santri->uuid}")
+        $this->get(route('wali.magic.report', $santri->uuid))
             ->assertOk()
             ->assertDontSee('Uang Saku');
     }

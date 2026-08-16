@@ -6,6 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0f766e">
 
+    {{-- Sejak §1.8 Fase 1 portal wali satu host dengan profil publik yang JUSTRU
+         ingin terindeks. Tanpa baris ini, halaman anak orang ikut masuk hasil
+         pencarian. Pola sama dengan panduan.blade.php. --}}
+    <meta name="robots" content="noindex, nofollow">
+
     {{-- PWA --}}
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -61,9 +66,19 @@
                 ])
 
                 @unless($previewMode ?? false)
-                <form method="POST" action="{{ route('logout') }}">
+                {{-- Pengunjung yang sedang MENCOBA demo butuh pintu keluar yang jelas
+                     menyebut demo (§1.8) — sementara wali sungguhan, yang juga masuk
+                     lewat magic link, tetap melihat "Keluar" biasa. --}}
+                @php
+                    // Blok penuh, bukan @php(...): direktif ringkasnya salah mengurai
+                    // tanda kurung bersarang di ekspresi ini.
+                    $sesiDemo = session('magic_link_session') && (auth()->user()?->pesantren?->is_demo ?? false);
+                @endphp
+                <form method="POST" action="{{ route('wali.logout') }}">
                     @csrf
-                    <button type="submit" class="text-xs text-teal-200 dark:text-teal-500 hover:text-white dark:hover:text-gray-900">Keluar</button>
+                    <button type="submit" class="text-xs text-teal-200 dark:text-teal-500 hover:text-white dark:hover:text-gray-900 whitespace-nowrap">
+                        {{ $sesiDemo ? 'Keluar dari demo' : 'Keluar' }}
+                    </button>
                 </form>
                 @endunless
             </div>

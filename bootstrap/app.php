@@ -5,12 +5,15 @@ use App\Http\Middleware\CheckTenantQuota;
 use App\Http\Middleware\PublicTenantResolver;
 use App\Http\Middleware\ResolveTenantFromAccount;
 use App\Http\Middleware\SaaSLifecycleLock;
+use App\Http\Middleware\TenantHost;
 use App\Http\Middleware\VerifyMagicToken;
+use App\Models\TenantDomain;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
@@ -28,8 +31,26 @@ return Application::configure(basePath: dirname(__DIR__))
             'magic.token' => VerifyMagicToken::class,
             'magic.block' => BlockMagicLinkSession::class,
             'public.tenant' => PublicTenantResolver::class,
+            // Pagar host tenant §1.8 Fase 1 — dipasang bersama public.tenant,
+            // selalu SESUDAHnya (ia membaca hasil resolusi host).
+            'tenant.host' => TenantHost::class,
             'tenant.resolve' => ResolveTenantFromAccount::class,
         ]);
+
+        // Tamu di host tenant diantar ke pintu pesantrennya sendiri, bukan ke pintu
+        // platform (§1.8 Fase 1). Tanpa ini, wali yang membuka portal tanpa sesi
+        // terlempar ke app.walisantri.com/login — lalu login di sana membuat sesi
+        // di host yang salah (cookie ber-scope host) dan ia dipantulkan lagi.
+        //
+        // Host-nya sengaja di-resolve ulang di sini, bukan dibaca dari atribut yang
+        // diisi PublicTenantResolver: middleware `auth` punya prioritas lebih tinggi
+        // dan berjalan LEBIH DULU dari middleware grup, jadi atribut itu masih kosong
+        // saat callback ini dipanggil. Satu query tambahan, dan hanya di jalur tamu.
+        $middleware->redirectGuestsTo(function (Request $request) {
+            $domain = TenantDomain::where('hostname', $request->getHost())->first();
+
+            return $domain?->pesantren?->url('/login') ?? route('login');
+        });
 
         // SaaSLifecycleLock hanya di panel app (bukan dash/super_admin)
         // Didaftarkan di AdminPanelProvider::middleware(), bukan di web group global,

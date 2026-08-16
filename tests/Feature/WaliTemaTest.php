@@ -15,6 +15,9 @@ class WaliTemaTest extends TestCase
     private function santriDenganWali(): Santri
     {
         $pesantren = Pesantren::factory()->create();
+        // §1.8 Fase 1: permukaan wali hidup di host pesantren, jadi seluruh
+        // route('wali.*') di berkas ini harus menunjuk ke sana.
+        $this->pakaiHostTenant($pesantren);
         $wali = User::factory()->waliSantri()->create(['pesantren_id' => $pesantren->id]);
 
         return Santri::factory()->create([
@@ -37,7 +40,7 @@ class WaliTemaTest extends TestCase
         $santri = $this->santriDenganWali();
 
         $this->actingAs($santri->wali)
-            ->get('/wali/dashboard')
+            ->get(route('wali.dashboard'))
             ->assertOk()
             ->assertSee('data-tema-tombol', false)
             ->assertSee('localStorage.getItem(KUNCI)', false)
@@ -55,7 +58,7 @@ class WaliTemaTest extends TestCase
         $santri = $this->santriDenganWali();
 
         $this->actingAs($santri->wali)
-            ->get('/wali/dashboard')
+            ->get(route('wali.dashboard'))
             ->assertOk()
             ->assertSee('bg-teal-700 text-white dark:bg-teal-100 dark:text-gray-900', false);
     }

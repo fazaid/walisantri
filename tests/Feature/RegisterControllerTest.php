@@ -90,11 +90,17 @@ class RegisterControllerTest extends TestCase
 
     public function test_wali_santri_yang_sudah_login_diarahkan_ke_dashboard_wali(): void
     {
-        $wali = User::factory()->waliSantri()->create();
+        $pesantren = Pesantren::factory()->create();
+        $wali = User::factory()->waliSantri()->create(['pesantren_id' => $pesantren->id]);
+
+        // Portal wali hidup di host pesantrennya (§1.8 Fase 1), sedangkan /register
+        // berada di host platform — pengalihannya lintas host, jadi yang diperiksa
+        // URL absolutnya, bukan route() yang butuh konteks host.
+        $this->hostnameTenant($pesantren);
 
         $this->actingAs($wali)
             ->get($this->registerUrl())
-            ->assertRedirect(route('wali.dashboard'));
+            ->assertRedirect($pesantren->url('/wali/dashboard'));
     }
 
     public function test_admin_pesantren_yang_sudah_login_diarahkan_ke_panel_admin(): void
@@ -152,14 +158,36 @@ class RegisterControllerTest extends TestCase
                 'password' => 'Password123',
                 'password_confirmation' => 'Password123',
             ])
-            ->assertRedirect($this->adminUrl());
+            ->assertRedirect();
 
         $this->assertDatabaseHas('pesantrens', ['slug' => 'al-hidayah-baru']);
 
         $pesantren = Pesantren::where('slug', 'al-hidayah-baru')->firstOrFail();
 
+        // Sesi TIDAK lahir di apex: /register di walisantri.com, panel di
+        // app.walisantri.com, dan cookie ber-scope host (§1.8 Fase 1). Sesi apex
+        // hanya akan mati diam-diam dan pendaftar mendarat sebagai tamu — itulah
+        // cacat yang ditutup v4.48 dengan tautan serah-terima sekali pakai.
+        $this->assertGuest();
+
+        $tautan = $this->post($this->registerUrl(), [
+            'nama_pesantren' => 'Pesantren Kedua',
+            'slug' => 'al-hidayah-kedua',
+            'admin_name' => 'Admin Kedua',
+            'email' => 'admin-kedua@example.com',
+            'password' => 'Password123',
+            'password_confirmation' => 'Password123',
+        ])->headers->get('Location');
+
+        // Janji "akun aktif seketika" diuji sampai tuntas: ikuti tautannya, lalu
+        // panel benar-benar terbuka sebagai admin yang baru dibuat.
+        $this->get($tautan)->assertRedirect('/admin');
+
         $this->assertAuthenticated();
-        $this->assertSame('admin-baru@example.com', auth()->user()->email);
-        $this->assertSame($pesantren->id, auth()->user()->pesantren_id);
+        $this->assertSame('admin-kedua@example.com', auth()->user()->email);
+        $this->assertSame(
+            Pesantren::where('slug', 'al-hidayah-kedua')->value('id'),
+            auth()->user()->pesantren_id
+        );
     }
 }

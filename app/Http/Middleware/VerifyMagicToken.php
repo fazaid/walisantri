@@ -31,6 +31,21 @@ class VerifyMagicToken
             abort(404, 'Tautan tidak valid atau santri tidak aktif.');
         }
 
+        // Tautan dibuka di host pesantren LAIN — antar ke host yang benar sebelum
+        // sesi apa pun dibuat (§1.8 Fase 1).
+        //
+        // Lookup uuid sengaja global, jadi tautan berfungsi di host mana pun yang
+        // melayani rutenya. Tanpa pagar ini, santri yang benar akan tampil di
+        // permukaan ber-merek pesantren yang salah — bukan kebocoran data (santri
+        // di-resolve dari uuid, bukan dari host), tapi terlihat seperti kebocoran.
+        // Kasus nyatanya: subdomain yang sudah diklaim ulang pesantren lain setelah
+        // cooldown 90 hari, sementara tautan lama masih beredar di HP wali.
+        $pesantrenHost = $request->attributes->get('public_pesantren');
+
+        if ($pesantrenHost !== null && (int) $pesantrenHost->id !== (int) $santri->pesantren_id) {
+            return redirect()->away($santri->linkWali());
+        }
+
         // Jika sudah login sebagai admin/ustadz/super_admin, jangan timpa sesi mereka
         if (Auth::check() && Auth::user()->role !== 'wali_santri') {
             return redirect(route('filament.admin.santri.resources.santris.view', $santri));

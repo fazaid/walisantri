@@ -40,6 +40,9 @@ class WaliPresensiTest extends TestCase
         parent::setUp();
 
         $this->pesantren = Pesantren::factory()->create();
+        // §1.8 Fase 1: permukaan wali hidup di host pesantren, jadi seluruh
+        // route('wali.*') di berkas ini harus menunjuk ke sana.
+        $this->pakaiHostTenant($this->pesantren);
         $this->wali = User::factory()->waliSantri()->create(['pesantren_id' => $this->pesantren->id]);
         $this->kelas = Kelas::factory()->create(['pesantren_id' => $this->pesantren->id]);
         $this->santri = Santri::factory()->create([
@@ -296,7 +299,7 @@ class WaliPresensiTest extends TestCase
     {
         $this->catat(Waktu::hariIni(), StatusKehadiran::Hadir);
 
-        $this->get('/report/'.$this->santri->uuid)->assertOk();
+        $this->get(route('wali.magic.report', $this->santri->uuid))->assertOk();
 
         // Kartunya tampil di report, jadi menekannya tidak boleh memantulkan wali
         // kembali ke report tanpa penjelasan.
@@ -312,7 +315,7 @@ class WaliPresensiTest extends TestCase
             'kelas_id' => $this->kelas->id,
         ]);
 
-        $this->get('/report/'.$this->santri->uuid)->assertOk();
+        $this->get(route('wali.magic.report', $this->santri->uuid))->assertOk();
 
         $this->get(route('wali.santri.presensi', $tetangga->id))
             ->assertRedirect(route('wali.magic.report', $this->santri->uuid));

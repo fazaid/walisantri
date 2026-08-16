@@ -8,6 +8,7 @@ use App\Models\PlatformBrandingSetting;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
@@ -31,9 +32,9 @@ class PlatformLogoSettingsPage extends Page implements HasForms
 
     protected static ?int $navigationSort = 5;
 
-    protected static ?string $navigationLabel = 'Logo & Favicon';
+    protected static ?string $navigationLabel = 'Merek & Kontak';
 
-    protected static ?string $title = 'Logo & Favicon Platform';
+    protected static ?string $title = 'Merek & Kontak Platform';
 
     protected string $view = 'filament.pages.platform-logo-settings';
 
@@ -42,6 +43,8 @@ class PlatformLogoSettingsPage extends Page implements HasForms
     public $logo = null; // FileUpload state (single) hydrates sebagai array secara internal
 
     public $favicon = null;
+
+    public $wa_dukungan = '';
 
     public static function canAccess(): bool
     {
@@ -53,6 +56,7 @@ class PlatformLogoSettingsPage extends Page implements HasForms
         $this->form->fill([
             'logo' => PlatformBrandingSetting::get('logo'),
             'favicon' => PlatformBrandingSetting::get('favicon'),
+            'wa_dukungan' => PlatformBrandingSetting::get('wa_dukungan', ''),
         ]);
     }
 
@@ -81,6 +85,16 @@ class PlatformLogoSettingsPage extends Page implements HasForms
                         ->image()
                         ->acceptedFileTypes(['image/svg+xml'])
                         ->maxSize(256)
+                        ->nullable(),
+                ]),
+            Section::make('Kontak Dukungan')
+                ->description('Nomor WhatsApp tim yang dihubungi pengurus pesantren lewat tombol Bantuan di panel. Kosongkan untuk menyembunyikan tombolnya.')
+                ->schema([
+                    TextInput::make('wa_dukungan')
+                        ->label('Nomor WhatsApp Dukungan')
+                        ->helperText('Format bebas — spasi, tanda hubung, dan awalan 0 atau +62 sama-sama diterima; sistem merapikannya sendiri.')
+                        ->tel()
+                        ->maxLength(25)
                         ->nullable(),
                 ]),
         ]);
@@ -116,6 +130,8 @@ class PlatformLogoSettingsPage extends Page implements HasForms
 
             PlatformBrandingSetting::set($key, $new);
         }
+
+        PlatformBrandingSetting::set('wa_dukungan', $state['wa_dukungan'] ?: null);
 
         Notification::make()
             ->title('Branding platform berhasil disimpan')

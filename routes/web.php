@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\ExportController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\Auth\SerahTerimaSesiController;
 use App\Http\Controllers\Auth\VerifikasiEmailController;
 use App\Http\Controllers\Auth\WaliLoginController;
 use App\Http\Controllers\DemoController;
@@ -24,7 +25,9 @@ use App\Http\Controllers\Wali\SppController;
 use App\Http\Controllers\Wali\TahfidzStatsController;
 use App\Http\Controllers\Wali\UangSakuController;
 use App\Models\Order;
+use App\Models\Santri;
 use App\Support\SandboxDemo;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -92,16 +95,29 @@ Route::domain($appDomain)->group(function () use ($sameDomain) {
             }
 
             return match (auth()->user()->role) {
-                'wali_santri' => redirect()->route('wali.dashboard'),
+                // Lihat catatan di WaliLoginController::redirectAfterLogin().
+                'wali_santri' => redirect()->away(auth()->user()->urlPortalWali()),
                 default => redirect('/admin'),
             };
         });
     }
 
     // --- Auth login terpusat (§1.3, ?tenant=slug branding) ---
+    // Pintu staf. Sejak §1.8 Fase 1, wali masuk lewat host pesantrennya sendiri —
+    // wali yang telanjur mendarat di sini dialihkan ke sana oleh controller, sebab
+    // sesi yang dibuat di host ini tidak akan terbawa ke host tenant (cookie
+    // ber-scope host).
     Route::get('/login', [WaliLoginController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [WaliLoginController::class, 'login'])->name('wali.login.submit');
+    Route::post('/login', [WaliLoginController::class, 'login'])->name('login.submit');
     Route::post('/logout', [WaliLoginController::class, 'logout'])->middleware('auth')->name('logout');
+
+    // --- Serah-terima sesi lintas host (§1.8 Fase 1) ---
+    // Dicetak HANYA oleh RegisterController::store(): /register hidup di apex,
+    // panel di host ini, dan cookie sesi ber-scope host — tanpa rute ini pendaftar
+    // mendarat di panel sebagai tamu. Sekali pakai + kedaluwarsa 5 menit.
+    Route::get('/masuk-otomatis/{token}', SerahTerimaSesiController::class)
+        ->middleware(['signed', 'throttle:magic-link'])
+        ->name('auth.serah-terima');
 
     // --- Reset kata sandi lewat email (§9.1) — staf saja; wali santri passwordless ---
     Route::get('/lupa-password', [ResetPasswordController::class, 'showLinkRequestForm'])->name('password.request');
@@ -126,36 +142,33 @@ Route::domain($appDomain)->group(function () use ($sameDomain) {
     // --- Panduan penggunaan untuk Admin Pesantren & Ustadz — statis, tanpa login ---
     Route::get('/panduan', PanduanController::class)->name('panduan');
 
-    // --- Portal Wali Santri (§1.6) ---
-    Route::middleware(['auth', 'magic.block', 'tenant.resolve', 'saas.lifecycle'])
-        ->prefix('wali')
-        ->name('wali.')
-        ->group(function () {
-            Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-            Route::get('/santri/{santri}', [ReportController::class, 'show'])->name('santri.show');
-            Route::get('/santri/{santri}/tahfidz', [TahfidzStatsController::class, 'show'])->name('santri.tahfidz');
-            Route::get('/santri/{santri}/kesehatan', [KesehatanStatsController::class, 'show'])->name('santri.kesehatan');
-            Route::get('/santri/{santri}/mutabaah', [MutabaahStatsController::class, 'show'])->name('santri.mutabaah');
-            Route::get('/santri/{santri}/inventaris', [InventarisController::class, 'show'])->name('santri.inventaris');
-            Route::get('/santri/{santri}/presensi', [PresensiController::class, 'show'])->name('santri.presensi');
-            Route::get('/pengumuman', [PengumumanController::class, 'index'])->name('pengumuman');
-            Route::get('/rapor', [RaporController::class, 'index'])->name('rapor');
-            Route::get('/laporan/pdf', [LaporanController::class, 'exportPdf'])->name('laporan.pdf');
-            Route::get('/spp', [SppController::class, 'index'])->name('spp');
-            Route::post('/spp/{tagihan}/konfirmasi', [SppController::class, 'konfirmasi'])->name('spp.konfirmasi');
-            Route::get('/uang-saku', [UangSakuController::class, 'index'])->name('uang-saku');
-            Route::get('/uang-saku/{santri}', [UangSakuController::class, 'show'])->name('uang-saku.show');
-            Route::get('/izin', [IzinController::class, 'index'])->name('izin');
-            Route::post('/izin', [IzinController::class, 'store'])->name('izin.store');
-            // Lampiran di disk 'local' — tidak punya URL publik, jadi disajikan
-            // lewat rute terotorisasi (pola orders.bukti-transfer).
-            Route::get('/izin/{izin}/lampiran', [IzinController::class, 'lampiran'])->name('izin.lampiran');
-        });
+    // --- Pintu kanonik magic link (§1.8 Fase 1) ---
+    //
+    // Rute ini TIDAK PERNAH dihapus, dan tugasnya HANYA mengalihkan. Magic link
+    // tidak punya kedaluwarsa (§4.3): tautan yang tersimpan di HP wali bisa dipakai
+    // bertahun-tahun, jadi perpindahan portal ke host tenant harus aditif.
+    //
+    // Sengaja TANPA middleware magic.token: yang mengautentikasi adalah host tenant.
+    // Kalau login terjadi di sini, sesinya lahir di host yang salah dan — karena
+    // cookie ber-scope host — tidak akan terbawa ke tujuan.
+    //
+    // Tujuannya dihitung dari tenant SANTRI-nya, bukan dari host yang diketuk,
+    // sehingga penggantian slug tidak pernah mematikan tautan lama (§1.4).
+    Route::get('/report/{uuid}', function (string $uuid, Request $request) {
+        $santri = Santri::withoutGlobalScope('pesantren')->where('uuid', $uuid)->first();
 
-    // --- Magic Link — /report/{uuid} (§4.3) ---
-    Route::get('/report/{uuid}', [ReportController::class, 'showByUuid'])
-        ->middleware(['magic.token', 'throttle:magic-link'])
-        ->name('wali.magic.report');
+        abort_if($santri === null, 404);
+
+        $tujuan = $santri->linkWali();
+
+        // Tenant tanpa baris tenant_domains membuat linkWali() jatuh kembali ke host
+        // platform — persis host ini. Mengalihkannya berarti loop tak berujung, jadi
+        // lebih baik gagal terang-terangan. Di production semua tenant punya baris
+        // domainnya (diperiksa saat rilis §1.8 Fase 1); ini pagar untuk data rusak.
+        abort_if(parse_url($tujuan, PHP_URL_HOST) === $request->getHost(), 404);
+
+        return redirect()->away($tujuan);
+    })->middleware('throttle:magic-link')->name('magic.kanonik');
 
     // --- Bukti transfer order — hanya super_admin ---
     Route::get('/orders/{order}/bukti-transfer', function (Order $order) {
@@ -195,7 +208,66 @@ Route::domain($appDomain)->group(function () use ($sameDomain) {
 Route::domain('{slug}.'.$baseDomain)
     ->middleware('public.tenant')
     ->group(function () {
+        // Profil publik sengaja TANPA pagar tenant.host: halaman ini boleh dibaca
+        // siapa saja, termasuk pengguna yang sedang login di pesantren lain.
         Route::get('/', [PublicProfileController::class, 'index'])->name('public.profile');
         Route::get('/kegiatan', [PublicProfileController::class, 'kegiatan'])->name('public.kegiatan');
         Route::get('/artikel', [PublicProfileController::class, 'artikel'])->name('public.artikel');
+    });
+
+// =============================================================================
+// PERMUKAAN WALI DI HOST TENANT — {slug}.walisantri.com (§1.8 Fase 1)
+//
+// Login, portal, dan magic link tinggal satu host dengan profil pesantren, supaya
+// wali tidak pernah melihat merek platform di titik sentuh hariannya.
+//
+// ⚠️ URUTAN PENDAFTARAN ITU PAGARNYA. Pola '{slug}.walisantri.com' juga cocok
+// dengan 'app.walisantri.com' — grup APP di atas didaftarkan LEBIH DULU sehingga
+// ia yang menang. Jangan pernah memindahkan blok ini ke atas grup itu; ada tes
+// yang menjaganya (TenantHostTest).
+// =============================================================================
+Route::domain('{slug}.'.$baseDomain)
+    ->middleware(['public.tenant', 'tenant.host'])
+    ->group(function () {
+        // Serah-terima sesi dari pintu platform ke sini (§1.8 Fase 1) — wali yang
+        // login di app.walisantri.com diantar ke portalnya tanpa mengetik ulang.
+        Route::get('/masuk-otomatis/{token}', SerahTerimaSesiController::class)
+            ->middleware(['signed', 'throttle:magic-link'])
+            ->name('wali.serah-terima');
+
+        Route::get('/login', [WaliLoginController::class, 'showLoginForm'])->name('wali.login');
+        Route::post('/login', [WaliLoginController::class, 'login'])->name('wali.login.submit');
+        Route::post('/logout', [WaliLoginController::class, 'logout'])->middleware('auth')->name('wali.logout');
+
+        // Magic Link (§4.3) — handler sesungguhnya; pintu kanonik di app host
+        // hanya mengalihkan ke sini.
+        Route::get('/report/{uuid}', [ReportController::class, 'showByUuid'])
+            ->middleware(['magic.token', 'throttle:magic-link'])
+            ->name('wali.magic.report');
+
+        // --- Portal Wali Santri (§1.6) ---
+        Route::middleware(['auth', 'magic.block', 'tenant.resolve', 'saas.lifecycle'])
+            ->prefix('wali')
+            ->name('wali.')
+            ->group(function () {
+                Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+                Route::get('/santri/{santri}', [ReportController::class, 'show'])->name('santri.show');
+                Route::get('/santri/{santri}/tahfidz', [TahfidzStatsController::class, 'show'])->name('santri.tahfidz');
+                Route::get('/santri/{santri}/kesehatan', [KesehatanStatsController::class, 'show'])->name('santri.kesehatan');
+                Route::get('/santri/{santri}/mutabaah', [MutabaahStatsController::class, 'show'])->name('santri.mutabaah');
+                Route::get('/santri/{santri}/inventaris', [InventarisController::class, 'show'])->name('santri.inventaris');
+                Route::get('/santri/{santri}/presensi', [PresensiController::class, 'show'])->name('santri.presensi');
+                Route::get('/pengumuman', [PengumumanController::class, 'index'])->name('pengumuman');
+                Route::get('/rapor', [RaporController::class, 'index'])->name('rapor');
+                Route::get('/laporan/pdf', [LaporanController::class, 'exportPdf'])->name('laporan.pdf');
+                Route::get('/spp', [SppController::class, 'index'])->name('spp');
+                Route::post('/spp/{tagihan}/konfirmasi', [SppController::class, 'konfirmasi'])->name('spp.konfirmasi');
+                Route::get('/uang-saku', [UangSakuController::class, 'index'])->name('uang-saku');
+                Route::get('/uang-saku/{santri}', [UangSakuController::class, 'show'])->name('uang-saku.show');
+                Route::get('/izin', [IzinController::class, 'index'])->name('izin');
+                Route::post('/izin', [IzinController::class, 'store'])->name('izin.store');
+                // Lampiran di disk 'local' — tidak punya URL publik, jadi disajikan
+                // lewat rute terotorisasi (pola orders.bukti-transfer).
+                Route::get('/izin/{izin}/lampiran', [IzinController::class, 'lampiran'])->name('izin.lampiran');
+            });
     });

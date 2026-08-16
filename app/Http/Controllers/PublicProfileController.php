@@ -12,7 +12,11 @@ class PublicProfileController extends Controller
         /** @var Pesantren $pesantren */
         $pesantren = $request->attributes->get('public_pesantren');
 
-        $loginUrl = route('login').'?tenant='.$pesantren->slug;
+        // Host pesantren melayani /login sendiri sejak §1.8 Fase 1, jadi tautan ini
+        // tidak boleh lagi melempar wali ke app.walisantri.com — persis kebocoran
+        // merek yang §1.8 ada untuk menutupnya, dan di titik paling terlihat pula.
+        // ?tenant= juga tidak perlu lagi: brandingnya diturunkan dari host.
+        $loginUrl = $pesantren->url('/login');
 
         return view('public.profile', compact('pesantren', 'loginUrl'));
     }
@@ -33,7 +37,11 @@ class PublicProfileController extends Controller
         /** @var Pesantren $pesantren */
         $pesantren = $request->attributes->get('public_pesantren');
 
-        $loginUrl = route('login').'?tenant='.$pesantren->slug;
+        // Host pesantren melayani /login sendiri sejak §1.8 Fase 1, jadi tautan ini
+        // tidak boleh lagi melempar wali ke app.walisantri.com — persis kebocoran
+        // merek yang §1.8 ada untuk menutupnya, dan di titik paling terlihat pula.
+        // ?tenant= juga tidak perlu lagi: brandingnya diturunkan dari host.
+        $loginUrl = $pesantren->url('/login');
 
         return view('public.coming-soon', compact('pesantren', 'loginUrl', 'menu'));
     }

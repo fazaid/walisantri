@@ -82,13 +82,28 @@ class Santri extends Model
      * Link portal wali (magic link). Permanen sampai UUID di-regenerasi lewat
      * RegenerasiUuidAction. Dipakai modal "Link Wali" dan kolom Link Wali di
      * daftar santri — keduanya harus menghasilkan URL yang sama persis.
+     *
+     * Sejak §1.8 Fase 1 tautannya menunjuk host pesantren, bukan host platform.
+     * Sengaja dibangun dari `tenant_domains` (hostname `is_primary`), BUKAN dari
+     * slug: hostname adalah alamat yang benar-benar dilayani, sementara slug bisa
+     * berganti. Dipakai juga di konteks queue — job WhatsApp/email berjalan tanpa
+     * request, jadi ia tidak boleh bergantung pada host request.
+     *
+     * Fallback ke host platform ketika tenant belum punya baris domain: pintu
+     * kanonik `app.../report/{uuid}` tetap melayani dan mengalihkan, jadi tautan
+     * yang telanjur dibagikan tidak pernah mati.
      */
     public function linkWali(): string
     {
-        $appDomain = config('app.domain', 'app.walisantri.com');
-        $scheme = app()->environment('production') ? 'https' : 'http';
+        $pesantren = $this->pesantren;
 
-        return "{$scheme}://{$appDomain}/report/{$this->uuid}";
+        if ($pesantren === null) {
+            $skema = app()->environment('production') ? 'https' : 'http';
+
+            return $skema.'://'.config('app.domain', 'app.walisantri.com')."/report/{$this->uuid}";
+        }
+
+        return $pesantren->url("/report/{$this->uuid}");
     }
 
     // --- Relations ---

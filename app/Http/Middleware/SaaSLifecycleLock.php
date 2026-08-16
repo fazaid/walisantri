@@ -32,6 +32,11 @@ class SaaSLifecycleLock
             || $request->is('wali/logout')
             || $request->routeIs('filament.admin.auth.logout')
             || $request->routeIs('logout')
+            // Sejak §1.8 Fase 1 pintu keluar wali bernama 'wali.logout' dan berada
+            // di host pesantren dengan path '/logout' — tidak satu pun cocok dengan
+            // pola di atas. Tanpa baris ini, wali pesantren yang langganannya habis
+            // terkunci 423 TANPA cara keluar dari sesinya.
+            || $request->routeIs('wali.logout')
         ) {
             return $next($request);
         }

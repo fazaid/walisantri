@@ -84,6 +84,9 @@ class DataIsolationTest extends TestCase
         // Wali B login — meski sama tenant, hanya boleh lihat santri miliknya
         $this->actingAs($waliB);
 
+        // §1.8 Fase 1: dashboard dilayani di host pesantren.
+        $this->pakaiHostTenant($pesantren);
+
         $response = $this->get(route('wali.dashboard'));
         // Verifikasi bahwa wali hanya melihat anak terkait (implementation-level)
         // Scope Multitenantable membatasi ke pesantren_id; wali filter tambahan di controller
