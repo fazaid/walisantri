@@ -47,6 +47,7 @@ class EmailNotifikasiTest extends TestCase
     private function makePesantren(array $override = []): Pesantren
     {
         return Pesantren::create(array_merge([
+            'paket' => 'rintisan',
             'nama_pesantren' => 'Pesantren Email Test',
             'slug' => 'pesantren-email-'.uniqid(),
             'paket_langganan' => 'rintisan',
@@ -101,6 +102,7 @@ class EmailNotifikasiTest extends TestCase
         Mail::fake();
 
         $this->post(route('register.submit'), [
+            'paket' => 'rintisan',
             'nama_pesantren' => 'Pesantren Sambutan',
             'slug' => 'pesantren-sambutan',
             'admin_name' => 'Admin Sambutan',
@@ -123,6 +125,7 @@ class EmailNotifikasiTest extends TestCase
         EmailSetting::set('email_sambutan_enabled', false);
 
         $this->post(route('register.submit'), [
+            'paket' => 'rintisan',
             'nama_pesantren' => 'Pesantren Senyap',
             'slug' => 'pesantren-senyap',
             'admin_name' => 'Admin Senyap',

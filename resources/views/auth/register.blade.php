@@ -51,10 +51,19 @@
                 // Dihitung di Blade, bukan oleh JS setelah muat: tidak ada kedipan langkah
                 // yang salah, dan hasilnya bisa diperiksa langsung dari markup oleh tes.
                 // Default 1 sekaligus menangkap galat 'slug' dari penangkap QueryException.
-                $kolomLangkah1 = ['nama_pesantren', 'slug', 'wilayah_provinsi', 'wilayah_kota',
+                $kolomLangkahPesantren = ['nama_pesantren', 'slug', 'wilayah_provinsi', 'wilayah_kota',
                                   'wilayah_kecamatan', 'wilayah_desa', 'alamat_pesantren',
                                   'telepon_pesantren', 'email_pesantren'];
-                $langkahAwal = ($errors->any() && ! $errors->hasAny($kolomLangkah1)) ? 2 : 1;
+
+                // Paket dipilih sebelum apa pun (langkah 1). Datang dari kartu /harga
+                // berarti langkah itu sudah terjawab, jadi form terbuka di langkah 2 —
+                // pilihannya tetap bisa diubah lewat tombol di badge.
+                $paketAwal = old('paket', $paketTerpilih?->value);
+                $kartuTerpilih = collect($paketPilihan)->firstWhere('nilai', $paketAwal);
+
+                $langkahAwal = $errors->any()
+                    ? ($errors->has('paket') ? 1 : ($errors->hasAny($kolomLangkahPesantren) ? 2 : 3))
+                    : ($kartuTerpilih ? 2 : 1);
 
                 $kelasKolom = 'w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500';
                 $kelasLabel = 'block text-sm font-medium text-gray-700 mb-1';
@@ -90,15 +99,64 @@
                   data-langkah-awal="{{ $langkahAwal }}" class="space-y-5">
                 @csrf
 
+                {{-- Paket terpilih. Dirender server-side dari old()/query supaya sudah
+                     benar sebelum JS jalan, lalu diperbarui JS saat radio diganti. --}}
+                <div id="badge-paket"
+                     class="flex items-center justify-between gap-3 rounded-xl border border-teal-200 bg-teal-50 px-4 py-2.5 {{ $kartuTerpilih ? '' : 'hidden' }}">
+                    <span class="text-sm text-teal-800">
+                        Paket <span id="badge-paket-nama" class="font-semibold">{{ $kartuTerpilih['nama'] ?? '' }}</span>
+                        <span class="text-teal-700/70">· sampai <span id="badge-paket-kuota">{{ $kartuTerpilih ? number_format($kartuTerpilih['kuota'], 0, ',', '.') : '' }}</span> santri</span>
+                    </span>
+                    <button type="button" id="badge-paket-ubah"
+                            class="text-xs font-semibold text-teal-700 hover:underline shrink-0">Ubah</button>
+                </div>
+
                 {{-- Indikator langkah --}}
                 <ol class="flex items-center gap-3 text-xs font-medium mb-1">
-                    <li data-titik="1" class="{{ $langkahAwal === 1 ? 'text-teal-700' : 'text-gray-400' }}">1. Data Pesantren</li>
+                    <li data-titik="1" class="{{ $langkahAwal === 1 ? 'text-teal-700' : 'text-gray-400' }}">1. Paket</li>
                     <li class="flex-1 h-px bg-gray-200"></li>
-                    <li data-titik="2" class="{{ $langkahAwal === 2 ? 'text-teal-700' : 'text-gray-400' }}">2. Penanggung Jawab</li>
+                    <li data-titik="2" class="{{ $langkahAwal === 2 ? 'text-teal-700' : 'text-gray-400' }}">2. Data Pesantren</li>
+                    <li class="flex-1 h-px bg-gray-200"></li>
+                    <li data-titik="3" class="{{ $langkahAwal === 3 ? 'text-teal-700' : 'text-gray-400' }}">3. Penanggung Jawab</li>
                 </ol>
 
                 {{-- ============================ LANGKAH 1 ============================ --}}
-                <div id="langkah-1" data-langkah="1" class="space-y-5 {{ $langkahAwal === 1 ? '' : 'hidden' }}">
+                <div id="langkah-1" data-langkah="1" class="space-y-4 {{ $langkahAwal === 1 ? '' : 'hidden' }}">
+
+                    <p class="text-sm text-gray-500">
+                        Kuota santri adalah satu-satunya pembeda — seluruh modul terbuka di
+                        semua paket. Paket masih bisa diganti sendiri dari panel admin.
+                    </p>
+
+                    @foreach($paketPilihan as $kartu)
+                        <label class="flex items-start gap-3 border border-gray-300 rounded-xl px-4 py-3 cursor-pointer transition-colors
+                                      hover:border-teal-400 has-[:checked]:border-teal-600 has-[:checked]:bg-teal-50">
+                            <input type="radio" name="paket" value="{{ $kartu['nilai'] }}" required
+                                   class="mt-0.5 accent-teal-700"
+                                   data-nama="{{ $kartu['nama'] }}"
+                                   data-kuota="{{ number_format($kartu['kuota'], 0, ',', '.') }}"
+                                   @checked($paketAwal === $kartu['nilai'])>
+                            <span class="flex-1">
+                                <span class="block text-sm font-semibold text-gray-900">{{ $kartu['nama'] }}</span>
+                                <span class="block text-xs text-gray-500 mt-0.5">
+                                    Sampai {{ number_format($kartu['kuota'], 0, ',', '.') }} santri
+                                </span>
+                            </span>
+                        </label>
+                    @endforeach
+
+                    {{-- Paket Maju sengaja tidak ada di daftar ini: kuotanya dinegosiasikan
+                         lewat add-on per 100 santri, jadi pintunya percakapan dengan tim —
+                         aturan yang sama dengan kartu Maju di /harga. --}}
+                    <p class="text-xs text-gray-500">
+                        Pesantren yang lebih besar memakai paket Maju dengan kuota yang
+                        disesuaikan —
+                        <a href="{{ route('harga') }}" class="text-teal-700 font-medium hover:underline">hubungi tim kami lewat halaman harga</a>.
+                    </p>
+                </div>
+
+                {{-- ============================ LANGKAH 2 ============================ --}}
+                <div id="langkah-2" data-langkah="2" class="space-y-5 {{ $langkahAwal === 2 ? '' : 'hidden' }}">
 
                     {{-- Nama Pesantren --}}
                     <div>
@@ -201,8 +259,8 @@
                     </div>
                 </div>
 
-                {{-- ============================ LANGKAH 2 ============================ --}}
-                <div id="langkah-2" data-langkah="2" class="space-y-5 {{ $langkahAwal === 2 ? '' : 'hidden' }}">
+                {{-- ============================ LANGKAH 3 ============================ --}}
+                <div id="langkah-3" data-langkah="3" class="space-y-5 {{ $langkahAwal === 3 ? '' : 'hidden' }}">
 
                     {{-- Nama Admin --}}
                     <div>
@@ -254,15 +312,15 @@
 
                 <div class="flex gap-3">
                     <button type="button" id="tombol-kembali"
-                            class="px-5 py-2.5 rounded-xl font-semibold text-sm border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors {{ $langkahAwal === 2 ? '' : 'hidden' }}">
+                            class="px-5 py-2.5 rounded-xl font-semibold text-sm border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors {{ $langkahAwal === 1 ? 'hidden' : '' }}">
                         ← Kembali
                     </button>
                     <button type="button" id="tombol-lanjut"
-                            class="flex-1 bg-teal-700 hover:bg-teal-800 text-white font-semibold py-2.5 rounded-xl transition-colors {{ $langkahAwal === 1 ? '' : 'hidden' }}">
+                            class="flex-1 bg-teal-700 hover:bg-teal-800 text-white font-semibold py-2.5 rounded-xl transition-colors {{ $langkahAwal === 3 ? 'hidden' : '' }}">
                         Lanjut →
                     </button>
                     <button type="submit" id="tombol-daftar"
-                            class="flex-1 bg-teal-700 hover:bg-teal-800 text-white font-semibold py-2.5 rounded-xl transition-colors {{ $langkahAwal === 2 ? '' : 'hidden' }}">
+                            class="flex-1 bg-teal-700 hover:bg-teal-800 text-white font-semibold py-2.5 rounded-xl transition-colors {{ $langkahAwal === 3 ? '' : 'hidden' }}">
                         Daftarkan Pesantren
                     </button>
                 </div>
@@ -343,20 +401,26 @@
     });
 
     // ---------------------------------------------------------------------
-    // Wizard dua langkah
+    // Wizard tiga langkah
     // ---------------------------------------------------------------------
     const formDaftar = document.getElementById('form-daftar');
-    const panel      = { 1: document.getElementById('langkah-1'), 2: document.getElementById('langkah-2') };
+    const panel      = { 1: document.getElementById('langkah-1'),
+                         2: document.getElementById('langkah-2'),
+                         3: document.getElementById('langkah-3') };
+    const TERAKHIR   = 3;
     const btnLanjut  = document.getElementById('tombol-lanjut');
     const btnKembali = document.getElementById('tombol-kembali');
     const btnDaftar  = document.getElementById('tombol-daftar');
 
+    // Sumbernya markup, bukan variabel terpisah: langkah awal sudah dihitung Blade.
+    let langkahAktif = Number(formDaftar?.dataset.langkahAwal ?? 1);
+
     function tampilkanLangkah(n) {
-        panel[1].classList.toggle('hidden', n !== 1);
-        panel[2].classList.toggle('hidden', n !== 2);
-        btnLanjut.classList.toggle('hidden', n !== 1);
-        btnDaftar.classList.toggle('hidden', n !== 2);
-        btnKembali.classList.toggle('hidden', n !== 2);
+        langkahAktif = n;
+        Object.entries(panel).forEach(([k, el]) => el.classList.toggle('hidden', Number(k) !== n));
+        btnLanjut.classList.toggle('hidden', n === TERAKHIR);
+        btnDaftar.classList.toggle('hidden', n !== TERAKHIR);
+        btnKembali.classList.toggle('hidden', n === 1);
         document.querySelectorAll('[data-titik]').forEach((t) => {
             const aktif = Number(t.dataset.titik) === n;
             t.classList.toggle('text-teal-700', aktif);
@@ -370,12 +434,31 @@
         // Gerbangnya memakai constraint HTML5 yang sudah menempel di tiap kolom
         // (required/pattern) — tidak ada aturan duplikat yang bisa menyimpang dari
         // aturan server.
-        const cacat = [...panel[1].querySelectorAll('input, select, textarea')].find((el) => !el.checkValidity());
+        const cacat = [...panel[langkahAktif].querySelectorAll('input, select, textarea')]
+            .find((el) => !el.checkValidity());
         if (cacat) { cacat.reportValidity(); return; }
-        tampilkanLangkah(2);
+        tampilkanLangkah(Math.min(langkahAktif + 1, TERAKHIR));
     });
 
-    btnKembali?.addEventListener('click', () => tampilkanLangkah(1));
+    btnKembali?.addEventListener('click', () => tampilkanLangkah(Math.max(langkahAktif - 1, 1)));
+
+    // ---------------------------------------------------------------------
+    // Badge paket — cermin dari radio langkah 1, bukan sumber terpisah
+    // ---------------------------------------------------------------------
+    const badge      = document.getElementById('badge-paket');
+    const badgeNama  = document.getElementById('badge-paket-nama');
+    const badgeKuota = document.getElementById('badge-paket-kuota');
+
+    document.getElementById('badge-paket-ubah')?.addEventListener('click', () => tampilkanLangkah(1));
+
+    panel[1]?.querySelectorAll('input[name="paket"]').forEach((radio) => {
+        radio.addEventListener('change', () => {
+            if (!radio.checked) return;
+            badgeNama.textContent  = radio.dataset.nama;
+            badgeKuota.textContent = radio.dataset.kuota;
+            badge.classList.remove('hidden');
+        });
+    });
 
     // Jaring pengaman: kolom `required` yang sedang display:none tidak bisa difokuskan
     // browser, sehingga submit diblokir TANPA pesan apa pun — hanya warning di konsol.

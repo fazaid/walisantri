@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Enums\PaketLangganan;
 use App\Http\Controllers\Controller;
 use App\Mail\SambutanPendaftaran;
 use App\Models\EmailSetting;
@@ -13,6 +14,7 @@ use App\Rules\NomorWhatsApp;
 use App\Rules\SlugNotReserved;
 use App\Rules\ValidTenantSlug;
 use App\Rules\WilayahJalurValid;
+use App\Services\BillingCalculatorService;
 use App\Services\FonnteWhatsAppService;
 use App\Services\OnboardPesantren;
 use App\Support\WilayahLookup;
@@ -21,6 +23,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 class RegisterController extends Controller
@@ -44,7 +47,7 @@ class RegisterController extends Controller
         return (bool) session('magic_link_session');
     }
 
-    public function showForm()
+    public function showForm(Request $request)
     {
         if (Auth::check() && ! $this->sedangMencobaDemo()) {
             return $this->redirectAuthenticated();
@@ -53,11 +56,45 @@ class RegisterController extends Controller
         return view('auth.register', [
             'registrationOpen' => PlatformSetting::registrationOpen(),
             'demoOpen' => PlatformSetting::demoOpen(),
+            // Paket pilihan dari kartu /harga. null = pendaftar datang lewat tombol
+            // "Daftar" biasa dan memilih paketnya di langkah 1 form ini — /register
+            // tetap berdiri sendiri, jadi tautan & bookmark lama tidak mati.
+            'paketTerpilih' => $this->paketDariQuery($request),
+            'paketPilihan' => $this->kartuPaket(),
             // Provinsi dirender server-side (38 baris, di-cache) supaya kolom pertama
             // kaskade sudah terisi sebelum JS jalan — sekaligus membuat halaman tetap
             // masuk akal saat JS mati.
             'provinsi' => Wilayah::provinsi(),
         ]);
+    }
+
+    /**
+     * Paket dari query string — dipakai HANYA untuk memilih tampilan awal form.
+     * Nilai yang benar-benar ditulis ke database selalu lewat validasi di store().
+     */
+    private function paketDariQuery(Request $request): ?PaketLangganan
+    {
+        $paket = PaketLangganan::tryFrom((string) $request->query('paket'));
+
+        return $paket?->bisaDipilihSendiri() ? $paket : null;
+    }
+
+    /**
+     * Kartu pilihan paket di langkah 1. Kuotanya dibaca lewat kalkulator — sumber
+     * yang sama dengan /harga dan OnboardPesantren, supaya angka yang dijanjikan
+     * form ini persis kuota yang nanti diterima tenant.
+     *
+     * @return list<array{nilai: string, nama: string, kuota: int}>
+     */
+    private function kartuPaket(): array
+    {
+        $kalkulator = app(BillingCalculatorService::class);
+
+        return array_map(fn (PaketLangganan $paket) => [
+            'nilai' => $paket->value,
+            'nama' => $paket->label(),
+            'kuota' => $kalkulator->hitungUntukTarget($paket->value, 0)['kuota_maksimal'],
+        ], PaketLangganan::pilihanMandiri());
     }
 
     public function store(Request $request, OnboardPesantren $onboard, WilayahLookup $wilayah)
@@ -78,7 +115,14 @@ class RegisterController extends Controller
         abort_if(! PlatformSetting::registrationOpen(), 404);
 
         $data = $request->validate([
-            // --- Langkah 1: Data Pesantren ---
+            // --- Langkah 1: Paket ---
+            // Kode di query string tidak pernah dipercaya — sama seperti kode wilayah
+            // (§4.1), ia divalidasi ulang di sini. Rule::in dibangun dari
+            // PaketLangganan::pilihanMandiri() supaya 'maju' ditolak oleh server, bukan
+            // sekadar tidak dirender di form.
+            'paket' => ['required', Rule::in(array_column(PaketLangganan::pilihanMandiri(), 'value'))],
+
+            // --- Langkah 2: Data Pesantren ---
             'nama_pesantren' => ['required', 'string', 'max:100'],
             'slug' => ['required', 'string', new ValidTenantSlug, new SlugNotReserved, 'unique:pesantrens,slug'],
             'wilayah_provinsi' => ['required', 'string', 'regex:/^\d{2}$/'],
@@ -93,12 +137,14 @@ class RegisterController extends Controller
             'telepon_pesantren' => ['nullable', 'string', 'max:20', 'regex:/^[0-9+\-\s()]{8,20}$/'],
             'email_pesantren' => ['nullable', 'email', 'max:100'],
 
-            // --- Langkah 2: Penanggung Jawab ---
+            // --- Langkah 3: Penanggung Jawab ---
             'admin_name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email', 'unique:users,email'],
             'admin_whatsapp' => ['required', 'string', 'max:20', new NomorWhatsApp],
             'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()],
         ], [
+            'paket.required' => 'Paket wajib dipilih.',
+            'paket.in' => 'Paket tidak dikenali. Silakan pilih ulang.',
             'wilayah_provinsi.required' => 'Provinsi wajib dipilih.',
             'wilayah_kota.required' => 'Kota/Kabupaten wajib dipilih.',
             'wilayah_kecamatan.required' => 'Kecamatan wajib dipilih.',
@@ -124,6 +170,7 @@ class RegisterController extends Controller
                 // UpgradeOrderService diam-diam return lebih awal bagi mereka.
                 adminPhone: app(FonnteWhatsAppService::class)->normalizePhoneNumber($data['admin_whatsapp']),
                 profil: $this->rakitProfil($data, $wilayah),
+                paket: PaketLangganan::from($data['paket']),
             );
         } catch (QueryException $e) {
             Log::warning('register_onboard_failed', [

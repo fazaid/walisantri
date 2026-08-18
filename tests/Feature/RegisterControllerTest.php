@@ -70,11 +70,52 @@ class RegisterControllerTest extends TestCase
         $this->withoutVite();
         BillingSetting::set('trial_days', 21);
 
+        // Kedua bentuk halaman diperiksa: yang memilih paket sendiri, dan yang
+        // datang membawa paket dari kartu /harga — badge paket adalah permukaan
+        // baru tempat janji itu paling mudah menyelinap kembali.
+        foreach (['', '?paket=tumbuh'] as $query) {
+            $this->get($this->registerUrl().$query)
+                ->assertOk()
+                ->assertDontSee('21 hari')
+                ->assertDontSee('Trial')
+                ->assertDontSee('trial');
+        }
+    }
+
+    public function test_form_membuka_langkah_paket_saat_pendaftar_datang_tanpa_pilihan(): void
+    {
+        $this->withoutVite();
+
         $this->get($this->registerUrl())
             ->assertOk()
-            ->assertDontSee('21 hari')
-            ->assertDontSee('Trial')
-            ->assertDontSee('trial');
+            ->assertSee('data-langkah-awal="1"', false)
+            ->assertSee('name="paket"', false)
+            // Maju tidak pernah dirender: kuotanya dinegosiasikan lewat tim (§5.3).
+            ->assertDontSee('value="maju"', false);
+    }
+
+    public function test_paket_dari_kartu_harga_melewati_langkah_pemilihan(): void
+    {
+        $this->withoutVite();
+
+        $this->get($this->registerUrl().'?paket=tumbuh')
+            ->assertOk()
+            ->assertSee('data-langkah-awal="2"', false)
+            ->assertSee('value="tumbuh"', false)
+            ->assertSee('Tumbuh');
+    }
+
+    /**
+     * Paket Maju tidak boleh masuk lewat query: kuotanya angka hasil negosiasi,
+     * dan halaman ini tidak punya cara menanyakannya.
+     */
+    public function test_paket_maju_di_query_diabaikan_dan_pendaftar_tetap_memilih(): void
+    {
+        $this->withoutVite();
+
+        $this->get($this->registerUrl().'?paket=maju')
+            ->assertOk()
+            ->assertSee('data-langkah-awal="1"', false);
     }
 
     /**
@@ -156,6 +197,7 @@ class RegisterControllerTest extends TestCase
     {
         $this->withoutMiddleware(ValidateCsrfToken::class)
             ->post($this->registerUrl(), [
+                'paket' => 'rintisan',
                 'nama_pesantren' => 'Pesantren Al-Hidayah',
                 'slug' => 'al-hidayah-baru',
                 'admin_name' => 'Admin Baru',
@@ -178,6 +220,7 @@ class RegisterControllerTest extends TestCase
         $this->assertGuest();
 
         $tautan = $this->post($this->registerUrl(), [
+            'paket' => 'rintisan',
             'nama_pesantren' => 'Pesantren Kedua',
             'slug' => 'al-hidayah-kedua',
             'admin_name' => 'Admin Kedua',
@@ -198,5 +241,75 @@ class RegisterControllerTest extends TestCase
             Pesantren::where('slug', 'al-hidayah-kedua')->value('id'),
             auth()->user()->pesantren_id
         );
+    }
+
+    public function test_pendaftaran_tanpa_paket_ditolak(): void
+    {
+        $this->withoutMiddleware(ValidateCsrfToken::class)
+            ->post($this->registerUrl(), $this->dataPendaftaran(['paket' => null]))
+            ->assertSessionHasErrors('paket');
+
+        $this->assertDatabaseMissing('pesantrens', ['slug' => 'pesantren-uji']);
+    }
+
+    /**
+     * Pagar sisi server, bukan sekadar opsi yang tidak dirender: form-nya HTML biasa
+     * dan siapa pun bisa mengirim nilai apa pun.
+     */
+    public function test_paket_maju_ditolak_walau_dikirim_langsung(): void
+    {
+        $this->withoutMiddleware(ValidateCsrfToken::class)
+            ->post($this->registerUrl(), $this->dataPendaftaran(['paket' => 'maju']))
+            ->assertSessionHasErrors('paket');
+
+        $this->assertDatabaseMissing('pesantrens', ['slug' => 'pesantren-uji']);
+    }
+
+    /**
+     * Inti v4.53: trial lahir pada paket yang dipilih pendaftar, bukan selalu Rintisan.
+     *
+     * Kuotanya sengaja digeser dari nilai bawaan lebih dulu — kalau kuota diambil dari
+     * PaketLangganan::maxSantri() yang hardcode, angka di sini akan tetap 250 dan tes
+     * ini merah. Sumbernya wajib BillingSetting, sama seperti /harga.
+     */
+    public function test_trial_lahir_pada_paket_pilihan_dengan_kuota_dari_billing_setting(): void
+    {
+        BillingSetting::set('kuota_tumbuh', 275);
+        BillingSetting::set('trial_days', 30);
+
+        $this->withoutMiddleware(ValidateCsrfToken::class)
+            ->post($this->registerUrl(), $this->dataPendaftaran(['paket' => 'tumbuh']))
+            ->assertRedirect();
+
+        $pesantren = Pesantren::where('slug', 'pesantren-uji')->firstOrFail();
+
+        $this->assertSame('tumbuh', $pesantren->paket_langganan);
+        $this->assertSame(275, $pesantren->max_santri_kuota);
+        $this->assertSame('trial', $pesantren->status_berlangganan);
+        $this->assertTrue($pesantren->expired_at->isSameDay(now()->addDays(30)));
+    }
+
+    /**
+     * @param  array<string, mixed>  $ubah
+     * @return array<string, mixed>
+     */
+    private function dataPendaftaran(array $ubah = []): array
+    {
+        // $ubah di depan: operator + mempertahankan kunci operan KIRI, jadi urutan
+        // terbalik akan diam-diam mengabaikan setiap nilai yang mau ditimpa tes.
+        // null = kolomnya sengaja tidak dikirim sama sekali.
+        $data = $ubah + [
+            'paket' => 'rintisan',
+            'nama_pesantren' => 'Pesantren Uji',
+            'slug' => 'pesantren-uji',
+            'admin_name' => 'Admin Uji',
+            'email' => 'admin-uji@example.com',
+            'alamat_pesantren' => 'Jl. Raya Contoh No. 12, RT 03/RW 05',
+            'admin_whatsapp' => '081234567892',
+            'password' => 'Password123',
+            'password_confirmation' => 'Password123',
+        ] + $this->dataWilayahValid();
+
+        return array_filter($data, fn ($nilai) => $nilai !== null);
     }
 }

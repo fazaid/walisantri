@@ -162,7 +162,10 @@
                     @elseif($paket['hubungiKami'])
                         {{-- Nomor WA belum diatur dan demo ditutup: tanpa CTA, bukan tombol daftar. --}}
                     @elseif($registrationOpen)
-                        <a href="{{ route('register') }}"
+                        {{-- Paket dibawa ke form supaya pendaftar tidak memilihnya dua kali;
+                             /register tetap memvalidasinya ulang dan tidak pernah percaya
+                             query string ini (§4.1). --}}
+                        <a href="{{ route('register', ['paket' => $paket['slug']]) }}"
                            class="mt-auto block text-center font-semibold px-4 py-2.5 rounded-xl text-sm transition-colors
                                {{ $paket['populer'] ? 'bg-teal-700 text-white hover:bg-teal-800' : 'border border-teal-200 text-teal-700 hover:bg-teal-50' }}">
                             Daftar Sekarang

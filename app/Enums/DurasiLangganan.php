@@ -17,7 +17,7 @@ enum DurasiLangganan: int
             self::SatuBulan => '1 Bulan',
             self::TigaBulan => '3 Bulan',
             self::EnamBulan => '6 Bulan',
-            self::DuabelasBulan => '12 Bulan (1 Tahun)',
+            self::DuabelasBulan => '12 Bulan',
         };
     }
 

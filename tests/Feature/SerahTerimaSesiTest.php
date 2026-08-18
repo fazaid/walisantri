@@ -35,6 +35,7 @@ class SerahTerimaSesiTest extends TestCase
     private function dataPendaftaran(string $slug): array
     {
         return [
+            'paket' => 'rintisan',
             'nama_pesantren' => 'Pesantren '.$slug,
             'slug' => $slug,
             'admin_name' => 'Admin Uji',

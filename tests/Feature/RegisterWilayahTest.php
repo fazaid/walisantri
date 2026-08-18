@@ -42,6 +42,7 @@ class RegisterWilayahTest extends TestCase
     private function payload(array $ubahan = []): array
     {
         return array_merge([
+            'paket' => 'rintisan',
             'nama_pesantren' => 'Pesantren Al-Hidayah',
             'slug' => 'al-hidayah-wilayah',
             'admin_name' => 'Admin Baru',
@@ -254,7 +255,7 @@ class RegisterWilayahTest extends TestCase
 
     // ------------------------------------------------------- langkah saat galat
 
-    public function test_form_dibuka_di_langkah_dua_saat_galat_hanya_di_penanggung_jawab(): void
+    public function test_form_dibuka_di_langkah_penanggung_jawab_saat_galatnya_di_sana(): void
     {
         $this->withoutVite();
         $pesantren = Pesantren::factory()->create();
@@ -266,10 +267,10 @@ class RegisterWilayahTest extends TestCase
             ->followingRedirects()
             ->withoutMiddleware(ValidateCsrfToken::class)
             ->post($this->registerUrl(), $this->payload(['email' => 'sudah@ada.test']))
-            ->assertSee('data-langkah-awal="2"', false);
+            ->assertSee('data-langkah-awal="3"', false);
     }
 
-    public function test_form_tetap_di_langkah_satu_saat_galat_di_data_pesantren(): void
+    public function test_form_dibuka_di_langkah_data_pesantren_saat_galatnya_di_sana(): void
     {
         $this->withoutVite();
         Pesantren::factory()->create(['slug' => 'sudah-dipakai']);
@@ -278,6 +279,6 @@ class RegisterWilayahTest extends TestCase
             ->followingRedirects()
             ->withoutMiddleware(ValidateCsrfToken::class)
             ->post($this->registerUrl(), $this->payload(['slug' => 'sudah-dipakai']))
-            ->assertSee('data-langkah-awal="1"', false);
+            ->assertSee('data-langkah-awal="2"', false);
     }
 }
