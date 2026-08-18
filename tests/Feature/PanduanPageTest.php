@@ -31,8 +31,9 @@ class PanduanPageTest extends TestCase
     /**
      * Nav & footer halaman ini kini partial yang sama dengan landing. Yang diperiksa
      * bukan warnanya (itu urusan CSS), melainkan buktinya: menu landing muncul di
-     * sini, dan tautan seksinya absolut ke landing — kalau relatif, "#harga" hanya
+     * sini, dan tautan seksinya absolut ke landing — kalau relatif, "#faq" hanya
      * menggantung di halaman panduan dan tidak membawa pembaca ke mana pun.
+     * "Harga" tidak lagi termasuk: ia rute penuh sejak /harga berdiri sendiri.
      */
     public function test_nav_dan_footer_sama_dengan_landing_dengan_anchor_absolut(): void
     {
@@ -40,8 +41,8 @@ class PanduanPageTest extends TestCase
 
         $this->get($this->panduanUrl())
             ->assertOk()
-            ->assertSee('Cara Kerja')
-            ->assertSee(route('landing').'#harga', false)
+            ->assertSee(route('landing').'#fitur', false)
+            ->assertSee(route('harga'), false)
             ->assertSee(route('landing').'#faq', false)
             ->assertSee('Hak Cipta Dilindungi');
     }

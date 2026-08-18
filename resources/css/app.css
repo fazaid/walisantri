@@ -99,3 +99,16 @@
     --color-lime-50: #1c2a0b;
     --color-lime-100: #2b3a17;
 }
+
+/* ---------------------------------------------------------------------------
+   Akordeon <details> — dipakai FAQ di landing dan di /harga.
+
+   Tinggal di sini, bukan di <style> tiap halaman, karena dua halaman memakainya
+   dan salinan kedua akan menyimpang diam-diam. Selector pemilih siklus harga
+   TIDAK ikut ke sini: ia terikat pada id yang cuma ada di /harga, jadi tetap
+   inline di halaman itu bersama komentar jebakannya.
+   --------------------------------------------------------------------------- */
+details summary::-webkit-details-marker { display: none; }
+details summary { list-style: none; }
+details[open] .faq-icon-plus { display: none; }
+details:not([open]) .faq-icon-minus { display: none; }

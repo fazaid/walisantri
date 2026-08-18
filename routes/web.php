@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\SerahTerimaSesiController;
 use App\Http\Controllers\Auth\VerifikasiEmailController;
 use App\Http\Controllers\Auth\WaliLoginController;
 use App\Http\Controllers\DemoController;
+use App\Http\Controllers\HargaController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\PanduanController;
 use App\Http\Controllers\PublicProfileController;
@@ -68,6 +69,11 @@ Route::domain($baseDomain)->group(function () use ($sameDomain) {
 
     Route::get('/demo', [DemoController::class, 'show'])->name('demo');
     Route::post('/demo', [DemoController::class, 'store'])->name('demo.submit')->middleware('throttle:demo');
+
+    // Paket harga (§1.6). Rumah kanoniknya di sini, bukan seksi anchor di landing.
+    // Cukup didaftarkan di domain ini: berbeda dari '/' dan '/panduan', pathnya tidak
+    // bertabrakan saat base_domain == app_domain.
+    Route::get('/harga', HargaController::class)->name('harga');
 
     // Panduan juga tersedia di domain utama (tanpa "app.") — dilewati saat
     // $sameDomain karena rute 'panduan' di grup APP di bawah sudah menjajaki

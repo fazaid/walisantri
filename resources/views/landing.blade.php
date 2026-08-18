@@ -9,31 +9,6 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @include('partials.tema')
     @include('partials.analytics-head')
-    <style>
-        details summary::-webkit-details-marker { display: none; }
-        details summary { list-style: none; }
-        details[open] .faq-icon-plus { display: none; }
-        details:not([open]) .faq-icon-minus { display: none; }
-
-        /* Pemilih siklus harga: radio tersembunyi + selector sibling, supaya
-           landing tetap bebas JavaScript seperti FAQ di atas. */
-        #siklus-bulanan:checked ~ * .harga-tahunan,
-        #siklus-tahunan:checked ~ * .harga-bulanan { display: none; }
-        /* Pakai variabel palet, bukan heksa mati: keduanya ikut membalik saat
-           mode gelap menyala (lihat resources/css/app.css). */
-        #siklus-bulanan:checked ~ .siklus-tab label[for="siklus-bulanan"],
-        #siklus-tahunan:checked ~ .siklus-tab label[for="siklus-tahunan"] {
-            background-color: var(--color-white);
-            color: var(--color-teal-700);
-            box-shadow: 0 1px 2px rgb(0 0 0 / 0.1);
-        }
-        /* Input-nya sr-only, jadi fokus keyboard harus terlihat lewat label. */
-        #siklus-bulanan:focus-visible ~ .siklus-tab label[for="siklus-bulanan"],
-        #siklus-tahunan:focus-visible ~ .siklus-tab label[for="siklus-tahunan"] {
-            outline: 2px solid var(--color-teal-600);
-            outline-offset: 2px;
-        }
-    </style>
 </head>
 <body class="bg-white text-gray-800 font-sans">
 @include('partials.analytics-body')
@@ -585,132 +560,6 @@
         </div>
     </section>
 
-    {{-- Harga --}}
-    <section id="harga" class="max-w-6xl mx-auto px-6 py-20">
-        <div class="text-center mb-12">
-            <h2 class="text-3xl font-bold text-gray-900 mb-4">Harga Transparan, Sesuai Jumlah Santri</h2>
-            <p class="text-gray-500 max-w-2xl mx-auto leading-relaxed">
-                Semua modul terbuka di semua paket; yang membedakan hanya kuota santri.
-                Pendaftaran tidak meminta kartu kredit.
-            </p>
-        </div>
-
-        {{-- Pemilih siklus. Radio-nya sengaja jadi saudara langsung <section> agar
-             CSS di <head> bisa menyembunyikan harga yang tidak dipilih tanpa JS. --}}
-        <input type="radio" name="siklus-harga" id="siklus-bulanan" class="sr-only" checked>
-        <input type="radio" name="siklus-harga" id="siklus-tahunan" class="sr-only">
-
-        <div class="siklus-tab flex justify-center mb-10">
-            <div class="inline-flex items-center gap-1 bg-gray-100 p-1 rounded-full">
-                <label for="siklus-bulanan"
-                       class="cursor-pointer rounded-full px-5 py-2 text-sm font-semibold text-gray-500 transition-colors">
-                    Bulanan
-                </label>
-                <label for="siklus-tahunan"
-                       class="cursor-pointer rounded-full px-5 py-2 text-sm font-semibold text-gray-500 transition-colors whitespace-nowrap">
-                    Tahunan
-                    @if($bonusTahunan > 0)
-                        <span class="ml-1 text-xs font-bold text-teal-600">{{ $bonusTahunan }} bulan gratis</span>
-                    @endif
-                </label>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
-            @foreach($paketList as $paket)
-                <div class="relative border rounded-2xl p-6 flex flex-col gap-4 h-full
-                    {{ $paket['populer'] ? 'border-teal-500 shadow-lg shadow-teal-100 ring-1 ring-teal-500' : 'border-gray-200 hover:border-gray-300' }}">
-
-                    @if($paket['populer'])
-                        <div class="absolute -top-3 left-1/2 -translate-x-1/2">
-                            <span class="bg-teal-600 text-white text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap">Paling Populer</span>
-                        </div>
-                    @endif
-
-                    <div>
-                        <div class="font-bold text-gray-900 text-lg mb-1">{{ $paket['nama'] }}</div>
-                        <div class="text-gray-500 text-sm leading-relaxed">{{ $paket['deskripsi'] }}</div>
-                    </div>
-
-                    {{-- Yang ditonjolkan tarif per santri; harga paket tetap ditulis di
-                         bawahnya karena itulah yang ditagih. min-h menahan tinggi kartu
-                         supaya tidak melompat saat siklus diganti. --}}
-                    <div class="min-h-[7.5rem]">
-                        <div class="harga-bulanan">
-                            <span class="text-3xl font-bold text-gray-900">{{ $paket['perSantriBulanan'] }}</span>
-                            <span class="text-gray-500 text-sm">/santri/bulan</span>
-                            <div class="text-sm text-gray-700 mt-1.5">
-                                <span class="font-semibold">{{ $paket['harga'] }}</span>/bulan per pesantren
-                            </div>
-                            <div class="text-xs text-gray-500 mt-0.5">
-                                Setara pada kuota {{ number_format($paket['kuota'], 0, ',', '.') }} santri; tagihannya per paket.
-                            </div>
-                        </div>
-                        <div class="harga-tahunan">
-                            <span class="text-3xl font-bold text-gray-900">{{ $paket['perSantriTahunan'] }}</span>
-                            <span class="text-gray-500 text-sm">/santri/tahun</span>
-                            <div class="text-sm text-gray-700 mt-1.5">
-                                <span class="font-semibold">{{ $paket['hargaTahunan'] }}</span>/tahun per pesantren
-                                @if($paket['adaHematTahunan'])
-                                    <span class="text-gray-400 line-through">{{ $paket['hargaTahunanNormal'] }}</span>
-                                @endif
-                            </div>
-                            @if($paket['adaHematTahunan'])
-                                <div class="text-xs font-semibold text-teal-700 mt-0.5">
-                                    Hemat {{ $paket['hematTahunan'] }} — bayar {{ $bulanBayarTahunan }} bulan, aktif {{ $totalBulanTahunan }} bulan.
-                                </div>
-                            @endif
-                            <div class="text-xs text-gray-500 mt-0.5">
-                                Setara pada kuota {{ number_format($paket['kuota'], 0, ',', '.') }} santri; tagihannya per paket.
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="text-sm text-gray-600 border-t border-gray-100 pt-4">
-                        <span class="font-semibold text-gray-900">
-                            Sampai {{ number_format($paket['kuota'], 0, ',', '.') }} santri
-                        </span>
-                        @if($paket['hubungiKami'])
-                            <div class="text-xs text-gray-500 mt-1">Kuota bisa ditambah per 100 santri.</div>
-                        @endif
-                    </div>
-
-                    <ul class="space-y-1.5 text-sm text-gray-600">
-                        @foreach(['Seluruh modul terbuka', 'Portal wali & Magic Link', 'Website profil pesantren', 'Ekspor PDF & Excel'] as $fitur)
-                            <li class="flex items-start gap-2">
-                                <span class="text-teal-500 shrink-0">✓</span> {{ $fitur }}
-                            </li>
-                        @endforeach
-                    </ul>
-
-                    @if($paket['hubungiKami'] && $demoOpen)
-                        <a href="{{ route('demo') }}"
-                           class="mt-auto block text-center border border-teal-200 text-teal-700 font-semibold px-4 py-2.5 rounded-xl text-sm hover:bg-teal-50 transition-colors">
-                            Hubungi Kami
-                        </a>
-                    @elseif($registrationOpen)
-                        <a href="{{ route('register') }}"
-                           class="mt-auto block text-center font-semibold px-4 py-2.5 rounded-xl text-sm transition-colors
-                               {{ $paket['populer'] ? 'bg-teal-700 text-white hover:bg-teal-800' : 'border border-teal-200 text-teal-700 hover:bg-teal-50' }}">
-                            Daftar Sekarang
-                        </a>
-                    @elseif($demoOpen)
-                        <a href="{{ route('demo') }}"
-                           class="mt-auto block text-center border border-teal-200 text-teal-700 font-semibold px-4 py-2.5 rounded-xl text-sm hover:bg-teal-50 transition-colors">
-                            Ajukan Demo
-                        </a>
-                    @endif
-                </div>
-            @endforeach
-        </div>
-
-        <p class="text-center text-sm text-gray-500 mt-8 leading-relaxed">
-            Tersedia juga durasi 6 bulan dengan <span class="font-semibold text-gray-700">{{ $bonusEnam }} bulan gratis</span>.
-            Pembayaran lewat transfer bank.
-            Harga dapat berubah sewaktu-waktu — yang tercantum di halaman ini adalah harga yang berlaku hari ini.
-        </p>
-    </section>
-
     {{-- Masalah yang Diselesaikan --}}
     <section class="max-w-6xl mx-auto px-6 py-20">
         <div class="text-center mb-12">
@@ -790,7 +639,7 @@
             @foreach([
                 [
                     'Berapa biaya Walisantri?',
-                    'Walisantri berlangganan, mulai Rp 150.000/bulan sesuai jumlah santri — rinciannya ada di bagian Harga. Semua modul terbuka di semua paket; yang membedakan hanya kuota santri. Pendaftaran tidak meminta kartu kredit dan akun aktif seketika.'
+                    'Walisantri berlangganan, mulai '.$hargaTerendah.'/bulan sesuai jumlah santri — rinciannya ada di halaman Harga. Semua modul terbuka di semua paket; yang membedakan hanya kuota santri. Pendaftaran tidak meminta kartu kredit dan akun aktif seketika.'
                 ],
                 [
                     'Bagaimana cara wali santri mengakses portal?',
