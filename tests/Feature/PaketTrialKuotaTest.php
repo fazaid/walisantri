@@ -53,6 +53,13 @@ class PaketTrialKuotaTest extends TestCase
         return $pesantren;
     }
 
+    /**
+     * ->set() dan bukan ->call('pilihPaket'), dan itu disengaja: sejak v4.54 kartu
+     * paket yang kuotanya kurang sudah tidak bisa diklik sama sekali, jadi menempuh
+     * jalur UI tidak akan pernah sampai ke pagar yang sedang diuji di sini. Yang
+     * ditiru justru keadaan yang tersisa — state komponen sudah terlanjur menunjuk
+     * paket itu.
+     */
     public function test_tombol_bayar_mati_saat_kuota_paket_tujuan_kurang(): void
     {
         $this->siapkanTenant();
@@ -86,8 +93,7 @@ class PaketTrialKuotaTest extends TestCase
         $this->siapkanTenant();
 
         Livewire::test(UpgradePage::class)
-            ->set('paket_target', 'tumbuh')
-            ->call('hitungHarga')
+            ->call('pilihPaket', 'tumbuh')
             ->assertActionEnabled('prosesPembayaran')
             ->call('prosesPembayaran');
 

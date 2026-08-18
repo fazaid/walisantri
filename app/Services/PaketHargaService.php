@@ -63,6 +63,54 @@ class PaketHargaService
     }
 
     /**
+     * Kartu untuk SATU siklus tertentu — dipakai halaman Upgrade di panel admin.
+     *
+     * Berbeda dari kartu(): di sana kedua siklus dirender sekaligus lalu salah
+     * satunya disembunyikan CSS (halaman /harga nol JavaScript), sedangkan di panel
+     * siklusnya state Livewire — jadi cukup satu siklus per render.
+     *
+     * $kuotaMaju hanya berarti bagi paket Maju: kuotanya add-on per 100 santri, jadi
+     * harganya bergantung angka yang sedang diketik admin.
+     *
+     * @return list<array{slug: string, nama: string, deskripsi: string, kuota: int,
+     *                    perBulan: int, perBulanFormatted: string, totalFormatted: string,
+     *                    bulanBayar: int, totalBulan: int, bonusBulan: int,
+     *                    populer: bool, dinegosiasikan: bool}>
+     */
+    public function kartuUntukDurasi(DurasiLangganan $durasi, ?int $kuotaMaju = null): array
+    {
+        return collect(PaketLangganan::cases())
+            ->map(function (PaketLangganan $paket) use ($durasi, $kuotaMaju) {
+                $hitung = $this->kalkulator->hitungUntukTarget(
+                    $paket->value,
+                    $paket === PaketLangganan::Maju ? ($kuotaMaju ?? 0) : 0,
+                );
+
+                $perBulan = $hitung['total_biaya'];
+
+                return [
+                    'slug' => $paket->value,
+                    'nama' => $paket->label(),
+                    'deskripsi' => $this->deskripsi($paket),
+                    'kuota' => $hitung['kuota_maksimal'],
+                    'perBulan' => $perBulan,
+                    'perBulanFormatted' => $hitung['formatted'],
+                    // Bonus dibayarkan sebagai bulan gratis, bukan potongan harga:
+                    // yang ditagih bulanBayar(), yang aktif totalBulan().
+                    'totalFormatted' => $this->rupiah($perBulan * $durasi->bulanBayar()),
+                    'bulanBayar' => $durasi->bulanBayar(),
+                    'totalBulan' => $durasi->totalBulan(),
+                    'bonusBulan' => $durasi->bonusBulan(),
+                    'populer' => $paket === PaketLangganan::Tumbuh,
+                    // Di panel paket Maju TETAP bisa dibeli — berbeda dari /register.
+                    // Penandanya dipakai untuk memunculkan input kuota & catatan add-on.
+                    'dinegosiasikan' => ! $paket->bisaDipilihSendiri(),
+                ];
+            })
+            ->all();
+    }
+
+    /**
      * Angka yang dipakai salinan seputar siklus (label tab, catatan kaki, FAQ).
      * Di-spread ke data view supaya kedua halaman memakai kunci yang sama.
      */

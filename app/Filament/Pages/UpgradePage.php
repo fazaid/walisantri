@@ -8,10 +8,10 @@ use App\Enums\TipeDiskon;
 use App\Models\Kupon;
 use App\Models\Pesantren;
 use App\Services\BillingCalculatorService;
+use App\Services\PaketHargaService;
 use App\Services\UpgradeOrderService;
 use BackedEnum;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
@@ -96,9 +96,10 @@ class UpgradePage extends Page implements HasForms
         $this->min_durasi_upgrade = $this->hitungMinDurasi($pesantren);
         $this->durasi_bulan = max($this->durasi_bulan, $this->min_durasi_upgrade);
 
+        // Paket & durasi tidak lagi hidup di schema Filament — keduanya dipilih lewat
+        // kartu dan segmented control di Blade (wire:click), jadi nilainya murni
+        // properti publik komponen ini.
         $this->form->fill([
-            'paket_target' => $this->paket_target,
-            'durasi_bulan' => $this->durasi_bulan,
             'max_santri_kuota_target' => $this->max_santri_kuota_target,
             'kode_kupon' => '',
         ]);
@@ -127,84 +128,20 @@ class UpgradePage extends Page implements HasForms
     public function form(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('Pilih Paket')
+            Section::make('Kuota Santri')
+                ->description('Kuota paket Maju ditambah per 100 santri (§5.3).')
+                ->visible(fn () => $this->paket_target === 'maju')
                 ->schema([
-                    Select::make('paket_target')
-                        ->label('Paket Tujuan')
-                        ->options(function () {
-                            $calculator = app(BillingCalculatorService::class);
-
-                            return collect(PaketLangganan::cases())
-                                ->mapWithKeys(function (PaketLangganan $paket) use ($calculator) {
-                                    $kuota = $calculator->hitungUntukTarget($paket->value, 0)['kuota_maksimal'];
-                                    $kuotaFormatted = number_format($kuota, 0, ',', '.');
-                                    $keterangan = $paket === PaketLangganan::Maju
-                                        ? "mulai dari {$kuotaFormatted} santri"
-                                        : "maksimal {$kuotaFormatted} santri";
-
-                                    return [$paket->value => "{$paket->label()} - {$keterangan}"];
-                                })
-                                ->all();
-                        })
-                        ->required()
-                        ->native(false)
-                        ->live()
-                        ->helperText(fn () => $this->kuotaKurang() ? $this->pesanKuotaKurang() : null)
-                        ->afterStateUpdated(function (?string $state) {
-                            $this->paket_target = $state ?? '';
-                            $calculator = app(BillingCalculatorService::class);
-                            $hasil = $calculator->hitungUntukTarget($state ?? '', $this->max_santri_kuota_target);
-                            $this->max_santri_kuota_target = $hasil['kuota_maksimal'];
-                            if ($state === 'maju') {
-                                $this->max_santri_kuota_target = max(
-                                    $this->max_santri_kuota_target,
-                                    1000
-                                );
-                            }
-                            $this->hitungHarga();
-                        }),
-
                     TextInput::make('max_santri_kuota_target')
                         ->label('Kuota Santri')
                         ->numeric()
                         ->minValue(1000)
                         ->step(100)
                         ->helperText('Minimum 1.000 untuk paket Maju, kelipatan 100.')
-                        ->visible(fn () => $this->paket_target === 'maju')
                         ->live(onBlur: true)
                         ->afterStateUpdated(function (?string $state) {
                             $this->max_santri_kuota_target = (int) ($state ?? 1000);
                             $this->hitungHarga();
-                        }),
-                ]),
-
-            Section::make('Pilih Durasi')
-                ->schema([
-                    Select::make('durasi_bulan')
-                        ->label('Durasi Langganan')
-                        ->options(function () {
-                            return collect(DurasiLangganan::cases())
-                                ->filter(fn ($d) => $d->value >= $this->min_durasi_upgrade)
-                                ->mapWithKeys(fn ($d) => [$d->value => $d->label()])
-                                ->all();
-                        })
-                        ->helperText(function () {
-                            if ($this->min_durasi_upgrade === 12) {
-                                return 'Durasi minimum 12 bulan karena sisa langganan aktif lebih dari 9 bulan.';
-                            }
-                            if ($this->min_durasi_upgrade === 6) {
-                                return 'Durasi minimum 6 bulan karena sisa langganan aktif lebih dari 6 bulan.';
-                            }
-
-                            return null;
-                        })
-                        ->required()
-                        ->native(false)
-                        ->live()
-                        ->afterStateUpdated(function (int $state) {
-                            $this->durasi_bulan = $state;
-                            $this->hitungHarga();
-                            $this->terapkanKupon();
                         }),
                 ]),
 
@@ -254,6 +191,125 @@ class UpgradePage extends Page implements HasForms
             ->extraAttributes(['style' => 'width: 100%; justify-content: center;'])
             ->disabled(fn () => $this->kuotaKurang())
             ->action('prosesPembayaran');
+    }
+
+    /**
+     * Kartu paket untuk siklus yang sedang dipilih.
+     *
+     * Angkanya lewat PaketHargaService — sumber yang sama dengan /harga, supaya
+     * halaman ini tidak pernah memajang tarif yang berbeda dari yang dilihat calon
+     * pelanggan sebelum masuk. Yang ditambahkan di sini hanya tiga penanda yang
+     * memang cuma berarti di dalam panel: mana yang sedang dipilih, mana paket
+     * tenant hari ini, dan mana yang terkunci karena kuotanya sudah terlampaui.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function kartuPaket(): array
+    {
+        $paketSekarang = Auth::user()?->pesantren?->paket_langganan;
+
+        return collect(app(PaketHargaService::class)
+            ->kartuUntukDurasi(DurasiLangganan::from($this->durasi_bulan), $this->max_santri_kuota_target))
+            ->map(function (array $kartu) use ($paketSekarang) {
+                $terkunci = $kartu['kuota'] < $this->santri_aktif;
+
+                return $kartu + [
+                    'terpilih' => $kartu['slug'] === $this->paket_target,
+                    'sekarang' => $kartu['slug'] === $paketSekarang,
+                    'terkunci' => $terkunci,
+                    'alasanTerkunci' => $terkunci
+                        ? 'Kuotanya di bawah '.number_format($this->santri_aktif, 0, ',', '.').' santri aktif Anda.'
+                        : null,
+                ];
+            })
+            ->all();
+    }
+
+    /**
+     * Pilihan siklus. Durasi di bawah min_durasi_upgrade ditandai terkunci, bukan
+     * dihilangkan: tombol yang lenyap tanpa penjelasan terbaca sebagai "opsinya
+     * tidak ada", padahal yang benar "sisa langganan Anda masih panjang".
+     *
+     * Bonus bulan gratis tidak ikut dikembalikan: yang menuliskannya kartu paket,
+     * lengkap dengan total yang ditagih — tab cukup menyebut lama siklusnya.
+     *
+     * @return list<array{bulan: int, label: string, terpilih: bool, terkunci: bool}>
+     */
+    public function opsiDurasi(): array
+    {
+        return collect(DurasiLangganan::cases())
+            ->map(fn (DurasiLangganan $durasi) => [
+                'bulan' => $durasi->value,
+                'label' => $durasi->label(),
+                'terpilih' => $durasi->value === $this->durasi_bulan,
+                'terkunci' => $durasi->value < $this->min_durasi_upgrade,
+            ])
+            ->all();
+    }
+
+    public function pesanMinDurasi(): ?string
+    {
+        return match ($this->min_durasi_upgrade) {
+            12 => 'Durasi minimum 12 bulan karena sisa langganan aktif lebih dari 9 bulan.',
+            6 => 'Durasi minimum 6 bulan karena sisa langganan aktif lebih dari 6 bulan.',
+            default => null,
+        };
+    }
+
+    public function pilihPaket(string $paket): void
+    {
+        $pilihan = PaketLangganan::tryFrom($paket);
+
+        if (! $pilihan) {
+            return;
+        }
+
+        $kuota = app(BillingCalculatorService::class)
+            ->hitungUntukTarget($pilihan->value, $this->max_santri_kuota_target)['kuota_maksimal'];
+
+        // Kartunya memang sudah dinonaktifkan di Blade, tapi wire:click tetap bisa
+        // dipanggil langsung dari klien — sama alasannya dengan pagar di
+        // prosesPembayaran().
+        if ($kuota < $this->santri_aktif) {
+            Notification::make()
+                ->title('Kuota paket tidak cukup')
+                ->body('Paket '.$pilihan->label().' berkuota '.number_format($kuota, 0, ',', '.')
+                    .' santri, di bawah '.number_format($this->santri_aktif, 0, ',', '.').' santri aktif Anda.')
+                ->danger()
+                ->send();
+
+            return;
+        }
+
+        $this->paket_target = $pilihan->value;
+        $this->max_santri_kuota_target = $pilihan === PaketLangganan::Maju
+            ? max($kuota, 1000)
+            : $kuota;
+
+        $this->form->fill([
+            'max_santri_kuota_target' => $this->max_santri_kuota_target,
+            'kode_kupon' => $this->kode_kupon,
+        ]);
+
+        $this->hitungHarga();
+    }
+
+    public function pilihDurasi(int $bulan): void
+    {
+        $durasi = DurasiLangganan::tryFrom($bulan);
+
+        // Pagar ini dulu dipegang ->options() milik Select durasi, yang memfilter
+        // daftar dengan min_durasi_upgrade. Begitu dropdown-nya diganti tombol,
+        // pagarnya harus pindah ke sini — bukan hilang.
+        if (! $durasi || $durasi->value < $this->min_durasi_upgrade) {
+            return;
+        }
+
+        $this->durasi_bulan = $durasi->value;
+
+        // hitungHarga() memanggil terapkanKupon() di ujungnya; validitas kupon
+        // bergantung durasi (Kupon::isValid), jadi urutannya tidak boleh dibalik.
+        $this->hitungHarga();
     }
 
     /**
