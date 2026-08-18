@@ -52,7 +52,8 @@ class PaketHargaService
                     'populer' => $paket === PaketLangganan::Tumbuh,
                     'deskripsi' => $this->deskripsi($paket),
                     // Kuota paket Maju bisa dinaikkan lewat add-on, jadi CTA-nya
-                    // mengarah ke form demo — angkanya perlu dibicarakan dulu.
+                    // membuka percakapan WhatsApp dengan tim — angkanya perlu
+                    // dibicarakan dulu, bukan langsung didaftarkan sendiri.
                     'hubungiKami' => $paket === PaketLangganan::Maju,
                 ];
             })

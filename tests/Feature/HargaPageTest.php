@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\BillingSetting;
+use App\Models\PlatformBrandingSetting;
+use App\Models\PlatformContactSetting;
 use App\Models\PlatformSetting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -18,6 +20,22 @@ class HargaPageTest extends TestCase
     private function hargaUrl(): string
     {
         return 'http://'.config('app.base_domain').'/harga';
+    }
+
+    /**
+     * Potongan HTML kartu Maju saja. Asersi CTA wajib dibatasi ke kartunya:
+     * 'Maju' dan tautan /register sama-sama muncul lagi di seksi add-on dan CTA
+     * penutup, jadi assertSee/assertDontSee atas seluruh halaman tidak
+     * membuktikan apa pun tentang tombol di kartu ini.
+     */
+    private function kartuMaju(string $isi): string
+    {
+        $mulai = strpos($isi, 'text-lg mb-1">Maju</div>');
+        $akhir = strpos($isi, 'Tersedia juga durasi 6 bulan', $mulai);
+
+        $this->assertNotFalse($mulai, 'Kartu paket Maju tidak ditemukan di halaman harga.');
+
+        return substr($isi, $mulai, $akhir - $mulai);
     }
 
     public function test_harga_paket_mengikuti_billing_setting_bukan_angka_mati(): void
@@ -246,5 +264,62 @@ class HargaPageTest extends TestCase
             ->assertSee(route('landing').'#faq', false)
             ->assertSee(route('harga'), false)
             ->assertSee('Hak Cipta Dilindungi');
+    }
+
+    /**
+     * Paket Maju dinegosiasikan (kuotanya add-on per 100 santri), jadi kartunya
+     * tidak boleh menawarkan pendaftaran mandiri — CTA-nya membuka WhatsApp tim.
+     * Registrasi sengaja dibuka di sini: justru saat pintu daftar terbuka kartu
+     * ini paling mudah jatuh kembali ke tombol "Daftar Sekarang" milik cabang
+     * paket lain.
+     */
+    public function test_kartu_maju_mengarah_ke_whatsapp_bukan_pendaftaran(): void
+    {
+        $this->withoutVite();
+        PlatformSetting::set('registration_open', true);
+        PlatformBrandingSetting::set('wa_dukungan', '0812-3456-7890');
+
+        $kartu = $this->kartuMaju($this->get($this->hargaUrl())->assertOk()->getContent());
+
+        $this->assertStringContainsString('https://wa.me/6281234567890', $kartu);
+        $this->assertStringContainsString('Hubungi Kami', $kartu);
+        $this->assertStringNotContainsString('Daftar Sekarang', $kartu);
+        $this->assertStringNotContainsString(route('register'), $kartu);
+        $this->assertStringNotContainsString(route('demo'), $kartu);
+    }
+
+    /**
+     * Hanya `cs_whatsapp` yang punya nilai bawaan dari migrasi; `wa_dukungan`
+     * kosong di instalasi yang belum pernah membukanya. Tanpa cadangan itu kartu
+     * Maju kehilangan CTA-nya diam-diam di production.
+     */
+    public function test_kartu_maju_memakai_nomor_cs_saat_wa_dukungan_kosong(): void
+    {
+        $this->withoutVite();
+        PlatformSetting::set('registration_open', true);
+        PlatformBrandingSetting::set('wa_dukungan', null);
+        PlatformContactSetting::set('cs_whatsapp', '6289911223344');
+
+        $kartu = $this->kartuMaju($this->get($this->hargaUrl())->assertOk()->getContent());
+
+        $this->assertStringContainsString('https://wa.me/6289911223344', $kartu);
+    }
+
+    /**
+     * Saat kedua pintu tertutup, halaman menyatakan pesantren baru sedang tidak
+     * diterima. Tombol "Hubungi Kami" yang tetap berdiri di kartu Maju akan
+     * membantah pernyataan itu — jadi ia ikut padam, bukan bertahan sebagai satu-
+     * satunya CTA yang tersisa.
+     */
+    public function test_kartu_maju_tanpa_cta_saat_kedua_pintu_tertutup(): void
+    {
+        $this->withoutVite();
+        PlatformSetting::set('registration_open', false);
+        PlatformSetting::set('demo_open', false);
+        PlatformBrandingSetting::set('wa_dukungan', '081234567890');
+
+        $isi = $this->get($this->hargaUrl())->assertOk()->getContent();
+
+        $this->assertStringNotContainsString('https://wa.me/', $this->kartuMaju($isi));
     }
 }

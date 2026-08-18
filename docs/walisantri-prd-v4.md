@@ -4,7 +4,9 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Agustus 2026 — v4.51
+**Last Updated:** Agustus 2026 — v4.52
+
+**Changelog v4.52:** **CTA kartu paket Maju di `/harga` tidak lagi "Daftar Sekarang" — ia membuka percakapan WhatsApp dengan tim.** Kuota Maju dinegosiasikan lewat add-on per 100 santri (§1.6), jadi mengarahkan calon pelanggannya ke pendaftaran mandiri berarti menyuruh mereka memilih kuota yang justru perlu dibicarakan dulu. Sebelumnya tombol "Hubungi Kami" hanya muncul saat `demo_open` menyala dan mengarah ke `/demo`; begitu antrean demo ditutup, kartu Maju diam-diam jatuh ke cabang "Daftar Sekarang" milik paket lain. Nomornya **tidak di-hardcode**: `PlatformBrandingSetting::waDukungan()` (setelan "Kontak Dukungan" di halaman Merek & Kontak, v4.48) dengan `PlatformContactSetting::csWhatsapp()` sebagai cadangan — hanya yang kedua punya nilai bawaan dari migrasi, jadi tanpa cadangan itu instalasi yang belum pernah mengisi `wa_dukungan` kehilangan CTA-nya tanpa gejala. Teks pembuka chat diisi otomatis dengan nama paket, pola yang sama dengan tombol Bantuan di panel. ⚠️ **CTA-nya tetap tunduk pada gerbang `registration_open`/`demo_open`**: saat kedua pintu tertutup halaman menyatakan pesantren baru sedang tidak diterima, dan satu tombol "Hubungi Kami" yang bertahan di sana akan membantahnya. Dikunci tiga tes di `HargaPageTest`, semuanya mengiris HTML kartu Maju dulu — kata "Maju" dan tautan `/register` sama-sama muncul lagi di seksi add-on dan CTA penutup, jadi `assertSee` atas seluruh halaman tidak membuktikan apa pun tentang tombol ini.
 
 **Changelog v4.51:** **Form pendaftaran dipecah jadi dua langkah — Data Pesantren lalu Penanggung Jawab — dan akhirnya mengumpulkan lokasi serta nomor WhatsApp admin.** Sampai v4.50, `/register` hanya menanyakan enam hal (nama, subdomain, nama admin, email, sandi, konfirmasi), sehingga platform tidak tahu satu pun pesantrennya berada di mana. Kini langkah 1 menambah **provinsi → kota/kabupaten → kecamatan → desa/kelurahan** sebagai dropdown berjenjang berbasis data resmi Kemendagri, **alamat jalan** selebar penuh tepat di bawahnya, plus telepon dan email pesantren (keduanya opsional); langkah 2 memuat nama admin, email, **nomor WhatsApp**, dan sandi. Dua belas kolom dalam satu halaman lurus akan terbaca panjang dan menakutkan — karena itu wizard, bukan sekadar dua judul seksi.
 
@@ -603,7 +605,7 @@ Subdomain profil baru aktif otomatis tanpa sentuh DNS/config:
 
 | Host | Path | Pengguna |
 |---|---|---|
-| `walisantri.com` | `/` · `/harga` · `/register` · `/check-slug/{slug}` | Landing · **paket harga (v4.50 — satu-satunya tempat harga; landing tidak menyebut paket sama sekali)** · onboarding · API cek slug (JSON) |
+| `walisantri.com` | `/` · `/harga` · `/register` · `/check-slug/{slug}` | Landing · **paket harga (v4.50 — satu-satunya tempat harga; landing tidak menyebut paket sama sekali; CTA kartu Maju ke WhatsApp tim, bukan `/register`, v4.52)** · onboarding · API cek slug (JSON) |
 | `{slug}.walisantri.com` (+ custom domain) | `/` · `/kegiatan` · `/artikel` | Website profil publik (read-only, tanpa auth); `/kegiatan` & `/artikel` saat ini placeholder "Segera Hadir" |
 | `app.walisantri.com` | `/login` · `/admin` | Login tunggal · panel Filament (Super Admin, Admin Pesantren, Ustadz) — menu per role via `canAccess()` |
 | `app.walisantri.com` | `/wali/dashboard` · `/report/{uuid}` · `/admin/billing-page` | Portal wali · Magic Link read-only · billing (halaman Filament, bukan route `/billing`) |
