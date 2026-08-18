@@ -8,9 +8,14 @@ use App\Models\EmailSetting;
 use App\Models\Pesantren;
 use App\Models\PlatformSetting;
 use App\Models\User;
+use App\Models\Wilayah;
+use App\Rules\NomorWhatsApp;
 use App\Rules\SlugNotReserved;
 use App\Rules\ValidTenantSlug;
+use App\Rules\WilayahJalurValid;
+use App\Services\FonnteWhatsAppService;
 use App\Services\OnboardPesantren;
+use App\Support\WilayahLookup;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -48,10 +53,14 @@ class RegisterController extends Controller
         return view('auth.register', [
             'registrationOpen' => PlatformSetting::registrationOpen(),
             'demoOpen' => PlatformSetting::demoOpen(),
+            // Provinsi dirender server-side (38 baris, di-cache) supaya kolom pertama
+            // kaskade sudah terisi sebelum JS jalan — sekaligus membuat halaman tetap
+            // masuk akal saat JS mati.
+            'provinsi' => Wilayah::provinsi(),
         ]);
     }
 
-    public function store(Request $request, OnboardPesantren $onboard)
+    public function store(Request $request, OnboardPesantren $onboard, WilayahLookup $wilayah)
     {
         // Pendaftar yang datang dari demo harus benar-benar keluar dari sesi itu
         // sebelum tenant barunya dibuat — kalau tidak, ia mendaftar sambil masih
@@ -69,11 +78,37 @@ class RegisterController extends Controller
         abort_if(! PlatformSetting::registrationOpen(), 404);
 
         $data = $request->validate([
+            // --- Langkah 1: Data Pesantren ---
             'nama_pesantren' => ['required', 'string', 'max:100'],
             'slug' => ['required', 'string', new ValidTenantSlug, new SlugNotReserved, 'unique:pesantrens,slug'],
+            'wilayah_provinsi' => ['required', 'string', 'regex:/^\d{2}$/'],
+            'wilayah_kota' => ['required', 'string', 'regex:/^\d{2}\.\d{2}$/'],
+            'wilayah_kecamatan' => ['required', 'string', 'regex:/^\d{2}\.\d{2}\.\d{2}$/'],
+            // Satu-satunya kode yang benar-benar diadu ke database. Tiga kode di atasnya
+            // hanya dicocokkan dengan hasil turunannya — lihat WilayahJalurValid.
+            'wilayah_desa' => ['required', 'string', 'regex:/^\d{2}\.\d{2}\.\d{2}\.\d{4}$/', new WilayahJalurValid($wilayah)],
+            // Alamat jalan — melengkapi empat kolom wilayah, bukan menggantikannya.
+            // maxLength 500 disamakan dengan kolom Alamat di PesantrenSettingsPage.
+            'alamat_pesantren' => ['required', 'string', 'max:500'],
+            'telepon_pesantren' => ['nullable', 'string', 'max:20', 'regex:/^[0-9+\-\s()]{8,20}$/'],
+            'email_pesantren' => ['nullable', 'email', 'max:100'],
+
+            // --- Langkah 2: Penanggung Jawab ---
             'admin_name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email', 'unique:users,email'],
+            'admin_whatsapp' => ['required', 'string', 'max:20', new NomorWhatsApp],
             'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()],
+        ], [
+            'wilayah_provinsi.required' => 'Provinsi wajib dipilih.',
+            'wilayah_kota.required' => 'Kota/Kabupaten wajib dipilih.',
+            'wilayah_kecamatan.required' => 'Kecamatan wajib dipilih.',
+            'wilayah_desa.required' => 'Desa/Kelurahan wajib dipilih.',
+            'alamat_pesantren.required' => 'Alamat pesantren wajib diisi.',
+            'wilayah_provinsi.regex' => 'Provinsi tidak dikenali. Silakan pilih ulang.',
+            'wilayah_kota.regex' => 'Kota/Kabupaten tidak dikenali. Silakan pilih ulang.',
+            'wilayah_kecamatan.regex' => 'Kecamatan tidak dikenali. Silakan pilih ulang.',
+            'wilayah_desa.regex' => 'Desa/Kelurahan tidak dikenali. Silakan pilih ulang.',
+            'telepon_pesantren.regex' => 'Format nomor telepon pesantren tidak valid — gunakan angka saja.',
         ]);
 
         try {
@@ -83,6 +118,12 @@ class RegisterController extends Controller
                 adminName: $data['admin_name'],
                 adminEmail: $data['email'],
                 adminPassword: $data['password'],
+                // Disimpan ternormalisasi (62…), sama seperti jalur impor Excel. Sampai
+                // v4.51 kolom ini selalu kosong untuk pendaftar mandiri — dan itulah yang
+                // membuat WarnExpiringTenantsWhatsApp, CheckExpiredTenants, serta
+                // UpgradeOrderService diam-diam return lebih awal bagi mereka.
+                adminPhone: app(FonnteWhatsAppService::class)->normalizePhoneNumber($data['admin_whatsapp']),
+                profil: $this->rakitProfil($data, $wilayah),
             );
         } catch (QueryException $e) {
             Log::warning('register_onboard_failed', [
@@ -102,6 +143,46 @@ class RegisterController extends Controller
         // pernah terbaca di host panel (cookie ber-scope host, §1.8). Sesinya
         // dipindahkan lewat tautan sekali pakai — lihat SerahTerimaSesiController.
         return redirect()->away(SerahTerimaSesiController::untuk($result['admin']));
+    }
+
+    /**
+     * Rakit blob `pesantrens.profil` awal dari kolom langkah 1.
+     *
+     * Nama wilayah ikut disimpan (didenormalisasi) supaya profil publik, ekspor, dan
+     * email tidak pernah butuh join; kodenya disimpan supaya nilainya tetap
+     * machine-usable — prefill Select di Pengaturan, dan agregasi sebaran pesantren.
+     *
+     * `alamat` diisi dari kolomnya sendiri, TIDAK pernah dirangkai dari wilayah.
+     * Merangkainya berarti mengarang data yang akan ditimpa begitu admin mengisi alamat
+     * sungguhan — dan `alamat` adalah penanda "profil sudah diisi manusia" bagi
+     * checklist onboarding (§14), jadi nilainya harus benar-benar berasal dari manusia.
+     *
+     * Langkah onboarding Profil tetap belum selesai setelah pendaftaran: ia menuntut
+     * `alamat` DAN `logo`, dan logo memang belum bisa diunggah dari /register.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function rakitProfil(array $data, WilayahLookup $wilayah): array
+    {
+        // Sudah dimemo WilayahJalurValid pada request yang sama — tidak ada query kedua.
+        $profil = [
+            'wilayah' => $wilayah->jalurDariDesa($data['wilayah_desa']),
+            'alamat' => $data['alamat_pesantren'],
+        ];
+
+        if (filled($data['telepon_pesantren'] ?? null)) {
+            $profil['telepon'] = $data['telepon_pesantren'];
+        }
+
+        // Key `email_kontak`, bukan `email_pesantren`: itulah key yang sudah dirender
+        // resources/views/public/profile.blade.php sejak lama namun tidak pernah ditulis
+        // siapa pun.
+        if (filled($data['email_pesantren'] ?? null)) {
+            $profil['email_kontak'] = $data['email_pesantren'];
+        }
+
+        return $profil;
     }
 
     private function redirectAuthenticated()

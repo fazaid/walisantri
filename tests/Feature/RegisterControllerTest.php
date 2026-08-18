@@ -8,11 +8,12 @@ use App\Models\PlatformSetting;
 use App\Models\User;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\MenyemaiWilayah;
 use Tests\TestCase;
 
 class RegisterControllerTest extends TestCase
 {
-    use RefreshDatabase;
+    use MenyemaiWilayah, RefreshDatabase;
 
     protected function setUp(): void
     {
@@ -20,6 +21,10 @@ class RegisterControllerTest extends TestCase
 
         // .env.testing menutup registrasi secara default; buka khusus untuk suite ini.
         PlatformSetting::set('registration_open', true);
+
+        // Wajib: tabel wilayah kosong setelah migrate:fresh, dan /register menolak
+        // kode desa yang tidak ada di sana.
+        $this->semaiWilayahContoh();
     }
 
     private function registerUrl(): string
@@ -155,9 +160,11 @@ class RegisterControllerTest extends TestCase
                 'slug' => 'al-hidayah-baru',
                 'admin_name' => 'Admin Baru',
                 'email' => 'admin-baru@example.com',
+                'alamat_pesantren' => 'Jl. Raya Contoh No. 12, RT 03/RW 05',
+                'admin_whatsapp' => '081234567890',
                 'password' => 'Password123',
                 'password_confirmation' => 'Password123',
-            ])
+            ] + $this->dataWilayahValid())
             ->assertRedirect();
 
         $this->assertDatabaseHas('pesantrens', ['slug' => 'al-hidayah-baru']);
@@ -175,9 +182,11 @@ class RegisterControllerTest extends TestCase
             'slug' => 'al-hidayah-kedua',
             'admin_name' => 'Admin Kedua',
             'email' => 'admin-kedua@example.com',
+            'alamat_pesantren' => 'Jl. Raya Contoh No. 12, RT 03/RW 05',
+            'admin_whatsapp' => '081234567891',
             'password' => 'Password123',
             'password_confirmation' => 'Password123',
-        ])->headers->get('Location');
+        ] + $this->dataWilayahValid())->headers->get('Location');
 
         // Janji "akun aktif seketika" diuji sampai tuntas: ikuti tautannya, lalu
         // panel benar-benar terbuka sebagai admin yang baru dibuat.

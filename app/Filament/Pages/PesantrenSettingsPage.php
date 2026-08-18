@@ -3,12 +3,15 @@
 namespace App\Filament\Pages;
 
 use App\Enums\NavigationGroup;
+use App\Models\Wilayah;
 use App\Rules\SlugNotReserved;
 use App\Rules\ValidTenantSlug;
+use App\Support\WilayahLookup;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -20,6 +23,7 @@ use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\Form;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Auth;
@@ -57,6 +61,18 @@ class PesantrenSettingsPage extends Page implements HasForms
 
     public string $telepon = '';
 
+    public string $email_kontak = '';
+
+    // Kolom wilayah menyimpan KODE Kemendagri; namanya diambil ulang dari tabel saat
+    // simpan, supaya nama yang tersimpan di profil tidak pernah basi terhadap tabelnya.
+    public ?string $wilayah_provinsi = null;
+
+    public ?string $wilayah_kota = null;
+
+    public ?string $wilayah_kecamatan = null;
+
+    public ?string $wilayah_desa = null;
+
     public string $deskripsi = '';
 
     public array $rekening = [];
@@ -85,6 +101,11 @@ class PesantrenSettingsPage extends Page implements HasForms
             'pesantren_slug' => $pesantren->slug,
             'alamat' => $pesantren->profil['alamat'] ?? '',
             'telepon' => $pesantren->profil['telepon'] ?? '',
+            'email_kontak' => $pesantren->profil['email_kontak'] ?? '',
+            'wilayah_provinsi' => $pesantren->profil['wilayah']['provinsi']['kode'] ?? null,
+            'wilayah_kota' => $pesantren->profil['wilayah']['kota']['kode'] ?? null,
+            'wilayah_kecamatan' => $pesantren->profil['wilayah']['kecamatan']['kode'] ?? null,
+            'wilayah_desa' => $pesantren->profil['wilayah']['desa']['kode'] ?? null,
             'deskripsi' => $pesantren->profil['deskripsi'] ?? '',
             'rekening' => $pesantren->profil['rekening'] ?? [],
             'program' => $pesantren->profil['program'] ?? [],
@@ -162,8 +183,60 @@ class PesantrenSettingsPage extends Page implements HasForms
                             ->tel()
                             ->maxLength(20),
 
+                        TextInput::make('email_kontak')
+                            ->label('Email Pesantren')
+                            ->email()
+                            ->maxLength(100),
+
+                        // Kaskade wilayah (§3.1). Tanpa kolom ini, salah pilih saat
+                        // mendaftar bersifat permanen — tidak ada permukaan lain yang
+                        // bisa mengubah profil['wilayah'].
+                        //
+                        // Opsi terbesar adalah daftar desa satu kecamatan (≤ 100 baris),
+                        // jadi ->options() biasa + searchable sudah cukup; tabelnya boleh
+                        // 91 ribu baris tanpa perlu getSearchResultsUsing().
+                        Select::make('wilayah_provinsi')
+                            ->label('Provinsi')
+                            ->options(fn () => Wilayah::provinsi()->pluck('nama', 'kode'))
+                            ->searchable()
+                            ->live()
+                            ->afterStateUpdated(function (Set $set) {
+                                $set('wilayah_kota', null);
+                                $set('wilayah_kecamatan', null);
+                                $set('wilayah_desa', null);
+                            }),
+
+                        Select::make('wilayah_kota')
+                            ->label('Kota/Kabupaten')
+                            ->options(fn (Get $get) => Wilayah::anak($get('wilayah_provinsi'))->pluck('nama', 'kode'))
+                            ->disabled(fn (Get $get) => blank($get('wilayah_provinsi')))
+                            ->placeholder('Pilih provinsi dulu')
+                            ->searchable()
+                            ->live()
+                            ->afterStateUpdated(function (Set $set) {
+                                $set('wilayah_kecamatan', null);
+                                $set('wilayah_desa', null);
+                            }),
+
+                        Select::make('wilayah_kecamatan')
+                            ->label('Kecamatan')
+                            ->options(fn (Get $get) => Wilayah::anak($get('wilayah_kota'))->pluck('nama', 'kode'))
+                            ->disabled(fn (Get $get) => blank($get('wilayah_kota')))
+                            ->placeholder('Pilih kota/kabupaten dulu')
+                            ->searchable()
+                            ->live()
+                            ->afterStateUpdated(fn (Set $set) => $set('wilayah_desa', null)),
+
+                        Select::make('wilayah_desa')
+                            ->label('Desa/Kelurahan')
+                            ->options(fn (Get $get) => Wilayah::anak($get('wilayah_kecamatan'))->pluck('nama', 'kode'))
+                            ->disabled(fn (Get $get) => blank($get('wilayah_kecamatan')))
+                            ->placeholder('Pilih kecamatan dulu')
+                            ->searchable(),
+
                         TextInput::make('alamat')
                             ->label('Alamat')
+                            ->helperText('Nama jalan, RT/RW, dan patokan. Wilayah administratif sudah diisi lewat kolom di atas.')
                             ->maxLength(500),
 
                         Textarea::make('deskripsi')
@@ -277,6 +350,7 @@ class PesantrenSettingsPage extends Page implements HasForms
             'profil' => array_merge($oldProfil, [
                 'alamat' => $data['alamat'],
                 'telepon' => $data['telepon'],
+                'email_kontak' => $data['email_kontak'],
                 'deskripsi' => $data['deskripsi'],
                 'rekening' => $data['rekening'] ?? [],
                 'program' => $data['program'] ?? [],
@@ -284,12 +358,36 @@ class PesantrenSettingsPage extends Page implements HasForms
                 'akreditasi' => $data['akreditasi'],
                 'logo' => $data['logo'],
                 'galeri' => $data['galeri'] ?? [],
-            ]),
+            ], $this->wilayahTersimpan($data)),
         ]);
 
         Notification::make()
             ->title('Pengaturan berhasil disimpan.')
             ->success()
             ->send();
+    }
+
+    /**
+     * Rakit ulang key `wilayah` dari kode desa yang dipilih.
+     *
+     * Sengaja mengabaikan tiga kode di atasnya: leluhurnya diturunkan dari kode desa
+     * itu sendiri (WilayahLookup), aturan yang sama dengan /register — sehingga
+     * kombinasi tidak konsisten mustahil tersimpan dari permukaan mana pun.
+     *
+     * Mengembalikan array kosong bila desa belum dipilih, supaya array_merge
+     * membiarkan nilai lama apa adanya alih-alih menimpanya dengan null.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function wilayahTersimpan(array $data): array
+    {
+        if (blank($data['wilayah_desa'] ?? null)) {
+            return [];
+        }
+
+        $jalur = app(WilayahLookup::class)->jalurDariDesa($data['wilayah_desa']);
+
+        return $jalur === null ? [] : ['wilayah' => $jalur];
     }
 }

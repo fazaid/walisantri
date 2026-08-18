@@ -12,8 +12,11 @@
         @endif
         <div>
             <h1 class="text-2xl font-bold">{{ $pesantren->nama_pesantren }}</h1>
-            @if($pesantren->profil['alamat'] ?? null)
-                <p class="text-teal-200 text-sm mt-1">📍 {{ $pesantren->profil['alamat'] }}</p>
+            {{-- Alamat jalan + wilayah digabung: sejak v4.51 keduanya kolom terpisah,
+                 dan alamat sendirian tidak lagi memuat kota maupun provinsi (§4.1). --}}
+            @php($lokasi = $pesantren->alamatLengkap())
+            @if($lokasi)
+                <p class="text-teal-200 text-sm mt-1">📍 {{ $lokasi }}</p>
             @endif
         </div>
     </div>

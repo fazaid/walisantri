@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PlatformBrandingSetting;
+use App\Models\PlatformContactSetting;
 use App\Models\PlatformSetting;
 use App\Services\PaketHargaService;
 
@@ -25,6 +27,12 @@ class HargaController extends Controller
             // bukan halaman ini: kalau relatif ia menggantung di sini dan tidak
             // membawa pembaca ke mana pun.
             'anchorBase' => route('landing'),
+            // Paket Maju tidak didaftar sendiri — CTA-nya membuka WhatsApp tim.
+            // Sumber utamanya setelan "Kontak Dukungan" (Merek & Kontak), dengan
+            // nomor CS sebagai cadangan: hanya yang kedua punya nilai bawaan dari
+            // migrasi, jadi tanpa cadangan itu kartu Maju kehilangan CTA-nya di
+            // instalasi yang belum pernah mengisi wa_dukungan.
+            'waDukungan' => PlatformBrandingSetting::waDukungan() ?? PlatformContactSetting::csWhatsapp(),
             'paketList' => $this->harga->kartu(),
             'addOn' => $this->harga->addOnMaju(),
             ...$this->harga->konteksSiklus(),

@@ -25,6 +25,7 @@ use App\Http\Controllers\Wali\ReportController;
 use App\Http\Controllers\Wali\SppController;
 use App\Http\Controllers\Wali\TahfidzStatsController;
 use App\Http\Controllers\Wali\UangSakuController;
+use App\Http\Controllers\WilayahController;
 use App\Models\Order;
 use App\Models\Santri;
 use App\Support\SandboxDemo;
@@ -63,6 +64,17 @@ Route::domain($baseDomain)->group(function () use ($sameDomain) {
     Route::get('/check-slug/{slug}', SlugCheckController::class)
         ->middleware('throttle:check-slug')
         ->name('check-slug');
+
+    // Dropdown wilayah berjenjang di halaman register (§4.1). Serumah dengan
+    // check-slug: /register hidup di apex, dan JS-nya memanggil path relatif.
+    //
+    // Regex-nya sekaligus pagar kedalaman: induk yang sah hanya provinsi (2 digit),
+    // kab/kota (5), atau kecamatan (8). Kode desa (13) tidak punya anak, jadi
+    // ditolak 404 oleh router sebelum menyentuh database.
+    Route::get('/wilayah/{parent?}', WilayahController::class)
+        ->where('parent', '[0-9]{2}(\.[0-9]{2}){0,2}')
+        ->middleware('throttle:wilayah')
+        ->name('wilayah');
 
     Route::get('/register', [RegisterController::class, 'showForm'])->name('register');
     Route::post('/register', [RegisterController::class, 'store'])->name('register.submit')->middleware('throttle:register');

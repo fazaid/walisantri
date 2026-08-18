@@ -139,11 +139,28 @@
                         @endforeach
                     </ul>
 
-                    @if($paket['hubungiKami'] && $demoOpen)
+                    {{--
+                        Paket Maju tidak punya tombol daftar: kuotanya dinegosiasikan
+                        (add-on per 100 santri), jadi CTA-nya membuka percakapan WhatsApp
+                        dengan tim, bukan /register maupun /demo. Tetap ikut gerbang
+                        pendaftaran/demo — saat kedua pintu tertutup halaman ini menyatakan
+                        pesantren baru sedang tidak diterima, dan tombol "Hubungi Kami"
+                        yang tersisa akan membantahnya.
+                    --}}
+                    @if($paket['hubungiKami'] && $waDukungan && ($registrationOpen || $demoOpen))
+                        <a href="https://wa.me/{{ $waDukungan }}?text={{ rawurlencode('Halo tim Walisantri, saya ingin bertanya tentang paket '.$paket['nama'].' untuk pesantren kami.') }}"
+                           target="_blank"
+                           rel="noopener"
+                           class="mt-auto block text-center border border-teal-200 text-teal-700 font-semibold px-4 py-2.5 rounded-xl text-sm hover:bg-teal-50 transition-colors">
+                            Hubungi Kami
+                        </a>
+                    @elseif($paket['hubungiKami'] && $demoOpen)
                         <a href="{{ route('demo') }}"
                            class="mt-auto block text-center border border-teal-200 text-teal-700 font-semibold px-4 py-2.5 rounded-xl text-sm hover:bg-teal-50 transition-colors">
                             Hubungi Kami
                         </a>
+                    @elseif($paket['hubungiKami'])
+                        {{-- Nomor WA belum diatur dan demo ditutup: tanpa CTA, bukan tombol daftar. --}}
                     @elseif($registrationOpen)
                         <a href="{{ route('register') }}"
                            class="mt-auto block text-center font-semibold px-4 py-2.5 rounded-xl text-sm transition-colors
