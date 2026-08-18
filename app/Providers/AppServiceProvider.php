@@ -102,6 +102,13 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('register', fn ($request) => Limit::perHour(5)->by($request->ip())
         );
 
+        // Dropdown wilayah berjenjang di /register (§4.1). Satu kaskade lengkap =
+        // 3 permintaan (kab/kota → kecamatan → desa), dan pendaftar wajar berganti
+        // pilihan beberapa kali. 60/menit longgar untuk manusia, tetap menutup
+        // penyedotan 91 ribu baris lewat penyisiran kode.
+        RateLimiter::for('wilayah', fn ($request) => Limit::perMinute(60)->by($request->ip())->response(fn () => response()->json([], 429))
+        );
+
         RateLimiter::for('demo', fn ($request) => Limit::perHour(5)->by($request->ip())
         );
 

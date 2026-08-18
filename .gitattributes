@@ -9,3 +9,7 @@
 /.github export-ignore
 CHANGELOG.md export-ignore
 .styleci.yml export-ignore
+
+# Dataset wilayah Kemendagri: biner terkompresi, diganti wholesale saat regenerasi
+# — diff per-baris tidak bernilai apa pun di sini.
+database/data/*.csv.gz binary

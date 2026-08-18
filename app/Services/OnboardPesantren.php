@@ -13,7 +13,7 @@ class OnboardPesantren
 {
     /**
      * Jalankan seluruh alur registrasi pesantren baru (PRD §4.1):
-     * 1. Buat baris pesantrens
+     * 1. Buat baris pesantrens (termasuk profil awal: wilayah + kontak dari form)
      * 2. Buat baris tenant_domains (subdomain otomatis)
      * 3. Buat user pertama role admin_pesantren
      * 4. Aktifkan trial (durasi dari BillingSetting::trial_days)
@@ -27,9 +27,14 @@ class OnboardPesantren
         string $adminEmail,
         string $adminPassword,
         ?string $adminPhone = null,
+        // Blob profil awal (§3.1): wilayah 4 level + telepon/email pesantren, dirakit
+        // pemanggil. Satu parameter array, bukan enam skalar — bentuknya memang sudah
+        // dimiliki bersama PesantrenSettingsPage, jadi menambah key baru kelak tidak
+        // lagi mengubah tanda tangan ini. null untuk jalur non-registrasi.
+        ?array $profil = null,
     ): array {
         return DB::transaction(function () use (
-            $namaPesantren, $slug, $adminName, $adminEmail, $adminPassword, $adminPhone
+            $namaPesantren, $slug, $adminName, $adminEmail, $adminPassword, $adminPhone, $profil
         ) {
             $pesantren = Pesantren::create([
                 'nama_pesantren' => $namaPesantren,
@@ -40,6 +45,7 @@ class OnboardPesantren
                 'expired_at' => now()->addDays(BillingSetting::get('trial_days', 14)),
                 'santri_count_cache' => 0,
                 'onboarding_completed_steps' => [],
+                'profil' => $profil,
             ]);
 
             // Subdomain + amalan bawaan. Dipisah ke ProvisionTenant supaya jalur

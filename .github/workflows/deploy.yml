@@ -98,6 +98,14 @@ jobs:
             npm run build
             bash scripts/backup.sh --db-only --no-offsite --tag pre-deploy || echo "WARN: dump pra-deploy gagal/tidak ada, lanjut deploy"
             php artisan migrate --force
+
+            # Data referensi wilayah Kemendagri (§3.1). Idempoten: pada deploy normal
+            # ia hanya membandingkan COUNT dengan header berkas lalu keluar (~50 ms).
+            # SENGAJA tanpa "|| true" — beda dari langkah backup dan sandbox di sekitarnya:
+            # /register mustahil dilalui bila tabel ini kosong, jadi kegagalannya harus
+            # menghentikan deploy. trap EXIT di atas tetap mengembalikan situs online.
+            php artisan wilayah:impor
+
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache

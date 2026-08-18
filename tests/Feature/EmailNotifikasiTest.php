@@ -15,6 +15,7 @@ use App\Services\InvoicePdf;
 use App\Services\UpgradeOrderService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
+use Tests\Concerns\MenyemaiWilayah;
 use Tests\TestCase;
 
 /**
@@ -28,7 +29,7 @@ use Tests\TestCase;
  */
 class EmailNotifikasiTest extends TestCase
 {
-    use RefreshDatabase;
+    use MenyemaiWilayah, RefreshDatabase;
 
     protected function setUp(): void
     {
@@ -37,6 +38,10 @@ class EmailNotifikasiTest extends TestCase
         // .env.testing menutup registrasi secara default; tes pendaftaran di repo
         // ini memang menyalakannya eksplisit (lihat RegisterControllerTest).
         PlatformSetting::set('registration_open', true);
+
+        // Wajib: tabel wilayah kosong setelah migrate:fresh, dan /register menolak
+        // kode desa yang tidak ada di sana.
+        $this->semaiWilayahContoh();
     }
 
     private function makePesantren(array $override = []): Pesantren
@@ -100,9 +105,11 @@ class EmailNotifikasiTest extends TestCase
             'slug' => 'pesantren-sambutan',
             'admin_name' => 'Admin Sambutan',
             'email' => 'admin.sambutan@contoh.test',
+            'alamat_pesantren' => 'Jl. Raya Contoh No. 12, RT 03/RW 05',
+            'admin_whatsapp' => '081234567890',
             'password' => 'Rahasia123',
             'password_confirmation' => 'Rahasia123',
-        ]);
+        ] + $this->dataWilayahValid());
 
         Mail::assertQueued(
             SambutanPendaftaran::class,
@@ -120,9 +127,11 @@ class EmailNotifikasiTest extends TestCase
             'slug' => 'pesantren-senyap',
             'admin_name' => 'Admin Senyap',
             'email' => 'admin.senyap@contoh.test',
+            'alamat_pesantren' => 'Jl. Raya Contoh No. 12, RT 03/RW 05',
+            'admin_whatsapp' => '081234567890',
             'password' => 'Rahasia123',
             'password_confirmation' => 'Rahasia123',
-        ]);
+        ] + $this->dataWilayahValid());
 
         Mail::assertNotQueued(SambutanPendaftaran::class);
     }

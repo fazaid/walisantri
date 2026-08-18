@@ -27,7 +27,9 @@
         @endif
 
         {{-- Kontak --}}
-        @if(($pesantren->profil['telepon'] ?? null) || ($pesantren->profil['website'] ?? null))
+        {{-- email_kontak wajib ikut diperiksa: sejak /register mengisinya (v4.51), pesantren
+             yang HANYA punya email akan kehilangan seluruh seksi Kontak tanpa kondisi ini. --}}
+        @if(($pesantren->profil['telepon'] ?? null) || ($pesantren->profil['email_kontak'] ?? null) || ($pesantren->profil['website'] ?? null))
             <section class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                 <h2 class="font-semibold text-gray-900 mb-3">Kontak</h2>
                 <div class="space-y-2 text-sm text-gray-600">

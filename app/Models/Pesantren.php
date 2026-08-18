@@ -164,6 +164,46 @@ class Pesantren extends Model
         return true;
     }
 
+    /**
+     * Lokasi lengkap untuk ditampilkan: alamat jalan + wilayah administratif.
+     *
+     * Keduanya digabung, bukan salah satu, karena sejak v4.51 `/register` memisahkan
+     * keduanya — `alamat` berisi jalan/RT-RW saja, dan menampilkannya sendirian akan
+     * menghilangkan kota serta provinsi dari profil publik.
+     *
+     * Tenant lama (dan yang dibuat super admin) tidak punya `wilayah`, jadi mereka
+     * tetap menampilkan alamat panjangnya apa adanya tanpa duplikasi.
+     */
+    public function alamatLengkap(): ?string
+    {
+        $bagian = array_filter([
+            $this->profil['alamat'] ?? null,
+            $this->alamatWilayah(),
+        ]);
+
+        return $bagian === [] ? null : implode(', ', $bagian);
+    }
+
+    /**
+     * Wilayah administratif dari kolom yang diisi saat pendaftaran (§4.1), dirangkai
+     * untuk dibaca manusia: "Desa, Kec. X, Kabupaten Y, Provinsi Z".
+     */
+    public function alamatWilayah(): ?string
+    {
+        $wilayah = $this->profil['wilayah'] ?? null;
+
+        if (blank($wilayah['desa']['nama'] ?? null)) {
+            return null;
+        }
+
+        return implode(', ', array_filter([
+            $wilayah['desa']['nama'],
+            filled($wilayah['kecamatan']['nama'] ?? null) ? 'Kec. '.$wilayah['kecamatan']['nama'] : null,
+            $wilayah['kota']['nama'] ?? null,
+            $wilayah['provinsi']['nama'] ?? null,
+        ]));
+    }
+
     public function getLogoUrlAttribute(): ?string
     {
         $path = $this->profil['logo'] ?? null;

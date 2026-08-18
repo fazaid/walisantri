@@ -7,6 +7,7 @@ use App\Models\Pesantren;
 use App\Models\PlatformSetting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\MenyemaiWilayah;
 use Tests\TestCase;
 
 /**
@@ -20,7 +21,16 @@ use Tests\TestCase;
  */
 class SerahTerimaSesiTest extends TestCase
 {
-    use RefreshDatabase;
+    use MenyemaiWilayah, RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Wajib: tabel wilayah kosong setelah migrate:fresh, dan /register menolak
+        // kode desa yang tidak ada di sana.
+        $this->semaiWilayahContoh();
+    }
 
     private function dataPendaftaran(string $slug): array
     {
@@ -29,9 +39,11 @@ class SerahTerimaSesiTest extends TestCase
             'slug' => $slug,
             'admin_name' => 'Admin Uji',
             'email' => $slug.'@contoh.test',
+            'alamat_pesantren' => 'Jl. Raya Contoh No. 12, RT 03/RW 05',
+            'admin_whatsapp' => '081234567890',
             'password' => 'Rahasia123',
             'password_confirmation' => 'Rahasia123',
-        ];
+        ] + $this->dataWilayahValid();
     }
 
     public function test_pendaftaran_mengantar_lewat_tautan_serah_terima_bukan_sesi_apex(): void
