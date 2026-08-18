@@ -46,6 +46,15 @@ class UpgradePage extends Page implements HasForms
 
     public int $max_santri_kuota_target = 1000;
 
+    // Kuota yang benar-benar akan diterima kalau order ini dibayar — selalu hasil
+    // kalkulator, bukan isi kolom mentah (paket tetap mengabaikan angka ketikan,
+    // dan Maju membulatkannya ke kelipatan 100).
+    public int $kuota_target_efektif = 0;
+
+    // Diambil sekali saat mount: pembanding untuk menolak paket yang kuotanya di
+    // bawah jumlah santri yang sudah terlanjur masuk.
+    public int $santri_aktif = 0;
+
     public string $kode_kupon = '';
 
     // Computed once in mount — minimum durasi berdasarkan sisa masa aktif
@@ -83,6 +92,7 @@ class UpgradePage extends Page implements HasForms
 
         $this->paket_target = $pesantren->paket_langganan ?? 'rintisan';
         $this->max_santri_kuota_target = $pesantren->max_santri_kuota ?? 1000;
+        $this->santri_aktif = $pesantren->jumlahSantriAktif();
         $this->min_durasi_upgrade = $this->hitungMinDurasi($pesantren);
         $this->durasi_bulan = max($this->durasi_bulan, $this->min_durasi_upgrade);
 
@@ -139,6 +149,7 @@ class UpgradePage extends Page implements HasForms
                         ->required()
                         ->native(false)
                         ->live()
+                        ->helperText(fn () => $this->kuotaKurang() ? $this->pesanKuotaKurang() : null)
                         ->afterStateUpdated(function (?string $state) {
                             $this->paket_target = $state ?? '';
                             $calculator = app(BillingCalculatorService::class);
@@ -241,7 +252,29 @@ class UpgradePage extends Page implements HasForms
             ->color('primary')
             ->size(Size::Large)
             ->extraAttributes(['style' => 'width: 100%; justify-content: center;'])
+            ->disabled(fn () => $this->kuotaKurang())
             ->action('prosesPembayaran');
+    }
+
+    /**
+     * Paket tujuan tidak boleh berkuota di bawah santri yang sudah aktif.
+     *
+     * SantriObserver hanya bisa menahan PENAMBAHAN santri (SantriQuotaExceededException);
+     * tidak ada mekanisme apa pun yang membereskan kelebihan yang terlanjur ada. Jadi
+     * pagarnya dipasang di sini — sebelum ordernya lahir — bukan sesudah pembayaran
+     * dikonfirmasi dan tenant menemukan dirinya 300 santri di kuota 100.
+     */
+    public function kuotaKurang(): bool
+    {
+        return $this->kuota_target_efektif > 0
+            && $this->kuota_target_efektif < $this->santri_aktif;
+    }
+
+    public function pesanKuotaKurang(): string
+    {
+        return 'Pesantren Anda punya '.number_format($this->santri_aktif, 0, ',', '.')
+            .' santri aktif, melebihi kuota '.number_format($this->kuota_target_efektif, 0, ',', '.')
+            .' pada paket ini. Pilih paket yang kuotanya cukup, atau nonaktifkan santri yang sudah tidak mondok.';
     }
 
     public function hitungHarga(): void
@@ -250,6 +283,7 @@ class UpgradePage extends Page implements HasForms
         $hasil = $calculator->hitungUntukTarget($this->paket_target, $this->max_santri_kuota_target);
 
         $durasi = DurasiLangganan::from($this->durasi_bulan);
+        $this->kuota_target_efektif = $hasil['kuota_maksimal'];
         $this->harga_per_bulan = $hasil['total_biaya'];
         $this->bonus_bulan = $durasi->bonusBulan();
         $this->bulan_bayar = $durasi->bulanBayar();
@@ -292,6 +326,19 @@ class UpgradePage extends Page implements HasForms
     public function prosesPembayaran(): void
     {
         $this->form->getState();
+
+        // Tombolnya memang sudah dimatikan, tapi aksi Livewire tetap bisa dipanggil
+        // langsung. Notification, bukan abort(): ini kesalahan pilihan pengguna yang
+        // masih bisa diperbaiki di halaman yang sama, bukan permintaan yang cacat.
+        if ($this->kuotaKurang()) {
+            Notification::make()
+                ->title('Kuota paket tidak cukup')
+                ->body($this->pesanKuotaKurang())
+                ->danger()
+                ->send();
+
+            return;
+        }
 
         abort_if(
             $this->durasi_bulan < $this->min_durasi_upgrade,

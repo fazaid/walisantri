@@ -2,12 +2,14 @@
 
 namespace App\Services;
 
+use App\Enums\PaketLangganan;
 use App\Models\ActivityLog;
 use App\Models\BillingSetting;
 use App\Models\Pesantren;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use InvalidArgumentException;
 
 class OnboardPesantren
 {
@@ -16,7 +18,8 @@ class OnboardPesantren
      * 1. Buat baris pesantrens (termasuk profil awal: wilayah + kontak dari form)
      * 2. Buat baris tenant_domains (subdomain otomatis)
      * 3. Buat user pertama role admin_pesantren
-     * 4. Aktifkan trial (durasi dari BillingSetting::trial_days)
+     * 4. Aktifkan trial pada paket yang dipilih pendaftar (durasi dari
+     *    BillingSetting::trial_days, kuota dari BillingCalculatorService)
      * 5. Isikan amalan bawaan supaya modul Mutaba'ah langsung bisa dipakai
      * 6. Catat audit log
      */
@@ -32,15 +35,33 @@ class OnboardPesantren
         // dimiliki bersama PesantrenSettingsPage, jadi menambah key baru kelak tidak
         // lagi mengubah tanda tangan ini. null untuk jalur non-registrasi.
         ?array $profil = null,
+        // Paket yang di-trial. Sampai v4.52 selalu Rintisan — pesantren 300 santri
+        // mencoba produk di kuota 100 dan menabrak SantriQuotaExceededException
+        // sebelum sempat merasakan nilainya. Parameter terakhir dan bernilai bawaan
+        // supaya jalur non-registrasi tidak perlu tahu apa-apa soal ini.
+        PaketLangganan $paket = PaketLangganan::Rintisan,
     ): array {
+        // Pagar terakhir, bukan pengganti validasi form: kuota paket Maju adalah
+        // angka hasil negosiasi (add-on per 100 santri) yang service ini tidak punya,
+        // jadi ia tidak boleh bisa lahir dari jalur pendaftaran mandiri sama sekali.
+        if (! $paket->bisaDipilihSendiri()) {
+            throw new InvalidArgumentException("Paket {$paket->value} tidak bisa didaftarkan mandiri.");
+        }
+
+        // Kuota lewat kalkulator, bukan PaketLangganan::maxSantri(): angka di enum itu
+        // hardcode dan akan menyimpang begitu super admin menggeser kuota di
+        // BillingSettingsPage — halaman /harga sudah membaca sumber yang sama.
+        $kuota = app(BillingCalculatorService::class)
+            ->hitungUntukTarget($paket->value, 0)['kuota_maksimal'];
+
         return DB::transaction(function () use (
-            $namaPesantren, $slug, $adminName, $adminEmail, $adminPassword, $adminPhone, $profil
+            $namaPesantren, $slug, $adminName, $adminEmail, $adminPassword, $adminPhone, $profil, $paket, $kuota
         ) {
             $pesantren = Pesantren::create([
                 'nama_pesantren' => $namaPesantren,
                 'slug' => $slug,
-                'paket_langganan' => 'rintisan',
-                'max_santri_kuota' => BillingSetting::get('kuota_rintisan', 100),
+                'paket_langganan' => $paket->value,
+                'max_santri_kuota' => $kuota,
                 'status_berlangganan' => 'trial',
                 'expired_at' => now()->addDays(BillingSetting::get('trial_days', 14)),
                 'santri_count_cache' => 0,
@@ -68,7 +89,7 @@ class OnboardPesantren
                 'event' => 'pesantren.created',
                 'auditable_type' => Pesantren::class,
                 'auditable_id' => $pesantren->id,
-                'new_values' => ['nama' => $namaPesantren, 'slug' => $slug],
+                'new_values' => ['nama' => $namaPesantren, 'slug' => $slug, 'paket' => $paket->value],
             ]);
 
             return ['pesantren' => $pesantren, 'admin' => $admin];

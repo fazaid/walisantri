@@ -267,6 +267,28 @@ class HargaPageTest extends TestCase
     }
 
     /**
+     * CTA tiap kartu membawa paketnya ke /register (v4.53) — tanpa ini pendaftar
+     * memilih paket dua kali, dan pilihan di halaman ini tidak berarti apa-apa.
+     * Nilainya tetap divalidasi ulang di server; yang dijaga di sini hanya bahwa
+     * tautannya tidak kembali jadi /register polos.
+     */
+    public function test_cta_tiap_kartu_membawa_paketnya_ke_form_pendaftaran(): void
+    {
+        $this->withoutVite();
+        PlatformSetting::set('registration_open', true);
+
+        $isi = $this->get($this->hargaUrl())->assertOk()->getContent();
+
+        foreach (['rintisan', 'tumbuh', 'berkembang'] as $paket) {
+            $this->assertStringContainsString(
+                route('register', ['paket' => $paket]),
+                $isi,
+                "CTA kartu {$paket} tidak membawa paketnya ke /register."
+            );
+        }
+    }
+
+    /**
      * Paket Maju dinegosiasikan (kuotanya add-on per 100 santri), jadi kartunya
      * tidak boleh menawarkan pendaftaran mandiri — CTA-nya membuka WhatsApp tim.
      * Registrasi sengaja dibuka di sini: justru saat pintu daftar terbuka kartu

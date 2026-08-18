@@ -173,6 +173,16 @@
                 Setelah klik tombol di bawah, Anda akan mendapat nomor invoice dan instruksi transfer bank.
             </div>
 
+            {{-- Kuota paket tujuan di bawah santri yang sudah aktif: ordernya diblokir,
+                 bukan sekadar diperingatkan — tidak ada mekanisme yang membereskan
+                 kelebihan kuota setelah pembayaran dikonfirmasi (lihat UpgradePage::kuotaKurang). --}}
+            @if($this->kuotaKurang())
+            <div style="margin-top: 0.75rem; padding: 0.875rem 1rem; background: var(--us-danger-bg); border: 1px solid var(--us-danger-border); border-radius: 0.75rem; font-size: 0.75rem; color: var(--us-danger-text); line-height: 1.5;">
+                <div style="font-weight: 600; margin-bottom: 0.25rem;">⚠️ Kuota paket tidak cukup</div>
+                {{ $this->pesanKuotaKurang() }}
+            </div>
+            @endif
+
             {{-- Tombol bayar: selalu di bawah ringkasan, termasuk saat kolom di-stack di mobile --}}
             <div style="margin-top: 0.75rem;">
                 {{ $this->prosesPembayaranAction }}

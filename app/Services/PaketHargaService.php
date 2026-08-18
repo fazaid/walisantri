@@ -38,6 +38,8 @@ class PaketHargaService
 
                 return [
                     'nama' => $paket->label(),
+                    // Dipakai CTA kartu untuk membawa pilihannya ke /register.
+                    'slug' => $paket->value,
                     'harga' => $hitung['formatted'],
                     'hargaTahunan' => $this->rupiah($totalTahunan),
                     'hargaTahunanNormal' => $this->rupiah($perBulan * $tahunan->totalBulan()),
@@ -54,7 +56,7 @@ class PaketHargaService
                     // Kuota paket Maju bisa dinaikkan lewat add-on, jadi CTA-nya
                     // membuka percakapan WhatsApp dengan tim — angkanya perlu
                     // dibicarakan dulu, bukan langsung didaftarkan sendiri.
-                    'hubungiKami' => $paket === PaketLangganan::Maju,
+                    'hubungiKami' => ! $paket->bisaDipilihSendiri(),
                 ];
             })
             ->all();
