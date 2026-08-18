@@ -12,7 +12,7 @@
             Menghubungkan Pesantren & Wali Santri di Seluruh Indonesia
         </p>
         <div class="flex gap-6">
-            <a href="{{ $anchorBase }}#harga" class="text-sm text-gray-500 hover:text-teal-700">Harga</a>
+            <a href="{{ route('harga') }}" class="text-sm text-gray-500 hover:text-teal-700">Harga</a>
             <a href="{{ $anchorBase }}#faq" class="text-sm text-gray-500 hover:text-teal-700">FAQ</a>
             @if($registrationOpen)
                 <a href="{{ route('register') }}" class="text-sm text-gray-500 hover:text-teal-700">Daftar</a>

@@ -4,7 +4,27 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Agustus 2026 — v4.48
+**Last Updated:** Agustus 2026 — v4.50
+
+**Changelog v4.50:** **Paket harga pindah ke halaman sendiri, `/harga` — dan seksi harga di landing dicabut habis, bukan diringkas.** Seksi `#harga` yang memuat empat kartu, toggle siklus, dan catatan kakinya sudah menjadi bagian terpanjang di landing, padahal hal-hal yang paling sering ditanyakan calon pelanggan (cara bayar, opsi durasi, apa yang terjadi saat langganan habis, add-on kuota) tidak punya ruang di sana sama sekali. Kini `/harga` memuat kartu lengkap + toggle, tabel perbandingan paket, seksi add-on kuota Maju, dan FAQ khusus biaya. Rutenya didaftarkan di grup `$baseDomain` (`HargaController`, nama rute `harga`) — berbeda dari `/` dan `/panduan`, pathnya tidak bertabrakan saat `base_domain == app_domain`, jadi tidak perlu pagar `$sameDomain`.
+
+**Landing tidak lagi menyebut satu pun paket.** Rilis ini sempat memasang ringkasan (nama paket + kuota + tombol "Lihat Detail Harga") sebagai jalan tengah; itu dicabut atas keputusan pemilik produk — harga hanya punya satu tempat, dan nama paket tanpa angka justru lebih membingungkan daripada tidak ada sama sekali. Yang tersisa di landing cuma angka "mulai Rp …" di jawaban FAQ "Berapa biaya Walisantri?", dan itu pun turunan `BillingSetting` (dulu `Rp 150.000` mati). `LandingController` karena itu tidak lagi mengirim `paketList`, hanya `hargaTerendah`.
+
+**Entri "Cara Kerja" dihapus dari nav.** Bar situs kini empat entri: Fitur · Harga · FAQ · Panduan (+ Demo bila gerbangnya terbuka). Seksinya sendiri **tetap ada** di landing dengan judul "Mulai dalam 3 Langkah Mudah" — yang dicabut menunya, bukan isinya, dan `id="cara-kerja"` dipertahankan supaya tautan dalam yang sudah tersebar tidak mati.
+
+**Angkanya tetap satu sumber, dan sumber itu sekarang punya nama: `PaketHargaService`.** `LandingController::paketList()` dulu method privat; begitu dua halaman memajang angka yang sama, salinan kedua tinggal menunggu waktu untuk menyimpang. Service ini membungkus `BillingCalculatorService` dan melayani keduanya (`kartu()`, `konteksSiklus()`, `hargaTerendah()`, `addOnMaju()`). Aturan v4.41 tidak berubah: nol angka rupiah ditulis di Blade. Contoh add-on pun dihitung lewat `paketMaju()`, bukan diketik — `HargaPageTest` menggeser `harga_maju_per_100_santri` ke nilai tidak lazim lalu memeriksa tarif **dan** contohnya sekaligus.
+
+⚠️ **`walisantri.com/#harga` kini anchor mati** — seksinya tidak ada lagi, jadi tautan itu mendarat di puncak landing tanpa error. Tautan semacam ini sudah tersebar di materi promosi dan percakapan WhatsApp; konsekuensinya diterima sadar (pembaca tetap sampai di landing dan menemukan "Harga" di nav), tapi materi promosi yang masih memakainya sebaiknya diarahkan ulang ke `/harga`. Yang berubah di partial: entri "Harga" di `partials/situs-nav` dan `situs-footer` kini `route('harga')` — bukan `$anchorBase.'#harga'` — sehingga dari `/panduan` ia membuka halaman sungguhan alih-alih melompat ke anchor di landing. Anchor yang tersisa (`#fitur`, `#faq`) tetap memakai `$anchorBase`.
+
+⛔ **Kalimat FAQ durasi sempat menuliskan "0 bulan gratis".** Jawaban "Durasi apa saja yang bisa dipilih?" mula-mula menginterpolasi `$bonusEnam`/`$bonusTahunan` begitu saja; dengan `bonus_bulan_tahunan` disetel 0 ia berbunyi "durasi 12 bulan mendapat 0 bulan gratis" — klaim yang salah, bukan sekadar angka yang kebetulan nol. Kalimatnya kini dirakit bercabang di `@php`. Yang menangkapnya bukan pembacaan ulang, melainkan `test_klaim_bonus_tahunan_hilang_saat_bonus_dinolkan` yang ikut pindah dari `LandingPageTest` — bukti bahwa memindahkan tes bersama markup yang dijaganya lebih murah daripada menulis ulang asersinya.
+
+**Gaya `<details>` naik ke `resources/css/app.css`.** Dua halaman kini memakai akordeon yang sama; keempat barisnya tidak boleh hidup sebagai `<style>` kembar. Selector pemilih siklus **tidak** ikut — ia terikat pada id yang cuma ada di `/harga`, jadi tetap inline bersama komentar jebakannya (kedua `<input type="radio" sr-only>` wajib jadi saudara langsung isi seksinya, kalau dibungkus ulang selector siblingnya putus dan satu siklus tidak pernah tampil). Halaman ini tetap nol JavaScript, sama seperti landing.
+
+**Tesnya ikut pindah, bukan disalin.** `tests/Feature/HargaPageTest.php` (13 kasus) mengambil alih seluruh asersi kartu harga dari `LandingPageTest` — termasuk pagar `assertDontSee('kontrak')` (v4.46) dan `assertDontSee('trial')` (v4.45) yang kini menjaga halaman tempat janji itu paling mudah menyelinap kembali — lalu menambahkan gerbang `registration_open`/`demo_open` (lubang yang pernah nyata di `/panduan`), add-on, dan satu kasus yang memastikan tabel perbandingan tidak punya sel "tidak termasuk" mana pun: kelima Gate dihapus di v4.20, jadi mencoret modul per paket berarti menjanjikan penguncian yang tidak ditegakkan kode mana pun. `LandingPageTest` gantinya menjaga jalan keluarnya (nav & footer tetap menautkan `/harga`), "mulai Rp …" di jawaban FAQ yang kini turunan `BillingSetting`, dan dua bentuk sisa yang paling mudah tertinggal saat mencabut seksi sebesar itu: selector siklus sebagai CSS mati, dan potongan kartu (`Paling Populer`, `Setara pada kuota`, `id="harga"`) yang lolos karena dihapus separuh.
+
+**Angka versi PRD diseragamkan lagi** — header v4.49 tapi §22 dan footer masih v4.48. Pola yang sama pernah terjadi di v4.47 dan v4.21. Ketiganya kini v4.50.
+
+**Changelog v4.49:** **Kartu "Setoran Tahfidz" di portal wali dipotong dari 10 baris jadi 5 (§8).** Beranda wali mobile-first berlebar `max-w-lg`; daftar 10 setoran mendorong kartu Kesehatan, SPP, Uang Saku, dan Pengumuman jauh ke bawah lipatan — padahal yang dicari sekilas cuma setoran terakhir. Sepuluh terakhir tidak hilang, cuma pindah satu ketukan ke halaman Statistik Tahfidz yang sejak awal memang sudah menyediakannya; header kartu kini menuliskan "5 terakhir" dan kakinya memunculkan tautan "Lihat 10 setoran terakhir →" **hanya saat daftar penuh**, supaya wali dengan 3 setoran tidak diberi janji palsu. Batasnya diubah di satu tempat (`SantriDetailPresenter::detail()`), jadi berlaku seragam di beranda, detail santri, laporan magic link, dan preview admin. Ekspor PDF sengaja tetap 10 — di kertas ruang bukan barang langka.
 
 **Changelog v4.48:** **§1.8 Fase 1 dibangun — portal wali, login, dan magic link kini dilayani di `{slug}.walisantri.com`.** Wali tidak lagi melihat merek platform di titik sentuh hariannya. Panel staf tetap di `app.walisantri.com` (Filament hanya menerima satu domain, dan pengurus memang sudah tahu vendornya).
 
@@ -555,7 +575,7 @@ Subdomain profil baru aktif otomatis tanpa sentuh DNS/config:
 
 | Host | Path | Pengguna |
 |---|---|---|
-| `walisantri.com` | `/` · `/register` · `/check-slug/{slug}` | Landing · onboarding · API cek slug (JSON) |
+| `walisantri.com` | `/` · `/harga` · `/register` · `/check-slug/{slug}` | Landing · **paket harga (v4.50 — satu-satunya tempat harga; landing tidak menyebut paket sama sekali)** · onboarding · API cek slug (JSON) |
 | `{slug}.walisantri.com` (+ custom domain) | `/` · `/kegiatan` · `/artikel` | Website profil publik (read-only, tanpa auth); `/kegiatan` & `/artikel` saat ini placeholder "Segera Hadir" |
 | `app.walisantri.com` | `/login` · `/admin` | Login tunggal · panel Filament (Super Admin, Admin Pesantren, Ustadz) — menu per role via `canAccess()` |
 | `app.walisantri.com` | `/wali/dashboard` · `/report/{uuid}` · `/admin/billing-page` | Portal wali · Magic Link read-only · billing (halaman Filament, bukan route `/billing`) |
@@ -1370,7 +1390,7 @@ Diskon berlangganan tahunan via enum `DurasiLangganan`:
 
 Bonus bulan tidak hardcode — dibaca dari `BillingSetting` (`bonus_bulan_enam`, `bonus_bulan_tahunan`), jadi super admin bisa mengubahnya tanpa deploy. Kalkulasi memakai `bulanBayar()` (bukan `value`) untuk total harga dan `totalBulan()` untuk menambah `expired_at` — keduanya method di **`App\Enums\DurasiLangganan`** dan dipanggil dari `UpgradeOrderService` serta `UpgradePage`, bukan dari `BillingCalculatorService`. UI billing menampilkan "Durasi bayar: X bulan · Gratis: +Y bulan · Total aktif: Z bulan."
 
-Kebijakan yang sama dipajang di seksi #harga landing sebagai dua siklus (bulanan/tahunan) sejak v4.46, dengan tarif setara per santri sebagai angka utama dan harga paket di bawahnya: kartu tahunan menampilkan harga coret (`totalBulan()` × harga bulanan), harga yang dibayar (`bulanBayar()` × harga bulanan), dan nominal bulan yang digratiskan. Angkanya diturunkan di `LandingController`, bukan ditulis di Blade — dan seluruh klaim bonusnya lenyap sendiri bila `bonus_bulan_tahunan` disetel 0.
+Kebijakan yang sama dipajang sebagai dua siklus (bulanan/tahunan) sejak v4.46 — **di halaman `/harga` sejak v4.50**, sebelumnya di seksi `#harga` landing — dengan tarif setara per santri sebagai angka utama dan harga paket di bawahnya: kartu tahunan menampilkan harga coret (`totalBulan()` × harga bulanan), harga yang dibayar (`bulanBayar()` × harga bulanan), dan nominal bulan yang digratiskan. Angkanya diturunkan di `PaketHargaService` *(v4.50; sebelumnya `LandingController`)*, bukan ditulis di Blade — dan seluruh klaim bonusnya lenyap sendiri bila `bonus_bulan_tahunan` disetel 0, termasuk kalimat FAQ durasi di `/harga`.
 
 ## 5.3 Formula Kuota Custom Maju (`BillingCalculatorService`)
 
@@ -1613,7 +1633,7 @@ Blade + TailwindCSS murni (tanpa Flux UI), mobile-first. Akses via Magic Link (�
 
 **Fitur MVP (selesai v4.4):**
 - **Dashboard:** sapaan + pengumuman pondok terkini; alert jika ada santri dalam kondisi Rujukan_Luar/Istirahat_Total; banner notifikasi tunggakan SPP (orange, tap ke halaman SPP). **Branching (v4.8):** jika wali memiliki tepat 1 anak aktif → langsung tampil halaman detail penuh (capaian juz, persentase amalan, status kesehatan, rapor terakhir via `SantriDetailPresenter`); jika >1 anak → tampil cards ringkasan per anak dengan tap ke detail masing-masing.
-- **Statistik Tahfidz:** grafik perkembangan hafalan, riwayat setoran, nilai kelancaran.
+- **Statistik Tahfidz:** grafik perkembangan hafalan, riwayat setoran, nilai kelancaran. **Kartu "Setoran Tahfidz" di beranda dipotong 5 baris (v4.49)** — di ponsel daftar 10 mendorong kartu Kesehatan/SPP/Uang Saku jauh ke bawah lipatan; **10 terakhir tetap di halaman ini**, dicapai lewat tautan "Statistik →" di header kartu atau "Lihat 10 setoran terakhir →" yang muncul di kakinya saat daftar penuh. Batasnya satu tempat: `SantriDetailPresenter::detail()`, jadi berlaku juga untuk detail santri, laporan magic link, dan preview admin. Ekspor PDF (`LaporanController`) punya query sendiri dan tetap 10.
 - **Statistik Kesehatan:** tren berat/tinggi badan, riwayat rekam medis.
 - **Detail Mutaba'ah Harian:** tabel amalan harian per santri dengan filter tanggal.
 - **Detail Santri:** termasuk seksi Prestasi (daftar prestasi dengan badge medal tingkat) dan seksi **Ekstrakurikuler** (v4.9, daftar ekskul aktif santri + level).
@@ -1975,7 +1995,7 @@ Sisanya: `PresensiIzinTest`, `PresensiHariLiburTest`, `PresensiRekapPageTest`, `
 
 **Konfigurasi:** unit test pakai PostgreSQL ephemeral (mis. service container `postgres` di GitHub Actions) atau SQLite in-memory untuk test yang tidak bergantung fitur PostgreSQL; `CACHE_DRIVER=array`, `QUEUE_CONNECTION=sync`. Test isolasi tenant & RLS **wajib** pakai PostgreSQL (bukan SQLite) agar policy ikut teruji.
 
-**Sebaran nyata (v4.48):** 721 tes / 2.793 asersi (terhadap PostgreSQL; di SQLite 13 tes isolasi tenant di-skip).
+**Sebaran nyata (v4.50):** 741 tes / 2.813 asersi (terhadap PostgreSQL; di SQLite 13 tes isolasi tenant di-skip).
 
 ```
 tests/Feature/                                52 berkas  ← tulang punggung: alur panel Filament,
@@ -2081,7 +2101,7 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 
 # 22. Catatan Implementasi Aktual
 
-**PRD ini v4.48.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 999k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 349k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
+**PRD ini v4.50.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial Rintisan 14 hari (dikelola via `BillingSetting::trial_days`, bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 999k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 349k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
 
 **Bug & fix:** `HasUuids` isi `id` jika tak di-override → `uniqueIds(): ['uuid']` · `$navigationGroup` `?string` error → `string|UnitEnum|null` · index name >63 char (batas PostgreSQL) → nama eksplisit pendek · ingat PostgreSQL tak punya unsigned int (kolom unsigned → signed bigint) · (v4.7) `tahun_ajaran` di form Nilai Akademik/Rapor Tahfidz semula `TextInput` bebas → mismatch format antar input & filter rapor bikin data tidak muncul → diganti `Select` dropdown seragam (service `TahunAjaranOptions`) · (v4.7) Filament cluster default merender sub-navigation tab di bawah header & dropdown khusus mobile → di-override via render hook + CSS agar tab tampil di atas breadcrumbs, konsisten desktop/mobile (detail di §7).
 
@@ -2152,4 +2172,4 @@ Daftar tiga cacat yang dicatat v4.20 sudah habis dikerjakan, dan dua lagi ditemu
 
 ---
 
-*Confidential — Internal Document | Walisantri.com v4.48 | Agustus 2026*
+*Confidential — Internal Document | Walisantri.com v4.50 | Agustus 2026*

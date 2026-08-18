@@ -3,7 +3,9 @@
 
     $anchorBase kosong di landing supaya tautan seksi tetap menggulir di halaman
     yang sama; halaman lain mengisinya dengan URL landing, kalau tidak tautan
-    "#harga" menggantung di halaman itu sendiri dan tidak ke mana-mana.
+    "#fitur" menggantung di halaman itu sendiri dan tidak ke mana-mana.
+    "Harga" bukan anchor lagi sejak /harga berdiri sendiri — ia rute penuh, jadi
+    tidak perlu (dan tidak boleh) diberi $anchorBase.
 
     $registrationOpen & $demoOpen wajib dikirim pemanggil (lihat LandingController
     dan PanduanController) — gerbangnya sama persis di kedua halaman, jadi menutup
@@ -20,8 +22,7 @@
     // bisa berbeda isi — termasuk saat gerbang demo ditutup.
     $tautanMenu = [
         ['label' => 'Fitur', 'url' => $anchorBase.'#fitur'],
-        ['label' => 'Harga', 'url' => $anchorBase.'#harga'],
-        ['label' => 'Cara Kerja', 'url' => $anchorBase.'#cara-kerja'],
+        ['label' => 'Harga', 'url' => route('harga')],
         ['label' => 'FAQ', 'url' => $anchorBase.'#faq'],
     ];
 
