@@ -19,9 +19,10 @@ class SantriDetailPresenter
     /** Data lengkap untuk halaman detail satu santri (dipakai ReportController & dashboard wali ber-1-anak). */
     public static function detail(Santri $santri): array
     {
+        // 5 saja — dashboard cuma perlu sekilas-pandang; 10 terakhir ada di halaman Statistik Tahfidz.
         $tahfidzRecent = TahfidzProgress::where('santri_id', $santri->id)
             ->orderByDesc('tanggal')
-            ->limit(10)
+            ->limit(5)
             ->get();
 
         $kesehatanRecent = KesantrianKesehatan::where('santri_id', $santri->id)

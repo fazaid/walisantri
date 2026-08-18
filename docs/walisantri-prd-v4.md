@@ -4,7 +4,9 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Agustus 2026 — v4.48
+**Last Updated:** Agustus 2026 — v4.49
+
+**Changelog v4.49:** **Kartu "Setoran Tahfidz" di portal wali dipotong dari 10 baris jadi 5 (§8).** Beranda wali mobile-first berlebar `max-w-lg`; daftar 10 setoran mendorong kartu Kesehatan, SPP, Uang Saku, dan Pengumuman jauh ke bawah lipatan — padahal yang dicari sekilas cuma setoran terakhir. Sepuluh terakhir tidak hilang, cuma pindah satu ketukan ke halaman Statistik Tahfidz yang sejak awal memang sudah menyediakannya; header kartu kini menuliskan "5 terakhir" dan kakinya memunculkan tautan "Lihat 10 setoran terakhir →" **hanya saat daftar penuh**, supaya wali dengan 3 setoran tidak diberi janji palsu. Batasnya diubah di satu tempat (`SantriDetailPresenter::detail()`), jadi berlaku seragam di beranda, detail santri, laporan magic link, dan preview admin. Ekspor PDF sengaja tetap 10 — di kertas ruang bukan barang langka.
 
 **Changelog v4.48:** **§1.8 Fase 1 dibangun — portal wali, login, dan magic link kini dilayani di `{slug}.walisantri.com`.** Wali tidak lagi melihat merek platform di titik sentuh hariannya. Panel staf tetap di `app.walisantri.com` (Filament hanya menerima satu domain, dan pengurus memang sudah tahu vendornya).
 
@@ -1613,7 +1615,7 @@ Blade + TailwindCSS murni (tanpa Flux UI), mobile-first. Akses via Magic Link (�
 
 **Fitur MVP (selesai v4.4):**
 - **Dashboard:** sapaan + pengumuman pondok terkini; alert jika ada santri dalam kondisi Rujukan_Luar/Istirahat_Total; banner notifikasi tunggakan SPP (orange, tap ke halaman SPP). **Branching (v4.8):** jika wali memiliki tepat 1 anak aktif → langsung tampil halaman detail penuh (capaian juz, persentase amalan, status kesehatan, rapor terakhir via `SantriDetailPresenter`); jika >1 anak → tampil cards ringkasan per anak dengan tap ke detail masing-masing.
-- **Statistik Tahfidz:** grafik perkembangan hafalan, riwayat setoran, nilai kelancaran.
+- **Statistik Tahfidz:** grafik perkembangan hafalan, riwayat setoran, nilai kelancaran. **Kartu "Setoran Tahfidz" di beranda dipotong 5 baris (v4.49)** — di ponsel daftar 10 mendorong kartu Kesehatan/SPP/Uang Saku jauh ke bawah lipatan; **10 terakhir tetap di halaman ini**, dicapai lewat tautan "Statistik →" di header kartu atau "Lihat 10 setoran terakhir →" yang muncul di kakinya saat daftar penuh. Batasnya satu tempat: `SantriDetailPresenter::detail()`, jadi berlaku juga untuk detail santri, laporan magic link, dan preview admin. Ekspor PDF (`LaporanController`) punya query sendiri dan tetap 10.
 - **Statistik Kesehatan:** tren berat/tinggi badan, riwayat rekam medis.
 - **Detail Mutaba'ah Harian:** tabel amalan harian per santri dengan filter tanggal.
 - **Detail Santri:** termasuk seksi Prestasi (daftar prestasi dengan badge medal tingkat) dan seksi **Ekstrakurikuler** (v4.9, daftar ekskul aktif santri + level).

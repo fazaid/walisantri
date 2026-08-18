@@ -138,7 +138,10 @@
     {{-- Riwayat Setoran Tahfidz --}}
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-            <h2 class="font-semibold text-gray-800">📖 Setoran Tahfidz</h2>
+            <h2 class="font-semibold text-gray-800">
+                📖 Setoran Tahfidz
+                <span class="text-xs font-normal text-gray-400">5 terakhir</span>
+            </h2>
             @unless($previewMode ?? false)
             <a href="{{ route('wali.santri.tahfidz', $santri->id) }}"
                class="text-xs text-teal-600 font-medium hover:text-teal-800">
@@ -182,6 +185,16 @@
             Belum ada data setoran tahfidz.
         </div>
         @endforelse
+
+        {{-- Muncul hanya saat daftar penuh (5) — pertanda masih ada setoran lain di halaman Statistik. --}}
+        @unless($previewMode ?? false)
+        @if($tahfidzRecent->count() === 5)
+        <a href="{{ route('wali.santri.tahfidz', $santri->id) }}"
+           class="block px-4 py-3 border-t border-gray-100 text-center text-xs font-medium text-teal-600 hover:text-teal-800">
+            Lihat 10 setoran terakhir →
+        </a>
+        @endif
+        @endunless
     </div>
 
     {{-- Riwayat Kesehatan --}}
