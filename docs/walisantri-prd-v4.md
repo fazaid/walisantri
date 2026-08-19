@@ -4,7 +4,17 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Agustus 2026 — v4.55
+**Last Updated:** Agustus 2026 — v4.56
+
+**Changelog v4.56:** **"Pencatat setoran" dan "Penguji" berhenti berpura-pura jadi penugasan, dan jejak auditnya akhirnya benar-benar dijaga.** Keduanya terdaftar di tabel §5.4 sejajar pembimbing dan wali kelas, padahal **tidak ada seorang pun yang pernah menugaskannya**: satu-satunya yang mengisi adalah `->default(fn () => auth()->id())` milik form. Akibat pengelompokan itu, daftar penugasan terbaca tujuh padahal yang benar-benar dikelola admin hanya lima. Kini keduanya pindah ke catatan tersendiri di bawah tabel — bukan penugasan, melainkan **stempel siapa yang mencatat baris ini**.
+
+⚠️ **Dan stempelnya ternyata tidak menstempel apa pun.** `->default()` cuma nilai awal form, bebas diganti. Dropdown santri disaring ke bimbingan si ustadz (`SantriOptions::aktifUntukPengguna()`), tapi dropdown "Ustadz Pencatat" dan "Penguji" memuat **seluruh ustadz sepesantren** tanpa penjagaan server sama sekali — tidak ada `mutateFormDataBeforeCreate`, tidak ada observer. Seorang ustadz karena itu bisa mencatat setoran santri bimbingannya sendiri lalu mengkreditkannya ke ustadz lain, lewat UI biasa, tanpa jejak. Jejak audit yang bisa dibelokkan bukan jejak audit.
+
+**Perbaikannya sekaligus menyederhanakan form harian ustadz — dua tujuan yang kebetulan searah.** Untuk `ustadz` kedua field itu **tidak ditampilkan sama sekali** dan nilainya distempel server-side oleh `TahfidzProgressResource::stempelPencatat()` / `TahfidzUjianResource::stempelPenguji()`, mengikuti pola `UangSakuResource::catatPencatat()` yang sudah ada sejak lama (`->mutateDataUsing()` di `CreateAction`). Ustadz tahfidz kini cukup mengisi santri → tanggal → tipe → halaman → nilai; dua dropdown lenyap dari alur yang ia jalani setiap hari. Ini menjawab pengamatan lapangan bahwa ustadz tahfidz lazimnya menyimak **dan** menguji santri yang sama — memang begitu, dan justru karena itu tidak ada yang perlu dipilih. **`admin_pesantren` tetap memilih sendiri:** ia memasukkan data susulan atas nama ustadz yang benar-benar menyimak, jadi stempel otomatis justru akan salah untuknya.
+
+**Stempelnya sengaja hanya di `CreateAction`, tidak di `EditAction`.** Baris yang dimasukkan admin atas nama Ustadz B tidak boleh berpindah kredit begitu Ustadz A menyuntingnya — itu justru merusak jejak yang sedang dijaga. Dikunci `JejakAuditTahfidzTest` (7 tes), yang juga membuktikan pagarnya load-bearing: dilepas sebentar, `ustadz_id` tidak ikut ke INSERT sama sekali dan tesnya gagal.
+
+**Tidak ada penugasan "Ustadz Tahfidz" baru, dan itu keputusan.** Yang dimaksud dengan istilah itu sudah punya nama di sistem: **pembimbing halaqah** (`santri.pembimbing_ustadz_id`), yang §5.4 memang definisikan sebagai relasi pembinaan hafalan. Menambah kolom kedua berarti dua kolom menjawab pertanyaan yang sama, dan suatu hari keduanya akan berbeda isi.
 
 **Changelog v4.55:** **Kamar akhirnya punya penanggung jawab — `kamar.musyrif_id` — dan sengaja berhenti tepat di situ.** Sejak `kelas` dan `kamar` sama-sama diangkat jadi entitas master di v4.3, hanya `kelas` yang pernah kebagian penugasan (`wali_kelas_id`, v4.17); `kamar` bertahan sebagai tabel dua kolom, sehingga pertanyaan paling sederhana tentangnya — *"ustadz mana yang mengasuh kamar ini?"* — tidak punya jawaban di sistem, hanya di kepala admin. Kolomnya dinamai **`musyrif_id`**, **bukan** `wali_kamar_id` seperti yang sempat disebut §3.2 Modul Presensi: "musyrif" adalah istilah yang benar-benar diucapkan di pesantren, dan menamai kolom dengan istilah yang tidak pernah dipakai siapa pun hanyalah cara termurah membuat dokumen dan lapangan berbeda kosakata. Ini juga pemicu §22 yang menyala persis seperti tertulis: *"butuh atribut lebih lanjut per-kelas/kamar (kapasitas, PJ, jadwal) → tambah kolom ke tabel yang sudah ada."*
 
@@ -1473,17 +1483,19 @@ Contoh: 1.200 santri → X=2 → kuota 1.200 → Rp 1.199.000/bulan. Contoh X=0:
 
 ### Penugasan ≠ Role
 
-Istilah pembimbing, pengampu, pencatat, penguji, pembina, wali kelas, dan musyrif adalah **penugasan**, bukan tingkat hak akses. Semuanya disimpan sebagai FK di entitas yang ditugaskan — **bukan** sebagai nilai tambahan di `users.role`, yang tetap 4 nilai (§3.2).
+Istilah pembimbing, pengampu, pembina, wali kelas, dan musyrif adalah **penugasan**, bukan tingkat hak akses. Semuanya disimpan sebagai FK di entitas yang ditugaskan — **bukan** sebagai nilai tambahan di `users.role`, yang tetap 4 nilai (§3.2).
 
 | Penugasan | Sumber data |
 |---|---|
 | Pembimbing (halaqah) | `santri.pembimbing_ustadz_id` |
 | Pengampu mapel | `mata_pelajaran.ustadz_id` |
-| Pencatat setoran | `tahfidz_progress.ustadz_id` (jejak audit, terisi otomatis) |
-| Penguji | `tahfidz_rapor.penguji_id` |
 | Pembina ekskul | `ekskul_masters.pembina_id` (v4.17) — atau `pengajar` untuk pelatih luar tanpa akun |
 | Wali kelas | `kelas.wali_kelas_id` (v4.17) — sejak v4.25 menjadi cakupan **presensi harian** kelasnya + kewenangan menyetujui pengajuan izin santri kelasnya (§3.2 Modul Presensi) |
 | Musyrif kamar | `kamar.musyrif_id` (v4.55) — pengasuh asrama. ⚠️ **Label saja:** tidak membuka cakupan data apa pun, bandingkan wali kelas yang justru menjadi cakupan presensi |
+
+**Dua kolom yang BUKAN penugasan (v4.56).** `tahfidz_progress.ustadz_id` ("Ustadz Pencatat") dan `tahfidz_rapor.penguji_id` ("Penguji") sempat berdiri di tabel di atas sampai v4.55, padahal tidak ada seorang pun yang menugaskannya: keduanya **stempel siapa yang mencatat baris ini**, bukan jabatan yang diberikan admin. Untuk `ustadz` fieldnya tidak ditampilkan dan nilainya dipaksa `auth()->id()` server-side (`TahfidzProgressResource::stempelPencatat()` / `TahfidzUjianResource::stempelPenguji()` lewat `->mutateDataUsing()` di `CreateAction`, pola `UangSakuResource::catatPencatat()`); `admin_pesantren` tetap memilih sendiri karena ia memasukkan data atas nama ustadz yang menyimak. Sengaja **tidak** dipasang di `EditAction` — menyunting baris lama tidak boleh menulis ulang kreditnya ke penyunting. Dikunci `JejakAuditTahfidzTest`.
+
+Yang lazim disebut "ustadz tahfidz" **tidak butuh penugasan sendiri**: ia adalah pembimbing halaqah, dan `SantriOptions::aktifUntukPengguna()` memang sudah membatasi setoran/ujian ke santri bimbingannya. Kolom kedua untuk pertanyaan yang sama hanya akan berbeda isi suatu hari.
 
 Alasan `role` tidak dipecah jadi `ustadz_pengampu`, `ustadz_penguji`, dan seterusnya:
 
@@ -1512,7 +1524,7 @@ Alasan `role` tidak dipecah jadi `ustadz_pengampu`, `ustadz_penguji`, dan seteru
 
 Satu method turunan ditambahkan ke `App\Support\PenugasanUstadz`: `santriIdsPerwalianKelas()` (**ada sejak v4.28**). `santriIdsKelasDiampu()` yang sempat dijanjikan **tidak jadi dibuat** (v4.39): saat Fase 6 tiba, yang dibutuhkan halaman presensi per jam adalah santri di kelas milik satu mapel terpilih — `Santri::where('kelas_id', $mapel->kelas_id)` — bukan gabungan santri di seluruh kelas yang ia ampu, sehingga method itu tetap akan jadi kode mati. Cabang `jam_ke > 0` di `ScopesQueryToPresensiUstadz` memakai `mataPelajaranIdsDiampu()` yang memang sudah ada — keduanya murni turunan dari `kelasIdsPerwalian()`/`kelasIdsDiampu()` yang sudah ada, tanpa kolom baru, jadi tidak bisa basi. Scoping-nya **tidak** memakai `ScopesQueryToUstadzSantri`: trait itu menyaring satu kolom, sedangkan aturan presensi bercabang berdasarkan **isi baris** (`jam_ke`), sehingga dipakai trait tersendiri `ScopesQueryToPresensiUstadz` yang juga meng-override route-model binding. Memaksakan trait lama dengan `ustadzScopedIds()` gabungan perwalian ∪ kelas-diampu akan membuat pengampu Fiqih melihat presensi harian seluruh kelas — pelebaran cakupan diam-diam yang persis dilarang seksi ini.
 
-Definisi keenam jalur itu dipusatkan di `App\Support\PenugasanUstadz` (v4.17) supaya tidak lagi dihitung ad-hoc di tiap resource; `PenugasanUstadz::ringkasan()` menurunkan daftar penugasan per ustadz untuk ditampilkan di halaman Pengguna (dihitung, tidak disimpan).
+Definisi jalur-jalur itu dipusatkan di `App\Support\PenugasanUstadz` (v4.17) supaya tidak lagi dihitung ad-hoc di tiap resource; `PenugasanUstadz::ringkasan()` menurunkan daftar penugasan per ustadz untuk ditampilkan di halaman Pengguna (dihitung, tidak disimpan).
 
 ### Aturan kuota pembimbing
 
@@ -2069,7 +2081,7 @@ Sisanya: `PresensiIzinTest`, `PresensiHariLiburTest`, `PresensiRekapPageTest`, `
 
 **Konfigurasi:** unit test pakai PostgreSQL ephemeral (mis. service container `postgres` di GitHub Actions) atau SQLite in-memory untuk test yang tidak bergantung fitur PostgreSQL; `CACHE_DRIVER=array`, `QUEUE_CONNECTION=sync`. Test isolasi tenant & RLS **wajib** pakai PostgreSQL (bukan SQLite) agar policy ikut teruji.
 
-**Sebaran nyata (v4.55):** 800 tes / 3.143 asersi (terhadap PostgreSQL; di SQLite 14 tes di-skip).
+**Sebaran nyata (v4.56):** 807 tes / 3.188 asersi (terhadap PostgreSQL; di SQLite 14 tes di-skip).
 
 ⚠️ **Setiap tes yang mem-POST `/register` wajib memakai trait `Tests\Concerns\MenyemaiWilayah`.** Tabel `wilayah` sengaja dibiarkan kosong oleh migrasi (§3.1) dan `migrate:fresh` di suite tidak pernah menjalankan `wilayah:impor` — tanpa fixture-nya, validasi kode desa selalu gagal. Kelas kegagalannya bisa senyap: `EmailNotifikasiTest::test_email_sambutan_tidak_terkirim_saat_toggle_dimatikan` ber-`assertNotQueued`, jadi ia tetap hijau meski POST-nya sebenarnya ditolak validasi.
 
@@ -2180,7 +2192,7 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 
 # 22. Catatan Implementasi Aktual
 
-**PRD ini v4.55.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial 14 hari pada paket yang dipilih pendaftar di `/register` (Maju dikecualikan; durasi via `BillingSetting::trial_days`, kuota via `BillingCalculatorService`, keduanya bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 999k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 349k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
+**PRD ini v4.56.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial 14 hari pada paket yang dipilih pendaftar di `/register` (Maju dikecualikan; durasi via `BillingSetting::trial_days`, kuota via `BillingCalculatorService`, keduanya bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 999k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 349k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
 
 **Bug & fix:** `HasUuids` isi `id` jika tak di-override → `uniqueIds(): ['uuid']` · `$navigationGroup` `?string` error → `string|UnitEnum|null` · index name >63 char (batas PostgreSQL) → nama eksplisit pendek · ingat PostgreSQL tak punya unsigned int (kolom unsigned → signed bigint) · (v4.7) `tahun_ajaran` di form Nilai Akademik/Rapor Tahfidz semula `TextInput` bebas → mismatch format antar input & filter rapor bikin data tidak muncul → diganti `Select` dropdown seragam (service `TahunAjaranOptions`) · (v4.7) Filament cluster default merender sub-navigation tab di bawah header & dropdown khusus mobile → di-override via render hook + CSS agar tab tampil di atas breadcrumbs, konsisten desktop/mobile (detail di §7).
 
@@ -2251,4 +2263,4 @@ Daftar tiga cacat yang dicatat v4.20 sudah habis dikerjakan, dan dua lagi ditemu
 
 ---
 
-*Confidential — Internal Document | Walisantri.com v4.55 | Agustus 2026*
+*Confidential — Internal Document | Walisantri.com v4.56 | Agustus 2026*

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\TahfidzUjian;
 
+use App\Enums\UserRole;
 use App\Filament\Clusters\Tahfidz;
 use App\Filament\Concerns\HasAdminUstadzAccess;
 use App\Filament\Concerns\ScopesQueryToUstadzSantri;
@@ -12,6 +13,7 @@ use App\Filament\Resources\TahfidzUjian\Schemas\TahfidzUjianInfolist;
 use App\Filament\Resources\TahfidzUjian\Tables\TahfidzUjianTable;
 use App\Models\TahfidzUjian;
 use BackedEnum;
+use Closure;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -39,6 +41,25 @@ class TahfidzUjianResource extends Resource
     protected static ?string $pluralModelLabel = 'Ujian Tahfidz';
 
     protected static ?string $cluster = Tahfidz::class;
+
+    /**
+     * Stempel siapa yang menguji; kembarannya TahfidzProgressResource::stempelPencatat().
+     *
+     * Alasannya sama persis: ustadz hanya bisa memilih santri bimbingannya, jadi
+     * pengujinya tidak mungkin orang lain — sementara dropdown lamanya memuat seluruh
+     * ustadz sepesantren tanpa penjagaan server. admin_pesantren tetap memilih sendiri.
+     * Hanya di CreateAction, supaya menyunting baris lama tidak menulis ulang kreditnya.
+     */
+    public static function stempelPenguji(): Closure
+    {
+        return function (array $data): array {
+            if (auth()->user()?->role === UserRole::Ustadz->value) {
+                $data['penguji_id'] = auth()->id();
+            }
+
+            return $data;
+        };
+    }
 
     public static function form(Schema $schema): Schema
     {

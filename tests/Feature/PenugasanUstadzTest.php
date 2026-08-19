@@ -22,7 +22,7 @@ use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
- * Jenis ustadz (pembimbing, pengampu, penguji, pembina, wali kelas, musyrif) adalah
+ * Jenis ustadz (pembimbing, pengampu, pembina, wali kelas, musyrif) adalah
  * PENUGASAN, bukan role — disimpan sebagai FK di entitas yang ditugaskan supaya
  * satu orang bisa merangkap. Tes ini mengunci dua hal: penugasan baru tersimpan
  * & tampil, dan cakupan data tetap TERPISAH PER MODUL (tidak melebar).

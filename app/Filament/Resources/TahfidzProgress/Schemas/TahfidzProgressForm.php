@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\TahfidzProgress\Schemas;
 
 use App\Data\QuranSurah;
+use App\Enums\UserRole;
 use App\Filament\Support\SantriOptions;
 use App\Models\User;
 use App\Support\Waktu;
@@ -31,6 +32,10 @@ class TahfidzProgressForm
                             ->options(fn () => SantriOptions::aktifUntukPengguna())
                             ->searchable()
                             ->required(),
+                        // Hanya admin yang memilih: ia memasukkan data atas nama ustadz
+                        // yang menyimak. Untuk ustadz field ini tidak ditampilkan sama
+                        // sekali — nilainya distempel server-side oleh stempelPencatat(),
+                        // dan ia toh hanya bisa memilih santri bimbingannya sendiri.
                         Select::make('ustadz_id')
                             ->label('Ustadz Pencatat')
                             ->options(
@@ -38,7 +43,7 @@ class TahfidzProgressForm
                                     ->where('pesantren_id', auth()->user()?->pesantren_id)
                                     ->pluck('name', 'id')
                             )
-                            ->default(fn () => auth()->user()?->role === 'ustadz' ? auth()->id() : null)
+                            ->visible(fn (): bool => auth()->user()?->role !== UserRole::Ustadz->value)
                             ->searchable()
                             ->required(),
                         DatePicker::make('tanggal')

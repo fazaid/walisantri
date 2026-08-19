@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\TahfidzUjian\Schemas;
 
+use App\Enums\UserRole;
 use App\Filament\Support\SantriOptions;
 use App\Models\User;
 use App\Services\TahunAjaranOptions;
@@ -30,6 +31,8 @@ class TahfidzUjianForm
                             ->label('Santri')
                             ->options(fn () => SantriOptions::aktifUntukPengguna())
                             ->searchable()->required(),
+                        // Hanya admin yang memilih; untuk ustadz distempel server-side
+                        // oleh stempelPenguji(). Lihat alasannya di sana.
                         Select::make('penguji_id')
                             ->label('Penguji')
                             ->options(
@@ -37,7 +40,7 @@ class TahfidzUjianForm
                                     ->where('pesantren_id', auth()->user()?->pesantren_id)
                                     ->pluck('name', 'id')
                             )
-                            ->default(fn () => auth()->user()?->role === 'ustadz' ? auth()->id() : null)
+                            ->visible(fn (): bool => auth()->user()?->role !== UserRole::Ustadz->value)
                             ->searchable()->required(),
                         DatePicker::make('tanggal_ujian')
                             ->label('Tanggal Ujian')

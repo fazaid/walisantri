@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 /**
  * Satu-satunya sumber jawaban atas "apa yang dipegang ustadz ini".
  *
- * Jenis ustadz (pembimbing, pengampu, penguji, pembina, wali kelas, musyrif) adalah
+ * Jenis ustadz (pembimbing, pengampu, pembina, wali kelas, musyrif) adalah
  * PENUGASAN, bukan role: satu orang lazim merangkap beberapa sekaligus, jadi
  * semuanya disimpan sebagai FK di entitas yang ditugaskan — bukan sebagai nilai
  * tambahan di users.role yang cuma muat satu nilai.
