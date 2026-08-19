@@ -32,7 +32,8 @@ class UserInfolist
 
                 // Penugasan tidak disimpan di kolom mana pun — seluruhnya turunan
                 // dari FK (santri.pembimbing_ustadz_id, kelas.wali_kelas_id,
-                // mata_pelajaran.ustadz_id, ekskul_masters.pembina_id), jadi tidak
+                // mata_pelajaran.ustadz_id, ekskul_masters.pembina_id,
+                // kamar.musyrif_id), jadi tidak
                 // bisa basi dan tidak menambah nilai baru ke users.role.
                 TextEntry::make('penugasan')
                     ->label('Penugasan')

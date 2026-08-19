@@ -4,7 +4,13 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Agustus 2026 — v4.54
+**Last Updated:** Agustus 2026 — v4.55
+
+**Changelog v4.55:** **Kamar akhirnya punya penanggung jawab — `kamar.musyrif_id` — dan sengaja berhenti tepat di situ.** Sejak `kelas` dan `kamar` sama-sama diangkat jadi entitas master di v4.3, hanya `kelas` yang pernah kebagian penugasan (`wali_kelas_id`, v4.17); `kamar` bertahan sebagai tabel dua kolom, sehingga pertanyaan paling sederhana tentangnya — *"ustadz mana yang mengasuh kamar ini?"* — tidak punya jawaban di sistem, hanya di kepala admin. Kolomnya dinamai **`musyrif_id`**, **bukan** `wali_kamar_id` seperti yang sempat disebut §3.2 Modul Presensi: "musyrif" adalah istilah yang benar-benar diucapkan di pesantren, dan menamai kolom dengan istilah yang tidak pernah dipakai siapa pun hanyalah cara termurah membuat dokumen dan lapangan berbeda kosakata. Ini juga pemicu §22 yang menyala persis seperti tertulis: *"butuh atribut lebih lanjut per-kelas/kamar (kapasitas, PJ, jadwal) → tambah kolom ke tabel yang sudah ada."*
+
+⚠️ **Ini penugasan LABEL SAJA, dan justru itu bagian yang paling mudah tergerus rilis berikutnya.** Presedennya `ekskul_masters.pembina_id`, **bukan** `kelas.wali_kelas_id` — yang terakhir itu menganggur tujuh rilis lalu di v4.25 berubah menjadi cakupan presensi harian penuh, dan orang yang membaca kode setahun dari sekarang akan mengira `musyrif_id` menempuh jalur yang sama. Tidak. Ia tidak menambah satu method pun ke `PenugasanUstadz` selain cabang di `ringkasan()`: **tidak ada `kamarIdsPerwalian()`**, karena penugasan tanpa cakupan tidak punya pemanggil dan method tanpa pemanggil adalah kode mati — pelajaran yang sama yang membatalkan `santriIdsKelasDiampu()` di v4.39. `KamarResource` tetap `HasAdminOnlyAccess`, jadi seorang musyrif bahkan tidak bisa membuka menu Kamar. Dikunci `PenugasanUstadzTest::test_musyrif_kamar_tidak_membuka_akses_data_apa_pun`: musyrif tidak melihat mutaba'ah santri di kamarnya sendiri. Kalau suatu hari cakupannya memang mau dibuka, tes itulah yang harus diubah lebih dulu — bukan diam-diam melebar karena refactor.
+
+**Satu kamar satu musyrif, satu ustadz boleh beberapa kamar, tanpa kuota** — beda dari aturan 20 santri untuk pembimbing, sama persis dengan wali kelas. FK-nya `nullOnDelete`, jadi ia sengaja **tidak** masuk `UserResource::alasanTidakBisaDihapus()` yang hanya memuat FK `restrictOnDelete`: menghapus akun musyrif cukup mengosongkan penugasannya. Badge Penugasan di halaman Pengguna kini berbunyi "Musyrif Kamar Abu Bakar" — perangkaiannya `"Musyrif {nama_kamar}"` polos, sama seperti `"Wali Kelas {nama_kelas}"`, tanpa upaya mendeteksi kata "Kamar" di nama kamarnya; deteksi semacam itu akan salah persis saat sebuah kamar memang perlu menyandangnya. **Ongkosnya: query per baris tabel Pengguna naik empat → lima**; pagar pulang-awal untuk `wali_santri`/`super_admin` (baris terbanyak) tetap menahannya, dan komentar hitungan di `PenugasanUstadz` ikut dikoreksi supaya tidak basi.
 
 **Changelog v4.54:** **Halaman Upgrade berhenti meminta keputusan lewat dua dropdown polos — paket dan durasi kini dipilih lewat kartu dan pemilih siklus.** `Select` "Paket Tujuan" hanya berbunyi `"Tumbuh - maksimal 250 santri"`; harganya baru muncul di kolom ringkasan **setelah** dipilih, jadi membandingkan empat paket berarti memilihnya satu per satu dan membaca ulang ringkasan tiap kali — padahal calon pelanggan yang sama sudah melihat kartu lengkap di `/harga` sebelum mendaftar. Bonus bulan gratis untuk durasi 6/12 bulan bahkan tidak terlihat sama sekali sebelum ordernya jadi. Kini empat kartu berjajar satu baris penuh di atas area dua kolom (2 kolom di ≤1024px, 1 di ≤640px), masing-masing memajang kuota, harga per bulan, total untuk siklus terpilih, dan badge **Paket Anda** / **Paling Populer**; di atasnya segmented control 1 · 3 · 6 · 12 bulan. Bonus bulan gratis sengaja hanya ditulis di kartu — di sanalah ia berdampingan dengan total yang benar-benar ditagih ("bayar 10, aktif 12"); mengulangnya di tab hanya menggandakan janji yang sama tanpa angkanya.
 
@@ -946,11 +952,13 @@ erDiagram
     bigint id PK
     bigint pesantren_id FK
     string nama_kelas UK "unik per pesantren"
+    bigint wali_kelas_id FK "ke users, null (v4.17)"
   }
   kamar {
     bigint id PK
     bigint pesantren_id FK
     string nama_kamar UK "unik per pesantren"
+    bigint musyrif_id FK "ke users, null (v4.55)"
   }
   santri {
     bigint id PK
@@ -1174,7 +1182,7 @@ erDiagram
 
 **`kelas`** — `id` PK · `pesantren_id` FK cascadeOnDelete · `nama_kelas` string · `wali_kelas_id` FK→users nullOnDelete, null (v4.17) · timestamps. *Unique: `(pesantren_id, nama_kelas)`; Index: `wali_kelas_id`.* Hanya `admin_pesantren` yang bisa CRUD. **v4.17:** `wali_kelas_id` ditambah sebagai penugasan wali kelas (§5.4) — satu kelas satu wali, satu ustadz boleh mewalikan beberapa kelas, tanpa batas kuota seperti aturan 20 santri pembimbing. **v4.25:** kolom ini akhirnya dipakai — ia menjadi cakupan presensi harian (§3.2 Modul Presensi, §5.4); sebelumnya ia menganggur tujuh rilis sebagai "fondasi modul absensi".
 
-**`kamar`** — `id` PK · `pesantren_id` FK cascadeOnDelete · `nama_kamar` string · `kapasitas` unsignedSmallInteger default 0 · timestamps. *Unique: `(pesantren_id, nama_kamar)`.* Hanya `admin_pesantren` yang bisa CRUD.
+**`kamar`** — `id` PK · `pesantren_id` FK cascadeOnDelete · `nama_kamar` string · `musyrif_id` FK→users nullOnDelete, null (v4.55) · `kapasitas` unsignedSmallInteger default 0 · timestamps. *Unique: `(pesantren_id, nama_kamar)`; Index: `musyrif_id`.* Hanya `admin_pesantren` yang bisa CRUD. **v4.55:** `musyrif_id` ditambah sebagai penugasan musyrif kamar (§5.4) — satu kamar satu musyrif, satu ustadz boleh memusyrifi beberapa kamar, tanpa batas kuota seperti aturan 20 santri pembimbing. ⚠️ **Label saja:** kolom ini sengaja **tidak** membuka cakupan data apa pun — presedennya `ekskul_masters.pembina_id`, bukan `kelas.wali_kelas_id` yang sejak v4.25 justru menjadi cakupan presensi.
 
 **`santri`** — `id` PK · `pesantren_id` FK cascadeOnDelete · `wali_santri_id` FK→users restrictOnDelete, **nullable (v4.9)** · `pembimbing_ustadz_id` FK→users restrictOnDelete, **nullable (v4.9)** · `kelas_id` FK→kelas nullOnDelete · `kamar_id` FK→kamar nullOnDelete · `uuid` unique (token Magic Link) · `nis` (unique per pesantren) · `nama_lengkap` · `nama_panggilan` null · `tanggal_lahir` date null · `jenis_kelamin` enum(`laki_laki`/`perempuan`) null (v4.12) · `nama_ayah` null · `nama_ibu` null · `alamat_lengkap` text null · `jumlah_saudara` smallint null · `ciri_fisik` text null (ciri fisik yang mudah dikenali) · `cita_cita` null · `foto_profil` string null (path file, v4.9) · `status_aktif` bool default true · `deleted_at` (SoftDeletes) · timestamps. *Index: `(pesantren_id, status_aktif)`, `pembimbing_ustadz_id`, `wali_santri_id`; Unique: `(pesantren_id, nis)`.* Kolom `kelas`/`kamar` string dihapus (migrasi ke FK di v4.3). Kolom biodata (`nama_panggilan` s.d. `cita_cita`) ditambah di v4.7 — semua nullable, diisi opsional oleh admin/ustadz. `tanggal_lahir` ditambah di v4.8. **v4.9:** `wali_santri_id`/`pembimbing_ustadz_id` dibuat nullable agar bulk import Excel bisa membuat baris santri sebelum akun wali/ustadz terkait dibuat; `foto_profil` ditambah (FileUpload validasi magic-bytes, `SantriObserver` membersihkan file lama saat diganti/dihapus). **v4.12:** `jenis_kelamin` ditambah — enum PHP `App\Enums\JenisKelamin`, nullable (data lama tidak punya nilai), diisi opsional lewat form/import Excel (parser `SantriImport` toleran variasi teks "L"/"Laki-laki"/"P"/"Perempuan", case-insensitive). **v4.25:** dua kolom kartu presensi ditambah — `kode_presensi` string(16) null **unique global** (nama index `santri_kode_presensi_unik`) dan `kode_presensi_diperbarui_at` ts null. Isinya 12 karakter Crockford Base32 (alfabet tanpa I/L/O/U supaya tetap terbaca manusia bila QR rusak), digenerate `App\Support\KodePresensi::buat()` di `SantriObserver::creating()` dan di-backfill migrasi `tenant/2026_08_15_000006` lewat `DB::table('santri')` — bukan Eloquent, karena global scope `pesantren` menyaring habis saat migrasi jalan tanpa sesi auth, dan baris ber-`deleted_at` juga wajib kebagian kode agar unique tidak menabrak saat santri di-restore. ⚠️ **Kolom ini sengaja BUKAN `uuid`** — lihat §13.2.
 
@@ -1334,7 +1342,7 @@ Filternya **tanggal + mata pelajaran + jam ke**, dan pemilihannya sengaja dimula
 
 Mode ketiga sekaligus menutup celah penemuan: sebelum v4.26 **tidak ada satu pun `whereNull('kelas_id')` di seluruh repo**, dan filter kelas di daftar Santri memakai `SelectFilter::relationship()` yang tidak punya opsi "Tanpa Kelas" — jadi admin tidak punya cara apa pun menemukan santri yatim-kelas lewat UI. Opsi filter **"Tanpa Kelas"** karena itu ditambahkan juga ke `SantrisTable`, mengikuti pola label yang sudah ada di sana (`'— belum ada wali —'`).
 
-*Kamar ditolak sebagai unit presensi:* `Kamar` tidak punya `wali_kamar_id` (bandingkan `Kelas`), dan nol pemakaian `kamar_id` di seluruh Pages/Widgets/Services. Menjadikannya unit presensi berarti kolom baru **dan** jenis penugasan baru di §5.4 — di luar cakupan modul ini.
+*Kamar ditolak sebagai unit presensi:* nol pemakaian `kamar_id` di seluruh Pages/Widgets/Services, dan menjadikannya unit presensi berarti membuka modul ini ke unit kedua — di luar cakupan modul ini. *(Diperbarui v4.55: premis aslinya, "`Kamar` tidak punya `wali_kamar_id` (bandingkan `Kelas`)", **sudah tidak berlaku** — kolomnya kini ada sebagai `kamar.musyrif_id`, tapi **sengaja label saja**, tanpa cakupan data apa pun. Penolakannya tetap berdiri, dan alasannya jadi lebih jelas: yang kurang ternyata bukan kolomnya, melainkan keputusan menduakan unit presensi.)*
 
 **Tiga guard empty-state wajib (v4.26).** Repo ini **tidak punya konvensi `emptyState*` Filament sama sekali** — nol pemakaian di luar `vendor/` — jadi guard ditulis mengikuti dua pola yang memang sudah dipakai: guard Blade di halaman kustom (`saldo-uang-saku-page.blade.php`) dan guard aksi + `Notification::make()->warning()` (`RaporPage`). Ketiganya: **belum ada santri aktif** · **ustadz belum ditetapkan sebagai wali kelas mana pun** (dengan arahan konkret: "minta admin menetapkan Anda lewat menu Santri → Kelas") · **tanggal terpilih adalah hari libur** (peringatan, bukan larangan — ada pondok yang berkegiatan di hari libur).
 
@@ -1465,7 +1473,7 @@ Contoh: 1.200 santri → X=2 → kuota 1.200 → Rp 1.199.000/bulan. Contoh X=0:
 
 ### Penugasan ≠ Role
 
-Istilah pembimbing, pengampu, pencatat, penguji, pembina, dan wali kelas adalah **penugasan**, bukan tingkat hak akses. Semuanya disimpan sebagai FK di entitas yang ditugaskan — **bukan** sebagai nilai tambahan di `users.role`, yang tetap 4 nilai (§3.2).
+Istilah pembimbing, pengampu, pencatat, penguji, pembina, wali kelas, dan musyrif adalah **penugasan**, bukan tingkat hak akses. Semuanya disimpan sebagai FK di entitas yang ditugaskan — **bukan** sebagai nilai tambahan di `users.role`, yang tetap 4 nilai (§3.2).
 
 | Penugasan | Sumber data |
 |---|---|
@@ -1475,6 +1483,7 @@ Istilah pembimbing, pengampu, pencatat, penguji, pembina, dan wali kelas adalah 
 | Penguji | `tahfidz_rapor.penguji_id` |
 | Pembina ekskul | `ekskul_masters.pembina_id` (v4.17) — atau `pengajar` untuk pelatih luar tanpa akun |
 | Wali kelas | `kelas.wali_kelas_id` (v4.17) — sejak v4.25 menjadi cakupan **presensi harian** kelasnya + kewenangan menyetujui pengajuan izin santri kelasnya (§3.2 Modul Presensi) |
+| Musyrif kamar | `kamar.musyrif_id` (v4.55) — pengasuh asrama. ⚠️ **Label saja:** tidak membuka cakupan data apa pun, bandingkan wali kelas yang justru menjadi cakupan presensi |
 
 Alasan `role` tidak dipecah jadi `ustadz_pengampu`, `ustadz_penguji`, dan seterusnya:
 
@@ -1494,6 +1503,7 @@ Alasan `role` tidak dipecah jadi `ustadz_pengampu`, `ustadz_penguji`, dan seteru
 | Pengampu mapel | — | **Isi & lihat** baris mapel yang ia ampu | — |
 | Pembimbing halaqah | — | — | — |
 | Pembina ekskul | — | — | — |
+| Musyrif kamar | — | — | — |
 | `super_admin` | — | — | — |
 
 **Pembimbing halaqah sengaja nol akses presensi.** Halaqah adalah relasi pembinaan hafalan dan adab, bukan kehadiran kelas; memberinya presensi berarti mencampur dua cakupan yang §5.4 justru dibuat untuk memisahkan. Bila seorang pembimbing memang perlu mengabsen, admin cukup menjadikannya wali kelas — satu klik, dan jejaknya terbaca di `PenugasanUstadz::ringkasan()`. Dikunci tes `PresensiCakupanUstadzTest`, sekelas dengan `PenugasanUstadzTest`.
@@ -2059,7 +2069,7 @@ Sisanya: `PresensiIzinTest`, `PresensiHariLiburTest`, `PresensiRekapPageTest`, `
 
 **Konfigurasi:** unit test pakai PostgreSQL ephemeral (mis. service container `postgres` di GitHub Actions) atau SQLite in-memory untuk test yang tidak bergantung fitur PostgreSQL; `CACHE_DRIVER=array`, `QUEUE_CONNECTION=sync`. Test isolasi tenant & RLS **wajib** pakai PostgreSQL (bukan SQLite) agar policy ikut teruji.
 
-**Sebaran nyata (v4.51):** 774 tes / 3.049 asersi (terhadap PostgreSQL; di SQLite 14 tes di-skip).
+**Sebaran nyata (v4.55):** 800 tes / 3.143 asersi (terhadap PostgreSQL; di SQLite 14 tes di-skip).
 
 ⚠️ **Setiap tes yang mem-POST `/register` wajib memakai trait `Tests\Concerns\MenyemaiWilayah`.** Tabel `wilayah` sengaja dibiarkan kosong oleh migrasi (§3.1) dan `migrate:fresh` di suite tidak pernah menjalankan `wilayah:impor` — tanpa fixture-nya, validasi kode desa selalu gagal. Kelas kegagalannya bisa senyap: `EmailNotifikasiTest::test_email_sambutan_tidak_terkirim_saat_toggle_dimatikan` ber-`assertNotQueued`, jadi ia tetap hijau meski POST-nya sebenarnya ditolak validasi.
 
@@ -2170,7 +2180,7 @@ Opsional, setelah MVP. Hanya paket Maju. Laravel 13 AI SDK (first-party). **Ring
 
 # 22. Catatan Implementasi Aktual
 
-**PRD ini v4.54.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial 14 hari pada paket yang dipilih pendaftar di `/register` (Maju dikecualikan; durasi via `BillingSetting::trial_days`, kuota via `BillingCalculatorService`, keduanya bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 999k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 349k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
+**PRD ini v4.55.** **Versi:** Laravel 13.11.1 · Filament v5.6.3 · PHP 8.3 (Herd, dev) / PHP 8.4-FPM (VPS produksi — `composer.json` tetap `^8.3`, kompatibel) · PostgreSQL 17 · R2 (belum dikonfigurasi, lihat §6.2) · SSL Wildcard DNS-01 · deploy GitHub Actions (terverifikasi sukses 2026-06-07) · subdomain aktif kembali (file: `docs/walisantri-prd-v4.md`). **Model bisnis terkini:** tidak ada paket Gratis — `PaketLangganan` enum `rintisan`/`tumbuh`/`berkembang`/`maju`; onboarding mulai dengan trial 14 hari pada paket yang dipilih pendaftar di `/register` (Maju dikecualikan; durasi via `BillingSetting::trial_days`, kuota via `BillingCalculatorService`, keduanya bisa diubah super admin tanpa deploy). Lifecycle: `trial` → `expired` → (+7 hari) `suspended`. Maju base price Rp 999k/bulan untuk 1.000 santri (X=0). Paket Tumbuh (250 santri, Rp 349k) adalah paket paling populer. Minimum durasi upgrade dibatasi berdasarkan sisa masa aktif (lihat §16).
 
 **Bug & fix:** `HasUuids` isi `id` jika tak di-override → `uniqueIds(): ['uuid']` · `$navigationGroup` `?string` error → `string|UnitEnum|null` · index name >63 char (batas PostgreSQL) → nama eksplisit pendek · ingat PostgreSQL tak punya unsigned int (kolom unsigned → signed bigint) · (v4.7) `tahun_ajaran` di form Nilai Akademik/Rapor Tahfidz semula `TextInput` bebas → mismatch format antar input & filter rapor bikin data tidak muncul → diganti `Select` dropdown seragam (service `TahunAjaranOptions`) · (v4.7) Filament cluster default merender sub-navigation tab di bawah header & dropdown khusus mobile → di-override via render hook + CSS agar tab tampil di atas breadcrumbs, konsisten desktop/mobile (detail di §7).
 
@@ -2209,7 +2219,7 @@ Daftar tiga cacat yang dicatat v4.20 sudah habis dikerjakan, dan dua lagi ditemu
 | Batas | Kondisi sekarang | Pemicu tinjau ulang |
 |---|---|---|
 | `users` mencampur staf & wali (dibedakan `role`) | Hemat untuk MVP; atribut staf vs wali belum dipisah | Saat **modul SDM/kepegawaian** masuk (gaji, jadwal mengajar, sertifikasi) → pertimbangkan pecah ke tabel profil `staff`/`wali` |
-| `kelas` & `kamar` sudah jadi entitas master (v4.3) | Tabel `kelas` + `kamar` per-tenant, santri FK ke keduanya | Saat butuh atribut lebih lanjut per-kelas/kamar (kapasitas, PJ, jadwal) → tambah kolom ke tabel yang sudah ada |
+| `kelas` & `kamar` sudah jadi entitas master (v4.3) | Tabel `kelas` + `kamar` per-tenant, santri FK ke keduanya. **Pemicunya sudah dua kali menyala dan dijawab persis seperti tertulis:** `kelas.wali_kelas_id` (v4.17) lalu `kamar.musyrif_id` (v4.55) — kolom ke tabel yang sudah ada, bukan tabel baru | Saat butuh atribut yang **berulang per periode** (jadwal mingguan, rotasi musyrif per semester) → barulah tabel tersendiri; atribut bernilai tunggal tetap jadi kolom |
 | Sebagian enum di-hardcode (CHECK constraint) | Aman untuk nilai tetap (`A/B/C/D`, `tipe_setoran`) | Saat pesantren minta **menambah kategori** (mis. `kategori_keluhan`, jenis amalan) → migrasi ke tabel `master_{x}` per-tenant |
 | Sebagian besar entitas tenant menggantung ke `santri` | Pola per-santri konsisten & teruji; SPP & **akademik formal** (`mata_pelajaran` — akar `kelas`, bukan `santri`, v4.5) sudah jadi contoh nyata "modul bukan-per-santri" yang ikut §1.7 | Saat modul bukan-per-santri lain masuk (mis. aset pondok, kepegawaian) → ikuti pola yang sama: entitas baru dengan akar selain `santri`, ikuti §1.7 |
 | Email unik global | Wali tak bisa pakai email sama di dua pesantren | Bila kasus ini sering → pertimbangkan identitas wali lintas-tenant (kompleks; kemungkinan tetap ditolak) |
@@ -2241,4 +2251,4 @@ Daftar tiga cacat yang dicatat v4.20 sudah habis dikerjakan, dan dua lagi ditemu
 
 ---
 
-*Confidential — Internal Document | Walisantri.com v4.51 | Agustus 2026*
+*Confidential — Internal Document | Walisantri.com v4.55 | Agustus 2026*

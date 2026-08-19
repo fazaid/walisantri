@@ -20,6 +20,11 @@ class KamarsTable
                     ->label('Nama Kamar')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('musyrif.name')
+                    ->label('Musyrif')
+                    ->placeholder('—')
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('kapasitas')
                     ->label('Kapasitas')
                     ->sortable()
