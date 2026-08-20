@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Enums\Modul;
 use App\Models\Santri;
 use App\Support\Waktu;
 use Filament\Support\RawJs;
@@ -28,7 +29,8 @@ class UstadzTrendSetoranChart extends ChartWidget
 
     public static function canView(): bool
     {
-        return Auth::user()?->role === 'ustadz';
+        return Auth::user()?->role === 'ustadz'
+            && Modul::Tahfidz->aktif();
     }
 
     protected function getType(): string

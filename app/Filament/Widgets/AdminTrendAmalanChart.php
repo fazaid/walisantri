@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Enums\Modul;
 use App\Models\KesantrianMutabaah;
 use App\Models\Santri;
 use App\Services\MutabaahScoreCalculator;
@@ -27,7 +28,8 @@ class AdminTrendAmalanChart extends ChartWidget
 
     public static function canView(): bool
     {
-        return Auth::user()?->role === 'admin_pesantren';
+        return Auth::user()?->role === 'admin_pesantren'
+            && Modul::Kesantrian->aktif();
     }
 
     public function getDescription(): string|Htmlable|null

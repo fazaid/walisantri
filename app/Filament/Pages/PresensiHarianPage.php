@@ -6,6 +6,7 @@ use App\Enums\StatusKehadiran;
 use App\Enums\SumberPresensi;
 use App\Enums\UserRole;
 use App\Filament\Clusters\Presensi as ClusterPresensi;
+use App\Filament\Support\ModulKomponen;
 use App\Models\Kelas;
 use App\Models\Presensi;
 use App\Models\PresensiPengaturan;
@@ -83,7 +84,8 @@ class PresensiHarianPage extends Page implements HasForms
         return in_array(Auth::user()?->role, [
             UserRole::AdminPesantren->value,
             UserRole::Ustadz->value,
-        ], true);
+        ], true)
+            && ModulKomponen::aktif(static::class);
     }
 
     protected function pengaturan(): PresensiPengaturan

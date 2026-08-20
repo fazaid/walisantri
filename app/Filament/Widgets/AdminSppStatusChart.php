@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Enums\Modul;
 use App\Filament\Resources\TagihanSpps\TagihanSppResource;
 use App\Support\Waktu;
 use Filament\Support\RawJs;
@@ -34,7 +35,8 @@ class AdminSppStatusChart extends ChartWidget
 
     public static function canView(): bool
     {
-        return Auth::user()?->role === 'admin_pesantren';
+        return Auth::user()?->role === 'admin_pesantren'
+            && Modul::Keuangan->aktif();
     }
 
     public function getDescription(): string|Htmlable|null

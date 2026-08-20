@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\BlockMagicLinkSession;
 use App\Http\Middleware\CheckTenantQuota;
+use App\Http\Middleware\PastikanModulAktif;
 use App\Http\Middleware\PublicTenantResolver;
 use App\Http\Middleware\ResolveTenantFromAccount;
 use App\Http\Middleware\SaaSLifecycleLock;
@@ -35,6 +36,9 @@ return Application::configure(basePath: dirname(__DIR__))
             // selalu SESUDAHnya (ia membaca hasil resolusi host).
             'tenant.host' => TenantHost::class,
             'tenant.resolve' => ResolveTenantFromAccount::class,
+            // Toggle modul per-pesantren (§5.1, v4.57). Dipakai bersuffix nama modul:
+            // ->middleware('modul:keuangan').
+            'modul' => PastikanModulAktif::class,
         ]);
 
         // Tamu di host tenant diantar ke pintu pesantrennya sendiri, bukan ke pintu

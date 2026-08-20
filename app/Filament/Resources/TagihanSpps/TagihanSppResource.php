@@ -8,6 +8,7 @@ use App\Filament\Resources\TagihanSpps\Pages\ListTagihanSpps;
 use App\Filament\Resources\TagihanSpps\Pages\ViewTagihanSpp;
 use App\Filament\Resources\TagihanSpps\Schemas\TagihanSppInfolist;
 use App\Filament\Resources\TagihanSpps\Tables\TagihanSppsTable;
+use App\Filament\Support\ModulKomponen;
 use App\Models\TagihanSpp;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -35,7 +36,8 @@ class TagihanSppResource extends Resource
     {
         $role = auth()->user()?->role;
 
-        return $role === UserRole::AdminPesantren->value;
+        return $role === UserRole::AdminPesantren->value
+            && ModulKomponen::aktif(static::class);
     }
 
     public static function canViewAny(): bool

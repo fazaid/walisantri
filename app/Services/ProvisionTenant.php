@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\ModulPengaturan;
 use App\Models\Pesantren;
 use App\Models\PresensiPengaturan;
 use App\Models\TenantDomain;
@@ -47,6 +48,12 @@ class ProvisionTenant
         // justru karena satu-satunya pengisi datanya adalah migrasi yang hanya
         // jalan sekali.
         PresensiPengaturan::untuk($pesantren->id);
+
+        // Baris pengaturan modul (v4.57). Tiga lapis yang sama: migrasi
+        // 2026_08_21_000002 menambal tenant lama, ModulPengaturan::untuk()
+        // menyembuhkan sisanya. Seluruh modulnya menyala secara bawaan — tenant
+        // baru tidak boleh lahir dengan menu yang sudah dimatikan.
+        ModulPengaturan::untuk($pesantren->id);
 
         // Jam pelajaran bawaan. Sama seperti amalan Mutaba'ah: daftarnya milik
         // aplikasi (App\Support\PresensiDefault), bukan milik satu migrasi yang

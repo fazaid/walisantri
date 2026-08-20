@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Enums\UserRole;
 use App\Filament\Clusters\Akademik;
+use App\Filament\Support\ModulKomponen;
 use App\Models\MataPelajaran;
 use App\Models\NilaiAkademik;
 use App\Models\Santri;
@@ -69,7 +70,8 @@ class NilaiMassalPage extends Page implements HasForms
         return in_array(Auth::user()?->role, [
             UserRole::AdminPesantren->value,
             UserRole::Ustadz->value,
-        ]);
+        ])
+            && ModulKomponen::aktif(static::class);
     }
 
     public function mount(): void

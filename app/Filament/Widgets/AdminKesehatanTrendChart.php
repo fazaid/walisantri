@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Enums\Modul;
 use App\Models\KesantrianKesehatan;
 use App\Support\Waktu;
 use Filament\Forms\Components\Select;
@@ -31,7 +32,8 @@ class AdminKesehatanTrendChart extends ChartWidget
 
     public static function canView(): bool
     {
-        return Auth::user()?->role === 'admin_pesantren';
+        return Auth::user()?->role === 'admin_pesantren'
+            && Modul::Kesantrian->aktif();
     }
 
     public function getDescription(): string|Htmlable|null

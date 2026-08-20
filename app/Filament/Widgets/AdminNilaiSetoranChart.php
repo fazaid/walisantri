@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Enums\Modul;
 use App\Support\Waktu;
 use Filament\Support\RawJs;
 use Filament\Widgets\ChartWidget;
@@ -26,7 +27,8 @@ class AdminNilaiSetoranChart extends ChartWidget
 
     public static function canView(): bool
     {
-        return Auth::user()?->role === 'admin_pesantren';
+        return Auth::user()?->role === 'admin_pesantren'
+            && Modul::Tahfidz->aktif();
     }
 
     public function getDescription(): string|Htmlable|null

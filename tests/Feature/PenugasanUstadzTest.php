@@ -3,9 +3,12 @@
 namespace Tests\Feature;
 
 use App\Filament\Resources\EkskulMasters\Pages\ListEkskulMasters;
+use App\Filament\Resources\Kamars\KamarResource;
+use App\Filament\Resources\Kamars\Pages\ListKamars;
 use App\Filament\Resources\Kelas\Pages\ListKelas;
 use App\Filament\Resources\KesantrianMutabaahs\Pages\ListKesantrianMutabaahs;
 use App\Models\EkskulMaster;
+use App\Models\Kamar;
 use App\Models\Kelas;
 use App\Models\KesantrianMutabaah;
 use App\Models\MataPelajaran;
@@ -19,7 +22,7 @@ use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
- * Jenis ustadz (pembimbing, pengampu, penguji, pembina, wali kelas) adalah
+ * Jenis ustadz (pembimbing, pengampu, pembina, wali kelas, musyrif) adalah
  * PENUGASAN, bukan role — disimpan sebagai FK di entitas yang ditugaskan supaya
  * satu orang bisa merangkap. Tes ini mengunci dua hal: penugasan baru tersimpan
  * & tampil, dan cakupan data tetap TERPISAH PER MODUL (tidak melebar).
@@ -94,6 +97,97 @@ class PenugasanUstadzTest extends TestCase
         ]);
 
         $this->assertCount(2, PenugasanUstadz::kelasIdsPerwalian($ustadz->id));
+    }
+
+    // ---------- Musyrif kamar ----------
+
+    public function test_admin_bisa_menetapkan_musyrif_kamar_lewat_modal(): void
+    {
+        $ustadz = $this->ustadz();
+        $this->actingAs($this->admin());
+
+        Livewire::test(ListKamars::class)
+            ->callAction('create', [
+                'nama_kamar' => 'Kamar Abu Bakar',
+                'musyrif_id' => $ustadz->id,
+                'kapasitas' => 8,
+            ])
+            ->assertHasNoActionErrors();
+
+        $this->assertDatabaseHas('kamar', [
+            'nama_kamar' => 'Kamar Abu Bakar',
+            'musyrif_id' => $ustadz->id,
+        ]);
+    }
+
+    public function test_nama_musyrif_tampil_di_daftar_kamar(): void
+    {
+        $ustadz = $this->ustadz();
+        Kamar::create([
+            'pesantren_id' => $this->pesantren->id,
+            'nama_kamar' => 'Kamar Umar',
+            'musyrif_id' => $ustadz->id,
+            'kapasitas' => 8,
+        ]);
+
+        $this->actingAs($this->admin());
+
+        Livewire::test(ListKamars::class)->assertSee($ustadz->name);
+    }
+
+    public function test_kamar_boleh_tanpa_musyrif_dan_musyrif_boleh_memegang_beberapa_kamar(): void
+    {
+        $ustadz = $this->ustadz();
+
+        Kamar::create(['pesantren_id' => $this->pesantren->id, 'nama_kamar' => 'A']);
+        Kamar::create([
+            'pesantren_id' => $this->pesantren->id, 'nama_kamar' => 'B', 'musyrif_id' => $ustadz->id,
+        ]);
+        Kamar::create([
+            'pesantren_id' => $this->pesantren->id, 'nama_kamar' => 'C', 'musyrif_id' => $ustadz->id,
+        ]);
+
+        // Sengaja lewat query langsung, bukan lewat method PenugasanUstadz: musyrif
+        // adalah penugasan LABEL SAJA, jadi method jalurnya tidak dibuat sama sekali.
+        $this->assertSame(2, Kamar::where('musyrif_id', $ustadz->id)->count());
+    }
+
+    public function test_musyrif_kamar_tidak_membuka_akses_data_apa_pun(): void
+    {
+        // Keputusan sadar (§5.4): musyrif adalah label, bukan hak akses. Kalau suatu
+        // saat cakupannya sengaja dibuka, tes INI yang harus diubah lebih dulu — bukan
+        // diam-diam melebar karena refactor. Sekelas dengan tes pengampu di bawah.
+        $musyrif = $this->ustadz();
+        $pembimbing = $this->ustadz();
+
+        $kamar = Kamar::create([
+            'pesantren_id' => $this->pesantren->id,
+            'nama_kamar' => 'Kamar Utsman',
+            'musyrif_id' => $musyrif->id,
+        ]);
+
+        $santri = Santri::factory()->create([
+            'pesantren_id' => $this->pesantren->id,
+            'kamar_id' => $kamar->id,
+            'pembimbing_ustadz_id' => $pembimbing->id,
+            'nama_lengkap' => 'Santri Kamar Utsman',
+        ]);
+
+        KesantrianMutabaah::create([
+            'pesantren_id' => $this->pesantren->id,
+            'santri_id' => $santri->id,
+            'tanggal' => now()->toDateString(),
+            'amalan' => [],
+        ]);
+
+        Livewire::actingAs($musyrif)
+            ->test(ListKesantrianMutabaahs::class)
+            ->assertDontSee('Santri Kamar Utsman');
+
+        // Ia bahkan tidak bisa membuka menu Kamar-nya sendiri — KamarResource tetap
+        // admin-only, tidak disentuh perubahan ini.
+        $this->actingAs($musyrif);
+        $this->assertFalse(KamarResource::canViewAny());
     }
 
     // ---------- Pembina ekskul ----------
@@ -178,7 +272,7 @@ class PenugasanUstadzTest extends TestCase
 
     public function test_ringkasan_menyebut_semua_penugasan_yang_dirangkap(): void
     {
-        // Justru inilah alasan role tidak dipecah: satu orang memegang empat
+        // Justru inilah alasan role tidak dipecah: satu orang memegang lima
         // penugasan sekaligus, mustahil diwakili satu nilai users.role.
         $ustadz = $this->ustadz();
 
@@ -207,10 +301,19 @@ class PenugasanUstadzTest extends TestCase
             'pembina_id' => $ustadz->id,
         ]);
 
+        Kamar::create([
+            'pesantren_id' => $this->pesantren->id,
+            'nama_kamar' => 'Kamar Abu Bakar',
+            'musyrif_id' => $ustadz->id,
+        ]);
+
         $ringkasan = PenugasanUstadz::ringkasan($ustadz);
 
         $this->assertContains('Pembimbing 2 santri', $ringkasan);
         $this->assertContains('Wali Kelas 3A', $ringkasan);
+        // Kamar lazim dinamai "Kamar X", jadi "Musyrif {nama_kamar}" polos sudah
+        // berbunyi benar tanpa menyisipkan kata "Kamar" sendiri.
+        $this->assertContains('Musyrif Kamar Abu Bakar', $ringkasan);
         $this->assertContains('Pengampu Fiqih 3A', $ringkasan);
         $this->assertContains('Pembina Kaligrafi', $ringkasan);
     }

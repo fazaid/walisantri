@@ -7,6 +7,16 @@
 @section('content')
 <div class="space-y-4">
 
+    @php
+        /* Seksi milik modul yang dimatikan pesantren tidak dirender sama sekali.
+           Dashboard hanya dicapai sesi login (magic.block menyaring sesi magic
+           link), jadi konteks tenant di sini selalu terisi dan Modul::X->aktif()
+           boleh membaca pesantren pengguna. */
+        $modulKesantrian = \App\Enums\Modul::Kesantrian->aktif();
+        $modulKeuangan   = \App\Enums\Modul::Keuangan->aktif();
+        $modulPresensi   = \App\Enums\Modul::Presensi->aktif();
+    @endphp
+
     {{-- Sapaan --}}
     <div>
         <p class="text-sm text-gray-500">Assalamu'alaikum,</p>
@@ -14,7 +24,7 @@
     </div>
 
     {{-- Alert Kesehatan --}}
-    @if($alertKesehatan->isNotEmpty())
+    @if($modulKesantrian && $alertKesehatan->isNotEmpty())
     <div class="bg-red-50 border border-red-200 rounded-2xl p-4 space-y-1">
         <p class="text-sm font-semibold text-red-700">⚠ Perhatian Kesehatan</p>
         @foreach($alertKesehatan as $alert)
@@ -28,7 +38,7 @@
     @endif
 
     {{-- Alert Kehadiran Hari Ini --}}
-    @if($alertKehadiran->isNotEmpty())
+    @if($modulPresensi && $alertKehadiran->isNotEmpty())
     <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-1">
         <p class="text-sm font-semibold text-amber-700">🗓️ Kehadiran Hari Ini</p>
         @foreach($alertKehadiran as $alert)
@@ -95,7 +105,7 @@
     @endif
 
     {{-- Notifikasi SPP --}}
-    @if($tunggakanSpp > 0)
+    @if($modulKeuangan && $tunggakanSpp > 0)
     <a href="{{ route('wali.spp') }}" class="block bg-orange-50 border border-orange-200 rounded-2xl px-4 py-3">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-2.5">
@@ -116,7 +126,7 @@
 
     {{-- Uang Saku (agregat lintas anak) — login-only, seperti SPP. Sengaja TIDAK
          disurutkan ke magic link/preview karena data finansial & link bisa disebar. --}}
-    @if($firstSantriId)
+    @if($modulKeuangan && $firstSantriId)
     <a href="{{ route('wali.uang-saku') }}"
        class="block bg-white rounded-2xl shadow-sm border border-gray-100 px-4 py-3 hover:border-teal-200 transition-colors">
         <div class="flex items-center justify-between">
@@ -136,7 +146,7 @@
 
     {{-- Inventaris (agregat lintas anak) — untuk wali >1 anak. Wali 1 anak sudah
          mendapat kartu inventaris per-santri dari partial santri-detail di atas. --}}
-    @if(! $santri && $firstSantriId)
+    @if($modulKesantrian && ! $santri && $firstSantriId)
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 px-4 py-3">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">

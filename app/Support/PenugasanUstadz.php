@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Enums\UserRole;
 use App\Models\EkskulMaster;
+use App\Models\Kamar;
 use App\Models\Kelas;
 use App\Models\MataPelajaran;
 use App\Models\Santri;
@@ -14,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 /**
  * Satu-satunya sumber jawaban atas "apa yang dipegang ustadz ini".
  *
- * Jenis ustadz (pembimbing, pengampu, penguji, pembina, wali kelas) adalah
+ * Jenis ustadz (pembimbing, pengampu, pembina, wali kelas, musyrif) adalah
  * PENUGASAN, bukan role: satu orang lazim merangkap beberapa sekaligus, jadi
  * semuanya disimpan sebagai FK di entitas yang ditugaskan — bukan sebagai nilai
  * tambahan di users.role yang cuma muat satu nilai.
@@ -23,6 +24,11 @@ use Illuminate\Support\Facades\Auth;
  * ia ampu, pembimbing hanya santri binaannya, wali kelas hanya kelasnya. Kelas ini
  * memusatkan definisinya supaya keenam jalur tidak lagi dihitung ulang ad-hoc di
  * tiap resource — bukan untuk menyatukan cakupannya jadi satu kolam.
+ *
+ * Musyrif kamar (v4.55) adalah pengecualian yang disengaja: ia penugasan penuh yang
+ * ikut muncul di ringkasan(), tapi cakupannya NOL, jadi ia tidak punya method jalur
+ * sendiri di sini. Kalau suatu saat ia diberi cakupan, method-nya ditambahkan saat
+ * itu juga — bukan sekarang, saat belum ada yang memanggilnya.
  */
 class PenugasanUstadz
 {
@@ -79,15 +85,15 @@ class PenugasanUstadz
 
     /**
      * Ringkasan penugasan untuk ditampilkan di halaman Pengguna, mis.
-     * ["Pembimbing 12 santri", "Wali Kelas 3A", "Pengampu Fiqih 3A"].
+     * ["Pembimbing 12 santri", "Wali Kelas 3A", "Musyrif Kamar Abu Bakar"].
      *
      * Murni turunan dari FK — tidak ada kolom yang disimpan, jadi tidak bisa basi.
      */
     public static function ringkasan(User $user): array
     {
-        // Empat query per pemanggilan, dan pemanggilnya adalah kolom tabel yang jalan
+        // Lima query per pemanggilan, dan pemanggilnya adalah kolom tabel yang jalan
         // SEKALI PER BARIS. Wali santri (baris terbanyak — satu per keluarga) dan super
-        // admin tidak pernah bisa jadi pembimbing/wali kelas/pengampu/pembina, jadi
+        // admin tidak pernah bisa jadi pembimbing/wali kelas/musyrif/pengampu/pembina, jadi
         // keluar lebih awal: halaman Pengguna dengan 25 baris tidak lagi menembak
         // ~100 query hanya demi satu kolom.
         if (in_array($user->role, [UserRole::WaliSantri->value, UserRole::SuperAdmin->value], true)) {
@@ -107,6 +113,18 @@ class PenugasanUstadz
         $perwalian = Kelas::where('wali_kelas_id', $user->id)->pluck('nama_kelas');
         foreach ($perwalian as $namaKelas) {
             $ringkasan[] = "Wali Kelas {$namaKelas}";
+        }
+
+        // Musyrif kamar — LABEL SAJA (§5.4). Tidak ada kamarIdsPerwalian() pendamping:
+        // penugasan tanpa cakupan data tidak punya pemanggil, dan method tanpa pemanggil
+        // adalah kode mati — pelajaran yang sama yang membatalkan santriIdsKelasDiampu().
+        //
+        // Dirangkai "Musyrif {nama_kamar}" polos, sama seperti wali kelas: kamar lazim
+        // dinamai "Kamar Abu Bakar" sehingga katanya sudah ada di sana, dan mendeteksi
+        // prefiks itu akan salah persis saat sebuah kamar memang perlu menyandangnya.
+        $kamarDimusyrifi = Kamar::where('musyrif_id', $user->id)->pluck('nama_kamar');
+        foreach ($kamarDimusyrifi as $namaKamar) {
+            $ringkasan[] = "Musyrif {$namaKamar}";
         }
 
         $mapel = MataPelajaran::where('ustadz_id', $user->id)

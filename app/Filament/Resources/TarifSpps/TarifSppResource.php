@@ -7,6 +7,7 @@ use App\Filament\Clusters\Keuangan;
 use App\Filament\Resources\TarifSpps\Pages\ListTarifSpps;
 use App\Filament\Resources\TarifSpps\Schemas\TarifSppForm;
 use App\Filament\Resources\TarifSpps\Tables\TarifSppsTable;
+use App\Filament\Support\ModulKomponen;
 use App\Models\TarifSpp;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -33,7 +34,8 @@ class TarifSppResource extends Resource
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->role === UserRole::AdminPesantren->value;
+        return auth()->user()?->role === UserRole::AdminPesantren->value
+            && ModulKomponen::aktif(static::class);
     }
 
     public static function canViewAny(): bool

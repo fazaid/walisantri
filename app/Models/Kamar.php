@@ -7,10 +7,11 @@ use App\Traits\Multitenantable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Table('kamar')]
-#[Fillable(['pesantren_id', 'nama_kamar', 'kapasitas'])]
+#[Fillable(['pesantren_id', 'nama_kamar', 'musyrif_id', 'kapasitas'])]
 class Kamar extends Model
 {
     use BelongsToPesantren, Multitenantable;
@@ -18,5 +19,10 @@ class Kamar extends Model
     public function santri(): HasMany
     {
         return $this->hasMany(Santri::class);
+    }
+
+    public function musyrif(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'musyrif_id');
     }
 }

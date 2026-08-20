@@ -14,7 +14,9 @@ class ListTahfidzUjian extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()->modalWidth(Width::FourExtraLarge),
+            CreateAction::make()
+                ->modalWidth(Width::FourExtraLarge)
+                ->mutateDataUsing(TahfidzUjianResource::stempelPenguji()),
         ];
     }
 }

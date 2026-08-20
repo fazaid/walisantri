@@ -6,6 +6,7 @@ use App\Enums\StatusKehadiran;
 use App\Enums\SumberPresensi;
 use App\Enums\UserRole;
 use App\Filament\Clusters\Presensi as ClusterPresensi;
+use App\Filament\Support\ModulKomponen;
 use App\Models\Presensi;
 use App\Models\PresensiPengaturan;
 use App\Models\Santri;
@@ -54,7 +55,8 @@ class PresensiScannerPage extends Page
         return in_array(Auth::user()?->role, [
             UserRole::AdminPesantren->value,
             UserRole::Ustadz->value,
-        ], true);
+        ], true)
+            && ModulKomponen::aktif(static::class);
     }
 
     public function pengaturan(): PresensiPengaturan

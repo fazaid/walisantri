@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Enums\UserRole;
 use App\Filament\Clusters\Presensi as ClusterPresensi;
 use App\Filament\Resources\PresensiJamPelajarans\PresensiJamPelajaranResource;
+use App\Filament\Support\ModulKomponen;
 use App\Models\PresensiPengaturan;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -73,9 +74,15 @@ class PresensiPengaturanPage extends Page implements HasForms
         6 => 'Sabtu',
     ];
 
+    /**
+     * Ikut mati bersama modul Presensi, dan itu memang benar: kalau modulnya
+     * dimatikan, pengaturannya tidak punya alasan untuk tetap ada. Jalan kembalinya
+     * lewat Manajemen → Modul, bukan lewat halaman ini.
+     */
     public static function canAccess(): bool
     {
-        return Auth::user()?->role === UserRole::AdminPesantren->value;
+        return Auth::user()?->role === UserRole::AdminPesantren->value
+            && ModulKomponen::aktif(static::class);
     }
 
     public function mount(): void

@@ -10,6 +10,7 @@ use App\Filament\Resources\PresensiIzins\Pages\ViewPresensiIzin;
 use App\Filament\Resources\PresensiIzins\Schemas\PresensiIzinForm;
 use App\Filament\Resources\PresensiIzins\Schemas\PresensiIzinInfolist;
 use App\Filament\Resources\PresensiIzins\Tables\PresensiIzinsTable;
+use App\Filament\Support\ModulKomponen;
 use App\Models\PresensiIzin;
 use App\Support\PenugasanUstadz;
 use BackedEnum;
@@ -52,7 +53,8 @@ class PresensiIzinResource extends Resource
         return in_array(Auth::user()?->role, [
             UserRole::AdminPesantren->value,
             UserRole::Ustadz->value,
-        ], true);
+        ], true)
+            && ModulKomponen::aktif(static::class);
     }
 
     public static function canCreate(): bool

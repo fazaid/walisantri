@@ -268,24 +268,28 @@ Route::domain('{slug}.'.$baseDomain)
             ->prefix('wali')
             ->name('wali.')
             ->group(function () {
+                // Rute ber-`modul:*` ikut mati saat pesantren mematikan modulnya
+                // (v4.57) — 404, bukan 403; lihat PastikanModulAktif. Dashboard,
+                // detail santri, dan pengumuman sengaja tanpa penjaga: ketiganya
+                // inti portal dan tidak dimiliki modul mana pun.
                 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
                 Route::get('/santri/{santri}', [ReportController::class, 'show'])->name('santri.show');
-                Route::get('/santri/{santri}/tahfidz', [TahfidzStatsController::class, 'show'])->name('santri.tahfidz');
-                Route::get('/santri/{santri}/kesehatan', [KesehatanStatsController::class, 'show'])->name('santri.kesehatan');
-                Route::get('/santri/{santri}/mutabaah', [MutabaahStatsController::class, 'show'])->name('santri.mutabaah');
-                Route::get('/santri/{santri}/inventaris', [InventarisController::class, 'show'])->name('santri.inventaris');
-                Route::get('/santri/{santri}/presensi', [PresensiController::class, 'show'])->name('santri.presensi');
+                Route::get('/santri/{santri}/tahfidz', [TahfidzStatsController::class, 'show'])->name('santri.tahfidz')->middleware('modul:tahfidz');
+                Route::get('/santri/{santri}/kesehatan', [KesehatanStatsController::class, 'show'])->name('santri.kesehatan')->middleware('modul:kesantrian');
+                Route::get('/santri/{santri}/mutabaah', [MutabaahStatsController::class, 'show'])->name('santri.mutabaah')->middleware('modul:kesantrian');
+                Route::get('/santri/{santri}/inventaris', [InventarisController::class, 'show'])->name('santri.inventaris')->middleware('modul:kesantrian');
+                Route::get('/santri/{santri}/presensi', [PresensiController::class, 'show'])->name('santri.presensi')->middleware('modul:presensi');
                 Route::get('/pengumuman', [PengumumanController::class, 'index'])->name('pengumuman');
-                Route::get('/rapor', [RaporController::class, 'index'])->name('rapor');
-                Route::get('/laporan/pdf', [LaporanController::class, 'exportPdf'])->name('laporan.pdf');
-                Route::get('/spp', [SppController::class, 'index'])->name('spp');
-                Route::post('/spp/{tagihan}/konfirmasi', [SppController::class, 'konfirmasi'])->name('spp.konfirmasi');
-                Route::get('/uang-saku', [UangSakuController::class, 'index'])->name('uang-saku');
-                Route::get('/uang-saku/{santri}', [UangSakuController::class, 'show'])->name('uang-saku.show');
-                Route::get('/izin', [IzinController::class, 'index'])->name('izin');
-                Route::post('/izin', [IzinController::class, 'store'])->name('izin.store');
+                Route::get('/rapor', [RaporController::class, 'index'])->name('rapor')->middleware('modul:rapor');
+                Route::get('/laporan/pdf', [LaporanController::class, 'exportPdf'])->name('laporan.pdf')->middleware('modul:rapor');
+                Route::get('/spp', [SppController::class, 'index'])->name('spp')->middleware('modul:keuangan');
+                Route::post('/spp/{tagihan}/konfirmasi', [SppController::class, 'konfirmasi'])->name('spp.konfirmasi')->middleware('modul:keuangan');
+                Route::get('/uang-saku', [UangSakuController::class, 'index'])->name('uang-saku')->middleware('modul:keuangan');
+                Route::get('/uang-saku/{santri}', [UangSakuController::class, 'show'])->name('uang-saku.show')->middleware('modul:keuangan');
+                Route::get('/izin', [IzinController::class, 'index'])->name('izin')->middleware('modul:presensi');
+                Route::post('/izin', [IzinController::class, 'store'])->name('izin.store')->middleware('modul:presensi');
                 // Lampiran di disk 'local' — tidak punya URL publik, jadi disajikan
                 // lewat rute terotorisasi (pola orders.bukti-transfer).
-                Route::get('/izin/{izin}/lampiran', [IzinController::class, 'lampiran'])->name('izin.lampiran');
+                Route::get('/izin/{izin}/lampiran', [IzinController::class, 'lampiran'])->name('izin.lampiran')->middleware('modul:presensi');
             });
     });

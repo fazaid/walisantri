@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Clusters\Kesantrian;
+use App\Filament\Support\ModulKomponen;
 use App\Models\KesantrianAmalMaster;
 use App\Models\KesantrianMutabaah;
 use App\Models\Santri;
@@ -72,7 +73,8 @@ class MutabaahHarianPage extends Page implements HasForms
 
     public static function canAccess(): bool
     {
-        return in_array(Auth::user()?->role, ['admin_pesantren', 'ustadz']);
+        return in_array(Auth::user()?->role, ['admin_pesantren', 'ustadz'])
+            && ModulKomponen::aktif(static::class);
     }
 
     public function mount(): void

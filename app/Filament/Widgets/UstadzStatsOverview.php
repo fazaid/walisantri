@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Enums\Modul;
 use App\Models\KesantrianKesehatan;
 use App\Models\KesantrianMutabaah;
 use App\Models\Santri;
@@ -38,48 +39,63 @@ class UstadzStatsOverview extends StatsOverviewWidget
 
         $totalHalaqah = $santriHalaqah->count();
 
+        $tahfidzAktif = Modul::Tahfidz->aktif();
+        $kesantrianAktif = Modul::Kesantrian->aktif();
+
         // Setoran tahfidz hari ini khusus dari santri halaqahnya
-        $setoranHariIni = TahfidzProgress::where('pesantren_id', $pesantrenId)
+        $setoranHariIni = ! $tahfidzAktif ? 0 : TahfidzProgress::where('pesantren_id', $pesantrenId)
             ->where('ustadz_id', $ustadzId)
             ->whereIn('santri_id', $santriHalaqah)
             ->where('tanggal', $today)
             ->count();
 
         // Santri yang belum input mutaba'ah hari ini
-        $sudahInput = KesantrianMutabaah::where('pesantren_id', $pesantrenId)
-            ->whereIn('santri_id', $santriHalaqah)
-            ->where('tanggal', $today)
-            ->pluck('santri_id');
+        $belumInput = 0;
+        $santriSakit = 0;
 
-        $belumInput = $totalHalaqah - $sudahInput->count();
+        if ($kesantrianAktif) {
+            $sudahInput = KesantrianMutabaah::where('pesantren_id', $pesantrenId)
+                ->whereIn('santri_id', $santriHalaqah)
+                ->where('tanggal', $today)
+                ->pluck('santri_id');
 
-        // Santri sakit di halaqahnya hari ini
-        $santriSakit = KesantrianKesehatan::where('pesantren_id', $pesantrenId)
-            ->whereIn('santri_id', $santriHalaqah)
-            ->where('tanggal_periksa', $today)
-            ->whereIn('status_pemulihan', ['Istirahat_Total', 'Rujukan_Luar'])
-            ->count();
+            $belumInput = $totalHalaqah - $sudahInput->count();
 
-        return [
+            // Santri sakit di halaqahnya hari ini
+            $santriSakit = KesantrianKesehatan::where('pesantren_id', $pesantrenId)
+                ->whereIn('santri_id', $santriHalaqah)
+                ->where('tanggal_periksa', $today)
+                ->whereIn('status_pemulihan', ['Istirahat_Total', 'Rujukan_Luar'])
+                ->count();
+        }
+
+        $stats = [
             Stat::make('Santri Binaan', $totalHalaqah)
                 ->description('Santri binaan Anda')
                 ->descriptionIcon('heroicon-m-users')
                 ->color('success'),
 
-            Stat::make('Setoran Hari Ini', $setoranHariIni)
+        ];
+
+        if ($tahfidzAktif) {
+            $stats[] = Stat::make('Setoran Hari Ini', $setoranHariIni)
                 ->description('Total setoran masuk hari ini')
                 ->descriptionIcon('heroicon-m-book-open')
-                ->color($setoranHariIni > 0 ? 'success' : 'warning'),
+                ->color($setoranHariIni > 0 ? 'success' : 'warning');
+        }
 
-            Stat::make('Belum Input Mutaba\'ah', $belumInput)
+        if ($kesantrianAktif) {
+            $stats[] = Stat::make('Belum Input Mutaba\'ah', $belumInput)
                 ->description('Dari '.$totalHalaqah.' santri')
                 ->descriptionIcon('heroicon-m-clipboard-document-list')
-                ->color($belumInput === 0 ? 'success' : ($belumInput <= 3 ? 'warning' : 'danger')),
+                ->color($belumInput === 0 ? 'success' : ($belumInput <= 3 ? 'warning' : 'danger'));
 
-            Stat::make('Santri Sakit', $santriSakit)
+            $stats[] = Stat::make('Santri Sakit', $santriSakit)
                 ->description('Istirahat total & rujukan luar')
                 ->descriptionIcon('heroicon-m-heart')
-                ->color($santriSakit > 0 ? 'danger' : 'success'),
-        ];
+                ->color($santriSakit > 0 ? 'danger' : 'success');
+        }
+
+        return $stats;
     }
 }

@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Enums\UserRole;
 use App\Filament\Clusters\Keuangan;
 use App\Filament\Resources\UangSakus\UangSakuResource;
+use App\Filament\Support\ModulKomponen;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Pages\Page;
@@ -33,7 +34,8 @@ class SaldoUangSakuPage extends Page
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->role === UserRole::AdminPesantren->value;
+        return auth()->user()?->role === UserRole::AdminPesantren->value
+            && ModulKomponen::aktif(static::class);
     }
 
     protected function getHeaderActions(): array
