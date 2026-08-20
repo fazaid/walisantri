@@ -111,6 +111,21 @@ class AdminPanelProvider extends PanelProvider
                 PanelsRenderHook::GLOBAL_SEARCH_AFTER,
                 fn (): string => view('filament.admin.tombol-bantuan')->render(),
             )
+            // Tombol "Panduan" di baris judul setiap halaman. Hook ini dirender
+            // walau halamannya tidak punya header action sama sekali (lihat
+            // components/header/index.blade.php), jadi halaman pengaturan pun
+            // kebagian. Satu pendaftaran untuk semua menu: yang menentukan
+            // muncul-tidaknya adalah ada-tidaknya entri di Panduan::PETA.
+            //
+            // Parameter $scopes DISUNTIKKAN Filament, bukan ditebak: ViewManager
+            // memanggil closure ini lewat app()->call($hook, ['scopes' => ...]),
+            // berisi [KelasHalaman] atau [KelasHalaman, KelasResource]. Namanya
+            // harus persis 'scopes' — salah nama baru ketahuan saat halaman
+            // dirender, bukan saat boot (dijaga TombolPanduanTest).
+            ->renderHook(
+                PanelsRenderHook::PAGE_HEADER_ACTIONS_BEFORE,
+                fn (array $scopes): string => view('filament.admin.tombol-panduan', ['scopes' => $scopes])->render(),
+            )
             ->renderHook(
                 PanelsRenderHook::BODY_END,
                 fn (): string => view('filament.admin.bottom-nav')->render(),

@@ -732,5 +732,7 @@
     {{-- Footer --}}
     @include('partials.situs-footer')
 
+@include('partials.tombol-whatsapp')
+
 </body>
 </html>

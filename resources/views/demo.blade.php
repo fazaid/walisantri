@@ -201,5 +201,7 @@
         © {{ date('Y') }} Walisantri.com · Platform Digitalisasi Pesantren Indonesia
     </footer>
 
+@include('partials.tombol-whatsapp', ['pesan' => 'Halo tim Walisantri, saya ingin bertanya sebelum mengajukan demo.'])
+
 </body>
 </html>
