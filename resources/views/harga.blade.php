@@ -415,5 +415,7 @@
 
     @include('partials.situs-footer')
 
+@include('partials.tombol-whatsapp', ['pesan' => 'Halo tim Walisantri, saya ingin bertanya tentang paket dan harga Walisantri untuk pesantren kami.'])
+
 </body>
 </html>

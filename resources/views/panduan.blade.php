@@ -1004,5 +1004,7 @@
     window.addEventListener('resize', ukur);
   })();
 </script>
+@include('partials.tombol-whatsapp', ['pesan' => 'Halo tim Walisantri, saya sedang membaca panduan dan ingin bertanya tentang '])
+
 </body>
 </html>
