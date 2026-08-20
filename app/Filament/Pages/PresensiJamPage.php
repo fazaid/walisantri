@@ -7,6 +7,7 @@ use App\Enums\SumberPresensi;
 use App\Enums\UserRole;
 use App\Filament\Clusters\Presensi as ClusterPresensi;
 use App\Filament\Resources\PresensiJamPelajarans\PresensiJamPelajaranResource;
+use App\Filament\Support\ModulKomponen;
 use App\Models\MataPelajaran;
 use App\Models\Presensi;
 use App\Models\PresensiJamPelajaran;
@@ -75,20 +76,28 @@ class PresensiJamPage extends Page implements HasForms
     protected ?PresensiPengaturan $pengaturan = null;
 
     /**
-     * Peran saja, TIDAK termasuk cek toggle.
+     * Peran + modul Presensi. TIDAK termasuk cek toggle `presensi_per_jam_aktif`.
      *
-     * Kalau toggle ikut dinilai di sini, admin yang membuka URL-nya saat fitur
-     * mati akan menabrak 403 telanjang — padahal dialah satu-satunya orang yang
-     * bisa menyalakannya, dan yang ia butuhkan justru penjelasan plus tautannya.
-     * Penjagaan fiturnya ada di peringatanKosong() (untuk layar) dan di save()
-     * (untuk request yang dirakit tangan).
+     * Kalau toggle per-jam ikut dinilai di sini, admin yang membuka URL-nya saat
+     * fitur mati akan menabrak 403 telanjang — padahal dialah satu-satunya orang
+     * yang bisa menyalakannya, dan yang ia butuhkan justru penjelasan plus
+     * tautannya. Penjagaan fitur itu ada di peringatanKosong() (untuk layar) dan
+     * di save() (untuk request yang dirakit tangan).
+     *
+     * ⚠️ Toggle MODUL (v4.57) beda perkara, dan bedanya mekanis bukan selera:
+     * canAccess() adalah metode yang SAMA yang memutuskan "menu tampil" — Filament
+     * membangun navigasi cluster dari sini (Cluster::canAccessClusteredComponents()).
+     * Tidak mungkin membiarkan URL terbuka sambil membuat menunya hilang; keduanya
+     * satu saklar. Preseden di atas justru bekerja karena toggle per-jam hidup DI
+     * DALAM modul yang menunya tetap ada.
      */
     public static function canAccess(): bool
     {
         return in_array(Auth::user()?->role, [
             UserRole::AdminPesantren->value,
             UserRole::Ustadz->value,
-        ], true);
+        ], true)
+            && ModulKomponen::aktif(static::class);
     }
 
     /** Dipakai tombol header di ListPresensis — tombolnya sembunyi saat fitur mati. */

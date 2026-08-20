@@ -7,7 +7,23 @@
 
 @section('content')
 @php
-    $activeTab = request('tab', 'tahfidz');
+    /* Tab rapor mengikuti modul yang dinyalakan pesantren. Perhatikan tab
+       Karakter milik modul KESANTRIAN (KesantrianKarakterRapor), bukan modul
+       tersendiri — sama seperti di halaman Rapor panel admin. */
+    $tabTersedia = array_keys(array_filter([
+        'tahfidz'  => \App\Enums\Modul::Tahfidz->aktif(),
+        'karakter' => \App\Enums\Modul::Kesantrian->aktif(),
+        'akademik' => \App\Enums\Modul::Akademik->aktif(),
+    ]));
+
+    /* Jatuh ke tab aktif PERTAMA, bukan hardcoded 'tahfidz': kalau Tahfidz
+       dimatikan, default lama membuat halaman terbuka pada tab yang tidak ada
+       tombolnya — kosong, tanpa satu pun petunjuk kenapa. */
+    $activeTab = request('tab', $tabTersedia[0] ?? null);
+
+    if (! in_array($activeTab, $tabTersedia, true)) {
+        $activeTab = $tabTersedia[0] ?? null;
+    }
 
     $badgeClass = fn($nilai) => match($nilai) {
         'A' => 'bg-green-100 text-green-700',
@@ -65,22 +81,33 @@
     </form>
 
     {{-- ── Tabs ─────────────────────────────────────────────────────────── --}}
+    @if(empty($tabTersedia))
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center text-sm text-gray-400">
+            Pesantren belum mengaktifkan satu pun modul rapor.
+        </div>
+    @else
     <div class="flex border-b border-gray-200 bg-white rounded-t-xl overflow-hidden shadow-sm">
+        @if(in_array('tahfidz', $tabTersedia, true))
         <a href="{{ request()->fullUrlWithQuery(['tab' => 'tahfidz']) }}"
            class="flex-1 text-center py-3 text-sm font-medium border-b-2 transition-colors
                   {{ $activeTab === 'tahfidz' ? 'border-teal-600 text-teal-700 bg-teal-50' : 'border-transparent text-gray-500 hover:text-gray-700' }}">
             📖 Tahfidz
         </a>
+        @endif
+        @if(in_array('karakter', $tabTersedia, true))
         <a href="{{ request()->fullUrlWithQuery(['tab' => 'karakter']) }}"
            class="flex-1 text-center py-3 text-sm font-medium border-b-2 transition-colors
                   {{ $activeTab === 'karakter' ? 'border-teal-600 text-teal-700 bg-teal-50' : 'border-transparent text-gray-500 hover:text-gray-700' }}">
             🌱 Karakter
         </a>
+        @endif
+        @if(in_array('akademik', $tabTersedia, true))
         <a href="{{ request()->fullUrlWithQuery(['tab' => 'akademik']) }}"
            class="flex-1 text-center py-3 text-sm font-medium border-b-2 transition-colors
                   {{ $activeTab === 'akademik' ? 'border-teal-600 text-teal-700 bg-teal-50' : 'border-transparent text-gray-500 hover:text-gray-700' }}">
             📚 Akademik
         </a>
+        @endif
     </div>
 
     {{-- ══════════════════════════════════════════════════════════════════ --}}
@@ -257,7 +284,9 @@
     @endif {{-- /akademik tab --}}
 
     {{-- ── Tombol Export PDF ────────────────────────────────────────────── --}}
-    @if($santriId)
+    @endif {{-- /ada tab tersedia --}}
+
+    @if($santriId && ! empty($tabTersedia))
     <a href="{{ route('wali.laporan.pdf', [
             'santri_id'    => $santriId,
             'tahun_ajaran' => $tahunAjaran,

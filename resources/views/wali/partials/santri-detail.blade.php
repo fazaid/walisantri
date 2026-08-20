@@ -1,4 +1,17 @@
 {{-- File: resources/views/wali/partials/santri-detail.blade.php --}}
+@php
+    /* Modul yang dimatikan pesantren tidak boleh menyisakan seksi kosong di sini.
+       ⚠️ Dibaca dari $santri->pesantren_id, BUKAN konteks tenant: partial ini juga
+       dirender jalur magic link (wali.magic.report) yang tidak memakai middleware
+       tenant.resolve, dan salahnya tidak memunculkan galat apa pun — wali cuma
+       melihat seksi milik pesantren lain.
+       Ekskul & Prestasi tidak dijaga di sini: koleksi Ekskul sudah dikosongkan
+       SantriDetailPresenter saat modul Akademik mati sehingga @if-nya yang lama
+       sudah menutupnya, dan Prestasi milik Cluster Santri yang tidak punya tuas. */
+    $modulTahfidz    = \App\Enums\Modul::Tahfidz->aktif($santri->pesantren_id);
+    $modulKesantrian = \App\Enums\Modul::Kesantrian->aktif($santri->pesantren_id);
+    $modulPresensi   = \App\Enums\Modul::Presensi->aktif($santri->pesantren_id);
+@endphp
 <div class="space-y-5">
 
     {{-- Info Card Santri --}}
@@ -67,8 +80,10 @@
         }
     @endphp
 
+    @if($modulTahfidz || $modulKesantrian)
     <div class="grid grid-cols-2 gap-3">
 
+        @if($modulTahfidz)
         {{-- Card 1 — Capaian Hafalan --}}
         <div class="bg-teal-50 border border-teal-200 rounded-2xl p-4">
             <div class="flex items-center gap-1.5 mb-2">
@@ -85,6 +100,9 @@
             @endif
         </div>
 
+        @endif
+
+        @if($modulKesantrian)
         {{-- Card 2 — Amalan Minggu Ini --}}
         <div class="bg-purple-50 border border-purple-200 rounded-2xl p-4">
             <div class="flex items-center gap-1.5 mb-2">
@@ -115,6 +133,9 @@
             @endif
         </div>
 
+        @endif
+
+        @if($modulTahfidz)
         {{-- Card 4 — Rapor Tahfidz --}}
         <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4">
             <div class="flex items-center gap-1.5 mb-2">
@@ -133,8 +154,11 @@
             @endif
         </div>
 
+        @endif
     </div>{{-- /grid --}}
+    @endif
 
+    @if($modulTahfidz)
     {{-- Riwayat Setoran Tahfidz --}}
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
@@ -197,6 +221,9 @@
         @endunless
     </div>
 
+    @endif
+
+    @if($modulKesantrian)
     {{-- Riwayat Kesehatan --}}
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
@@ -305,6 +332,9 @@
         @endif
     </div>
 
+    @endif
+
+    @if($modulKesantrian)
     {{-- Inventaris --}}
     @php $inventarisPreview = $previewMode ?? false; @endphp
     <a @unless($inventarisPreview) href="{{ route('wali.santri.inventaris', $santri->id) }}" @endunless
@@ -323,6 +353,9 @@
         </div>
     </a>
 
+    @endif
+
+    @if($modulPresensi)
     {{-- Presensi --}}
     @php $presensiPreview = $previewMode ?? false; @endphp
     <a @unless($presensiPreview) href="{{ route('wali.santri.presensi', $santri->id) }}" @endunless
@@ -358,6 +391,8 @@
             @endunless
         </div>
     </a>
+
+    @endif
 
     {{-- Ekstrakurikuler --}}
     @if($ekskul->isNotEmpty())

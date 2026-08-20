@@ -2,6 +2,8 @@
 
 namespace App\Filament\Pages;
 
+use App\Enums\Modul;
+use App\Filament\Support\ModulKomponen;
 use App\Filament\Support\SantriOptions;
 use App\Models\Santri;
 use App\Services\Rapor\RaporAkademikData;
@@ -30,6 +32,24 @@ class RaporPage extends Page
         'presensi' => 'Presensi',
     ];
 
+    /**
+     * Kunci rapor → tuas modul yang memilikinya (v4.57).
+     *
+     * ⚠️ Perhatikan 'mutabaah' DAN 'karakter' sama-sama menggantung ke Kesantrian —
+     * keduanya memang resource di Cluster Kesantrian, jadi mematikan modul itu
+     * menghilangkan DUA centang sekaligus, bukan satu.
+     *
+     * Ditulis sebagai const pendamping, bukan menggantikan MODUL: MODUL tetap satu
+     * sumber untuk label, urutan tampil, dan judul halaman PDF.
+     */
+    private const MODUL_TOGGLE = [
+        'akademik' => Modul::Akademik,
+        'tahfidz' => Modul::Tahfidz,
+        'mutabaah' => Modul::Kesantrian,
+        'karakter' => Modul::Kesantrian,
+        'presensi' => Modul::Presensi,
+    ];
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentChartBar;
 
     protected static ?string $slug = 'rapor';
@@ -56,17 +76,21 @@ class RaporPage extends Page
     /** Cache per-request supaya blade boleh memanggil getData() berkali-kali tanpa query ulang. */
     private ?array $dataCache = null;
 
+    /** Cache per-request; blade memanggil getModulOptions() dua kali per render. */
+    private ?array $tersediaCache = null;
+
     public function mount(): void
     {
         $this->tahunAjaran = TahunAjaranOptions::current();
         $this->periode = TahunAjaranOptions::currentPeriode();
         $this->bulan = Waktu::sekarang()->month.'-'.Waktu::sekarang()->year;
-        $this->modul = array_keys(self::MODUL);
+        $this->modul = array_keys($this->modulTersedia());
     }
 
     public static function canAccess(): bool
     {
-        return in_array(Auth::user()?->role, ['admin_pesantren', 'ustadz']);
+        return in_array(Auth::user()?->role, ['admin_pesantren', 'ustadz'])
+            && ModulKomponen::aktif(static::class);
     }
 
     public function updated(string $property): void
@@ -81,7 +105,7 @@ class RaporPage extends Page
 
     public function pilihSemuaModul(): void
     {
-        $this->modul = array_keys(self::MODUL);
+        $this->modul = array_keys($this->modulTersedia());
     }
 
     public function kosongkanModul(): void
@@ -91,7 +115,21 @@ class RaporPage extends Page
 
     public function getModulOptions(): array
     {
-        return self::MODUL;
+        return $this->modulTersedia();
+    }
+
+    /**
+     * Modul rapor yang modulnya masih dinyalakan pesantren ini.
+     *
+     * @return array<string, string>
+     */
+    public function modulTersedia(): array
+    {
+        return $this->tersediaCache ??= array_filter(
+            self::MODUL,
+            fn (string $kunci): bool => self::MODUL_TOGGLE[$kunci]->aktif(),
+            ARRAY_FILTER_USE_KEY
+        );
     }
 
     public function getSantriOptions(): array
@@ -134,9 +172,20 @@ class RaporPage extends Page
         return Santri::with('pesantren', 'kelas')->find($this->santriId);
     }
 
+    /**
+     * ⚠️ Baris kedua adalah SATU-SATUNYA titik yang menutup request basi.
+     *
+     * $this->modul adalah properti Livewire publik, jadi sepenuhnya dikendalikan
+     * klien: tab yang dibuka sebelum admin mematikan Kesantrian, atau request yang
+     * dirakit tangan, tetap bisa membawa 'mutabaah'. Karena getData() menyaring
+     * SETIAP sumbernya lewat method ini, satu pemeriksaan di sini menutup layar dan
+     * PDF sekaligus. Meng-inline-kan in_array() kembali ke getData() akan
+     * menghilangkan penjagaan ini tanpa galat apa pun.
+     */
     public function isModulAktif(string $modul): bool
     {
-        return in_array($modul, $this->modul, true);
+        return in_array($modul, $this->modul, true)
+            && array_key_exists($modul, $this->modulTersedia());
     }
 
     /**
@@ -201,7 +250,7 @@ class RaporPage extends Page
                     $pdf = Pdf::loadView('filament.pdf.rapor-gabungan', [
                         'santri' => $santri,
                         'data' => $data,
-                        'modulLabels' => self::MODUL,
+                        'modulLabels' => $this->modulTersedia(),
                         'tahunAjaran' => $this->tahunAjaran,
                         'periodeLabel' => $this->getPeriodeLabel(),
                     ])->setPaper('A4', 'portrait');

@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Enums\StatusKehadiran;
 use App\Enums\UserRole;
 use App\Filament\Clusters\Presensi as ClusterPresensi;
+use App\Filament\Support\ModulKomponen;
 use App\Models\Kelas;
 use App\Services\PresensiRekap;
 use App\Services\TahunAjaranOptions;
@@ -45,7 +46,8 @@ class PresensiRekapPage extends Page
         return in_array(Auth::user()?->role, [
             UserRole::AdminPesantren->value,
             UserRole::Ustadz->value,
-        ], true);
+        ], true)
+            && ModulKomponen::aktif(static::class);
     }
 
     public function mount(): void

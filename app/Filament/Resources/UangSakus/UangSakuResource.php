@@ -7,6 +7,7 @@ use App\Filament\Clusters\Keuangan;
 use App\Filament\Resources\UangSakus\Pages\ListUangSakus;
 use App\Filament\Resources\UangSakus\Schemas\UangSakuForm;
 use App\Filament\Resources\UangSakus\Tables\UangSakusTable;
+use App\Filament\Support\ModulKomponen;
 use App\Models\UangSakuSantri;
 use BackedEnum;
 use Closure;
@@ -34,7 +35,8 @@ class UangSakuResource extends Resource
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->role === UserRole::AdminPesantren->value;
+        return auth()->user()?->role === UserRole::AdminPesantren->value
+            && ModulKomponen::aktif(static::class);
     }
 
     public static function canViewAny(): bool

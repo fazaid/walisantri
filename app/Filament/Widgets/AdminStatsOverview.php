@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Enums\Modul;
 use App\Filament\Pages\BillingPage;
 use App\Models\KesantrianKesehatan;
 use App\Models\KesantrianMutabaah;
@@ -75,16 +76,24 @@ class AdminStatsOverview extends StatsOverviewWidget
             ->where('role', 'wali_santri')
             ->count();
 
+        // Dua stat terakhir milik modul Kesantrian. Pemeriksaannya di sini, bukan
+        // hanya saat merakit array di bawah: query kesehatan dan agregasi amalan
+        // adalah bagian termahal widget ini, dan pesantren yang mematikan modulnya
+        // tidak boleh tetap membayarnya di setiap load dashboard.
+        $kesantrianAktif = Modul::Kesantrian->aktif();
+
         // Santri sakit hari ini
-        $santriSakit = KesantrianKesehatan::where('pesantren_id', $pesantrenId)
-            ->where('tanggal_periksa', $today)
-            ->whereIn('status_pemulihan', ['Istirahat_Total', 'Rujukan_Luar'])
-            ->count();
+        $santriSakit = $kesantrianAktif
+            ? KesantrianKesehatan::where('pesantren_id', $pesantrenId)
+                ->where('tanggal_periksa', $today)
+                ->whereIn('status_pemulihan', ['Istirahat_Total', 'Rujukan_Luar'])
+                ->count()
+            : 0;
 
         // Persentase amalan minggu ini (rata-rata seluruh santri) — di-cache 15
         // menit karena komputasinya (agregasi item amal dinamis per pesantren)
         // cukup berat untuk dihitung ulang di setiap load dashboard.
-        $persenAmalan = Cache::remember(
+        $persenAmalan = ! $kesantrianAktif ? 0 : Cache::remember(
             "admin_stats:persen_amalan:{$pesantrenId}:{$startOfWeek}",
             now()->addMinutes(15),
             function () use ($pesantrenId, $startOfWeek, $endOfWeek) {
@@ -100,7 +109,7 @@ class AdminStatsOverview extends StatsOverviewWidget
             }
         );
 
-        return [
+        $stats = [
             Stat::make('Santri Aktif', $totalSantri.' / '.$kuota)
                 ->description($persenKuota.'% dari kuota paket')
                 ->descriptionIcon('heroicon-m-users')
@@ -116,16 +125,6 @@ class AdminStatsOverview extends StatsOverviewWidget
                 ->descriptionIcon('heroicon-m-user-group')
                 ->color('info'),
 
-            Stat::make('Santri Sakit Hari Ini', $santriSakit)
-                ->description('Istirahat total & rujukan luar')
-                ->descriptionIcon('heroicon-m-heart')
-                ->color($santriSakit > 0 ? 'danger' : 'success'),
-
-            Stat::make('Amalan Minggu Ini', $persenAmalan.'%')
-                ->description('Rata-rata seluruh santri')
-                ->descriptionIcon('heroicon-m-check-circle')
-                ->color($persenAmalan >= 75 ? 'success' : ($persenAmalan >= 50 ? 'warning' : 'danger')),
-
             Stat::make('Langganan', $statusLabel)
                 ->description(
                     $sisaHari !== null
@@ -138,5 +137,23 @@ class AdminStatsOverview extends StatsOverviewWidget
                 ->url(BillingPage::getUrl())
                 ->color($billingColor),
         ];
+
+        if ($kesantrianAktif) {
+            // Disisipkan sebelum stat Langganan supaya urutannya tidak berubah bagi
+            // pesantren yang modulnya menyala — Langganan tetap yang paling kanan.
+            array_splice($stats, 3, 0, [
+                Stat::make('Santri Sakit Hari Ini', $santriSakit)
+                    ->description('Istirahat total & rujukan luar')
+                    ->descriptionIcon('heroicon-m-heart')
+                    ->color($santriSakit > 0 ? 'danger' : 'success'),
+
+                Stat::make('Amalan Minggu Ini', $persenAmalan.'%')
+                    ->description('Rata-rata seluruh santri')
+                    ->descriptionIcon('heroicon-m-check-circle')
+                    ->color($persenAmalan >= 75 ? 'success' : ($persenAmalan >= 50 ? 'warning' : 'danger')),
+            ]);
+        }
+
+        return $stats;
     }
 }

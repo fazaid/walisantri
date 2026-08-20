@@ -49,10 +49,13 @@
             <div class="pt-4 border-t border-gray-100 dark:border-gray-700">
                 <div class="flex items-center justify-between mb-2">
                     <label class="text-xs font-medium text-gray-600 dark:text-gray-400">Rapor yang ditampilkan</label>
-                    <div class="flex items-center gap-3 text-xs">
-                        <button type="button" wire:click="pilihSemuaModul" class="text-teal-600 dark:text-teal-400 hover:underline">Pilih semua</button>
-                        <button type="button" wire:click="kosongkanModul" class="text-gray-500 dark:text-gray-400 hover:underline">Kosongkan</button>
-                    </div>
+                    {{-- Tanpa satu pun modul, kedua tombol ini tidak punya apa pun untuk dipilih. --}}
+                    @if(! empty($this->getModulOptions()))
+                        <div class="flex items-center gap-3 text-xs">
+                            <button type="button" wire:click="pilihSemuaModul" class="text-teal-600 dark:text-teal-400 hover:underline">Pilih semua</button>
+                            <button type="button" wire:click="kosongkanModul" class="text-gray-500 dark:text-gray-400 hover:underline">Kosongkan</button>
+                        </div>
+                    @endif
                 </div>
                 <div class="flex flex-wrap gap-2">
                     @foreach($this->getModulOptions() as $key => $label)
@@ -71,7 +74,15 @@
             $data   = $this->getData();
         @endphp
 
-        @if(! $santri)
+        {{-- Cabang ini WAJIB paling atas. Saat seluruh modul rapor dimatikan, tidak
+             ada santri yang bisa dipilih untuk memperbaikinya dan tidak ada centang
+             yang bisa dicentang — dua pesan di bawah sama-sama menyuruh admin
+             melakukan sesuatu yang tidak akan menolong. --}}
+        @if(empty($this->getModulOptions()))
+            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-8 text-center text-sm text-gray-400">
+                Semua modul rapor sedang dimatikan untuk pesantren ini. Nyalakan lewat menu Manajemen → Modul.
+            </div>
+        @elseif(! $santri)
             <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-8 text-center text-sm text-gray-400">
                 Pilih santri untuk melihat rapor.
             </div>

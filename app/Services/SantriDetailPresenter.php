@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\Modul;
 use App\Models\KesantrianInventaris;
 use App\Models\KesantrianKesehatan;
 use App\Models\KesantrianMutabaah;
@@ -16,32 +17,62 @@ use Illuminate\Support\Collection;
 
 class SantriDetailPresenter
 {
-    /** Data lengkap untuk halaman detail satu santri (dipakai ReportController & dashboard wali ber-1-anak). */
+    /**
+     * Data lengkap untuk halaman detail satu santri (dipakai ReportController & dashboard wali ber-1-anak).
+     *
+     * Modul yang dimatikan pesantren tidak sekadar disembunyikan di Blade — query-nya
+     * memang tidak dijalankan. Menjaganya hanya di view berarti pesantren yang
+     * mematikan Kesantrian tetap membayar empat query di setiap tampilan halaman ini.
+     *
+     * ⚠️ Modulnya dibaca dari $santri->pesantren_id, BUKAN dari konteks tenant.
+     * Rute magic link (wali.magic.report) tidak memakai middleware tenant.resolve,
+     * jadi global scope 'pesantren' bisa tidak terisi di sana — persis alasan yang
+     * sama yang membuat query pengumuman di bawah memakai withoutGlobalScope.
+     * Salahnya tidak akan memunculkan galat apa pun; wali cuma melihat seksi yang
+     * bukan miliknya.
+     */
     public static function detail(Santri $santri): array
     {
+        $pesantrenId = $santri->pesantren_id;
+        $tahfidzAktif = Modul::Tahfidz->aktif($pesantrenId);
+        $kesantrianAktif = Modul::Kesantrian->aktif($pesantrenId);
+        $akademikAktif = Modul::Akademik->aktif($pesantrenId);
+
         // 5 saja — dashboard cuma perlu sekilas-pandang; 10 terakhir ada di halaman Statistik Tahfidz.
-        $tahfidzRecent = TahfidzProgress::where('santri_id', $santri->id)
-            ->orderByDesc('tanggal')
-            ->limit(5)
-            ->get();
+        $tahfidzRecent = $tahfidzAktif
+            ? TahfidzProgress::where('santri_id', $santri->id)
+                ->orderByDesc('tanggal')
+                ->limit(5)
+                ->get()
+            : collect();
 
-        $kesehatanRecent = KesantrianKesehatan::where('santri_id', $santri->id)
-            ->orderByDesc('tanggal_periksa')
-            ->limit(5)
-            ->get();
+        $kesehatanRecent = $kesantrianAktif
+            ? KesantrianKesehatan::where('santri_id', $santri->id)
+                ->orderByDesc('tanggal_periksa')
+                ->limit(5)
+                ->get()
+            : collect();
 
-        $juz = TahfidzJuzCalculator::calculate($santri->id);
+        // Bentuknya dipertahankan (kunci juz_hafal tetap ada) supaya pembaca di
+        // Blade tidak perlu tahu modulnya mati.
+        $juz = $tahfidzAktif
+            ? TahfidzJuzCalculator::calculate($santri->id)
+            : ['juz_hafal' => 0.0];
 
-        $mutabaahMingguIni = KesantrianMutabaah::where('santri_id', $santri->id)
-            ->whereBetween('tanggal', [Waktu::sekarang()->subDays(6)->toDateString(), Waktu::sekarang()->toDateString()])
-            ->get();
+        $mutabaahMingguIni = $kesantrianAktif
+            ? KesantrianMutabaah::where('santri_id', $santri->id)
+                ->whereBetween('tanggal', [Waktu::sekarang()->subDays(6)->toDateString(), Waktu::sekarang()->toDateString()])
+                ->get()
+            : collect();
 
         $persentaseAmalanMingguIni = MutabaahScoreCalculator::persentaseRataRata($mutabaahMingguIni);
         $mutabaahWeek = $mutabaahMingguIni->keyBy(fn ($m) => $m->tanggal->toDateString());
 
-        $latestKesehatan = KesantrianKesehatan::where('santri_id', $santri->id)
-            ->orderByDesc('tanggal_periksa')
-            ->first();
+        $latestKesehatan = $kesantrianAktif
+            ? KesantrianKesehatan::where('santri_id', $santri->id)
+                ->orderByDesc('tanggal_periksa')
+                ->first()
+            : null;
 
         $statusKesehatanTerkini = $latestKesehatan ? [
             'tanggal_periksa' => $latestKesehatan->tanggal_periksa,
@@ -49,9 +80,11 @@ class SantriDetailPresenter
             'status_pemulihan' => $latestKesehatan->status_pemulihan,
         ] : null;
 
-        $latestRapor = TahfidzUjian::where('santri_id', $santri->id)
-            ->orderByDesc('created_at')
-            ->first();
+        $latestRapor = $tahfidzAktif
+            ? TahfidzUjian::where('santri_id', $santri->id)
+                ->orderByDesc('created_at')
+                ->first()
+            : null;
 
         $raporTahfidzTerakhir = $latestRapor ? [
             'periode' => $latestRapor->periode,
@@ -62,18 +95,23 @@ class SantriDetailPresenter
             'nilai_makhraj' => $latestRapor->nilai_makhraj,
         ] : null;
 
+        // Prestasi milik Cluster Santri — inti, tidak pernah bisa dimatikan.
         $prestasi = PrestasiSantri::withoutGlobalScope('pesantren')
             ->where('santri_id', $santri->id)
             ->orderByDesc('tanggal')
             ->get();
 
-        $ekskul = SantriEkskul::where('santri_id', $santri->id)
-            ->with('ekskulMaster')
-            ->orderBy('aktif', 'desc')
-            ->orderBy('tanggal_mulai', 'asc')
-            ->get();
+        $ekskul = $akademikAktif
+            ? SantriEkskul::where('santri_id', $santri->id)
+                ->with('ekskulMaster')
+                ->orderBy('aktif', 'desc')
+                ->orderBy('tanggal_mulai', 'asc')
+                ->get()
+            : collect();
 
-        $totalInventaris = KesantrianInventaris::where('santri_id', $santri->id)->count();
+        $totalInventaris = $kesantrianAktif
+            ? KesantrianInventaris::where('santri_id', $santri->id)->count()
+            : 0;
 
         // Pengumuman untuk halaman report — disurutkan ke sesi magic link & preview
         // yang tak punya akses dashboard/nav. Di-scope eksplisit ke pesantren santri

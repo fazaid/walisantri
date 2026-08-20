@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Enums\Modul;
 use App\Models\NilaiAkademik;
 use App\Models\Santri;
 use App\Services\TahunAjaranOptions;
@@ -27,7 +28,8 @@ class UstadzNilaiAkademikChart extends ChartWidget
 
     public static function canView(): bool
     {
-        return Auth::user()?->role === 'ustadz';
+        return Auth::user()?->role === 'ustadz'
+            && Modul::Akademik->aktif();
     }
 
     protected function getType(): string

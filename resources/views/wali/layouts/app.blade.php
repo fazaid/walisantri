@@ -92,75 +92,69 @@
     {{-- ─── Bottom Navigation Bar ─────────────────────────────────────────── --}}
     @unless(session('magic_link_session') || ($previewMode ?? false))
     @php
-        $isBerandaActive    = request()->routeIs('wali.dashboard') || request()->routeIs('wali.santri.show');
-        $isPengumumanActive = request()->routeIs('wali.pengumuman');
-        $isSppActive        = request()->routeIs('wali.spp');
-        $isRaporActive      = request()->routeIs('wali.rapor');
-        $isUangSakuActive   = request()->routeIs('wali.uang-saku') || request()->routeIs('wali.uang-saku.show');
+        // Daftar tab dirakit sekali lalu di-loop — pola yang sama dengan
+        // filament/admin/bottom-nav.blade.php. Tanpa itu, menyembunyikan satu tab
+        // berarti membungkus satu blok <a> panjang dengan @if, dan tab berikutnya
+        // diam-diam berubah lebarnya karena flex-1 membagi sisa ruang.
+        //
+        // Beranda dan Pengumuman tanpa syarat, jadi bar ini tidak pernah kosong
+        // sekalipun keenam modul dimatikan.
+        $tabs = [
+            [
+                'label'  => 'Beranda',
+                'url'    => route('wali.dashboard'),
+                'active' => request()->routeIs('wali.dashboard') || request()->routeIs('wali.santri.show'),
+                'icon'   => 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
+            ],
+        ];
+
+        if (\App\Enums\Modul::Keuangan->aktif()) {
+            $tabs[] = [
+                'label'  => 'SPP',
+                'url'    => route('wali.spp'),
+                'active' => request()->routeIs('wali.spp'),
+                'icon'   => 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z',
+            ];
+        }
+
+        $tabs[] = [
+            'label'  => 'Pengumuman',
+            'url'    => route('wali.pengumuman'),
+            'active' => request()->routeIs('wali.pengumuman'),
+            'icon'   => 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9',
+        ];
+
+        if (\App\Enums\Modul::Keuangan->aktif()) {
+            $tabs[] = [
+                'label'  => 'Uang Saku',
+                'url'    => route('wali.uang-saku'),
+                'active' => request()->routeIs('wali.uang-saku') || request()->routeIs('wali.uang-saku.show'),
+                'icon'   => 'M21 12a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 12m18 0v6a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 9m18 0V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v3',
+            ];
+        }
+
+        if (\App\Enums\Modul::Rapor->aktif()) {
+            $tabs[] = [
+                'label'  => 'Rapor',
+                'url'    => route('wali.rapor'),
+                'active' => request()->routeIs('wali.rapor'),
+                'icon'   => 'M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25M9 16.5v.75m3-3v3M15 12v5.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z',
+            ];
+        }
     @endphp
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-20">
         <div class="max-w-lg mx-auto flex items-stretch">
-
-            {{-- Tab: Beranda --}}
-            <a href="{{ route('wali.dashboard') }}"
-               class="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-xs font-medium transition-colors
-                      {{ $isBerandaActive ? 'text-teal-600' : 'text-gray-400 hover:text-gray-600' }}">
-                <svg class="w-6 h-6" fill="{{ $isBerandaActive ? 'currentColor' : 'none' }}"
-                     stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                </svg>
-                Beranda
-            </a>
-
-            {{-- Tab: SPP --}}
-            <a href="{{ route('wali.spp') }}"
-               class="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-xs font-medium transition-colors
-                      {{ $isSppActive ? 'text-teal-600' : 'text-gray-400 hover:text-gray-600' }}">
-                <svg class="w-6 h-6" fill="{{ $isSppActive ? 'currentColor' : 'none' }}"
-                     stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
-                </svg>
-                SPP
-            </a>
-
-            {{-- Tab: Pengumuman --}}
-            <a href="{{ route('wali.pengumuman') }}"
-               class="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-xs font-medium transition-colors
-                      {{ $isPengumumanActive ? 'text-teal-600' : 'text-gray-400 hover:text-gray-600' }}">
-                <svg class="w-6 h-6" fill="{{ $isPengumumanActive ? 'currentColor' : 'none' }}"
-                     stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                </svg>
-                Pengumuman
-            </a>
-
-            {{-- Tab: Uang Saku --}}
-            <a href="{{ route('wali.uang-saku') }}"
-               class="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-xs font-medium transition-colors
-                      {{ $isUangSakuActive ? 'text-teal-600' : 'text-gray-400 hover:text-gray-600' }}">
-                <svg class="w-6 h-6" fill="{{ $isUangSakuActive ? 'currentColor' : 'none' }}"
-                     stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M21 12a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 12m18 0v6a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 9m18 0V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v3"/>
-                </svg>
-                Uang Saku
-            </a>
-
-            {{-- Tab: Rapor --}}
-            <a href="{{ route('wali.rapor') }}"
-               class="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-xs font-medium transition-colors
-                      {{ $isRaporActive ? 'text-teal-600' : 'text-gray-400 hover:text-gray-600' }}">
-                <svg class="w-6 h-6" fill="{{ $isRaporActive ? 'currentColor' : 'none' }}"
-                     stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25M9 16.5v.75m3-3v3M15 12v5.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/>
-                </svg>
-                Rapor
-            </a>
-
+            @foreach($tabs as $tab)
+                <a href="{{ $tab['url'] }}"
+                   class="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-xs font-medium transition-colors
+                          {{ $tab['active'] ? 'text-teal-600' : 'text-gray-400 hover:text-gray-600' }}">
+                    <svg class="w-6 h-6" fill="{{ $tab['active'] ? 'currentColor' : 'none' }}"
+                         stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="{{ $tab['icon'] }}"/>
+                    </svg>
+                    {{ $tab['label'] }}
+                </a>
+            @endforeach
         </div>
     </nav>
     @endunless

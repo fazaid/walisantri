@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Enums\Modul;
 use App\Enums\UserRole;
 use App\Models\Kelas;
 use App\Models\Presensi;
@@ -39,7 +40,8 @@ class PresensiHariIniStat extends StatsOverviewWidget
         return in_array(Auth::user()?->role, [
             UserRole::AdminPesantren->value,
             UserRole::Ustadz->value,
-        ], true);
+        ], true)
+            && Modul::Presensi->aktif();
     }
 
     protected function getStats(): array

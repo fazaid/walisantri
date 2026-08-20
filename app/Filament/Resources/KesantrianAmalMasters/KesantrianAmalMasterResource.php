@@ -6,6 +6,7 @@ use App\Filament\Clusters\Kesantrian;
 use App\Filament\Resources\KesantrianAmalMasters\Pages\ListKesantrianAmalMaster;
 use App\Filament\Resources\KesantrianAmalMasters\Schemas\KesantrianAmalMasterForm;
 use App\Filament\Resources\KesantrianAmalMasters\Tables\KesantrianAmalMasterTable;
+use App\Filament\Support\ModulKomponen;
 use App\Models\KesantrianAmalMaster;
 use BackedEnum;
 use Closure;
@@ -45,7 +46,8 @@ class KesantrianAmalMasterResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return Auth::user()?->role === 'admin_pesantren';
+        return Auth::user()?->role === 'admin_pesantren'
+            && ModulKomponen::aktif(static::class);
     }
 
     public static function canCreate(): bool
