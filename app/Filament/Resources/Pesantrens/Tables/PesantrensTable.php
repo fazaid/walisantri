@@ -27,6 +27,16 @@ class PesantrensTable
     {
         return $table
             ->columns([
+                // Identitas stabil satu-satunya milik pesantren: slug bisa berganti
+                // (ada tabel slug_releases) dan nama bisa disunting, sementara id
+                // dipakai apa adanya di activity_logs.auditable_id. Disembunyikan
+                // secara bawaan supaya tabel tidak melebar untuk angka yang hanya
+                // dibutuhkan saat menautkan tenant dengan tiket dukungan atau log.
+                TextColumn::make('id')
+                    ->label('ID')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 TextColumn::make('nama_pesantren')
                     ->label('Nama Pesantren')
                     ->searchable()
@@ -35,6 +45,12 @@ class PesantrensTable
                 TextColumn::make('slug')
                     ->label('Slug')
                     ->searchable(),
+
+                TextColumn::make('created_at')
+                    ->label('Terdaftar')
+                    ->dateTime('d M Y, H:i')
+                    ->sortable()
+                    ->toggleable(),
 
                 TextColumn::make('paket_langganan')
                     ->label('Paket')
@@ -85,6 +101,11 @@ class PesantrensTable
                     ->where('role', UserRole::AdminPesantren->value)
                     ->whereNotNull('email_verified_at'),
             ]))
+            // Tabel ini sebelumnya tidak punya defaultSort sama sekali, jadi Filament
+            // jatuh ke fallback orderBy(id, 'asc'): pesantren yang baru mendaftar
+            // selalu terdampar di halaman terakhir — persis kebalikan dari yang
+            // dicari super admin saat membuka halaman ini.
+            ->defaultSort('created_at', 'desc')
             ->filters([
                 SelectFilter::make('paket_langganan')
                     ->label('Paket')

@@ -31,7 +31,9 @@ class TenantListWidget extends TableWidget
             ->query(Pesantren::withoutGlobalScope('pesantren')->pelanggan())
             // Tanpa ORDER BY eksplisit, Postgres tidak menjamin urutan antar halaman —
             // baris yang sudah tampil di halaman 1 bisa muncul lagi di halaman 2.
-            ->defaultSort('nama_pesantren')
+            // Terbaru di atas, sama seperti halaman Data Pesantren: urutan abjad
+            // menyembunyikan pendaftar baru di tengah daftar yang terus memanjang.
+            ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('nama_pesantren')
                     ->label('Nama Pesantren')
@@ -62,6 +64,12 @@ class TenantListWidget extends TableWidget
                     ->dateTime('d M Y')
                     ->sortable()
                     ->placeholder('-'),
+
+                TextColumn::make('created_at')
+                    ->label('Terdaftar')
+                    ->dateTime('d M Y, H:i')
+                    ->sortable()
+                    ->toggleable(),
             ])
             ->recordActions([
                 Action::make('suspend')

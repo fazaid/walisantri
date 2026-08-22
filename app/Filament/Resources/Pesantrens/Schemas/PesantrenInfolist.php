@@ -13,6 +13,12 @@ class PesantrenInfolist
     {
         return $schema
             ->components([
+                // Bisa disalin karena inilah angka yang ditempel ke tiket dukungan
+                // dan dicari di activity_logs.auditable_id saat menelusuri tenant.
+                TextEntry::make('id')
+                    ->label('ID Pesantren')
+                    ->copyable(),
+
                 TextEntry::make('nama_pesantren')
                     ->label('Nama Pesantren'),
 
@@ -38,6 +44,10 @@ class PesantrenInfolist
                     ->label('Expired')
                     ->dateTime('d M Y, H:i')
                     ->placeholder('-'),
+
+                TextEntry::make('created_at')
+                    ->label('Terdaftar')
+                    ->dateTime('d M Y, H:i'),
             ]);
     }
 }

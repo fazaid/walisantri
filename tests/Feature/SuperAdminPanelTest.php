@@ -89,6 +89,54 @@ class SuperAdminPanelTest extends TestCase
         $this->assertSame([], $table->getBulkActions(), 'Tabel Pesantren tidak boleh punya aksi massal apa pun.');
     }
 
+    // ---------- Menemukan pesantren yang baru mendaftar ----------
+
+    /**
+     * Tabel ini dulu tidak punya defaultSort sama sekali, jadi Filament jatuh ke
+     * fallback orderBy(id, 'asc') dan pendaftar terbaru selalu terdampar di
+     * halaman terakhir — persis kebalikan dari yang dicari super admin.
+     */
+    public function test_pesantren_terbaru_muncul_paling_atas(): void
+    {
+        $this->actingAs($this->superAdmin());
+
+        $lama = Pesantren::factory()->create(['created_at' => now()->subMonth()]);
+        $baru = Pesantren::factory()->create(['created_at' => now()]);
+
+        Livewire::test(ListPesantrens::class)
+            ->assertCanSeeTableRecords([$baru, $lama], inOrder: true);
+    }
+
+    public function test_kolom_id_dan_tanggal_daftar_tersedia_di_tabel_pesantren(): void
+    {
+        $this->actingAs($this->superAdmin());
+        Pesantren::factory()->create();
+
+        $table = Livewire::test(ListPesantrens::class)->instance()->getTable();
+
+        $id = $table->getColumn('id');
+        $this->assertNotNull($id, 'Kolom ID harus ada supaya tenant bisa ditautkan ke tiket dukungan & activity_logs.');
+        $this->assertTrue($id->isToggledHiddenByDefault(), 'Kolom ID disembunyikan secara bawaan, dimunculkan lewat menu Kolom.');
+
+        $terdaftar = $table->getColumn('created_at');
+        $this->assertNotNull($terdaftar, 'Kolom Terdaftar harus ada — inilah yang menjawab "mana yang baru".');
+        $this->assertFalse(
+            $terdaftar->isToggledHiddenByDefault(),
+            'Kolom Terdaftar harus terlihat tanpa perlu dimunculkan, kalau tidak urutan terbaru-di-atas jadi tak terbaca.',
+        );
+    }
+
+    public function test_widget_semua_pesantren_juga_terurut_terbaru_di_atas(): void
+    {
+        $this->actingAs($this->superAdmin());
+
+        $lama = Pesantren::factory()->create(['created_at' => now()->subMonth()]);
+        $baru = Pesantren::factory()->create(['created_at' => now()]);
+
+        Livewire::test(TenantListWidget::class)
+            ->assertCanSeeTableRecords([$baru, $lama], inOrder: true);
+    }
+
     // ---------- Pesantren baru harus lengkap apa pun jalurnya ----------
 
     public function test_pesantren_yang_dibuat_dari_panel_dapat_subdomain_dan_amalan_bawaan(): void
