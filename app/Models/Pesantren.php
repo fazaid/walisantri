@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\OnboardingStep;
 use App\Enums\StatusBerlangganan;
+use App\Enums\UserRole;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -111,6 +112,44 @@ class Pesantren extends Model
         return $this->hasOne(Order::class)
             ->whereIn('status', ['pending_payment', 'awaiting_confirmation'])
             ->latestOfMany();
+    }
+
+    /**
+     * Admin pesantren terlama — orang yang mendaftarkan tenant ini.
+     *
+     * Sebelum ini repo tidak punya relasi admin sama sekali: lima tempat
+     * mengulang `users->where('role','admin_pesantren')->first()` tanpa
+     * orderBy, sehingga "admin pertama" bergantung pada urutan yang
+     * kebetulan dikembalikan database. Ekspor Data Pesantren mencetak nama,
+     * email, DAN nomor HP admin di tiga kolom bersebelahan, jadi ia butuh
+     * jaminan ketiganya milik orang yang sama.
+     *
+     * Sengaja TIDAK menggantikan PenerimaEmail::adminPesantren(): semantiknya
+     * berbeda — ia menyaring admin yang emailnya kosong (users.email nullable
+     * sejak central/2026_07_09_100001) karena Mail::to(null) melempar
+     * exception. Di sini admin tanpa email tetap harus tercetak namanya.
+     */
+    public function adminUtama(): HasOne
+    {
+        // ⚠️ BUKAN `->where('role', ...)->oldestOfMany()`. Bentuk itu terbaca
+        // benar tapi salah, dan salahnya diam: CanBeOneOfMany::newOneOfManySubQuery()
+        // membangun query BARU dari model, sehingga where() yang dirantai
+        // sebelumnya TIDAK ikut ke subquery agregat. Hasilnya subquery menghitung
+        // MIN(id) atas SELURUH user pesantren, lalu outer query membuang baris itu
+        // kalau ternyata ia bukan admin — relasi mengembalikan NULL padahal
+        // adminnya ada. Cukup satu ustadz yang dibuat sebelum admin (impor massal,
+        // admin dihapus lalu dibuat ulang) untuk memicunya.
+        //
+        // Closure $aggregate di bawah diterapkan ke subquery, ->where() di luar
+        // menyaring outer query; keduanya perlu. Alias join dieksplisitkan karena
+        // tanpa itu Laravel menebaknya lewat debug_backtrace().
+        return $this->hasOne(User::class)
+            ->ofMany(
+                ['id' => 'MIN'],
+                fn (Builder $query): Builder => $query->where('role', UserRole::AdminPesantren->value),
+                'admin_utama',
+            )
+            ->where('role', UserRole::AdminPesantren->value);
     }
 
     // Helper: cek apakah tenant masih aktif
