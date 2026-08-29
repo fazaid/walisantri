@@ -105,10 +105,27 @@ rclone ls odcrypt:walisantri-backup                # cek artefak offsite
 ```cron
 MAILTO="kantorpusatnpc@gmail.com"
 RCLONE_REMOTE=odcrypt:walisantri-backup
-0 2 * * * /var/www/walisantri/scripts/backup.sh >> /home/fazaweb/backups/walisantri.log 2>&1
+0 2 * * * /var/www/walisantri/scripts/backup.sh >> /home/fazaweb/backups/walisantri.log
 ```
 
 Cron ini independen dari `schedule:run` Laravel — lebih sederhana & andal.
+
+> ⚠️ **Perhatikan tidak ada `2>&1`, dan itu disengaja.** stdout (jejak langkah)
+> masuk berkas log; stderr (baris `WARN`/`ERROR`) dibiarkan mengalir ke cron
+> supaya dikirim ke `MAILTO`. Versi lama baris ini memakai `2>&1`, sehingga cron
+> tidak pernah melihat keluaran apa pun dan tidak pernah mengirim surel.
+> Akibatnya nyata: **15–29 Agustus 2026 tidak ada satu pun backup offsite** dan
+> tidak ada yang tahu. Pemicunya PHP-FPM (`www-data`) membuat
+> `storage/app/private/bukti-transfer/<id>` dengan mode 0700 sementara backup
+> berjalan sebagai `fazaweb`; `tar` gagal, dan saat itu kegagalan `tar` bersifat
+> fatal sehingga skrip berhenti **sebelum** langkah unggah offsite — dump
+> database yang sudah jadi pun ikut tidak pernah keluar dari server.
+>
+> Tiga hal ditutup sekaligus (v4.59): `config/filesystems.php` kini menyetel
+> disk `local` ke 0750/0640 supaya direktori baru terbaca grup `www-data`;
+> `scripts/backup.sh` tidak lagi `die` saat `tar` gagal (arsipnya diberi nama
+> `-PARSIAL`, offsite tetap jalan, skrip keluar dengan status 1); dan baris cron
+> ini melepas `2>&1`. Prasyarat di server: `usermod -aG www-data fazaweb`.
 
 ---
 

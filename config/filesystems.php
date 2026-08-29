@@ -36,6 +36,24 @@ return [
             'serve' => true,
             'throw' => false,
             'report' => false,
+
+            // Default Flysystem untuk visibilitas `private` adalah 0700 (direktori)
+            // dan 0600 (berkas) — hanya www-data yang bisa membaca. Itu memutus
+            // backup: `scripts/backup.sh` berjalan sebagai user deploy (fazaweb),
+            // sehingga setiap direktori baru yang dibuat PHP — mis. bukti-transfer
+            // milik pesantren baru — membuat `tar` gagal. Sampai 29 Agustus 2026
+            // kegagalan itu fatal dan menghentikan skrip sebelum unggahan offsite,
+            // jadi satu unggahan bukti transfer diam-diam menghentikan SELURUH
+            // backup offsite selama 15 hari. Skripnya kini tahan (arsip -PARSIAL
+            // + keluar tidak-nol), tapi akar masalahnya ada di sini.
+            //
+            // 0750/0640 dengan grup www-data: PHP tetap satu-satunya yang menulis,
+            // user deploy cukup bisa MEMBACA. Prasyarat di server: user deploy jadi
+            // anggota grup www-data (`usermod -aG www-data fazaweb`).
+            'permissions' => [
+                'file' => ['public' => 0644, 'private' => 0640],
+                'dir' => ['public' => 0755, 'private' => 0750],
+            ],
         ],
 
         'public' => [

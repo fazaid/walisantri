@@ -18,6 +18,18 @@
 #   LOCAL_RETENTION_DAYS   default 7
 #   OFFSITE_RETENTION_DAYS default 30
 #
+# Penjadwalan (crontab user deploy) — perhatikan TIDAK ada `2>&1`:
+#
+#     MAILTO="…@…"
+#     RCLONE_REMOTE=odcrypt:walisantri-backup
+#     0 2 * * * /var/www/walisantri/scripts/backup.sh >> /home/fazaweb/backups/walisantri.log
+#
+# stdout (jejak langkah) masuk berkas log; stderr (WARN/ERROR) dibiarkan
+# mengalir ke cron supaya dikirim sebagai surel. Menambahkan `2>&1` membuat
+# cron tidak pernah melihat keluaran apa pun, sehingga kegagalan berulang
+# tidak memicu apa-apa — 15 hari tanpa backup offsite lewat begitu saja pada
+# 15–29 Agustus 2026 karena ini.
+#
 set -euo pipefail
 
 APP_DIR="${APP_DIR:-/var/www/walisantri}"
@@ -42,8 +54,19 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
-die() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERROR: $*" >&2; exit 1; }
+# Ringkasan kegagalan non-fatal. Terisi = backup selesai tapi TIDAK utuh,
+# dan skrip keluar dengan status 1 di baris terakhir.
+DEGRADASI=()
+
+log()  { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
+
+# WARN dan ERROR sengaja ditulis ke stdout DAN stderr: stdout masuk berkas log,
+# stderr ditangkap cron dan dikirim ke MAILTO. Crontab karena itu harus TANPA
+# `2>&1` — dengan `2>&1`, stderr ikut tertelan berkas log, cron tidak pernah
+# melihat keluaran apa pun, dan kegagalan jadi tak terlihat. Persis itu yang
+# menyembunyikan 15 hari tanpa backup offsite (15–29 Agustus 2026).
+warn() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] WARN: $*"; echo "[$(date '+%Y-%m-%d %H:%M:%S')] WARN: $*" >&2; }
+die()  { echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERROR: $*"; echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERROR: $*" >&2; exit 1; }
 
 [[ -f "$APP_DIR/.env" ]] || die "File .env tidak ditemukan di $APP_DIR"
 
@@ -95,12 +118,39 @@ artifacts+=("$DB_FILE")
 if [[ "$DB_ONLY" -eq 0 ]]; then
     # 2) File upload — storage/app (public + private)
     log "tar storage/app → $(basename "$FILES_FILE")"
-    tar czf "$FILES_FILE" -C "$APP_DIR" \
+
+    # SENGAJA tidak `die`. Sebelumnya langkah ini fatal, dan konsekuensinya jauh
+    # lebih besar daripada kelihatannya: satu direktori yang tak terbaca membuat
+    # seluruh skrip berhenti di sini, sehingga langkah 5 (unggah offsite) tidak
+    # pernah tercapai — dump database yang sudah jadi pun ikut tidak pernah keluar
+    # dari server. Terjadi 15–29 Agustus 2026: PHP-FPM (www-data) membuat
+    # storage/app/private/bukti-transfer/<id> dengan mode 0700, backup berjalan
+    # sebagai fazaweb, dan 15 hari berlalu tanpa satu pun salinan offsite.
+    # Arsip parsial lebih baik daripada tidak ada arsip, tapi HARUS mustahil
+    # tertukar dengan yang utuh — karena itu diberi nama -PARSIAL.
+    if tar czf "$FILES_FILE" -C "$APP_DIR" \
         $( [[ -d "$APP_DIR/storage/app/public" ]]  && echo storage/app/public ) \
-        $( [[ -d "$APP_DIR/storage/app/private" ]] && echo storage/app/private ) \
-        || die "tar storage gagal"
-    chmod 600 "$FILES_FILE"
-    artifacts+=("$FILES_FILE")
+        $( [[ -d "$APP_DIR/storage/app/private" ]] && echo storage/app/private )
+    then
+        chmod 600 "$FILES_FILE"
+    elif [[ -s "$FILES_FILE" ]]; then
+        PARSIAL="$DEST/files-${TS}${SUFFIX}-PARSIAL.tar.gz"
+        mv -f "$FILES_FILE" "$PARSIAL"
+        FILES_FILE="$PARSIAL"
+        chmod 600 "$FILES_FILE"
+        DEGRADASI+=("arsip storage/app TIDAK lengkap — $(basename "$FILES_FILE")")
+        warn "tar storage gagal membaca sebagian berkas. Backup DILANJUTKAN; arsip disimpan & diunggah sebagai $(basename "$FILES_FILE"). Periksa kepemilikan/mode di $APP_DIR/storage/app."
+    else
+        # tar gagal tanpa menghasilkan apa pun yang berguna. Jangan biarkan berkas
+        # kosong ikut terdaftar sebagai artefak — sha256sum dan rclone di bawah
+        # akan `die` karenanya, dan kita kembali ke perilaku lama yang justru
+        # membatalkan unggahan offsite dump database.
+        rm -f "$FILES_FILE"
+        FILES_FILE=""
+        DEGRADASI+=("arsip storage/app GAGAL TOTAL — tidak ada berkas untuk diunggah")
+        warn "tar storage gagal total. Backup DILANJUTKAN tanpa arsip berkas; dump database tetap diunggah. Periksa kepemilikan/mode di $APP_DIR/storage/app."
+    fi
+    if [[ -n "$FILES_FILE" ]]; then artifacts+=("$FILES_FILE"); fi
 
     # 3) .env (berisi APP_KEY & rahasia — bucket WAJIB privat / rclone crypt)
     cp "$APP_DIR/.env" "$ENV_FILE"
@@ -110,7 +160,7 @@ fi
 
 # 4) Checksum integritas
 ( cd "$DEST" && sha256sum "$(basename "$DB_FILE")" \
-    $( [[ "$DB_ONLY" -eq 0 ]] && basename "$FILES_FILE" ) \
+    $( [[ "$DB_ONLY" -eq 0 && -n "$FILES_FILE" ]] && basename "$FILES_FILE" ) \
     $( [[ "$DB_ONLY" -eq 0 ]] && basename "$ENV_FILE" ) > "$(basename "$SUMS_FILE")" )
 chmod 600 "$SUMS_FILE"
 artifacts+=("$SUMS_FILE")
@@ -144,3 +194,12 @@ find "$DEST" -maxdepth 1 -type f \
     -mtime "+${LOCAL_RETENTION_DAYS}" -print -delete || true
 
 log "Backup SELESAI: ${TS}${SUFFIX}"
+
+# Keluar tidak-nol bila ada langkah yang terdegradasi. Backup yang "selesai"
+# tapi tidak utuh harus berbunyi, bukan lewat diam-diam sebagai sukses.
+if [[ ${#DEGRADASI[@]} -gt 0 ]]; then
+    for catatan in "${DEGRADASI[@]}"; do
+        warn "TIDAK UTUH: $catatan"
+    done
+    exit 1
+fi
