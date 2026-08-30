@@ -28,6 +28,7 @@ class UpgradeOrderService
 {
     public function __construct(
         private readonly BillingCalculatorService $calculator,
+        private readonly NotifikasiAdminPlatform $notifikasiAdmin,
     ) {}
 
     public function createOrder(
@@ -106,8 +107,9 @@ class UpgradeOrderService
             return compact('order', 'invoice');
         });
 
-        // Di luar closure: email yang terlanjur keluar tidak bisa ikut di-rollback.
+        // Di luar closure: email/WA yang terlanjur keluar tidak bisa ikut di-rollback.
         $this->kirimEmailInvoice($hasil['order'], $hasil['invoice']);
+        $this->notifikasiAdmin->orderBaru($hasil['order'], $hasil['invoice']);
 
         return $hasil;
     }
@@ -150,6 +152,8 @@ class UpgradeOrderService
             'auditable_id' => $order->id,
             'new_values' => ['nomor_order' => $order->nomor_order],
         ]);
+
+        $this->notifikasiAdmin->buktiTransferMasuk($order, $invoice);
     }
 
     public function confirmOrder(Order $order, User $confirmedBy, ?string $catatanAdmin = null): void

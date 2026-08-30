@@ -9,6 +9,7 @@ use App\Models\WhatsAppGatewaySetting;
 use App\Models\WhatsAppMessageTemplate;
 use App\Models\WhatsAppSetting;
 use App\Services\FonnteWhatsAppService;
+use App\Services\NotifikasiAdminPlatform;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Placeholder;
@@ -70,6 +71,16 @@ class WhatsAppSettingsPage extends Page implements HasForms
 
     public string $cs_bantuan_template = '';
 
+    public bool $notif_admin_platform_enabled = false;
+
+    public ?string $admin_whatsapp = null;
+
+    public string $notif_admin_demo_baru_template = '';
+
+    public string $notif_admin_order_baru_template = '';
+
+    public string $notif_admin_order_bukti_template = '';
+
     public static function canAccess(): bool
     {
         return auth()->user()?->role === UserRole::SuperAdmin->value;
@@ -93,6 +104,21 @@ class WhatsAppSettingsPage extends Page implements HasForms
                 'cs_invoice_bantuan',
                 OrderInvoicePage::DEFAULT_CS_BANTUAN_TEMPLATE,
             ),
+            // Default `false` eksplisit — WhatsAppSetting::get() default-nya true.
+            'notif_admin_platform_enabled' => WhatsAppSetting::get('notif_admin_platform_enabled', false),
+            'admin_whatsapp' => PlatformContactSetting::adminWhatsapp(),
+            'notif_admin_demo_baru_template' => WhatsAppMessageTemplate::get(
+                'notif_admin_demo_baru',
+                NotifikasiAdminPlatform::DEFAULT_DEMO_BARU,
+            ),
+            'notif_admin_order_baru_template' => WhatsAppMessageTemplate::get(
+                'notif_admin_order_baru',
+                NotifikasiAdminPlatform::DEFAULT_ORDER_BARU,
+            ),
+            'notif_admin_order_bukti_template' => WhatsAppMessageTemplate::get(
+                'notif_admin_order_bukti',
+                NotifikasiAdminPlatform::DEFAULT_ORDER_BUKTI,
+            ),
         ]);
     }
 
@@ -110,6 +136,42 @@ class WhatsAppSettingsPage extends Page implements HasForms
     public function form(Schema $schema): Schema
     {
         return $schema->components([
+            Section::make('Notifikasi Internal ke Admin Platform')
+                ->description('Alert ke nomor WhatsApp Anda sendiri saat ada lead demo atau pesanan upgrade masuk. Kategori BERBEDA dari empat notifikasi di bawah: penerimanya bukan pelanggan, melainkan satu nomor tetap milik pemilik platform. Karena itu kill-switch-nya terpisah dan default MATI.')
+                ->schema([
+                    TextInput::make('admin_whatsapp')
+                        ->label('Nomor WhatsApp admin platform')
+                        ->placeholder('081399096658')
+                        ->maxLength(20)
+                        ->helperText('Tujuan semua alert internal. Boleh ditulis 08xx maupun 62xx — akan disimpan dalam format internasional. Kosongkan untuk menghentikan pengiriman tanpa mematikan toggle.')
+                        ->rule($this->nomorWhatsappRule()),
+                    Toggle::make('notif_admin_platform_enabled')
+                        ->label('Kirim alert WhatsApp saat lead demo & pesanan upgrade masuk')
+                        ->helperText('Default mati. Nyalakan hanya setelah memastikan token Fonnte hidup lewat tombol "Kirim WA Tes" di bawah.')
+                        ->default(false),
+                    Actions::make([
+                        Action::make('kirim_wa_tes')
+                            ->label('Kirim WA Tes')
+                            ->icon(Heroicon::OutlinedPaperAirplane)
+                            ->color('gray')
+                            ->action('kirimWaTes'),
+                    ])->key('aksi-wa-tes'),
+                    Textarea::make('notif_admin_demo_baru_template')
+                        ->label('Template alert lead demo baru')
+                        ->required()
+                        ->rows(8)
+                        ->helperText('Placeholder yang bisa dipakai: {nama_pesantren}, {nama_kontak}, {no_hp}, {kota}, {jumlah_santri}, {link_admin}.'),
+                    Textarea::make('notif_admin_order_baru_template')
+                        ->label('Template alert pesanan upgrade dibuat')
+                        ->required()
+                        ->rows(8)
+                        ->helperText('Dikirim saat pesantren membuat order (status menunggu pembayaran). Placeholder: {nama_pesantren}, {nomor_order}, {nomor_invoice}, {paket}, {durasi_bulan}, {total}, {link_admin}.'),
+                    Textarea::make('notif_admin_order_bukti_template')
+                        ->label('Template alert bukti transfer masuk')
+                        ->required()
+                        ->rows(8)
+                        ->helperText('Dikirim saat pesantren mengunggah bukti transfer — inilah momen yang menunggu konfirmasi Anda. Placeholder sama dengan template di atas.'),
+                ]),
             Section::make('Reminder Billing')
                 ->description('Pengecualian sempit atas kebijakan WhatsApp manual (PRD §12) — hanya mengatur reminder billing H-3/H-1, tidak memengaruhi fitur WA lain (Magic Link, broadcast wali, rapor, dsb).')
                 ->schema([
@@ -185,17 +247,7 @@ class WhatsAppSettingsPage extends Page implements HasForms
                         ->placeholder('081399096658')
                         ->maxLength(20)
                         ->helperText('Ditampilkan sebagai tombol "Hubungi CS" di halaman invoice pesantren. Boleh ditulis 08xx maupun 62xx — akan disimpan dalam format internasional. Kosongkan untuk menyembunyikan tombol.')
-                        ->rule(static function () {
-                            return static function (string $attribute, mixed $value, \Closure $fail): void {
-                                if (blank($value)) {
-                                    return;
-                                }
-
-                                if (app(FonnteWhatsAppService::class)->normalizePhoneNumber((string) $value) === null) {
-                                    $fail('Nomor WhatsApp tidak valid. Contoh yang benar: 081399096658.');
-                                }
-                            };
-                        }),
+                        ->rule($this->nomorWhatsappRule()),
                     Textarea::make('cs_bantuan_template')
                         ->label('Template pesan awal')
                         ->required()
@@ -203,6 +255,70 @@ class WhatsAppSettingsPage extends Page implements HasForms
                         ->helperText('Teks yang sudah terketik otomatis di kolom chat saat pesantren menekan tombol "Hubungi CS". Placeholder yang bisa dipakai: {nomor_invoice}, {nomor_order}, {nama_pesantren}, {total}, {status_order}.'),
                 ]),
         ]);
+    }
+
+    // Dipakai dua field nomor (CS & admin platform): kosong boleh, tapi kalau diisi
+    // harus lolos normalisasi Fonnte supaya tidak tersimpan dalam bentuk yang pasti
+    // ditolak gateway saat kirim.
+    //
+    // Closure BERLAPIS dan itu wajib: Filament mengevaluasi closure terluar lewat
+    // container-nya sendiri, lalu memakai nilai kembaliannya sebagai rule Laravel.
+    // Menyerahkan closure validasi langsung membuat Filament mencoba me-resolve
+    // $attribute sebagai dependency dan gagal.
+    private function nomorWhatsappRule(): \Closure
+    {
+        return static function (): \Closure {
+            return static function (string $attribute, mixed $value, \Closure $fail): void {
+                if (blank($value)) {
+                    return;
+                }
+
+                if (app(FonnteWhatsAppService::class)->normalizePhoneNumber((string) $value) === null) {
+                    $fail('Nomor WhatsApp tidak valid. Contoh yang benar: 081399096658.');
+                }
+            };
+        };
+    }
+
+    // Sengaja SINKRON (bukan lewat KirimNotifikasiWhatsapp), mengikuti preseden
+    // EmailUji: tes kredensial harus gagal dengan keras di layar, bukan diam-diam
+    // masuk failed_jobs. Tombol ini juga sengaja mengabaikan kill-switch supaya
+    // token & nomor bisa diverifikasi sebelum notifikasinya dinyalakan.
+    public function kirimWaTes(): void
+    {
+        $nomor = app(FonnteWhatsAppService::class)->normalizePhoneNumber((string) $this->admin_whatsapp);
+
+        if ($nomor === null) {
+            Notification::make()
+                ->title('Nomor WhatsApp admin belum diisi atau tidak valid')
+                ->body('Isi nomor yang benar di kolom di atas lebih dulu, contoh: 081399096658.')
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        try {
+            app(FonnteWhatsAppService::class)->send(
+                $nomor,
+                'Tes koneksi WhatsApp Walisantri.com. Jika pesan ini masuk, gateway Fonnte dan nomor admin platform sudah benar.',
+            );
+        } catch (\Throwable $e) {
+            Log::error('whatsapp_tes_admin_gagal', ['message' => $e->getMessage()]);
+
+            Notification::make()
+                ->title('Gagal mengirim WA tes')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+
+            return;
+        }
+
+        Notification::make()
+            ->title('WA tes terkirim ke '.$nomor)
+            ->success()
+            ->send();
     }
 
     public function content(Schema $schema): Schema
@@ -251,6 +367,20 @@ class WhatsAppSettingsPage extends Page implements HasForms
                     : null,
             );
             WhatsAppMessageTemplate::set('cs_invoice_bantuan', $state['cs_bantuan_template']);
+
+            WhatsAppSetting::set('notif_admin_platform_enabled', (bool) $state['notif_admin_platform_enabled']);
+            WhatsAppMessageTemplate::set('notif_admin_demo_baru', $state['notif_admin_demo_baru_template']);
+            WhatsAppMessageTemplate::set('notif_admin_order_baru', $state['notif_admin_order_baru_template']);
+            WhatsAppMessageTemplate::set('notif_admin_order_bukti', $state['notif_admin_order_bukti_template']);
+
+            // Ternormalisasi seperti cs_whatsapp — NotifikasiAdminPlatform meneruskan
+            // nilai ini apa adanya ke job pengirim.
+            PlatformContactSetting::set(
+                'admin_whatsapp',
+                filled($state['admin_whatsapp'])
+                    ? app(FonnteWhatsAppService::class)->normalizePhoneNumber($state['admin_whatsapp'])
+                    : null,
+            );
         } catch (\Throwable $e) {
             Log::error('whatsapp_settings_save_failed', ['message' => $e->getMessage()]);
 

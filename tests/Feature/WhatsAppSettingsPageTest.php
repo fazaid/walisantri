@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Filament\Pages\WhatsAppSettingsPage;
+use App\Models\PlatformContactSetting;
 use App\Models\User;
 use App\Models\WhatsAppGatewaySetting;
 use App\Models\WhatsAppMessageTemplate;
@@ -96,5 +97,69 @@ class WhatsAppSettingsPageTest extends TestCase
             ->call('save');
 
         $this->assertSame('token-lama-456', WhatsAppGatewaySetting::get('fonnte_token'));
+    }
+
+    public function test_nomor_admin_platform_tersimpan_ternormalisasi(): void
+    {
+        $superAdmin = User::factory()->superAdmin()->create();
+
+        Livewire::actingAs($superAdmin)
+            ->test(WhatsAppSettingsPage::class)
+            ->fillForm(['admin_whatsapp' => '081399096658'])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame('6281399096658', PlatformContactSetting::adminWhatsapp());
+    }
+
+    public function test_nomor_admin_platform_tidak_valid_ditolak(): void
+    {
+        $superAdmin = User::factory()->superAdmin()->create();
+
+        Livewire::actingAs($superAdmin)
+            ->test(WhatsAppSettingsPage::class)
+            ->fillForm(['admin_whatsapp' => '123'])
+            ->call('save')
+            ->assertHasFormErrors(['admin_whatsapp']);
+    }
+
+    public function test_nomor_admin_platform_boleh_dikosongkan(): void
+    {
+        $superAdmin = User::factory()->superAdmin()->create();
+        PlatformContactSetting::set('admin_whatsapp', '6281399096658');
+
+        Livewire::actingAs($superAdmin)
+            ->test(WhatsAppSettingsPage::class)
+            ->fillForm(['admin_whatsapp' => ''])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertNull(PlatformContactSetting::adminWhatsapp());
+    }
+
+    public function test_kill_switch_alert_admin_default_mati_dan_bisa_dinyalakan(): void
+    {
+        $superAdmin = User::factory()->superAdmin()->create();
+
+        $this->assertFalse(WhatsAppSetting::get('notif_admin_platform_enabled', false));
+
+        Livewire::actingAs($superAdmin)
+            ->test(WhatsAppSettingsPage::class)
+            ->fillForm(['notif_admin_platform_enabled' => true])
+            ->call('save');
+
+        $this->assertTrue(WhatsAppSetting::get('notif_admin_platform_enabled', false));
+    }
+
+    public function test_template_alert_admin_tersimpan(): void
+    {
+        $superAdmin = User::factory()->superAdmin()->create();
+
+        Livewire::actingAs($superAdmin)
+            ->test(WhatsAppSettingsPage::class)
+            ->fillForm(['notif_admin_order_bukti_template' => 'Bukti masuk {nomor_invoice}'])
+            ->call('save');
+
+        $this->assertSame('Bukti masuk {nomor_invoice}', WhatsAppMessageTemplate::get('notif_admin_order_bukti'));
     }
 }

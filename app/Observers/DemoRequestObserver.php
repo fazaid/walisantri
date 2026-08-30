@@ -9,11 +9,16 @@ use App\Models\DemoRequest;
 use App\Models\User;
 use App\Models\WhatsAppMessageTemplate;
 use App\Models\WhatsAppSetting;
+use App\Services\NotifikasiAdminPlatform;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 
 class DemoRequestObserver
 {
+    public function __construct(
+        private readonly NotifikasiAdminPlatform $notifikasiAdmin,
+    ) {}
+
     public function creating(DemoRequest $demoRequest): void
     {
         $match = DemoRequest::where(function ($query) use ($demoRequest) {
@@ -33,6 +38,7 @@ class DemoRequestObserver
     {
         $this->notifySuperAdmins($demoRequest);
         $this->sendTerimaKasihWhatsapp($demoRequest);
+        $this->notifikasiAdmin->demoBaru($demoRequest);
     }
 
     private function notifySuperAdmins(DemoRequest $demoRequest): void
