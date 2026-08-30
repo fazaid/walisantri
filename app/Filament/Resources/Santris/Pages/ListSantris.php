@@ -10,6 +10,7 @@ use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Schemas\Components\Actions as FormActions;
@@ -42,9 +43,12 @@ class ListSantris extends ListRecords
                             '<li><strong>Kolom opsional:</strong> nama_panggilan, tanggal_lahir <em>(DD/MM/YYYY)</em>, nama_ayah, nama_ibu, alamat_lengkap, jumlah_saudara, cita_cita, status</li>'.
                             '<li>Kolom <code>kelas</code> dan <code>kamar</code> harus sesuai nama yang sudah terdaftar di sistem.</li>'.
                             '<li>Kolom <code>status</code> diisi "Aktif" atau "Non-Aktif" — kosong dianggap Aktif.</li>'.
-                            '<li>Baris dengan NIS yang sudah terdaftar akan dilewati.</li>'.
-                            '<li><strong>Kolom opsional wali:</strong> wali_nama, wali_email, wali_no_hp — isi salah satu <code>wali_email</code> atau <code>wali_no_hp</code> untuk membuat/menautkan akun wali (kalau keduanya diisi, <code>wali_email</code> yang dipakai). Wali tanpa email tetap bisa pakai magic link portal lewat nomor WA. Kalau <code>wali_email</code> dan <code>wali_no_hp</code> kosong, wali tidak akan ditautkan (santri tetap dibuat).</li>'.
-                            '<li>Beberapa baris dengan <code>wali_email</code> (atau <code>wali_no_hp</code> kalau email kosong) yang sama akan ditautkan ke satu akun wali yang sama (untuk kakak-adik).</li>'.
+                            '<li>Baris dengan NIS yang sudah terdaftar akan <strong>dilewati</strong>, kecuali Anda menyalakan "Perbarui data santri yang sudah terdaftar" di bawah.</li>'.
+                            '<li>Saat mode perbarui menyala, <strong>hanya kolom yang Anda isi</strong> yang menimpa data lama — sel yang dikosongkan dibiarkan apa adanya. Jadi file berisi <code>nis</code> + <code>kelas</code> saja cukup untuk kenaikan kelas massal.</li>'.
+                            '<li>NIS milik santri yang sudah dihapus tetap dilewati. Pulihkan dulu santrinya bila memang ingin diperbarui.</li>'.
+                            '<li><strong>Kolom opsional wali:</strong> wali_nama, wali_email, wali_no_hp — isi salah satu <code>wali_email</code> atau <code>wali_no_hp</code> untuk membuat/menautkan akun wali. Wali tanpa email tetap bisa pakai magic link portal lewat nomor WA. Kalau keduanya kosong, wali tidak ditautkan (santri tetap dibuat).</li>'.
+                            '<li><strong>Sebaiknya isi keduanya bila Anda punya.</strong> Wali dicari lewat email <em>dan</em> nomor WA, jadi satu orang tua tetap satu akun walau di file lain hanya disebut lewat salah satunya. Kolom kontak yang masih kosong di akun wali akan dilengkapi dari file — yang <strong>sudah terisi tidak pernah ditimpa</strong>. Untuk mengoreksi email, nomor, atau nama wali, pakai menu Pengguna.</li>'.
+                            '<li>Beberapa baris yang menunjuk wali yang sama akan ditautkan ke satu akun (untuk kakak-adik), termasuk bila baris yang satu menyebut emailnya dan baris lain menyebut nomor WA-nya.</li>'.
                             '</ul>'
                         )),
                     FormActions::make([
@@ -66,6 +70,18 @@ class ListSantris extends ListRecords
                         ->maxSize(5120)
                         ->live()
                         ->helperText('Maks. 5 MB.'),
+
+                    // Default mati, dan itu disengaja: admin yang mengunggah ulang
+                    // file lama tanpa sadar tidak boleh memundurkan data yang sudah
+                    // disunting manual di panel. Live supaya angka di pratinjau
+                    // ikut berubah begitu togglenya disentuh — kalau tidak, admin
+                    // menekan tombol berdasarkan ringkasan yang bukan miliknya.
+                    Toggle::make('perbarui_yang_ada')
+                        ->label('Perbarui data santri yang sudah terdaftar')
+                        ->helperText('Kalau mati, baris ber-NIS yang sudah ada akan dilewati. Kalau menyala, hanya kolom yang terisi di file yang menimpa data lama — sel kosong tidak menghapus apa pun.')
+                        ->default(false)
+                        ->live(),
+
                     Placeholder::make('preview')
                         ->label('Ringkasan Sebelum Import')
                         ->content(function (Get $get) {
@@ -77,8 +93,9 @@ class ListSantris extends ListRecords
 
                             try {
                                 $pesantrenId = auth()->user()->pesantren_id;
+                                $perbarui = (bool) $get('perbarui_yang_ada');
                                 $rows = Excel::toCollection(new SantriImport($pesantrenId), $path, 'local')->first() ?? collect();
-                                $ringkasan = (new SantriImport($pesantrenId))->analyze($rows);
+                                $ringkasan = (new SantriImport($pesantrenId, $perbarui))->analyze($rows);
                             } catch (\Throwable $e) {
                                 Log::warning('Preview import santri gagal membaca file.', [
                                     'pesantren_id' => auth()->user()->pesantren_id ?? null,
@@ -95,8 +112,14 @@ class ListSantris extends ListRecords
                             $items = ['Total baris terbaca: <strong>'.$ringkasan['total'].'</strong>'];
                             $items[] = '<span class="text-success-600 dark:text-success-400">Akan diimpor: <strong>'.$ringkasan['akan_diimpor'].'</strong></span>';
 
+                            if ($ringkasan['akan_diperbarui'] > 0) {
+                                $items[] = '<span class="text-info-600 dark:text-info-400">Akan diperbarui: <strong>'.$ringkasan['akan_diperbarui'].'</strong></span>';
+                            }
                             if ($ringkasan['duplikat'] > 0) {
                                 $items[] = '<span class="text-warning-600 dark:text-warning-400">NIS duplikat, akan dilewati: <strong>'.$ringkasan['duplikat'].'</strong></span>';
+                            }
+                            if ($ringkasan['dihapus'] > 0) {
+                                $items[] = '<span class="text-warning-600 dark:text-warning-400">NIS milik santri terhapus, akan dilewati: <strong>'.$ringkasan['dihapus'].'</strong></span>';
                             }
                             if ($ringkasan['data_wajib_kosong'] > 0) {
                                 $items[] = '<span class="text-warning-600 dark:text-warning-400">NIS/Nama Lengkap kosong, akan dilewati: <strong>'.$ringkasan['data_wajib_kosong'].'</strong></span>';
@@ -118,7 +141,7 @@ class ListSantris extends ListRecords
                 ])
                 ->action(function (array $data): void {
                     $pesantrenId = auth()->user()->pesantren_id;
-                    $import = new SantriImport($pesantrenId);
+                    $import = new SantriImport($pesantrenId, (bool) ($data['perbarui_yang_ada'] ?? false));
 
                     try {
                         Excel::import($import, $data['file'], 'local');
@@ -141,12 +164,22 @@ class ListSantris extends ListRecords
                         Storage::disk('local')->delete($data['file']);
                     }
 
-                    $body = "Berhasil mengimpor {$import->imported} santri.";
-                    if ($import->skipped > 0) {
-                        $body .= " {$import->skipped} baris dilewati.";
+                    $bagian = [];
+                    if ($import->imported > 0 || $import->updated === 0) {
+                        $bagian[] = "Berhasil mengimpor {$import->imported} santri.";
                     }
+                    if ($import->updated > 0) {
+                        $bagian[] = "{$import->updated} santri diperbarui.";
+                    }
+                    if ($import->skipped > 0) {
+                        $bagian[] = "{$import->skipped} baris dilewati.";
+                    }
+                    $body = implode(' ', $bagian);
 
-                    if ($import->imported > 0) {
+                    // Pembaruan ikut dihitung sebagai keberhasilan. Tanpa ini, impor
+                    // yang isinya murni pembaruan — kasus paling wajar dari mode ini —
+                    // dilaporkan sebagai "Import Gagal" padahal semua barisnya masuk.
+                    if ($import->imported > 0 || $import->updated > 0) {
                         Notification::make()
                             ->title('Import Selesai')
                             ->body($body)

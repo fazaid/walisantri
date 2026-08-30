@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Exports\SantriTemplateExport;
 use App\Imports\SantriImport;
+use App\Models\ActivityLog;
 use App\Models\Kamar;
 use App\Models\Kelas;
 use App\Models\Pesantren;
@@ -88,7 +89,7 @@ class SantriImportTest extends TestCase
 
         $this->assertSame(0, $import->imported);
         $this->assertSame(1, $import->skipped);
-        $this->assertStringContainsString('sudah pernah terdaftar', $import->errors[0]);
+        $this->assertStringContainsString('sudah dihapus', $import->errors[0]);
     }
 
     public function test_import_nis_sama_di_pesantren_lain_tetap_berhasil(): void
@@ -336,7 +337,11 @@ class SantriImportTest extends TestCase
         $this->assertSame([
             'total' => 5,
             'akan_diimpor' => 2,
-            'duplikat' => 1,
+            'akan_diperbarui' => 0,
+            'duplikat' => 0,
+            // NIS bekas santri terhapus dihitung terpisah dari duplikat biasa:
+            // duplikat bisa diatasi dengan menyalakan mode perbarui, yang ini tidak.
+            'dihapus' => 1,
             'data_wajib_kosong' => 1,
             'melebihi_kuota' => 1,
             'wali_baru' => 0,
@@ -378,7 +383,348 @@ class SantriImportTest extends TestCase
 
         $this->assertSame($ringkasan['akan_diimpor'], $real->imported);
         $this->assertSame(
-            $ringkasan['duplikat'] + $ringkasan['data_wajib_kosong'] + $ringkasan['melebihi_kuota'],
+            $ringkasan['duplikat'] + $ringkasan['dihapus'] + $ringkasan['data_wajib_kosong'] + $ringkasan['melebihi_kuota'],
+            $real->skipped
+        );
+    }
+
+    // ---------- Mode perbarui data yang sudah ada ----------
+
+    public function test_perbarui_mati_secara_bawaan_sehingga_perilaku_lama_tidak_berubah(): void
+    {
+        $pesantren = $this->makePesantren();
+        Santri::factory()->create([
+            'pesantren_id' => $pesantren->id,
+            'nis' => '2024100',
+            'nama_lengkap' => 'Nama Lama',
+        ]);
+
+        $import = new SantriImport($pesantren->id);
+        $import->collection(new Collection([
+            ['nis' => '2024100', 'nama_lengkap' => 'Nama Baru'],
+        ]));
+
+        $this->assertSame(0, $import->updated);
+        $this->assertSame(1, $import->skipped);
+        $this->assertSame('Nama Lama', Santri::where('nis', '2024100')->value('nama_lengkap'));
+        $this->assertStringContainsString('Centang', $import->errors[0]);
+    }
+
+    public function test_perbarui_menimpa_kolom_yang_diisi(): void
+    {
+        $pesantren = $this->makePesantren();
+        $kelas = Kelas::factory()->create(['pesantren_id' => $pesantren->id, 'nama_kelas' => '8A']);
+        $santri = Santri::factory()->create([
+            'pesantren_id' => $pesantren->id,
+            'nis' => '2024101',
+            'nama_lengkap' => 'Nama Lama',
+        ]);
+
+        $import = new SantriImport($pesantren->id, perbaruiYangAda: true);
+        $import->collection(new Collection([
+            ['nis' => '2024101', 'nama_lengkap' => 'Nama Baru', 'kelas' => '8A'],
+        ]));
+
+        $this->assertSame(1, $import->updated);
+        $this->assertSame(0, $import->imported);
+        $this->assertSame(0, $import->skipped);
+
+        $santri->refresh();
+        $this->assertSame('Nama Baru', $santri->nama_lengkap);
+        $this->assertSame($kelas->id, $santri->kelas_id);
+
+        // Tidak boleh melahirkan baris kedua — memperbarui, bukan menambah.
+        $this->assertSame(1, Santri::where('pesantren_id', $pesantren->id)->count());
+    }
+
+    /**
+     * Inti dari pilihan desainnya: sel kosong berarti "jangan ubah", bukan
+     * "kosongkan". Tanpa ini, satu kolom yang lupa diisi menghapus biodata yang
+     * sudah susah payah dikumpulkan.
+     */
+    public function test_perbarui_tidak_mengosongkan_kolom_yang_dikosongkan_di_file(): void
+    {
+        $pesantren = $this->makePesantren();
+        $kelas = Kelas::factory()->create(['pesantren_id' => $pesantren->id, 'nama_kelas' => '9B']);
+        $santri = Santri::factory()->create([
+            'pesantren_id' => $pesantren->id,
+            'nis' => '2024102',
+            'nama_ayah' => 'Pak Ahmad',
+            'nama_ibu' => 'Bu Siti',
+            'alamat_lengkap' => 'Jl. Merdeka 1',
+            'kelas_id' => null,
+        ]);
+
+        $import = new SantriImport($pesantren->id, perbaruiYangAda: true);
+        $import->collection(new Collection([
+            [
+                'nis' => '2024102',
+                'nama_lengkap' => $santri->nama_lengkap,
+                'kelas' => '9B',
+                'nama_ayah' => '',
+                'nama_ibu' => null,
+                'alamat_lengkap' => '   ',
+            ],
+        ]));
+
+        $this->assertSame(1, $import->updated);
+
+        $santri->refresh();
+        $this->assertSame($kelas->id, $santri->kelas_id, 'Kolom yang diisi harus menimpa.');
+        $this->assertSame('Pak Ahmad', $santri->nama_ayah);
+        $this->assertSame('Bu Siti', $santri->nama_ibu);
+        $this->assertSame('Jl. Merdeka 1', $santri->alamat_lengkap, 'Spasi saja tetap dianggap kosong.');
+    }
+
+    public function test_perbarui_santri_terhapus_tetap_dilewati(): void
+    {
+        $pesantren = $this->makePesantren();
+        $santri = Santri::factory()->create([
+            'pesantren_id' => $pesantren->id,
+            'nis' => '2024103',
+            'nama_lengkap' => 'Sudah Dihapus',
+        ]);
+        $santri->delete();
+
+        $import = new SantriImport($pesantren->id, perbaruiYangAda: true);
+        $import->collection(new Collection([
+            ['nis' => '2024103', 'nama_lengkap' => 'Coba Hidupkan Lagi'],
+        ]));
+
+        $this->assertSame(0, $import->updated);
+        $this->assertSame(1, $import->skipped);
+        $this->assertStringContainsString('sudah dihapus', $import->errors[0]);
+
+        $santri->refresh();
+        $this->assertSame('Sudah Dihapus', $santri->nama_lengkap);
+        $this->assertTrue($santri->trashed(), 'Impor tidak boleh memulihkan santri yang sengaja dihapus.');
+    }
+
+    /**
+     * SantriObserver hanya memeriksa kuota di event `creating`. Tanpa penjagaan
+     * sendiri di jalur perbarui, mengaktifkan kembali santri lewat impor jadi
+     * jalan memutar untuk melewati batas paket.
+     */
+    public function test_perbarui_tidak_bisa_mengaktifkan_santri_melebihi_kuota(): void
+    {
+        $pesantren = $this->makePesantren(kuota: 1);
+        Santri::factory()->create(['pesantren_id' => $pesantren->id, 'status_aktif' => true]);
+        $alumni = Santri::factory()->create([
+            'pesantren_id' => $pesantren->id,
+            'nis' => '2024104',
+            'status_aktif' => false,
+        ]);
+
+        $import = new SantriImport($pesantren->id, perbaruiYangAda: true);
+        $import->collection(new Collection([
+            ['nis' => '2024104', 'nama_lengkap' => $alumni->nama_lengkap, 'status' => 'Aktif'],
+        ]));
+
+        $this->assertSame(0, $import->updated);
+        $this->assertSame(1, $import->skipped);
+        $this->assertStringContainsString('Kuota', $import->errors[0]);
+        $this->assertFalse((bool) $alumni->refresh()->status_aktif);
+    }
+
+    /**
+     * Baris yang gagal karena kuota tidak boleh meninggalkan akun wali yatim —
+     * karena itu kuota diperiksa sebelum resolveWali() sempat membuat akun.
+     */
+    public function test_perbarui_yang_terbentur_kuota_tidak_membuat_akun_wali(): void
+    {
+        $pesantren = $this->makePesantren(kuota: 1);
+        Santri::factory()->create(['pesantren_id' => $pesantren->id, 'status_aktif' => true]);
+        $alumni = Santri::factory()->create([
+            'pesantren_id' => $pesantren->id,
+            'nis' => '2024117',
+            'status_aktif' => false,
+        ]);
+
+        (new SantriImport($pesantren->id, perbaruiYangAda: true))->collection(new Collection([
+            [
+                'nis' => '2024117',
+                'nama_lengkap' => $alumni->nama_lengkap,
+                'status' => 'Aktif',
+                'wali_email' => 'wali.yatim@contoh.test',
+            ],
+        ]));
+
+        $this->assertNull(User::where('email', 'wali.yatim@contoh.test')->first());
+    }
+
+    public function test_perbarui_santri_yang_sudah_aktif_tidak_terbentur_kuota(): void
+    {
+        $pesantren = $this->makePesantren(kuota: 1);
+        $santri = Santri::factory()->create([
+            'pesantren_id' => $pesantren->id,
+            'nis' => '2024105',
+            'status_aktif' => true,
+        ]);
+
+        $import = new SantriImport($pesantren->id, perbaruiYangAda: true);
+        $import->collection(new Collection([
+            ['nis' => '2024105', 'nama_lengkap' => 'Nama Diperbarui', 'status' => 'Aktif'],
+        ]));
+
+        $this->assertSame(1, $import->updated);
+        $this->assertSame(0, $import->skipped);
+        $this->assertSame('Nama Diperbarui', $santri->refresh()->nama_lengkap);
+    }
+
+    public function test_perbarui_menautkan_ulang_wali_saat_kolom_wali_diisi(): void
+    {
+        $pesantren = $this->makePesantren();
+        $santri = Santri::factory()->create([
+            'pesantren_id' => $pesantren->id,
+            'nis' => '2024106',
+            'wali_santri_id' => null,
+        ]);
+
+        $import = new SantriImport($pesantren->id, perbaruiYangAda: true);
+        $import->collection(new Collection([
+            [
+                'nis' => '2024106',
+                'nama_lengkap' => $santri->nama_lengkap,
+                'wali_nama' => 'Bapak Wali',
+                'wali_email' => 'wali.baru@contoh.test',
+            ],
+        ]));
+
+        $this->assertSame(1, $import->updated);
+
+        $wali = User::where('email', 'wali.baru@contoh.test')->first();
+        $this->assertNotNull($wali);
+        $this->assertSame($wali->id, $santri->refresh()->wali_santri_id);
+    }
+
+    public function test_perbarui_tidak_memutus_wali_saat_kolom_wali_kosong(): void
+    {
+        $pesantren = $this->makePesantren();
+        $wali = User::factory()->waliSantri()->create(['pesantren_id' => $pesantren->id]);
+        $santri = Santri::factory()->create([
+            'pesantren_id' => $pesantren->id,
+            'nis' => '2024107',
+            'wali_santri_id' => $wali->id,
+        ]);
+
+        $import = new SantriImport($pesantren->id, perbaruiYangAda: true);
+        $import->collection(new Collection([
+            ['nis' => '2024107', 'nama_lengkap' => 'Nama Diperbarui'],
+        ]));
+
+        $this->assertSame(1, $import->updated);
+        $this->assertSame($wali->id, $santri->refresh()->wali_santri_id);
+    }
+
+    public function test_perbarui_satu_file_bisa_menambah_dan_memperbarui_sekaligus(): void
+    {
+        $pesantren = $this->makePesantren();
+        Santri::factory()->create([
+            'pesantren_id' => $pesantren->id,
+            'nis' => '2024108',
+            'nama_lengkap' => 'Lama',
+        ]);
+
+        $import = new SantriImport($pesantren->id, perbaruiYangAda: true);
+        $import->collection(new Collection([
+            ['nis' => '2024108', 'nama_lengkap' => 'Diperbarui'],
+            ['nis' => '2024109', 'nama_lengkap' => 'Santri Baru'],
+        ]));
+
+        $this->assertSame(1, $import->updated);
+        $this->assertSame(1, $import->imported);
+        $this->assertSame(0, $import->skipped);
+        $this->assertSame('Diperbarui', Santri::where('nis', '2024108')->value('nama_lengkap'));
+        $this->assertNotNull(Santri::where('nis', '2024109')->first());
+    }
+
+    /**
+     * NIS ganda di dalam satu file tetap dilewati walau mode perbarui menyala:
+     * baris mana yang menang kalau tidak begitu ditentukan urutan file.
+     */
+    public function test_perbarui_nis_ganda_dalam_satu_file_tetap_dilewati(): void
+    {
+        $pesantren = $this->makePesantren();
+        Santri::factory()->create(['pesantren_id' => $pesantren->id, 'nis' => '2024110']);
+
+        $import = new SantriImport($pesantren->id, perbaruiYangAda: true);
+        $import->collection(new Collection([
+            ['nis' => '2024110', 'nama_lengkap' => 'Versi Pertama'],
+            ['nis' => '2024110', 'nama_lengkap' => 'Versi Kedua'],
+        ]));
+
+        $this->assertSame(1, $import->updated);
+        $this->assertSame(1, $import->skipped);
+        $this->assertStringContainsString('lebih dari sekali', $import->errors[0]);
+        $this->assertSame('Versi Pertama', Santri::where('nis', '2024110')->value('nama_lengkap'));
+    }
+
+    public function test_perbarui_tercatat_di_activity_log(): void
+    {
+        $pesantren = $this->makePesantren();
+        $santri = Santri::factory()->create([
+            'pesantren_id' => $pesantren->id,
+            'nis' => '2024111',
+            'nama_lengkap' => 'Nama Lama',
+        ]);
+
+        (new SantriImport($pesantren->id, perbaruiYangAda: true))->collection(new Collection([
+            ['nis' => '2024111', 'nama_lengkap' => 'Nama Baru'],
+        ]));
+
+        $log = ActivityLog::where('event', 'santri.updated_via_import')
+            ->where('auditable_id', $santri->id)
+            ->first();
+
+        $this->assertNotNull($log, 'Pembaruan massal tanpa jejak audit tidak bisa ditelusuri saat file yang salah telanjur diunggah.');
+        $this->assertSame('Nama Lama', $log->old_values['nama_lengkap']);
+        $this->assertSame('Nama Baru', $log->new_values['nama_lengkap']);
+    }
+
+    public function test_analyze_memisahkan_akan_diperbarui_dari_duplikat(): void
+    {
+        $pesantren = $this->makePesantren();
+        Santri::factory()->create(['pesantren_id' => $pesantren->id, 'nis' => '2024112']);
+
+        $rows = new Collection([
+            ['nis' => '2024112', 'nama_lengkap' => 'Sudah Ada'],
+            ['nis' => '2024113', 'nama_lengkap' => 'Benar-benar Baru'],
+        ]);
+
+        $tanpaPerbarui = (new SantriImport($pesantren->id))->analyze($rows);
+        $this->assertSame(1, $tanpaPerbarui['akan_diimpor']);
+        $this->assertSame(0, $tanpaPerbarui['akan_diperbarui']);
+        $this->assertSame(1, $tanpaPerbarui['duplikat']);
+
+        $denganPerbarui = (new SantriImport($pesantren->id, perbaruiYangAda: true))->analyze($rows);
+        $this->assertSame(1, $denganPerbarui['akan_diimpor']);
+        $this->assertSame(1, $denganPerbarui['akan_diperbarui']);
+        $this->assertSame(0, $denganPerbarui['duplikat']);
+    }
+
+    public function test_analyze_mode_perbarui_konsisten_dengan_hasil_import_sungguhan(): void
+    {
+        $pesantren = $this->makePesantren(kuota: 5);
+        Santri::factory()->create(['pesantren_id' => $pesantren->id, 'nis' => '2024114']);
+        $dihapus = Santri::factory()->create(['pesantren_id' => $pesantren->id, 'nis' => '2024115']);
+        $dihapus->delete();
+
+        $rows = new Collection([
+            ['nis' => '2024114', 'nama_lengkap' => 'Diperbarui'],
+            ['nis' => '2024115', 'nama_lengkap' => 'Bekas Terhapus'],
+            ['nis' => '2024116', 'nama_lengkap' => 'Baru'],
+            ['nis' => '', 'nama_lengkap' => 'Tanpa NIS'],
+        ]);
+
+        $ringkasan = (new SantriImport($pesantren->id, perbaruiYangAda: true))->analyze($rows);
+
+        $real = new SantriImport($pesantren->id, perbaruiYangAda: true);
+        $real->collection($rows);
+
+        $this->assertSame($ringkasan['akan_diimpor'], $real->imported);
+        $this->assertSame($ringkasan['akan_diperbarui'], $real->updated);
+        $this->assertSame(
+            $ringkasan['duplikat'] + $ringkasan['dihapus'] + $ringkasan['data_wajib_kosong'] + $ringkasan['melebihi_kuota'],
             $real->skipped
         );
     }
@@ -401,9 +747,180 @@ class SantriImportTest extends TestCase
         $wali = User::find($santri->wali_santri_id);
         $this->assertSame('Bapak Anu', $wali->name);
         $this->assertSame('bapak.anu@example.com', $wali->email);
-        $this->assertSame('081211112222', $wali->phone_number);
+        // Ternormalisasi, sama seperti jalur pembuatan lewat nomor HP. Dulu jalur
+        // email menyimpan nomor mentah, sehingga dua akun untuk orang yang sama
+        // tidak akan pernah saling ditemukan lagi lewat pencarian nomor.
+        $this->assertSame('6281211112222', $wali->phone_number);
         $this->assertSame('wali_santri', $wali->role);
         $this->assertSame($pesantren->id, $wali->pesantren_id);
+    }
+
+    // ---------- Satu wali tetap satu akun, apa pun penanda yang dipakai ----------
+
+    private function jumlahWali(Pesantren $pesantren): int
+    {
+        return User::where('pesantren_id', $pesantren->id)->where('role', 'wali_santri')->count();
+    }
+
+    /**
+     * Jebakan lama: impor pertama menautkan wali lewat NOMOR (akun lahir ber-email
+     * NULL), impor kedua membawa emailnya. Pencarian email tidak menemukan akun itu
+     * sehingga akun KEDUA lahir dan santrinya berpindah ke sana — magic link portal
+     * wali yang sudah dibagikan jadi menunjuk akun yatim.
+     */
+    public function test_wali_dari_no_hp_lalu_diberi_email_tidak_melahirkan_akun_kedua(): void
+    {
+        $pesantren = $this->makePesantren();
+
+        (new SantriImport($pesantren->id))->collection(new Collection([
+            ['nis' => '4001', 'nama_lengkap' => 'Anak D', 'wali_nama' => 'Bapak D', 'wali_no_hp' => '081298765432'],
+        ]));
+
+        $santri = Santri::where('nis', '4001')->first();
+        $waliAwal = User::find($santri->wali_santri_id);
+        $this->assertNull($waliAwal->email);
+
+        (new SantriImport($pesantren->id, perbaruiYangAda: true))->collection(new Collection([
+            ['nis' => '4001', 'nama_lengkap' => 'Anak D', 'wali_nama' => 'Bapak D', 'wali_email' => 'bapak.d@contoh.test', 'wali_no_hp' => '081298765432'],
+        ]));
+
+        $this->assertSame(1, $this->jumlahWali($pesantren), 'Satu orang tua harus tetap satu akun.');
+        $this->assertSame($waliAwal->id, $santri->refresh()->wali_santri_id, 'Santri tidak boleh berpindah ke akun baru.');
+        $this->assertSame('bapak.d@contoh.test', $waliAwal->refresh()->email, 'Email yang tadinya NULL dilengkapi.');
+    }
+
+    /**
+     * Kebalikannya, dan justru kasus yang paling sulit: impor kedua HANYA membawa
+     * nomor HP, sementara akunnya lahir dari email dan nomornya masih NULL.
+     * Pencocokan dua arah saja tidak cukup di sini — yang menutupnya adalah
+     * pelengkapan kolom kosong di impor sebelumnya.
+     */
+    public function test_wali_dari_email_lalu_diberi_no_hp_tidak_melahirkan_akun_kedua(): void
+    {
+        $pesantren = $this->makePesantren();
+
+        (new SantriImport($pesantren->id))->collection(new Collection([
+            ['nis' => '4002', 'nama_lengkap' => 'Anak E', 'wali_nama' => 'Bapak E', 'wali_email' => 'bapak.e@contoh.test'],
+        ]));
+
+        $santri = Santri::where('nis', '4002')->first();
+        $waliAwal = User::find($santri->wali_santri_id);
+        $this->assertNull($waliAwal->phone_number);
+
+        // Impor kedua melengkapi nomornya, masih menyebut emailnya.
+        (new SantriImport($pesantren->id, perbaruiYangAda: true))->collection(new Collection([
+            ['nis' => '4002', 'nama_lengkap' => 'Anak E', 'wali_email' => 'bapak.e@contoh.test', 'wali_no_hp' => '081211113333'],
+        ]));
+
+        $this->assertSame('6281211113333', $waliAwal->refresh()->phone_number);
+
+        // Impor ketiga hanya membawa nomor — kini ketemu karena nomornya sudah terisi.
+        (new SantriImport($pesantren->id, perbaruiYangAda: true))->collection(new Collection([
+            ['nis' => '4002', 'nama_lengkap' => 'Anak E', 'wali_no_hp' => '0812-1111-3333'],
+        ]));
+
+        $this->assertSame(1, $this->jumlahWali($pesantren));
+        $this->assertSame($waliAwal->id, $santri->refresh()->wali_santri_id);
+    }
+
+    /**
+     * Batas yang disengaja: bila impor pertama HANYA menyebut email dan impor
+     * kedua HANYA menyebut nomor, tidak ada satu pun penanda yang sama di antara
+     * keduanya — tidak ada cara menyimpulkan mereka orang yang sama tanpa menebak.
+     * Akun kedua tetap lahir.
+     *
+     * Menebaknya dari "wali yang sekarang tertaut ke santri ini" sengaja TIDAK
+     * dilakukan: admin yang benar-benar mengganti wali santri akan diam-diam
+     * menimpa kontak wali lama alih-alih menautkan yang baru.
+     *
+     * Tes ini mengunci batas itu supaya perubahannya kelak disadari, bukan
+     * ditemukan di produksi.
+     */
+    public function test_impor_tanpa_penanda_yang_sama_memang_melahirkan_akun_terpisah(): void
+    {
+        $pesantren = $this->makePesantren();
+
+        (new SantriImport($pesantren->id))->collection(new Collection([
+            ['nis' => '4008', 'nama_lengkap' => 'Anak J', 'wali_nama' => 'Bapak J', 'wali_email' => 'bapak.j@contoh.test'],
+        ]));
+
+        (new SantriImport($pesantren->id, perbaruiYangAda: true))->collection(new Collection([
+            ['nis' => '4008', 'nama_lengkap' => 'Anak J', 'wali_nama' => 'Bapak J', 'wali_no_hp' => '081266667777'],
+        ]));
+
+        $this->assertSame(2, $this->jumlahWali($pesantren));
+    }
+
+    public function test_kontak_wali_yang_sudah_terisi_tidak_pernah_ditimpa(): void
+    {
+        $pesantren = $this->makePesantren();
+        $wali = User::factory()->waliSantri()->create([
+            'pesantren_id' => $pesantren->id,
+            'email' => 'asli@contoh.test',
+            'phone_number' => '6281299998888',
+        ]);
+        $namaAsli = $wali->name;
+
+        (new SantriImport($pesantren->id))->collection(new Collection([
+            ['nis' => '4003', 'nama_lengkap' => 'Anak F', 'wali_nama' => 'Nama Lain', 'wali_email' => 'asli@contoh.test', 'wali_no_hp' => '081233334444'],
+        ]));
+
+        $wali->refresh();
+        $this->assertSame('asli@contoh.test', $wali->email);
+        $this->assertSame('6281299998888', $wali->phone_number, 'Nomor yang sudah terisi tidak boleh ditimpa file impor.');
+        $this->assertSame($namaAsli, $wali->name, 'Nama wali juga tidak ditimpa — mengoreksinya lewat menu Pengguna, bukan lewat impor.');
+    }
+
+    /**
+     * Kakak-adik yang disebut lewat penanda berbeda di baris berbeda tetap harus
+     * mendarat di satu akun yang sama, tanpa bergantung urutan barisnya.
+     */
+    public function test_dua_baris_dengan_penanda_berbeda_menunjuk_satu_akun_wali(): void
+    {
+        $pesantren = $this->makePesantren();
+
+        (new SantriImport($pesantren->id))->collection(new Collection([
+            ['nis' => '4004', 'nama_lengkap' => 'Kakak', 'wali_nama' => 'Bapak G', 'wali_email' => 'bapak.g@contoh.test', 'wali_no_hp' => '081244445555'],
+            ['nis' => '4005', 'nama_lengkap' => 'Adik', 'wali_nama' => 'Bapak G', 'wali_no_hp' => '0812-4444-5555'],
+        ]));
+
+        $this->assertSame(1, $this->jumlahWali($pesantren));
+        $this->assertSame(
+            Santri::where('nis', '4004')->value('wali_santri_id'),
+            Santri::where('nis', '4005')->value('wali_santri_id'),
+        );
+    }
+
+    public function test_nomor_hp_tidak_valid_tidak_membatalkan_penautan_lewat_email(): void
+    {
+        $pesantren = $this->makePesantren();
+        $import = new SantriImport($pesantren->id);
+
+        $import->collection(new Collection([
+            ['nis' => '4006', 'nama_lengkap' => 'Anak H', 'wali_email' => 'bapak.h@contoh.test', 'wali_no_hp' => 'xx'],
+        ]));
+
+        $wali = User::where('email', 'bapak.h@contoh.test')->first();
+        $this->assertNotNull($wali);
+        $this->assertNull($wali->phone_number);
+        $this->assertSame($wali->id, Santri::where('nis', '4006')->value('wali_santri_id'));
+        $this->assertStringContainsString('nomornya diabaikan', $import->errors[0]);
+    }
+
+    public function test_analyze_tidak_menghitung_wali_baru_yang_sudah_punya_akun_lewat_penanda_lain(): void
+    {
+        $pesantren = $this->makePesantren();
+        User::factory()->waliSantri()->create([
+            'pesantren_id' => $pesantren->id,
+            'email' => null,
+            'phone_number' => '6281255556666',
+        ]);
+
+        $ringkasan = (new SantriImport($pesantren->id))->analyze(new Collection([
+            ['nis' => '4007', 'nama_lengkap' => 'Anak I', 'wali_email' => 'bapak.i@contoh.test', 'wali_no_hp' => '081255556666'],
+        ]));
+
+        $this->assertSame(0, $ringkasan['wali_baru'], 'Pratinjau tidak boleh menjanjikan akun baru untuk wali yang sudah punya akun.');
     }
 
     public function test_import_wali_kosong_semua_kolom_tidak_diproses(): void
