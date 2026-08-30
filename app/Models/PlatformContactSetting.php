@@ -34,4 +34,11 @@ class PlatformContactSetting extends Model
     {
         return static::get('cs_whatsapp');
     }
+
+    // Nomor WA pemilik platform untuk alert internal (lead demo, pesanan upgrade).
+    // Bukan nomor CS: tidak pernah ditampilkan ke pesantren mana pun.
+    public static function adminWhatsapp(): ?string
+    {
+        return static::get('admin_whatsapp');
+    }
 }

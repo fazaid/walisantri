@@ -4,7 +4,17 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Agustus 2026 — v4.58
+**Last Updated:** Agustus 2026 — v4.59
+
+**Changelog v4.59:** **Pemilik platform akhirnya diberi tahu saat ada lead demo atau pesanan upgrade masuk — lewat WhatsApp ke nomornya sendiri.** Sebelum ini satu-satunya pemberitahuan adalah lonceng database Filament di `DemoRequestObserver::notifySuperAdmins()`: polling 5 menit dan hanya terlihat kalau panel sedang dibuka. Order upgrade bahkan tidak punya pemberitahuan sama sekali — tidak ada observer, tidak ada event, seluruh side-effect ditulis tangan di `UpgradeOrderService`. Akibatnya SLA yang sudah dikodekan di model (`DemoRequest::SLA_BUSINESS_DAYS = 2`, `Order::SLA_BUSINESS_DAYS = 1`) bisa lewat tanpa ada yang tahu, dan badge merah "overdue" baru berteriak setelah terlambat. Tiga pemicu baru: **lead demo masuk · order upgrade dibuat · bukti transfer diupload**, semuanya lewat `App\Services\NotifikasiAdminPlatform` dan job generik `KirimNotifikasiWhatsapp` yang sudah ada.
+
+⚠️ **Ini pengecualian KELIMA, tapi kategorinya berbeda dan itulah yang membuatnya boleh ada.** Keempat pengecualian lama (§12.1) mengirim ke **pelanggan**: admin pesantren atau pendaftar demo, banyak nomor, tidak terduga bagi penerimanya — persis profil yang membuat nomor gateway berisiko diblokir dan karena itu keempatnya disetel `0` di production sejak v4.23. Yang kelima ini mengirim ke **satu nomor tetap milik pemilik platform sendiri**, beberapa pesan per hari, ke tujuan yang memang menunggunya. Kill-switch-nya **terpisah dan default MATI** (`notif_admin_platform_enabled` di-seed `0`) — kotak peringatan v4.23 tetap berlaku utuh untuk keempat notifikasi pelanggan, dan menyalakan yang kelima tidak menyalakan satu pun dari mereka.
+
+⚠️ **`WhatsAppSetting::get()` default-nya `true`, dan itu jebakan langsung untuk fitur yang harus default mati.** Tanpa argumen kedua `false` yang eksplisit, `get('notif_admin_platform_enabled')` mengembalikan `true` di setiap database yang barisnya belum ada — DB tes, DB yang migrasinya belum jalan, DB baru. Fitur akan menyala sendiri persis di tempat yang paling tidak diinginkan. Ada tes khusus untuk ini (`test_kill_switch_default_mati_tanpa_pengaturan_apa_pun`).
+
+⚠️ **`->rule()` Filament menerima closure BERLAPIS, dan meratakannya tampak benar sampai runtime.** Validasi nomor di `WhatsAppSettingsPage` ditulis sebagai closure yang *mengembalikan* closure validasi. Menyerahkan closure validasi langsung — refactor yang kelihatan seperti pembersihan — membuat Filament mencoba me-resolve `$attribute` sebagai dependency container dan melempar *"[$attribute] was unresolvable"*. Tidak ada galat statis; hanya tes `HubungiCsWhatsAppTest` yang menangkapnya. Bentuk berlapis itu sekarang dipakai bersama oleh field `cs_whatsapp` dan `admin_whatsapp` lewat `nomorWhatsappRule()`, dengan komentar yang menjelaskan kenapa lapisannya tidak boleh dihapus.
+
+Tombol **"Kirim WA Tes"** ditambahkan di section yang sama, sinkron (bukan lewat queue) mengikuti preseden `EmailUji`: tes kredensial harus gagal keras di layar, bukan diam-diam masuk `failed_jobs`. Ia sengaja mengabaikan kill-switch, supaya token dan nomor bisa diverifikasi **sebelum** notifikasinya dinyalakan — itulah yang membuat pilihan "default mati" praktis dan bukan sekadar penghalang.
 
 **Changelog v4.58:** **Super admin akhirnya bisa mengekspor dua daftar yang jadi tulang punggung operasinya — Antrean Demo & Data Pesantren.** Sebelum ini permukaan super admin tidak punya satu pun jalur ekspor: kelima kelas di `app/Exports/` semuanya milik `admin_pesantren`/`ustadz` dan di-scope ke satu `pesantren_id`, sehingga pekerjaan lintas-tenant (merekap lead demo, menyusun daftar tenant yang akan expired, menghitung sebaran paket) hanya bisa dilakukan dengan menyalin tabel dari layar atau query manual ke database production. Dua tombol **Ekspor Excel** baru di header `ListDemoRequests` & `ListPesantrens`, unduhan sinkron, tanpa queue — konsisten §15.
 
@@ -1943,14 +1953,20 @@ Didefinisikan dengan `Schedule::job(...)` di **`routes/console.php`** (Laravel 1
 
 > ⚠️ **Keadaan sekarang (v4.23): seluruh integrasi WhatsApp DIMATIKAN.** Keempat kill-switch di bawah disetel `0` di production atas keputusan pemilik produk — nomor WhatsApp yang dipakai gateway berisiko diblokir. Spesifikasi di seksi ini tetap berlaku sebagai rancangan yang kodenya utuh dan siap dihidupkan, tapi jangan menghitungnya sebagai kanal aktif. Kanal yang benar-benar mengirim hari ini hanya email (§12.2). Sisa `failed_jobs` dari era Fonnte aktif adalah jejak historis, bukan kegagalan yang sedang berlangsung.
 
-On-demand penuh — tidak ada pengiriman terjadwal otomatis, **KECUALI empat pengecualian sempit**:
+On-demand penuh — tidak ada pengiriman terjadwal otomatis, **KECUALI empat pengecualian sempit** ke pelanggan (plus satu jalur alert internal ke pemilik platform sendiri, v4.59, dijelaskan di bawah):
 
 1. Reminder billing H-3/H-1 sebelum langganan expired — `WarnExpiringTenantsWhatsApp` (terjadwal, §11).
 2. Notifikasi sekali saat status baru bertransisi ke expired — `CheckExpiredTenants` (terjadwal, §11).
 3. Notifikasi saat order upgrade/perpanjangan dikonfirmasi — `UpgradeOrderService::confirmOrder()` (terpicu aksi Super Admin).
 4. Ucapan terima kasih + link grup support ke pendaftar demo — `DemoRequestObserver` (terpicu otomatis saat DemoRequest dibuat, v4.17).
 
-Keempatnya channel tambahan selain email/alur manual, dan **hanya keempat tempat itulah** yang men-`dispatch` `KirimNotifikasiWhatsapp` di seluruh kode.
+Keempatnya channel tambahan selain email/alur manual, dan semuanya mengirim **ke pelanggan**.
+
+**Pengecualian kelima (v4.59) berdiri di kategori terpisah: alert internal ke pemilik platform.** `App\Services\NotifikasiAdminPlatform` mengirim ke **satu nomor tetap milik pemilik platform sendiri** (`platform_contact_settings.admin_whatsapp`) pada tiga pemicu: lead demo masuk (`DemoRequestObserver::created()`), order upgrade dibuat, dan bukti transfer diupload (keduanya `UpgradeOrderService`). Bedanya dari keempat di atas bukan teknis melainkan risiko: penerimanya satu, tetap, dan memang menunggu pesannya — bukan banyak nomor pelanggan yang tidak terduga, yang merupakan alasan asli nomor gateway dimatikan di v4.23. Karena itu ia punya **satu kill-switch sendiri, `notif_admin_platform_enabled`, di-seed `0` alias DEFAULT MATI**; menyalakannya tidak menyalakan satu pun dari keempat notifikasi pelanggan, dan kotak peringatan di atas tetap berlaku penuh untuk mereka.
+
+⚠️ Pembacaan kill-switch ini **wajib** menulis argumen kedua: `WhatsAppSetting::get('notif_admin_platform_enabled', false)`. Default method itu `true`, jadi tanpa argumen tersebut fitur menyala sendiri di database mana pun yang barisnya belum ada.
+
+Dengan kelima jalur itu, **hanya kelima tempat itulah** yang men-`dispatch` `KirimNotifikasiWhatsapp` di seluruh kode.
 
 Gateway Fonnte via job generik `KirimNotifikasiWhatsapp` (`App\Services\FonnteWhatsAppService`); retry max 3× (`$tries = 3`, `backoff [10,30,60]`), gagal permanen → `failed_jobs`. **Job ini tidak menyetel queue**, jadi jalan di queue `default` pada koneksi `QUEUE_CONNECTION` (`database`) — bukan queue `whatsapp-notif` di Redis seperti rancangan awal (§4.4).
 
@@ -1960,6 +1976,8 @@ Reminder billing H-3/H-1 punya kill-switch dan template pesan yang bisa diatur d
 
 Notifikasi expired (sekali saat transisi) punya kill-switch & template terpisah di halaman yang sama: toggle `notif_trial_habis_enabled` dan template key `notif_trial_habis` dengan placeholder `{nama_pesantren}`, `{tanggal_expired}`, `{link_billing}` (tanpa `{sisa_hari}` karena sudah expired).
 
+Alert internal ke admin platform *(v4.59)* diatur di section paling atas halaman yang sama — sengaja di atas keempat section pelanggan karena ia satu-satunya yang penerimanya bukan pelanggan. Isinya: nomor tujuan `admin_whatsapp` (tabel `platform_contact_settings`, disimpan sudah ternormalisasi `62…` lewat `FonnteWhatsAppService::normalizePhoneNumber()`, dibaca via `PlatformContactSetting::adminWhatsapp()`), satu toggle `notif_admin_platform_enabled`, tiga template (`notif_admin_demo_baru`, `notif_admin_order_baru`, `notif_admin_order_bukti`), dan tombol **Kirim WA Tes**. Placeholder demo: `{nama_pesantren}`, `{nama_kontak}`, `{no_hp}`, `{kota}`, `{jumlah_santri}`, `{link_admin}`. Placeholder order: `{nama_pesantren}`, `{nomor_order}`, `{nomor_invoice}`, `{paket}`, `{durasi_bulan}`, `{total}`, `{link_admin}`. Mengosongkan nomor menghentikan pengiriman tanpa menyentuh toggle. Nomor ini **berbeda dari `cs_whatsapp`** dan tidak pernah ditampilkan ke pesantren mana pun.
+
 Notifikasi order dikonfirmasi punya kill-switch & template terpisah di halaman yang sama: toggle `notif_order_dikonfirmasi_enabled` dan template key `notif_order_dikonfirmasi` dengan placeholder `{nama_pesantren}`, `{paket}`, `{durasi_bulan}`, `{tanggal_expired}`, `{nomor_order}`, `{total_dibayar}`, `{link_billing}`. Dikirim sekali per konfirmasi order oleh Super Admin, bukan dijadwalkan.
 
 | Trigger | Aktor | Konten |
@@ -1968,10 +1986,13 @@ Notifikasi order dikonfirmasi punya kill-switch & template terpisah di halaman y
 | Notifikasi langganan baru saja expired | System (scheduled, pengecualian §11) | Tanggal expired, link billing |
 | Konfirmasi order upgrade/perpanjangan | Super Admin (aksi Filament, pengecualian §12) | Paket, durasi, tanggal expired baru, nomor order, total dibayar |
 | Terima kasih pendaftar demo | System (observer, pengecualian §12) | Ucapan terima kasih + link grup support |
+| **Lead demo baru** *(v4.59, ke admin platform)* | System (observer) | Nama pesantren, kontak, no. HP, kota, jumlah santri, link ke `DemoRequestResource` |
+| **Pesanan upgrade dibuat** *(v4.59, ke admin platform)* | System (`UpgradeOrderService::createOrder`) | Pesantren, nomor order, paket, durasi, total, link ke `OrderResource` |
+| **Bukti transfer diupload** *(v4.59, ke admin platform)* | System (`UpgradeOrderService::uploadBuktiTransfer`) | Sama + nomor invoice; inilah momen yang menunggu konfirmasi Super Admin |
 
 **Belum dibangun** (tidak ada dispatch WhatsApp untuk keempatnya — dicatat di §22): Magic Link per santri/massal per kamar (hari ini admin menyalin link dari modal dan mengirim sendiri, §4.3) · notifikasi rapor baru · notifikasi santri `Rujukan_Luar` · siaran pengumuman penting.
 
-**Modul Presensi (v4.25) TIDAK menambah dispatch WhatsApp kelima.** Klaim "hanya keempat tempat itulah yang men-`dispatch` `KirimNotifikasiWhatsapp`" di atas tetap utuh dan boleh dipercaya. Pemberitahuan status pengajuan izin memakai jalur yang benar-benar hidup: notifikasi in-app Filament (`->sendToDatabase()` ke admin pesantren + wali kelas santri, pola `DemoRequestObserver`; `->databaseNotifications()` sudah aktif dengan polling 5 menit), badge jumlah `diajukan` di tab Pengajuan Izin, dan status yang terbaca wali di portal. Email juga tidak ditambahkan di v4.25 — jenis email baru berarti satu baris kill-switch di `email_settings`, satu Mailable, dan empat-serangkai tes (§17); tunda sampai benar-benar diminta.
+**Modul Presensi (v4.25) TIDAK menambah dispatch WhatsApp baru.** *(v4.59: yang menambahnya adalah alert internal ke admin platform, satu jalur dengan tiga pemicu — bukan modul presensi. Klaim di §12.1 kini berbunyi "kelima tempat".)* Pemberitahuan status pengajuan izin memakai jalur yang benar-benar hidup: notifikasi in-app Filament (`->sendToDatabase()` ke admin pesantren + wali kelas santri, pola `DemoRequestObserver`; `->databaseNotifications()` sudah aktif dengan polling 5 menit), badge jumlah `diajukan` di tab Pengajuan Izin, dan status yang terbaca wali di portal. Email juga tidak ditambahkan di v4.25 — jenis email baru berarti satu baris kill-switch di `email_settings`, satu Mailable, dan empat-serangkai tes (§17); tunda sampai benar-benar diminta.
 
 Sebagai rancangan siap-nyala bila integrasi WhatsApp dihidupkan kembali: key template `notif_izin_disetujui` dengan placeholder `{nama_santri}`, `{jenis_izin}`, `{tanggal_mulai}`, `{tanggal_selesai}`, `{nama_pesantren}` — dan kill-switch `notif_izin_disetujui_enabled`. Ditulis di sini supaya penyambungannya nanti tinggal satu dispatch, bukan perancangan ulang.
 

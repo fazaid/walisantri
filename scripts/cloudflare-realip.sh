@@ -32,7 +32,14 @@ trap 'rm -f "$SEMENTARA"' EXIT
     echo
 
     for sumber in https://www.cloudflare.com/ips-v4 https://www.cloudflare.com/ips-v6; do
-        curl -fsS --max-time 20 "$sumber" | while read -r rentang; do
+        # `|| [ -n "$rentang" ]`: berkas ips-v4/ips-v6 Cloudflare TIDAK diakhiri
+        # newline, sehingga `while read` polos menelan baris terakhir tanpa bunyi.
+        # Terukur 29 Agustus 2026: 131.0.72.0/22 dan 2c0f:f248::/32 — masing-masing
+        # baris pamungkas kedua berkas — absen dari konfigurasi yang terpasang,
+        # sehingga pengunjung yang lewat kedua rentang edge itu tetap tercatat
+        # sebagai IP Cloudflare dan ikut berbagi ember rate limiter. Persis bug
+        # yang skrip ini dibuat untuk menutup, menyisakan dua lubang.
+        curl -fsS --max-time 20 "$sumber" | while read -r rentang || [ -n "$rentang" ]; do
             [ -n "$rentang" ] && echo "set_real_ip_from ${rentang};"
         done
     done
