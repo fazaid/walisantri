@@ -57,6 +57,11 @@ class PesantrenSettingsPage extends Page implements HasForms
 
     public string $pesantren_slug = '';
 
+    // Halaman ini tanpa statePath, jadi tiap field form HARUS punya properti publik
+    // pasangannya di sini — tanpa itu `form->fill()` tidak punya tempat menaruh
+    // nilainya dan `save()` menyimpan null, tanpa error maupun galat validasi.
+    public string $kepala_pesantren = '';
+
     public string $alamat = '';
 
     public string $telepon = '';
@@ -113,6 +118,7 @@ class PesantrenSettingsPage extends Page implements HasForms
             'akreditasi' => $pesantren->profil['akreditasi'] ?? null,
             'logo' => $pesantren->profil['logo'] ?? null,
             'galeri' => $pesantren->profil['galeri'] ?? [],
+            'kepala_pesantren' => $pesantren->profil['kepala_pesantren'] ?? '',
         ]);
     }
 
@@ -148,6 +154,14 @@ class PesantrenSettingsPage extends Page implements HasForms
                             ])
                             ->hint('Mengubah slug akan melepas slug lama ke cooldown 90 hari.')
                             ->hintColor('warning'),
+
+                        // Disimpan di `profil`, bukan diturunkan dari adminUtama():
+                        // yang menandatangani kartu adalah pimpinan pesantren, yang
+                        // sering bukan orang yang memegang akun admin panel.
+                        TextInput::make('kepala_pesantren')
+                            ->label('Nama Kepala Pesantren')
+                            ->maxLength(255)
+                            ->helperText('Tercetak di bagian bawah kartu santri. Kosongkan bila tidak ingin ditampilkan.'),
                     ]),
 
                 Section::make('Logo & Galeri Pesantren')
@@ -358,6 +372,7 @@ class PesantrenSettingsPage extends Page implements HasForms
                 'akreditasi' => $data['akreditasi'],
                 'logo' => $data['logo'],
                 'galeri' => $data['galeri'] ?? [],
+                'kepala_pesantren' => $data['kepala_pesantren'],
             ], $this->wilayahTersimpan($data)),
         ]);
 

@@ -117,6 +117,32 @@ Menu: **Santri → Prestasi**. Gunakan untuk mencatat pencapaian lomba/kejuaraan
 3. Unggah sertifikat/foto piala kalau ada (JPG/PNG/PDF, maks 5 MB).
 4. Simpan. Prestasi ini akan otomatis muncul di portal wali santri terkait.
 
+### 2.4 Cetak Kartu Santri
+
+**Siapa yang bisa akses:** Cetak massal — Admin saja · Unduh per santri — Admin & Ustadz
+
+Ada **dua jenis kartu**, dan keduanya dicetak dari menu Santri:
+
+| Jenis | Isi | Bentuk cetak | Untuk apa |
+|---|---|---|---|
+| **Kartu QR** | Nama, NIS, kelas, QR, dan kode kartu sebagai teks | Lembar A4, dua kartu per baris | Dipindai petugas di **Presensi → Scan QR** |
+| **Kartu Santri** | Logo & nama pesantren, foto profil, identitas (kelas, kamar, jenis kelamin, tanggal lahir, alamat), **QR presensi + kode kartu**, masa berlaku, dan nama kepala pesantren | Satu kartu satu halaman, ukuran KTP (85,6 × 54 mm) | Tanda pengenal yang dipegang santri — sekaligus bisa dipindai untuk presensi |
+
+> **QR di kedua kartu itu sama persis.** Santri yang sudah memegang Kartu Santri tidak perlu juga membawa Kartu QR — keduanya terbaca pemindai yang sama. Kartu QR tetap berguna sebagai cetakan murah: bisa difotokopi dan diganti tanpa biaya laminating.
+
+**Cetak sekelas sekaligus.** Dari **Santri → Data Santri**, klik **Cetak Kartu**:
+
+1. Pilih **Kelas** — kartu dibuat untuk seluruh santri **aktif** di kelas itu.
+2. Pilih jenis kartunya.
+3. Khusus Kartu Santri, isi **Berlaku Sampai**. Bawaannya akhir tahun ajaran berjalan (30 Juni); ganti bila pesantren Anda memakai masa berlaku lain.
+4. Klik **Unduh**.
+
+**Cetak satu santri.** Buka detail santrinya. Bagian **Kartu Santri** menampilkan QR miliknya beserta kode kartunya, dengan tombol **Unduh Kartu QR** dan **Unduh Kartu Santri** di bawahnya. Ini jalan tercepat saat satu anak kehilangan kartunya dan kodenya baru diganti.
+
+> **Isi dulu Nama Kepala Pesantren.** Ada di **Pengaturan → Profil Pesantren**, bagian Identitas Pesantren. Selama kosong, blok tanda tangan di kartu tidak dicetak sama sekali (bukan dicetak kosong). Logo pesantren diambil dari halaman yang sama.
+
+> **Santri tanpa foto tetap bisa dicetak** — tempat fotonya diisi bingkai bertuliskan "Tanpa Foto", jadi tata letak kartu satu kelas tetap seragam.
+
 ---
 
 ## 3. Manajemen Pengguna
@@ -335,7 +361,9 @@ Hari libur dan hari libur mingguan (bagian 8.1) sama-sama dikeluarkan dari perhi
 
 Cara tercepat mengabsen banyak santri: cetak kartu ber-QR sekali, lalu tinggal dipindai tiap pagi. Santri tidak perlu membawa ponsel.
 
-**Mencetak kartu.** Dari **Presensi → Kehadiran**, klik **Cetak Kartu**, pilih kelas, lalu unduh PDF-nya dan cetak. Setiap kartu memuat nama, NIS, kode QR, dan **kode kartu dalam bentuk teks** — kode teks itu cadangan bila QR-nya lecek atau kamera gagal membaca.
+**Mencetak kartu.** Dari **Santri → Data Santri**, klik **Cetak Kartu**, pilih kelas, lalu pilih **Kartu QR**, unduh PDF-nya dan cetak. Setiap kartu memuat nama, NIS, kode QR, dan **kode kartu dalam bentuk teks** — kode teks itu cadangan bila QR-nya lecek atau kamera gagal membaca.
+
+Untuk satu santri saja — misalnya kartunya hilang dan kodenya baru diganti — buka detail santrinya; bagian **Kartu Santri** menampilkan QR-nya sekaligus tombol unduhnya. Selengkapnya di bagian 2.4.
 
 **Memindai.** Klik **Scan QR** dari halaman yang sama. Ada dua cara, dan keduanya bisa dipakai bergantian di layar yang sama:
 

@@ -70,6 +70,26 @@ class Santri extends Model
     }
 
     /**
+     * Path filesystem absolut foto profil — khusus render PDF.
+     *
+     * DomPDF di proyek ini jalan dengan `enable_remote = false`, jadi ia tidak
+     * bisa mengambil URL sama sekali. Memakai `foto_profil_url` di template PDF
+     * tidak melempar error apa pun: fotonya sekadar tidak muncul. Cermin dari
+     * `Pesantren::getLogoPathAttribute()`, termasuk guard file_exists()-nya —
+     * baris DB bisa menunjuk berkas yang sudah lenyap dari disk.
+     */
+    public function getFotoProfilPathAttribute(): ?string
+    {
+        if (! $this->foto_profil) {
+            return null;
+        }
+
+        $path = Storage::disk('public')->path($this->foto_profil);
+
+        return file_exists($path) ? $path : null;
+    }
+
+    /**
      * @deprecated Pakai PenugasanUstadz::santriIdsBimbingan() — definisi cakupan
      *             ustadz dipusatkan di sana bersama jalur penugasan lainnya.
      */

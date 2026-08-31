@@ -66,14 +66,14 @@ class Panduan
             'judul' => 'Data Santri',
             'ringkas' => 'Daftar induk seluruh santri — sumber data untuk hampir semua menu lain.',
             'langkah' => [
-                'Buat dulu daftar <strong>Kelas</strong> dan <strong>Kamar</strong>, supaya keduanya bisa langsung dipilih di form.',
-                'Klik <strong>+ New</strong>, lalu isi <strong>NIS</strong> (wajib unik), nama, tanggal lahir, jenis kelamin, kelas, dan kamar.',
+                'Buat dulu daftar <strong>Kelas</strong> dan <strong>Kamar</strong>, lalu klik <strong>+ New</strong> dan isi <strong>NIS</strong> (wajib unik), nama, tanggal lahir, jenis kelamin, kelas, dan kamar.',
                 'Di bagian <strong>Relasi</strong>, hubungkan santri ke akun Wali Santri dan Ustadz Pembimbing.',
                 'Simpan. Santri langsung tersedia di menu Tahfidz, Presensi, Kesantrian, dan Keuangan.',
                 'Pakai aksi baris <strong>Link Wali</strong> untuk menyalin tautan portal, atau <strong>Preview sebagai Wali</strong> untuk memeriksa tampilannya.',
                 'Untuk memindahkan banyak santri sekaligus, centang barisnya lalu pilih <strong>Pindah Kelas</strong> atau <strong>Pindah Kamar</strong>.',
+                'Klik <strong>Cetak Kartu</strong> untuk mencetak sekelas — pilih kelas, lalu <strong>Kartu QR</strong> (dipindai saat presensi) atau <strong>Kartu Santri</strong> (tanda pengenal berfoto, QR-nya sama sehingga tetap bisa dipindai). Untuk satu santri saja, pakai bagian <strong>Kartu Santri</strong> di halaman detailnya.',
             ],
-            'catatan' => 'Tanpa Wali Santri terhubung, Link Portal Wali tidak bisa dibuat. Satu ustadz maksimal membimbing 20 santri aktif.',
+            'catatan' => 'Tanpa Wali Santri terhubung, Link Portal Wali tidak bisa dibuat. Satu ustadz maksimal membimbing 20 santri aktif. Nama kepala pesantren yang tercetak di kartu diambil dari Pengaturan Pesantren.',
             'ustadz' => 'Anda melihat semua santri, tetapi hanya bisa mengubah santri bimbingan Anda sendiri dan tidak bisa menghapus.',
             'anchor' => 'manajemen-santri',
         ],
@@ -210,6 +210,7 @@ class Panduan
             'langkah' => [
                 'Halaman ini untuk <strong>menelusuri dan mengoreksi</strong>; pengisiannya lewat tombol di header.',
                 'Klik <strong>Isi Presensi</strong> untuk satu kelas satu hari, <strong>Isi per Jam</strong> untuk per jam pelajaran, atau <strong>Scan QR</strong> untuk memakai kartu.',
+                'Kartunya sendiri dicetak dari <strong>Santri &rarr; Data Santri &rarr; Cetak Kartu</strong>, bukan dari halaman ini.',
                 'Pakai filter Status, Jenis, Santri, dan Kelas untuk mempersempit daftar.',
                 'Kolom <strong>Sumber</strong> menunjukkan asal data — pengisian manual, scan kartu, atau izin yang disetujui.',
             ],
@@ -242,12 +243,12 @@ class Panduan
             'judul' => 'Scan Kartu Presensi',
             'ringkas' => 'Mencatat kehadiran dengan memindai QR pada kartu santri.',
             'langkah' => [
-                'Cetak dulu kartu presensi santri, yang memuat QR berisi kode unik masing-masing.',
+                'Cetak dulu kartu QR santri lewat <strong>Santri &rarr; Data Santri &rarr; Cetak Kartu</strong>; kartunya memuat QR berisi kode unik masing-masing.',
                 'Pakai alat pemindai QR, atau klik <strong>Pindai dengan Kamera</strong> bila pesantren tidak punya alatnya.',
                 'Arahkan QR kartu ke kamera. Jauhkan kartunya lebih dulu sebelum mendekatkan kartu berikutnya — tiap kartu dicatat sekali.',
                 'Santri yang sudah terpindai hari itu akan diberi tahu statusnya, bukan dicatat dua kali.',
             ],
-            'catatan' => 'Kalau kartu hilang atau bocor, buat ulang kodenya lewat aksi Ganti Kode Kartu Presensi di daftar Santri — kartu lama langsung tidak berlaku.',
+            'catatan' => 'Kalau kartu hilang atau bocor, buat ulang kodenya lewat aksi Ganti Kode Kartu Presensi di halaman detail santri — kartu lama langsung tidak berlaku — lalu cetak penggantinya dari bagian Kartu Santri di halaman yang sama.',
         ],
 
         Pages\PresensiRekapPage::class => [
@@ -478,7 +479,7 @@ class Panduan
             'judul' => 'Pengaturan Pesantren',
             'ringkas' => 'Identitas dan profil publik pesantren yang tampil di halaman profil.',
             'langkah' => [
-                'Isi <strong>Identitas Pesantren</strong>: nama dan subdomain.',
+                'Isi <strong>Identitas Pesantren</strong>: nama, subdomain, dan <strong>Nama Kepala Pesantren</strong> — yang terakhir tercetak di kaki kartu santri.',
                 'Unggah logo (PNG/JPG/SVG, maks 1 MB) dan foto galeri (maks 12, urutannya bisa digeser).',
                 'Lengkapi profil publik: telepon, alamat, deskripsi, program &amp; jenjang, tahun berdiri, dan akreditasi.',
                 'Tambahkan <strong>Rekening Pembayaran SPP</strong> — daftar inilah yang dilihat wali saat membuka tagihan.',

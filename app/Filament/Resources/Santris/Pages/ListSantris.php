@@ -6,16 +6,24 @@ use App\Exceptions\SantriQuotaExceededException;
 use App\Exports\SantriTemplateExport;
 use App\Filament\Resources\Santris\SantriResource;
 use App\Imports\SantriImport;
+use App\Models\Kelas;
+use App\Services\KartuPresensiPdf;
+use App\Services\KartuSantriPdf;
+use App\Services\TahunAjaranOptions;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Radio;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Schemas\Components\Actions as FormActions;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Support\Enums\Width;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
@@ -206,6 +214,57 @@ class ListSantris extends ListRecords
                             ->persistent()
                             ->send();
                     }
+                }),
+
+            // Pindahan dari Presensi → Kehadiran (dulu action 'cetakKartu' di sana).
+            // Yang dicetak adalah kartu identitas milik santri, jadi tempatnya di
+            // menu Santri; presensi cuma salah satu pemakainya.
+            Action::make('cetak_kartu')
+                ->label('Cetak Kartu')
+                ->icon('heroicon-o-printer')
+                ->color('gray')
+                ->visible(fn () => auth()->user()?->role === 'admin_pesantren')
+                ->modalHeading('Cetak Kartu Santri')
+                ->modalSubmitActionLabel('Unduh')
+                ->form([
+                    Select::make('kelas_id')
+                        ->label('Kelas')
+                        // Tanpa filter pesantren_id — global scope Multitenantable
+                        // yang mengerjakannya, dan findOrFail di bawah ikut ter-scope
+                        // sehingga kelas tenant lain berujung 404, bukan PDF.
+                        ->options(fn () => Kelas::orderBy('nama_kelas')->pluck('nama_kelas', 'id'))
+                        ->required()
+                        ->helperText('Kartu dicetak untuk seluruh santri aktif di kelas ini.'),
+
+                    Radio::make('jenis')
+                        ->label('Jenis Kartu')
+                        ->options([
+                            'qr' => 'Kartu QR — lembar A4 untuk dipindai saat presensi',
+                            'lengkap' => 'Kartu Santri — tanda pengenal berfoto ber-QR, satu kartu satu halaman',
+                        ])
+                        ->default('qr')
+                        ->required()
+                        ->live(),
+
+                    // Hanya relevan untuk kartu identitas; kartu QR tidak punya masa
+                    // berlaku karena yang membatalkannya adalah penggantian kode,
+                    // bukan tanggal.
+                    DatePicker::make('masa_berlaku')
+                        ->label('Berlaku Sampai')
+                        ->default(fn () => TahunAjaranOptions::akhirTahunAjaran())
+                        ->helperText('Tanggal ini tercetak di kartu.')
+                        ->visible(fn (Get $get) => $get('jenis') === 'lengkap')
+                        ->required(fn (Get $get) => $get('jenis') === 'lengkap'),
+                ])
+                ->action(function (array $data) {
+                    $kelas = Kelas::findOrFail($data['kelas_id']);
+
+                    if (($data['jenis'] ?? 'qr') === 'lengkap') {
+                        return app(KartuSantriPdf::class)
+                            ->untukKelas($kelas, Carbon::parse($data['masa_berlaku']));
+                    }
+
+                    return app(KartuPresensiPdf::class)->untukKelas($kelas);
                 }),
 
             Action::make('export_excel')

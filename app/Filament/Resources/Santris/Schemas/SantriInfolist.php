@@ -4,11 +4,14 @@
 
 namespace App\Filament\Resources\Santris\Schemas;
 
+use App\Filament\Resources\Santris\Actions\UnduhKartuLengkapAction;
+use App\Filament\Resources\Santris\Actions\UnduhKartuQrAction;
 use App\Models\Santri;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 
 class SantriInfolist
@@ -47,6 +50,25 @@ class SantriInfolist
                             ->label('Magic Link UUID')
                             ->copyable()
                             ->columnSpanFull(),
+                    ]),
+
+                // Kartu diletakkan tepat di bawah Data Santri, bukan di dekat Foto
+                // Profil: yang dicari admin di sini adalah "cetakkan kartu anak ini",
+                // dan itu tindakan identitas, bukan urusan berkas gambar.
+                Section::make('Kartu Santri')
+                    // Key eksplisit: tombol unduh hidup di footerActions section ini,
+                    // bukan di header halaman, jadi tes harus bisa menyebut alamatnya
+                    // (TestAction::...->schemaComponent('kartu-santri')).
+                    ->key('kartu-santri')
+                    ->description('QR yang dipindai saat presensi, dan tombol unduh kedua jenis kartu.')
+                    ->schema([
+                        // $record tersedia sendiri di blade lewat getExtraViewData()
+                        // milik komponen schema — tidak perlu viewData().
+                        View::make('filament.infolists.kartu-santri'),
+                    ])
+                    ->footerActions([
+                        UnduhKartuQrAction::make(),
+                        UnduhKartuLengkapAction::make(),
                     ]),
 
                 Section::make('Biodata')

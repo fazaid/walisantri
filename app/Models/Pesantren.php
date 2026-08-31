@@ -257,6 +257,19 @@ class Pesantren extends Model
             ->all();
     }
 
+    /**
+     * Nama kepala pesantren, tercetak di kaki kartu santri.
+     *
+     * Disimpan di `profil` alih-alih kolom sendiri karena ia data profil murni:
+     * tidak pernah dipakai untuk query, relasi, atau otorisasi — hanya dicetak.
+     * Bukan turunan dari `adminUtama()`: yang menandatangani kartu adalah pimpinan
+     * pesantren, yang sering bukan orang yang memegang akun admin panel.
+     */
+    public function getKepalaPesantrenAttribute(): ?string
+    {
+        return $this->profil['kepala_pesantren'] ?? null;
+    }
+
     // Path filesystem absolut logo — dipakai render PDF (DomPDF, enable_remote=false, tak bisa fetch URL)
     public function getLogoPathAttribute(): ?string
     {

@@ -4,7 +4,33 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Agustus 2026 — v4.59
+**Last Updated:** Agustus 2026 — v4.60
+
+**Changelog v4.60:** **Cetak kartu pindah dari Presensi ke Santri, dan kartunya jadi dua jenis.** Tombol "Cetak Kartu" berdiri di header `ListPresensis` sejak v4.32 — tempat yang salah secara domain: yang dicetak adalah kartu identitas milik santri, dan presensi hanya salah satu pemakainya. Bentuknya pun cuma satu (lembar QR A4 tanpa logo, foto, atau identitas), dan satu-satunya cara mencetak adalah **seluruh kelas sekaligus** — mahal untuk kasus yang paling sering terjadi, yaitu satu anak kehilangan kartunya sehari setelah kodenya diganti.
+
+Sekarang: **Kartu QR** (lembar A4, tidak berubah sedikit pun — kartu yang sudah beredar tetap sah) dan **Kartu Santri** (`KartuSantriPdf` + `filament/pdf/kartu-santri.blade.php`) — logo & nama pesantren, foto profil, identitas, QR presensi, masa berlaku, nama kepala pesantren. Dua jalan masuk: tombol **Cetak Kartu** di header `ListSantris` (pilih kelas → pilih jenis) dan section **Kartu Santri** di `ViewSantri` yang menampilkan QR-nya sekaligus dua tombol unduh per santri.
+
+**Kartu Santri memuat QR yang sama dengan Kartu QR** — payload `WSP1.{kode_presensi}` yang identik, lewat `GambarQr` yang sama. Jadi santri yang memegang kartu identitas tidak perlu juga membawa kartu presensi; keduanya terbaca pemindai yang sama, dan penggantian kode lewat `RegenerasiKodePresensiAction` membatalkan keduanya sekaligus. Kartu QR tetap ada sebagai cetakan murah yang boleh difotokopi. Kodenya dicetak sebagai teks di kedua kartu dengan alasan yang sama: QR di kartu yang dipakai harian lecek lebih cepat, dan petugas harus bisa mengetiknya.
+
+**Kertasnya diset seukuran kartu (CR80, 85,6 × 54 mm), bukan A4 bergaris potong.** Hasil potong tangan dari lembar A4 tidak pernah cukup lurus untuk dilaminating, dan pesantren yang punya printer kartu PVC bisa mencetak langsung tanpa mengatur apa pun. `setPaper([0, 0, 242.65, 153.07])`, satu kartu satu halaman, tanpa margin `@page`.
+
+⚠️ **Halaman seukuran kartu membuat tata letak gagal secara diam-diam, dan tiga hal di DomPDF memicunya.** (1) `position: absolute; bottom: 0` untuk menempelkan kaki kartu **meluap keluar halaman** — versi pertama menghasilkan dua halaman untuk satu kartu; yang bekerja adalah tabel setinggi tetap dengan baris atas & bawah `height: 1%`. (2) **`box-sizing` diabaikan** — placeholder foto `height: 21mm; padding-top: 10mm` menjadi kotak 31 mm, dan tambahan itu sendirian mendorong kartu ke halaman kedua; placeholder-nya sekarang tabel ber-`vertical-align: middle`. (3) Kotak setinggi **persis** tinggi halaman meluap karena pembulatan, jadi kartunya 46 mm + margin 2×2,5 mm = 51 mm dari 54 mm. Isi terpanjang yang mungkin terukur 46 mm (kop 12 + badan 26 + kaki 8) — cadangan sebenarnya 3 mm. Tidak satu pun dari ketiganya melempar error; gejalanya cuma "PDF-nya dua kali lebih tebal", yang gampang dikira wajar sampai ada yang mencetaknya ke kartu PVC. Karena itu `KartuSantriTest::test_kartu_terpanjang_pun_tetap_muat_satu_halaman` **menghitung halaman** pada isi terburuk, dan panjang alamat santri (45) & alamat pesantren (55) dipatok konstanta di `KartuSantriPdf` — keduanya bukan kosmetik, keduanya penjaga tata letak.
+
+⚠️ **Locale tanggal masa berlaku dipatok `->locale('id')`, tidak mengikuti `app.locale`.** Seluruh label kartu ditulis tetap dalam bahasa Indonesia, jadi bulan yang mengikuti config menghasilkan kartu setengah Inggris — *"Berlaku sampai 30 June 2027"* — di lingkungan mana pun yang `APP_LOCALE`-nya belum diset, tanpa error apa pun. Bukan hipotesis: `phpunit.xml` tidak menyetel `APP_LOCALE`, dan tes memang mencetak "June" sebelum ini diperbaiki.
+
+**`gambarQr()` diangkat keluar jadi `App\Support\GambarQr`, beserta seluruh docblock peringatannya.** Pemakainya kini tiga (PDF kartu QR, pratinjau di detail santri, dan apa pun yang menyusul), dan peringatan "instance QRCode wajib baru tiap panggilan" adalah tipe bug yang gagal **tanpa error apa pun** — selama pembuatannya tersebar, salinan yang terlewat akan mengulangi v4.32 diam-diam.
+
+⚠️ **`foto_profil_url` TIDAK boleh dipakai di template PDF, dan itu tidak akan pernah melempar galat.** DomPDF jalan dengan `enable_remote = false`; memberinya URL membuat fotonya sekadar tidak muncul. `Santri::getFotoProfilPathAttribute()` ditambahkan sebagai cermin persis `Pesantren::getLogoPathAttribute()` — path filesystem absolut, dengan guard `file_exists()` karena baris DB bisa menunjuk berkas yang sudah lenyap dari disk. Ada tes untuk kasus logo & foto yang path-nya menggantung.
+
+⚠️ **`PesantrenSettingsPage` tanpa `statePath`, jadi tiap field form WAJIB punya properti publik pasangannya di kelasnya.** Field `kepala_pesantren` sempat ditambahkan ke `form()`, `mount()`, dan `save()` dengan benar tetapi tanpa `public string $kepala_pesantren = ''` — dan hasilnya `form->fill()` tidak punya tempat menaruh nilainya, `save()` menyimpan `null`, dan **tidak ada error, galat validasi, maupun peringatan apa pun**. Formnya terlihat bekerja: isian bisa diketik, tombol simpan memunculkan notifikasi sukses, isinya hilang. Ditemukan hanya karena tesnya memeriksa isi `profil` sesudah `save()`, bukan sekadar `assertHasNoFormErrors()`. Berlaku untuk setiap field baru di halaman pengaturan mana pun yang berpola sama.
+
+**Nama kepala pesantren masuk `pesantrens.profil['kepala_pesantren']`, bukan kolom baru dan bukan turunan `adminUtama()`.** Ia data profil murni — tidak pernah dipakai untuk query, relasi, atau otorisasi, hanya dicetak; dan yang menandatangani kartu adalah pimpinan pesantren, yang sering bukan orang yang memegang akun admin panel. Selama kosong, blok tanda tangannya tidak dicetak sama sekali — label "Kepala Pesantren" yang menggantung tanpa nama terbaca seperti kartu cacat.
+
+**Masa berlaku diisi manual di modal cetak, dengan bawaan akhir tahun ajaran berjalan** (`TahunAjaranOptions::akhirTahunAjaran()`, diturunkan dari `current()` supaya cut-off bulan Juli hanya didefinisikan sekali). Bukan kolom di `santri`: tanggalnya milik cetakan, bukan milik santri, dan pesantren yang memakai masa berlaku non-tahun-ajaran tidak perlu disuruh menyunting ratusan baris.
+
+**Cetak massal tetap admin-only, unduh per santri terbuka untuk ustadz.** Sejajar `KirimMagicLinkAction`: mencetak ulang kartu santri bimbingan wajar dilakukan ustadz, sementara cetak sekelas melampaui cakupan perwaliannya. Yang tetap tertutup untuk ustadz adalah **mengganti kodenya** (`RegenerasiKodePresensiAction`, tidak berubah).
+
+Penjaga §13.2 (`assertStringNotContainsString($santri->uuid, $pdf)`) diduplikasi ke kedua jalur baru — kartu identitas justru lebih rawan daripada kartu QR, karena ia dipegang santri setiap hari dan dipotret untuk grup WhatsApp. `KartuSantriTest` juga menegakkan bahwa tombol lama benar-benar **hilang** dari `ListPresensis`: fitur yang "dipindah" tapi diam-diam masih ada di tempat lama akan pelan-pelan berbeda perilakunya.
 
 **Changelog v4.59:** **Pemilik platform akhirnya diberi tahu saat ada lead demo atau pesanan upgrade masuk — lewat WhatsApp ke nomornya sendiri.** Sebelum ini satu-satunya pemberitahuan adalah lonceng database Filament di `DemoRequestObserver::notifySuperAdmins()`: polling 5 menit dan hanya terlihat kalau panel sedang dibuka. Order upgrade bahkan tidak punya pemberitahuan sama sekali — tidak ada observer, tidak ada event, seluruh side-effect ditulis tangan di `UpgradeOrderService`. Akibatnya SLA yang sudah dikodekan di model (`DemoRequest::SLA_BUSINESS_DAYS = 2`, `Order::SLA_BUSINESS_DAYS = 1`) bisa lewat tanpa ada yang tahu, dan badge merah "overdue" baru berteriak setelah terlambat. Tiga pemicu baru: **lead demo masuk · order upgrade dibuat · bukti transfer diupload**, semuanya lewat `App\Services\NotifikasiAdminPlatform` dan job generik `KirimNotifikasiWhatsapp` yang sudah ada.
 
@@ -1694,6 +1720,10 @@ Dashboard                        ← semua role
 [Cluster Santri] Users ← top-level sidebar, tanpa group (v4.9, sort 0)
   Santri · Kelas AcademicCap [admin_pesantren] · Kamar Home [admin_pesantren]
   Prestasi Trophy ← admin_pesantren + ustadz (label "Prestasi Santri" → "Prestasi", URL /admin/santri/prestasi)
+  ┊ Cetak Kartu (tombol header ListSantris) [admin_pesantren] — pilih kelas, lalu Kartu QR atau
+  ┊   Kartu Santri; yang kedua meminta tanggal masa berlaku (v4.60, pindahan dari Cluster Presensi)
+  ┊ Unduh Kartu QR & Unduh Kartu Santri (footerActions section "Kartu Santri" di ViewSantri)
+  ┊   [admin_pesantren + ustadz] — kartu satu santri, tanpa lewat kelasnya
 ──
 [Cluster Akademik] AcademicCap ← top-level sidebar, tanpa group (v4.9, sort 1)
   Pelajaran [admin_pesantren] · Nilai · Ekskul (Santri) [admin_pesantren + ustadz, v4.9]
@@ -1711,6 +1741,8 @@ Dashboard                        ← semua role
   ┊ — kelimanya di dalam cluster tapi tanpa entri navigasi. Empat dicapai dari tombol header
   ┊   ListPresensis; **Jam Pelajaran** dari tombol header Pengaturan Presensi dan Isi per Jam,
   ┊   karena ia master data yang disentuh saat menyiapkan pesantren, bukan menu harian.
+  ┊ — **Cetak Kartu tidak lagi di sini** (v4.60). Pindah ke Cluster Santri; yang dicetak kartu
+  ┊   identitas milik santri, dan presensi cuma salah satu pemakainya.
 ──
 [Cluster Kesantrian] ShieldCheck ← top-level sidebar, tanpa group (v4.8, sort 4)
   Mutabaah ClipboardDocumentList · Karakter Star · Kesehatan Heart [Rintisan+] · Inventaris ArchiveBox [Maju]
@@ -2159,7 +2191,7 @@ Pendekatan **Feature test** sebagai tulang punggung, ditopang unit test untuk ka
 **Presensi (v4.25):** modul ini menambah dua belas berkas tes dan menyunting dua yang sudah ada. Yang wajib disebut namanya karena mengunci keputusan, bukan sekadar menutup jalur:
 
 - `PresensiCakupanUstadzTest` — **pembimbing halaqah nol akses presensi** di seluruh permukaan (aksi tersembunyi, halaman 403, route-model binding ditolak), pengampu mapel tidak bisa mengisi presensi harian, wali kelas tidak bisa mengisi presensi jam pelajaran. Sekelas dengan `PenugasanUstadzTest` dan `WaliRaporTest`: tugasnya membuat pelebaran cakupan di masa depan harus jadi keputusan sadar, bukan efek samping refactor.
-- `KartuPresensiTest` — memuat asersi `assertStringNotContainsString($santri->uuid, $pdf)`. Ini penjaga temuan §13.2: kalau suatu saat seseorang "menyederhanakan" kartu QR kembali ke `uuid`, tes inilah yang menolaknya.
+- `PresensiKartuQrTest` & `KartuSantriTest` — keduanya memuat asersi `assertStringNotContainsString($santri->uuid, $pdf)`. Ini penjaga temuan §13.2: kalau suatu saat seseorang "menyederhanakan" kartu kembali ke `uuid`, tes inilah yang menolaknya. Sengaja diduplikasi ke kedua jenis kartu (v4.60) — penjaga yang hanya ada di satu jalur tidak menghalangi jalur yang lain.
 - `WaliPresensiTest` — wali tidak bisa membaca presensi anak keluarga lain dengan mengubah `santri_id` di URL (regresi atas bug §8 #1), dan form pengajuan izin tersembunyi di sesi Magic Link.
 - `PresensiHarianPageTest` — tanggal WIB via `Waktu` diuji eksplisit pada pukul 01.00 WIB (18.00 UTC hari sebelumnya), simpan ulang **memperbarui** alih-alih menduplikasi, dan simpan transaksional (gagal di tengah → nol baris tersisa).
 - `PresensiScannerPageTest` — scan setelah `jam_masuk + toleransi` menghasilkan `Terlambat` dengan `menit_terlambat` yang benar; scan kedua memperbarui + memberi notifikasi peringatan, bukan membuat baris kedua; kode milik tenant lain tidak resolve.
