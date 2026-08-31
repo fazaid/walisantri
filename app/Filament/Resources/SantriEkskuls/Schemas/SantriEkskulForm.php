@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources\SantriEkskuls\Schemas;
 
-use App\Enums\UserRole;
+use App\Filament\Support\SantriOptions;
 use App\Support\Waktu;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
@@ -11,7 +11,6 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\Unique;
 
 class SantriEkskulForm
@@ -29,25 +28,22 @@ class SantriEkskulForm
                     ->schema([
                         Select::make('santri_id')
                             ->label('Santri')
-                            // relationship() menghormati global scope Multitenantable,
-                            // jadi tidak perlu filter pesantren_id manual. Tanpa
-                            // preload(): pencarian dilakukan di server, bukan dengan
-                            // memuat seluruh tabel santri ke dalam payload Livewire.
-                            ->relationship(
-                                'santri',
-                                'nama_lengkap',
-                                function (Builder $query) {
-                                    $query->where('status_aktif', true)
-                                        ->orderBy('nama_lengkap');
-
-                                    // Ustadz hanya boleh mendaftarkan santri
-                                    // bimbingannya sendiri — selaras dengan
-                                    // ScopesQueryToUstadzSantri di resource.
-                                    if (Auth::user()?->role === UserRole::Ustadz->value) {
-                                        $query->where('pembimbing_ustadz_id', Auth::id());
-                                    }
-                                },
-                            )
+                            // Daftarnya dimuat di muka, sama seperti sembilan form
+                            // ber-santri lainnya. Versi sebelumnya memakai
+                            // relationship()->searchable() tanpa preload() demi
+                            // menghemat payload, tapi akibatnya dropdown ini kosong
+                            // sampai admin mengetik — satu-satunya di seluruh panel
+                            // yang berperilaku begitu, dan tidak ada cara menebaknya
+                            // dari layar. Jumlah santri dibatasi kuota paket, jadi
+                            // yang dihemat tidak sebanding dengan kebingungannya.
+                            //
+                            // SantriOptions::aktifUntukPengguna() memakai
+                            // PenugasanUstadz::santriIdsBimbingan() — definisi cakupan
+                            // ustadz yang sama persis dengan ScopesQueryToUstadzSantri
+                            // di resource ini, jadi batasannya tidak berubah — dan
+                            // Santri::query() di dalamnya tetap lewat global scope
+                            // Multitenantable.
+                            ->options(fn () => SantriOptions::aktifUntukPengguna())
                             ->searchable()
                             ->required(),
                         Select::make('ekskul_id')
