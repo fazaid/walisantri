@@ -48,7 +48,10 @@
                     $teksWarna = $persen >= 80 ? 'text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30' : ($persen >= 60 ? 'text-yellow-700 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/30' : 'text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/30');
                 @endphp
                 <tr>
-                    <td class="px-5 py-3 text-gray-800 dark:text-gray-200 font-medium">{{ $item['label'] }}</td>
+                    {{-- Ikon dirender di sini, bukan ditempelkan ke label di
+                         RaporMutabaahData: emoji tidak punya glif di font PDF, jadi
+                         hanya layar yang boleh menampilkannya. --}}
+                    <td class="px-5 py-3 text-gray-800 dark:text-gray-200 font-medium">{{ trim(($item['icon'] ?? '').' '.$item['label']) }}</td>
                     <td class="px-5 py-3 text-center text-gray-700 dark:text-gray-300">{{ $item['total_capai'] }}</td>
                     <td class="px-5 py-3 text-center text-gray-500 dark:text-gray-400">{{ $item['total_maks'] }}</td>
                     <td class="px-5 py-3 text-center">

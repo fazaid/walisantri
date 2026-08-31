@@ -126,6 +126,136 @@ class SuperAdminPanelTest extends TestCase
         );
     }
 
+    // ---------- Siapa admin dari pesantren ini ----------
+
+    /**
+     * Kolom kedua tabel dulu berisi slug — identitas teknis routing subdomain yang
+     * bisa berganti (ada tabel slug_releases) dan tidak pernah jadi pertanyaan yang
+     * dibawa super admin ke halaman ini. Yang dicarinya: siapa yang bisa dihubungi
+     * saat menagih, memperingatkan expired, atau menindaklanjuti pesanan upgrade.
+     */
+    public function test_kolom_admin_pesantren_menggantikan_slug_yang_terlihat(): void
+    {
+        $this->actingAs($this->superAdmin());
+        $pesantren = Pesantren::factory()->create();
+        User::factory()->adminPesantren()->create([
+            'pesantren_id' => $pesantren->id,
+            'name' => 'Ustadz Fulan',
+            'email' => 'fulan@contoh.test',
+            'phone_number' => '6281234567890',
+        ]);
+
+        $komponen = Livewire::test(ListPesantrens::class);
+        $komponen->assertCanRenderTableColumn('adminUtama.name')
+            ->assertSee('Ustadz Fulan')
+            ->assertSee('fulan@contoh.test')
+            ->assertSee('6281234567890');
+
+        $slug = $komponen->instance()->getTable()->getColumn('slug');
+        $this->assertNotNull($slug, 'Slug tetap harus bisa dimunculkan lewat menu Kolom, bukan dihapus.');
+        $this->assertTrue(
+            $slug->isToggledHiddenByDefault(),
+            'Slug turun jadi kolom tersembunyi — tempatnya digantikan identitas admin.',
+        );
+    }
+
+    /**
+     * Baris email & no. HP dirakit jadi HTML sendiri (description() menerima
+     * Htmlable), jadi nilainya harus lewat e() satu per satu. Tanpa itu email admin
+     * bisa menyuntikkan markup ke tabel super admin.
+     */
+    public function test_kontak_admin_di_escape_bukan_dirender_sebagai_markup(): void
+    {
+        $this->actingAs($this->superAdmin());
+        $pesantren = Pesantren::factory()->create();
+        User::factory()->adminPesantren()->create([
+            'pesantren_id' => $pesantren->id,
+            'email' => '<b>injeksi</b>@contoh.test',
+        ]);
+
+        $html = Livewire::test(ListPesantrens::class)->html();
+
+        $this->assertStringContainsString('&lt;b&gt;injeksi&lt;/b&gt;@contoh.test', $html);
+        $this->assertStringNotContainsString('<b>injeksi</b>', $html);
+    }
+
+    /**
+     * DeleteAction di tabel ini meninggalkan user yatim (users.pesantren_id
+     * nullOnDelete) dan pesantren yang dibuat lewat CreateAction lahir tanpa admin
+     * sama sekali, jadi baris tanpa admin bukan kasus teoretis.
+     */
+    public function test_pesantren_tanpa_admin_tetap_ter_render(): void
+    {
+        $this->actingAs($this->superAdmin());
+        $pesantren = Pesantren::factory()->create();
+
+        Livewire::test(ListPesantrens::class)
+            ->assertCanSeeTableRecords([$pesantren])
+            ->assertCanRenderTableColumn('adminUtama.name')
+            ->assertSee('belum ada admin');
+    }
+
+    /**
+     * Pencarian sengaja menyapu SELURUH admin pesantren, bukan hanya adminUtama:
+     * super admin yang menempel email admin kedua tetap harus menemukan tenantnya.
+     */
+    public function test_pencarian_menemukan_pesantren_lewat_email_adminnya(): void
+    {
+        $this->actingAs($this->superAdmin());
+
+        $dicari = Pesantren::factory()->create();
+        $lain = Pesantren::factory()->create();
+
+        // Dibuat belakangan supaya ia BUKAN adminUtama (MIN(id)) — yang diuji
+        // justru bahwa pencarian tetap menemukannya.
+        User::factory()->adminPesantren()->create(['pesantren_id' => $dicari->id]);
+        User::factory()->adminPesantren()->create([
+            'pesantren_id' => $dicari->id,
+            'email' => 'bendahara@alhikmah.test',
+        ]);
+        User::factory()->adminPesantren()->create(['pesantren_id' => $lain->id]);
+
+        Livewire::test(ListPesantrens::class)
+            ->searchTable('bendahara@alhikmah.test')
+            ->assertCanSeeTableRecords([$dicari])
+            ->assertCanNotSeeTableRecords([$lain]);
+    }
+
+    /**
+     * Kolom admin membaca relasi di setiap baris; tanpa eager load ia menembak satu
+     * query user per pesantren. Yang diuji pertumbuhannya, bukan angka mutlaknya —
+     * Filament sendiri menyumbang sejumlah query tetap.
+     */
+    public function test_kolom_admin_tidak_menambah_query_per_baris(): void
+    {
+        $this->actingAs($this->superAdmin());
+
+        $hitungQuery = function (int $jumlah): int {
+            Pesantren::query()->delete();
+
+            foreach (Pesantren::factory()->count($jumlah)->create() as $pesantren) {
+                User::factory()->adminPesantren()->create(['pesantren_id' => $pesantren->id]);
+            }
+
+            DB::flushQueryLog();
+            DB::enableQueryLog();
+            Livewire::test(ListPesantrens::class)->assertOk();
+            $total = count(DB::getQueryLog());
+            DB::disableQueryLog();
+
+            return $total;
+        };
+
+        $satu = $hitungQuery(1);
+        $sepuluh = $hitungQuery(10);
+
+        $this->assertLessThanOrEqual(
+            $satu + 2,
+            $sepuluh,
+            'Jumlah query harus tetap datar saat baris bertambah — kalau tumbuh, eager load adminUtama hilang.',
+        );
+    }
+
     public function test_widget_semua_pesantren_juga_terurut_terbaru_di_atas(): void
     {
         $this->actingAs($this->superAdmin());

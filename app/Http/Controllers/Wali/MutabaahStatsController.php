@@ -36,7 +36,8 @@ class MutabaahStatsController extends Controller
         $amalMasterList = MutabaahScoreCalculator::masterAktif($santri->pesantren_id);
 
         // Trend rata-rata skor per bulan (12 bulan terakhir)
-        $awalTren = Waktu::sekarang()->subMonths(11)->startOfMonth();
+        // startOfMonth() SEBELUM subMonths() — lihat catatan di TrendBulanan.
+        $awalTren = Waktu::sekarang()->startOfMonth()->subMonths(11);
         $trendGroup = KesantrianMutabaah::where('santri_id', $santri->id)
             ->whereDate('tanggal', '>=', $awalTren->toDateString())
             ->orderBy('tanggal')

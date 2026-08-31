@@ -13,9 +13,11 @@ use App\Models\TagihanSpp;
 use App\Models\User;
 use App\Support\SandboxDemo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -151,5 +153,59 @@ class SandboxDemoTest extends TestCase
             'active',
             Pesantren::where('slug', SandboxDemo::SLUG)->value('status_berlangganan')
         );
+    }
+
+    /** @return array<string, array{0: string}> */
+    public static function tanggalRawanLuapan(): array
+    {
+        return [
+            '31 Agustus (31 Juni tidak ada)' => ['2026-08-31'],
+            '31 Mei (31 April tidak ada)' => ['2026-05-31'],
+            '31 Maret (31 Februari tidak ada)' => ['2026-03-31'],
+            '30 Maret (30 Februari tidak ada)' => ['2026-03-30'],
+            '29 Maret (29 Februari 2026 tidak ada)' => ['2026-03-29'],
+            '31 Desember' => ['2026-12-31'],
+        ];
+    }
+
+    /**
+     * ⚠️ Waktu DIBEKUKAN ke tanggal akhir bulan, dan itu inti tesnya.
+     *
+     * seedSpp() memakai subMonths() dalam loop. Carbon meluap saat tanggal acuan
+     * tidak ada di bulan tujuan — 31 Agustus dikurangi dua bulan jadi 31 Juni yang
+     * tidak ada, lalu meluap ke 1 Juli — sehingga dua iterasi menghasilkan Juli dan
+     * INSERT kedua menabrak unique (pesantren_id, santri_id, bulan, tahun).
+     * Perintahnya dijadwalkan mingguan, jadi penyegaran sandbox produksi gagal
+     * total setiap kali jadwalnya jatuh di tanggal semacam ini.
+     *
+     * Tanpa pembekuan waktu, tes ini lulus 28 hari dalam sebulan dan menyembunyikan
+     * bugnya — persis yang terjadi sebelum ini: seluruh suite hijau berbulan-bulan,
+     * lalu merah pada 31 Agustus.
+     */
+    #[DataProvider('tanggalRawanLuapan')]
+    public function test_penyegaran_berhasil_di_tanggal_akhir_bulan(string $hariIni): void
+    {
+        Carbon::setTestNow(Carbon::parse($hariIni.' 09:00:00'));
+
+        $this->segarkan();
+
+        $pesantren = Pesantren::where('slug', SandboxDemo::SLUG)->firstOrFail();
+        $santriIds = Santri::allTenants()->where('pesantren_id', $pesantren->id)->pluck('id');
+
+        $this->assertNotEmpty($santriIds);
+
+        // Empat bulan berbeda per santri — bukan tiga bulan dengan satu duplikat.
+        foreach ($santriIds as $id) {
+            $bulan = TagihanSpp::allTenants()
+                ->where('santri_id', $id)
+                ->get()
+                ->map(fn ($t) => $t->tahun.'-'.str_pad((string) $t->bulan, 2, '0', STR_PAD_LEFT))
+                ->all();
+
+            $this->assertCount(4, $bulan);
+            $this->assertSame(4, count(array_unique($bulan)), 'Bulan tagihan terduplikasi: '.implode(' ', $bulan));
+        }
+
+        Carbon::setTestNow();
     }
 }

@@ -35,13 +35,16 @@
     <p class="no-data">Tidak ada data amalan.</p>
 @else
 <table class="data-table">
-    <tr>
-        <th style="width:40%">Amalan</th>
-        <th style="width:12%" class="text-center">Terpenuhi</th>
-        <th style="width:12%" class="text-center">Target</th>
-        <th style="width:15%" class="text-center">Persentase</th>
-        <th>Progress</th>
-    </tr>
+    <thead>
+        <tr>
+            <th style="width:40%">Amalan</th>
+            <th style="width:12%" class="text-center">Terpenuhi</th>
+            <th style="width:12%" class="text-center">Target</th>
+            <th style="width:15%" class="text-center">Persentase</th>
+            <th>Progress</th>
+        </tr>
+    </thead>
+    <tbody>
     @foreach($modul['amalan'] as $item)
     @php
         $persen = $item['persen'];
@@ -49,10 +52,12 @@
         $barCls = $persen >= 80 ? 'bar-hijau' : ($persen >= 60 ? 'bar-kuning' : 'bar-merah');
     @endphp
     <tr>
+        {{-- $item['icon'] sengaja TIDAK dicetak di sini: ikon amalan berupa emoji,
+             dan DejaVu Sans (font PDF) tidak punya glifnya. Layar yang menampilkannya. --}}
         <td>{{ $item['label'] }}</td>
-        <td style="text-align:center">{{ $item['total_capai'] }}</td>
-        <td style="text-align:center">{{ $item['total_maks'] }}</td>
-        <td style="text-align:center"><span class="badge {{ $cls }}">{{ $persen }}%</span></td>
+        <td class="text-center">{{ $item['total_capai'] }}</td>
+        <td class="text-center">{{ $item['total_maks'] }}</td>
+        <td class="text-center"><span class="badge {{ $cls }}">{{ $persen }}%</span></td>
         <td>
             <div class="progress-bar-wrap">
                 <div class="progress-bar-fill {{ $barCls }}" style="width:{{ $persen }}%"></div>
@@ -60,21 +65,26 @@
         </td>
     </tr>
     @endforeach
+    </tbody>
 </table>
 @endif
 
 @if(! empty($modul['udzur_detail']))
 <div class="section-title">Rincian Udzur</div>
 <table class="data-table">
-    <tr>
-        <th>Jenis Udzur</th>
-        <th style="width:20%">Jumlah Hari</th>
-    </tr>
+    <thead>
+        <tr>
+            <th>Jenis Udzur</th>
+            <th style="width:20%">Jumlah Hari</th>
+        </tr>
+    </thead>
+    <tbody>
     @foreach($modul['udzur_detail'] as $jenis => $jumlah)
     <tr>
         <td>{{ str_replace('_', ' ', $jenis) }}</td>
         <td><span class="badge badge-oranye">{{ $jumlah }} hari</span></td>
     </tr>
     @endforeach
+    </tbody>
 </table>
 @endif

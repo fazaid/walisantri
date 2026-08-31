@@ -166,6 +166,34 @@ class PresensiKartuQrTest extends TestCase
         }
     }
 
+    public function test_kartu_satu_santri_memakai_template_yang_sama(): void
+    {
+        $pesantren = Pesantren::factory()->create();
+        $admin = User::factory()->adminPesantren()->create(['pesantren_id' => $pesantren->id]);
+        $kelas = Kelas::factory()->create(['pesantren_id' => $pesantren->id]);
+
+        $santri = Santri::factory()->create([
+            'pesantren_id' => $pesantren->id,
+            'kelas_id' => $kelas->id,
+            'nama_lengkap' => 'Dani Kurniawan',
+        ]);
+
+        $this->actingAs($admin);
+
+        // Cetak ulang satu kartu (kasus kartu hilang) harus keluar sama persis
+        // dengan kartu sekelasnya, bukan lembar khusus — kalau tidak, petugas
+        // presensi melihat dua benda berbeda untuk fungsi yang sama.
+        $response = app(KartuPresensiPdf::class)->untukSantri($santri);
+        ob_start();
+        $response->sendContent();
+        $pdf = ob_get_clean();
+
+        $this->assertStringStartsWith('%PDF', $pdf);
+
+        // Penjaga §13.2 berlaku di jalur ini juga, bukan cuma di cetak sekelas.
+        $this->assertStringNotContainsString($santri->uuid, $pdf);
+    }
+
     public function test_admin_bisa_mengganti_kode_kartu_yang_hilang(): void
     {
         $pesantren = Pesantren::factory()->create();

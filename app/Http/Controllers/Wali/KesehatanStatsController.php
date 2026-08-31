@@ -19,7 +19,8 @@ class KesehatanStatsController extends Controller
 
         // Pemeriksaan per bulan (12 bulan terakhir)
         $periksaPerBulan = KesantrianKesehatan::where('santri_id', $santri->id)
-            ->where('tanggal_periksa', '>=', Waktu::sekarang()->subMonths(11)->startOfMonth())
+            // startOfMonth() SEBELUM subMonths() — lihat catatan di TrendBulanan.
+            ->where('tanggal_periksa', '>=', Waktu::sekarang()->startOfMonth()->subMonths(11))
             ->select(DB::raw("TO_CHAR(tanggal_periksa, 'YYYY-MM') as bulan"), DB::raw('COUNT(*) as total'))
             ->groupBy('bulan')
             ->orderBy('bulan')

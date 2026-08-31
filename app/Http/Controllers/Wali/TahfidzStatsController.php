@@ -20,7 +20,11 @@ class TahfidzStatsController extends Controller
 
         // Setoran per bulan (12 bulan terakhir) — semua tipe
         $setoranPerBulan = TahfidzProgress::where('santri_id', $santri->id)
-            ->where('tanggal', '>=', Waktu::sekarang()->subMonths(11)->startOfMonth())
+            // startOfMonth() SEBELUM subMonths() — sesudahnya tidak menyelamatkan.
+            // Dipanggil 31 Agustus, subMonths(11) meluap dari 30 September ke
+            // 1 Oktober, jadi jendelanya jadi 11 bulan dan bulan tertua hilang
+            // dari grafik yang sumbunya tetap 12 bulan (lihat TrendBulanan).
+            ->where('tanggal', '>=', Waktu::sekarang()->startOfMonth()->subMonths(11))
             ->select(
                 DB::raw("TO_CHAR(tanggal, 'YYYY-MM') as bulan"),
                 DB::raw('COUNT(*) as total'),

@@ -19,7 +19,10 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\HtmlString;
+use Illuminate\Support\Str;
 
 class PesantrensTable
 {
@@ -42,9 +45,76 @@ class PesantrensTable
                     ->searchable()
                     ->sortable(),
 
+                // Siapa yang bisa dihubungi dari pesantren ini — pertanyaan yang
+                // benar-benar dibawa super admin ke halaman ini saat menagih,
+                // memperingatkan expired, atau menindaklanjuti pesanan upgrade.
+                // Menunjuk relasi adminUtama yang sama dengan DataPesantrenExport,
+                // jadi nama yang terbaca di layar dan yang tercetak di berkas Excel
+                // selalu orang yang sama.
+                TextColumn::make('adminUtama.name')
+                    ->label('Admin Pesantren')
+                    // Bukan kasus teoretis: DeleteAction di bawah meninggalkan user
+                    // yatim (users.pesantren_id nullOnDelete), dan pesantren yang
+                    // dibuat lewat CreateAction lahir tanpa admin sama sekali.
+                    ->placeholder('— belum ada admin —')
+                    // description() menerima Htmlable, jadi email & no. HP bisa
+                    // ditumpuk masing-masing satu baris di bawah nama. Tiap potong
+                    // di-e() sendiri: isinya datang dari input pengguna dan tidak
+                    // boleh pernah dirender sebagai markup.
+                    ->description(function (Pesantren $record): ?Htmlable {
+                        $admin = $record->adminUtama;
+
+                        if ($admin === null) {
+                            return null;
+                        }
+
+                        // users.email nullable sejak central/2026_07_09_100001, dan
+                        // phone_number pun bisa kosong (SegarkanSandboxCommand
+                        // sengaja mengosongkannya untuk tenant sandbox). Baris kosong
+                        // lebih terbaca daripada tumpukan '—'.
+                        $kontak = array_filter([$admin->email, $admin->phone_number], 'filled');
+
+                        if ($kontak === []) {
+                            return null;
+                        }
+
+                        return new HtmlString(implode('<br>', array_map('e', $kontak)));
+                    })
+                    // Pencarian ditulis sendiri, tidak menumpang pencarian relasi
+                    // bawaan: adminUtama adalah relasi ofMany bersubquery agregat.
+                    // Sengaja menyapu SELURUH admin pesantren, bukan hanya admin
+                    // utama — super admin yang mengetik email admin kedua tetap
+                    // harus menemukan pesantrennya.
+                    //
+                    // lower() di kedua sisi, bukan `ilike`: produksi memang Postgres
+                    // tapi suite tes berjalan di SQLite yang tidak mengenal operator
+                    // itu. Bentuk ini juga menyamai perilaku kolom searchable bawaan
+                    // Filament, yang di Postgres memang case-insensitive.
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        $istilah = '%'.Str::lower($search).'%';
+
+                        return $query->whereHas('users', fn (Builder $user): Builder => $user
+                            ->where('role', UserRole::AdminPesantren->value)
+                            ->where(fn (Builder $cocok): Builder => $cocok
+                                ->whereRaw('lower(users.name) like ?', [$istilah])
+                                ->orWhereRaw('lower(users.email) like ?', [$istilah])
+                                ->orWhereRaw('lower(users.phone_number) like ?', [$istilah])));
+                    })
+                    // Tidak sortable: mengurutkan lewat relasi ofMany menuntut join
+                    // subquery yang rapuh, sementara tidak ada yang mencari daftar
+                    // pesantren terurut menurut nama adminnya.
+                    ->toggleable(),
+
+                // Turun jadi kolom tersembunyi, seperti ID: slug adalah identitas
+                // teknis untuk routing subdomain yang bisa berganti (ada tabel
+                // slug_releases), bukan jawaban atas pertanyaan yang membawa super
+                // admin ke halaman ini. Tetap searchable supaya slug yang ditempel
+                // ke kotak pencarian tetap menemukan tenantnya walau kolomnya
+                // tidak tampak.
                 TextColumn::make('slug')
                     ->label('Slug')
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('created_at')
                     ->label('Terdaftar')
@@ -93,14 +163,20 @@ class PesantrensTable
                         : 'Belum dikonfirmasi — pesantren ini berisiko tidak menerima tagihan & peringatan expired')
                     ->toggleable(),
             ])
-            // withExists, bukan eager load relasi utuh: tabel ini sebelumnya tidak
-            // punya eager loading sama sekali, dan memuat seluruh users hanya untuk
-            // satu ikon akan melahirkan N+1 di setiap baris.
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query->withExists([
-                'users as admin_terverifikasi' => fn (Builder $q): Builder => $q
-                    ->where('role', UserRole::AdminPesantren->value)
-                    ->whereNotNull('email_verified_at'),
-            ]))
+            // Untuk ikon verifikasi dipakai withExists, bukan eager load relasi
+            // utuh: memuat seluruh users hanya demi satu ikon berarti mengangkut
+            // ratusan wali santri per baris. Yang di-eager load hanyalah adminUtama,
+            // satu baris per pesantren.
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query
+                // Kolom Admin Pesantren membaca relasi ini di setiap baris; tanpa
+                // eager load ia menembak satu query user per baris — N+1 yang persis
+                // sama dengan yang dihindari withExists di bawahnya.
+                ->with('adminUtama')
+                ->withExists([
+                    'users as admin_terverifikasi' => fn (Builder $q): Builder => $q
+                        ->where('role', UserRole::AdminPesantren->value)
+                        ->whereNotNull('email_verified_at'),
+                ]))
             // Tabel ini sebelumnya tidak punya defaultSort sama sekali, jadi Filament
             // jatuh ke fallback orderBy(id, 'asc'): pesantren yang baru mendaftar
             // selalu terdampar di halaman terakhir — persis kebalikan dari yang

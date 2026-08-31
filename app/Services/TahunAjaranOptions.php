@@ -14,6 +14,21 @@ class TahunAjaranOptions
             : (Waktu::sekarang()->year - 1).'/'.Waktu::sekarang()->year;
     }
 
+    /**
+     * 30 Juni penutup tahun ajaran berjalan — bawaan masa berlaku kartu santri.
+     *
+     * Admin tetap bisa menggantinya di modal cetak; ini cuma menghemat satu
+     * keputusan untuk kasus yang paling lazim, yaitu kartu yang habis bersamaan
+     * dengan tahun ajarannya. Tanggalnya dihitung dari `current()` supaya cut-off
+     * bulan Juli hanya didefinisikan di satu tempat.
+     */
+    public static function akhirTahunAjaran(): Carbon
+    {
+        [, $tahunTutup] = array_map('intval', explode('/', self::current()));
+
+        return Carbon::create($tahunTutup, 6, 30)->startOfDay();
+    }
+
     public static function currentPeriode(): string
     {
         return Waktu::sekarang()->month >= 7 ? 'Semester_Ganjil' : 'Semester_Genap';

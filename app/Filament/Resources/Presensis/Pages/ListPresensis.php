@@ -2,21 +2,16 @@
 
 namespace App\Filament\Resources\Presensis\Pages;
 
-use App\Enums\UserRole;
 use App\Filament\Pages\PresensiHarianPage;
 use App\Filament\Pages\PresensiJamPage;
 use App\Filament\Pages\PresensiPengaturanPage;
 use App\Filament\Pages\PresensiScannerPage;
 use App\Filament\Resources\Presensis\PresensiResource;
-use App\Models\Kelas;
-use App\Services\KartuPresensiPdf;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
-use Filament\Forms\Components\Select;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
-use Illuminate\Support\Facades\Auth;
 
 class ListPresensis extends ListRecords
 {
@@ -25,8 +20,9 @@ class ListPresensis extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            // Kedua halaman sengaja tidak didaftarkan sebagai tab cluster (menu
-            // Presensi cuma boleh berisi empat submenu); dua tombol ini jalan masuknya.
+            // Halaman-halaman berikut sengaja tidak didaftarkan sebagai tab cluster
+            // (menu Presensi cuma boleh berisi empat submenu); tombol-tombol ini
+            // jalan masuknya.
             Action::make('isiPresensi')
                 ->label('Isi Presensi')
                 ->icon(Heroicon::OutlinedClipboardDocumentCheck)
@@ -51,20 +47,11 @@ class ListPresensis extends ListRecords
                 ->color('gray')
                 ->visible(fn (): bool => PresensiScannerPage::canAccess()),
 
-            Action::make('cetakKartu')
-                ->label('Cetak Kartu')
-                ->icon(Heroicon::OutlinedPrinter)
-                ->color('gray')
-                ->visible(fn (): bool => Auth::user()?->role === UserRole::AdminPesantren->value)
-                ->form([
-                    Select::make('kelas_id')
-                        ->label('Kelas')
-                        ->options(fn () => Kelas::orderBy('nama_kelas')->pluck('nama_kelas', 'id'))
-                        ->required()
-                        ->helperText('Kartu dicetak untuk seluruh santri aktif di kelas ini.'),
-                ])
-                ->action(fn (array $data) => app(KartuPresensiPdf::class)
-                    ->untukKelas(Kelas::findOrFail($data['kelas_id']))),
+            // Tombol "Cetak Kartu" dulu berdiri di sini. Dipindah ke Santri →
+            // Data Santri: yang dicetak adalah kartu identitas milik santri, dan
+            // presensi hanya salah satu pemakainya. Jangan dikembalikan ke sini —
+            // kartunya sekarang ada dua jenis, dan yang kedua tidak ada urusannya
+            // dengan kehadiran sama sekali.
 
             Action::make('pengaturanPresensi')
                 ->label('Pengaturan')
