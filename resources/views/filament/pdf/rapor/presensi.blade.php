@@ -30,7 +30,7 @@
     (PresensiRekap::batasAkhir), sehingga rapor semester yang dicetak di tengah
     jalan tidak boleh terbaca seolah mencakup periode penuh.
 --}}
-<p class="no-data" style="font-style:normal">
+<p class="catatan-kaki">
     Periode dihitung: {{ \Illuminate\Support\Carbon::parse($modul['awal'])->translatedFormat('d M Y') }}
     – {{ \Illuminate\Support\Carbon::parse($modul['akhir'])->translatedFormat('d M Y') }}.
     Hari efektif tidak menghitung hari libur pondok. Hadir, Terlambat, dan Dispensasi
@@ -42,11 +42,14 @@
     <p class="no-data">Tidak ada data presensi.</p>
 @else
 <table class="data-table">
-    <tr>
-        <th style="width:60%">Status</th>
-        <th style="width:20%" class="text-center">Jumlah Hari</th>
-        <th style="width:20%" class="text-center">Porsi</th>
-    </tr>
+    <thead>
+        <tr>
+            <th style="width:60%">Status</th>
+            <th style="width:20%" class="text-center">Jumlah Hari</th>
+            <th style="width:20%" class="text-center">Porsi</th>
+        </tr>
+    </thead>
+    <tbody>
     @foreach($modul['status'] as $item)
     @php
         $porsi = $modul['hari_efektif'] > 0
@@ -55,19 +58,20 @@
     @endphp
     <tr>
         <td>{{ $item['label'] }}</td>
-        <td style="text-align:center">{{ $item['jumlah'] }}</td>
-        <td style="text-align:center">{{ $porsi }}%</td>
+        <td class="text-center">{{ $item['jumlah'] }}</td>
+        <td class="text-center">{{ $porsi }}%</td>
     </tr>
     @endforeach
     @if($modul['tanpa_keterangan'] > 0)
     <tr>
         <td>Tanpa Keterangan</td>
-        <td style="text-align:center">{{ $modul['tanpa_keterangan'] }}</td>
-        <td style="text-align:center">
+        <td class="text-center">{{ $modul['tanpa_keterangan'] }}</td>
+        <td class="text-center">
             {{ $modul['hari_efektif'] > 0 ? (int) round($modul['tanpa_keterangan'] / $modul['hari_efektif'] * 100) : 0 }}%
         </td>
     </tr>
     @endif
+    </tbody>
 </table>
 
 {{--
@@ -77,8 +81,12 @@
     pencatatan — bukan bukti santri tidak masuk. Rapor adalah dokumen yang dibaca
     orang tua dan disimpan bertahun-tahun; ambiguitasnya harus dijelaskan di
     lembar yang sama, bukan diserahkan ke ingatan wali kelas.
+
+    Dulu memakai .no-data (abu-abu, italic, gaya "belum ada data") lalu
+    membatalkan sebagian gayanya lewat style inline — keterangan sepenting ini
+    justru jadi yang paling mudah dilewati mata.
 --}}
-<p class="no-data" style="font-style:normal">
+<p class="catatan-kaki">
     <strong>Tanpa Keterangan</strong> adalah hari efektif yang presensinya belum tercatat —
     bukan ketidakhadiran yang dinyatakan. Sistem tidak pernah menandai Alpa secara otomatis.
 </p>

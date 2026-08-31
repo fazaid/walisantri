@@ -60,7 +60,13 @@ class RaporMutabaahData
 
         foreach ($masters as $master) {
             $kode = $master->kode;
-            $label = ($master->icon ? $master->icon.' ' : '').$master->label;
+
+            // ⚠️ Ikon dikirim TERPISAH, tidak lagi ditempelkan ke label. Ikonnya emoji
+            // (AmalanDefault: 🕌 🌙 🌃 …), dan PDF rapor dirender DomPDF dengan DejaVu
+            // Sans — font itu tidak punya satu pun glif emoji, jadi yang tercetak
+            // adalah kotak kosong plus spasi menggantung di depan tiap nama amalan.
+            // Layar tetap menampilkannya (browser punya font emoji); PDF mengabaikannya.
+            $label = $master->label;
 
             if ($master->tipe === 'hitungan') {
                 $total = (int) $records->sum(fn ($r) => $r->amalan[$kode] ?? 0);
@@ -68,6 +74,7 @@ class RaporMutabaahData
 
                 $amalan[] = [
                     'label' => $label,
+                    'icon' => $master->icon,
                     'tipe' => 'hitungan',
                     'nilai_maks' => $master->nilai_maks,
                     'total_capai' => $total,
@@ -82,6 +89,7 @@ class RaporMutabaahData
 
             $amalan[] = [
                 'label' => $label,
+                'icon' => $master->icon,
                 'tipe' => 'boolean',
                 'total_capai' => $total,
                 'total_maks' => $totalHari,

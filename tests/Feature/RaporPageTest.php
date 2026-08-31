@@ -491,4 +491,141 @@ class RaporPageTest extends TestCase
         $this->assertSame(1, $data['total_tercatat']);
         $this->assertSame(0, collect($data['status'])->firstWhere('label', 'Alpa')['jumlah']);
     }
+
+    // ---------------------------------------------------- Tata letak PDF rapor
+
+    /** HTML rapor apa adanya — isi PDF tidak bisa dicocokkan harfiah (aliran teksnya dikompresi). */
+    private function htmlRapor(array $modul = ['akademik', 'tahfidz', 'mutabaah', 'karakter', 'presensi']): string
+    {
+        $halaman = Livewire::actingAs($this->admin)
+            ->test(RaporPage::class)
+            ->set('santriId', $this->santri->id)
+            ->set('tahunAjaran', '2026/2027')
+            ->set('periode', 'Semester_Ganjil')
+            ->set('modul', $modul)
+            ->instance();
+
+        return view('filament.pdf.rapor-gabungan', [
+            'santri' => $halaman->getSantri(),
+            'data' => $halaman->getData(),
+            'modulLabels' => RaporPage::MODUL,
+            'tahunAjaran' => '2026/2027',
+            'periodeLabel' => $halaman->getPeriodeLabel(),
+        ])->render();
+    }
+
+    public function test_pdf_rapor_tidak_memuat_emoji_sama_sekali(): void
+    {
+        NilaiAkademik::create([
+            'pesantren_id' => $this->pesantren->id,
+            'santri_id' => $this->santri->id,
+            'mata_pelajaran_id' => MataPelajaran::create([
+                'pesantren_id' => $this->pesantren->id,
+                'kelas_id' => $this->kelas->id,
+                'nama_mapel' => 'Fiqih',
+            ])->id,
+            'tahun_ajaran' => '2026/2027',
+            'periode' => 'Semester_Ganjil',
+            'nilai' => 88,
+        ]);
+
+        // Amalan dengan ikon emoji — persis bentuk bawaan AmalanDefault.
+        KesantrianAmalMaster::create([
+            'pesantren_id' => $this->pesantren->id,
+            'kode' => 'is_dhuha',
+            'label' => 'Dhuha',
+            'tipe' => 'boolean',
+            'icon' => '🌅',
+            'bobot' => 10,
+            'urutan' => 1,
+            'aktif' => true,
+        ]);
+        KesantrianMutabaah::create([
+            'pesantren_id' => $this->pesantren->id,
+            'santri_id' => $this->santri->id,
+            'tanggal' => Waktu::hariIni(),
+            'amalan' => ['is_dhuha' => true],
+        ]);
+
+        // ⚠️ PENJAGA FONT. PDF rapor dirender DomPDF dengan DejaVu Sans, dan font itu
+        // TIDAK punya satu pun glif emoji — diperiksa langsung ke tabel glifnya.
+        // Emoji apa pun yang lolos ke sini tercetak sebagai kotak kosong plus spasi
+        // menggantung, tanpa error apa pun. Dulu ada 13 kemunculan: tujuh dari judul
+        // seksi, enam dari ikon amalan yang ditempelkan ke labelnya.
+        $cocok = preg_match_all(
+            '/[\x{1F300}-\x{1FAFF}\x{2600}-\x{27BF}\x{FE0F}]/u',
+            $this->htmlRapor(),
+            $temuan,
+        );
+
+        $this->assertSame(
+            0,
+            $cocok,
+            'Emoji tidak boleh masuk PDF rapor (DejaVu Sans tidak punya glifnya): '
+            .implode(' ', array_unique($temuan[0])),
+        );
+    }
+
+    public function test_tiap_halaman_rapor_membawa_identitas_dan_nomor_halaman(): void
+    {
+        $html = $this->htmlRapor(['akademik']);
+
+        // Kop dan kartu identitas hanya tercetak di halaman pertama, sementara tiap
+        // modul memulai halaman baru. Footer inilah satu-satunya yang berulang, jadi
+        // ia yang harus memikul identitas — satu lembar yang lepas dari staples
+        // tidak boleh jadi anonim.
+        $this->assertStringContainsString('Ahmad', $html);
+        $this->assertStringContainsString($this->kelas->nama_kelas, $html);
+        $this->assertStringContainsString('counter(page)', $html);
+        $this->assertStringContainsString('counter(pages)', $html);
+    }
+
+    public function test_rapor_ditutup_blok_tanda_tangan(): void
+    {
+        $this->kelas->update(['wali_kelas_id' => User::factory()->create([
+            'pesantren_id' => $this->pesantren->id,
+            'role' => 'ustadz',
+            'name' => 'Ustadz Mahmud',
+        ])->id]);
+
+        $this->pesantren->update(['profil' => array_merge($this->pesantren->profil ?? [], [
+            'kepala_pesantren' => 'KH Abdullah Syafii',
+        ])]);
+
+        $html = $this->htmlRapor(['akademik']);
+
+        $this->assertStringContainsString('Wali Kelas', $html);
+        $this->assertStringContainsString('Ustadz Mahmud', $html);
+        $this->assertStringContainsString('Kepala Pesantren', $html);
+        $this->assertStringContainsString('KH Abdullah Syafii', $html);
+    }
+
+    public function test_blok_tanda_tangan_tetap_bisa_diteken_manual_saat_nama_kosong(): void
+    {
+        // Wali kelas maupun kepala pesantren boleh belum diisi. Yang tidak boleh
+        // adalah blok tanda tangannya hilang — rapor jadi tidak bisa disahkan sama
+        // sekali, padahal cukup ditulis tangan.
+        $html = $this->htmlRapor(['akademik']);
+
+        $this->assertStringContainsString('Wali Kelas', $html);
+        $this->assertStringContainsString('Kepala Pesantren', $html);
+        $this->assertStringContainsString('(_______________________)', $html);
+    }
+
+    public function test_tabel_rapor_mengulang_baris_judul_antar_halaman(): void
+    {
+        MataPelajaran::create([
+            'pesantren_id' => $this->pesantren->id,
+            'kelas_id' => $this->kelas->id,
+            'nama_mapel' => 'Fiqih',
+        ]);
+
+        $html = $this->htmlRapor(['akademik']);
+
+        // <thead> + `display: table-header-group` adalah satu-satunya cara DomPDF
+        // mengulang baris judul saat tabel pecah ke halaman berikutnya. Tanpa itu,
+        // santri ber-mapel banyak dapat halaman berisi kolom angka tanpa judul.
+        $this->assertStringContainsString('<thead>', $html);
+        $this->assertStringContainsString('display: table-header-group', $html);
+    }
 }

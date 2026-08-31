@@ -446,6 +446,10 @@ Cluster ini berisi 4 halaman untuk melihat & mencetak rekap per santri per perio
 
 Ustadz hanya bisa memilih santri bimbingannya sendiri di dropdown Santri.
 
+**Bentuk PDF yang tercetak.** Halaman pertama memuat kop pesantren (logo + nama) dan kartu identitas santri; tiap modul yang dicentang lalu mulai di halaman baru. Setiap halaman punya baris kaki berisi **nama santri, kelas, tahun ajaran, dan periode** di kiri serta **"Halaman N dari M"** di kanan — jadi lembar yang terlepas dari staples tetap bisa dikenali, dan halaman yang hilang langsung ketahuan. Di halaman terakhir ada blok tanda tangan **Wali Kelas** dan **Kepala Pesantren**, lengkap dengan kota dan tanggal cetak.
+
+> **Dua nama itu diambil dari data, bukan diketik saat mencetak.** Wali kelas dari menu **Santri → Kelas**, kepala pesantren dari **Pengaturan → Identitas Pesantren**. Kalau salah satunya belum diisi, tempat tanda tangannya tetap dicetak dengan garis kosong supaya bisa ditulis tangan.
+
 ---
 
 ## 10. Keuangan
