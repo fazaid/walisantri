@@ -4,7 +4,22 @@
 **Stack:** Laravel 13.11.1 (PHP 8.3+), Filament v5.6.3, Livewire v3, TailwindCSS, PostgreSQL 17, Redis, Cloudflare R2
 **Dev/Deploy:** Laravel Herd (macOS) · GitHub Actions → VPS via SSH (deploy host-langsung, tanpa kontainer)
 **Interface:** Mobile-first (Wali Santri), desktop-optimized (Admin/Ustadz)
-**Last Updated:** Agustus 2026 — v4.61
+**Last Updated:** Agustus 2026 — v4.62
+
+**Changelog v4.62:** **Luapan bulan Carbon ditutup di lima tempat — bug yang tidur 28 hari sebulan lalu bangun di tanggal 31.**
+
+⚠️ **`subMonths()` MELUAP saat tanggal acuan tidak ada di bulan tujuan, dan `startOfMonth()` sesudahnya tidak menyelamatkan.** 31 Agustus dikurangi dua bulan menjadi 31 Juni yang tidak ada, lalu meluap ke 1 Juli. Jangkarnya harus **sebelum**: `now()->startOfMonth()->subMonths($i)`.
+
+Dua akibat yang terbukti, keduanya tanpa satu pun error:
+
+1. **`SegarkanSandboxCommand::seedSpp()`** — dua iterasi menghasilkan Juli, INSERT kedua menabrak unique `(pesantren_id, santri_id, bulan, tahun)`. Perintahnya dijadwalkan mingguan di `routes/console.php`, jadi **penyegaran sandbox produksi gagal total** setiap kali jadwalnya jatuh di tanggal 29–31 yang bulan targetnya lebih pendek. Inilah yang membuat suite tiba-tiba merah di 31 Agustus 2026 setelah berbulan-bulan hijau.
+2. **`TrendBulanan::duaBelasBulanTerakhir()`** — jauh lebih parah, dan ini menyentuh dasbor yang dilihat setiap hari. Pada 31 Agustus ia mengembalikan `2025-10 2025-10 2025-12 2025-12 2026-01 2026-03 2026-03 2026-05 2026-05 2026-07 2026-07 2026-08`: 12 entri tapi hanya **7 bulan unik** — lima bulan tercetak dua kali, dan September, November, Februari, April, serta Juni **hilang sama sekali**. Grafik tren berbohong, hanya pada tanggal tertentu, tanpa gejala apa pun.
+
+Tiga sisanya lebih ringan tapi satu kelas: `TahfidzStatsController`, `KesehatanStatsController`, dan `MutabaahStatsController` memakai `subMonths(11)->startOfMonth()`, sehingga jendela query jadi 11 bulan sementara sumbu grafiknya tetap 12 — bulan tertua kosong tanpa sebab yang terlihat.
+
+**Tesnya MEMBEKUKAN waktu ke tanggal akhir bulan, dan itu bukan detail.** Tanpa `Carbon::setTestNow()`, tes apa pun untuk kelas bug ini lulus 28 hari dalam sebulan dan menyembunyikannya — persis yang terjadi selama ini. `TrendBulananTest` dan `SandboxDemoTest::test_penyegaran_berhasil_di_tanggal_akhir_bulan` memakai data provider berisi 31 Agustus, 31 Mei, 31/30/29 Maret, 31 Desember, plus 29 Februari kabisat dan satu tanggal aman sebagai pembanding. Dengan kode lama, 6 dari 8 gagal.
+
+⚠️ **`Carbon::createFromFormat('Y-m', ...)` kena jebakan yang sama** — format tanpa komponen hari mengambil tanggal dari hari ini, sehingga `'2025-09'` yang di-parse pada tanggal 31 menjadi 31 September lalu meluap ke Oktober. Versi pertama `TrendBulananTest` sendiri tergelincir di situ. Pakai `createFromFormat('Y-m-d', $key.'-01')`.
 
 **Changelog v4.61:** **Tata letak PDF rapor dibenahi — sembilan temuan, lima di antaranya cacat yang gagal tanpa suara.**
 

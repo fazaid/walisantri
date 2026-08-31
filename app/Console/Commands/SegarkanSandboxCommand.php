@@ -453,7 +453,15 @@ class SegarkanSandboxCommand extends Command
         $nominal = 350_000;
 
         for ($i = 3; $i >= 0; $i--) {
-            $bulan = now()->subMonths($i);
+            // ⚠️ startOfMonth() SEBELUM subMonths(), bukan sesudah. Carbon meluap
+            // saat tanggal acuan tidak ada di bulan tujuan: dijalankan 31 Agustus,
+            // subMonths(2) menghasilkan 31 Juni yang tidak ada lalu meluap ke
+            // 1 Juli — sehingga iterasi i=2 dan i=1 sama-sama menghasilkan Juli,
+            // dan INSERT kedua menabrak unique (pesantren_id, santri_id, bulan,
+            // tahun). Perintah ini dijadwalkan mingguan (routes/console.php), jadi
+            // penyegaran sandbox gagal total setiap kali jadwalnya jatuh di
+            // tanggal 29-31 yang bulan targetnya lebih pendek.
+            $bulan = now()->startOfMonth()->subMonths($i);
             $lunas = $i > 0;
 
             $tagihan = TagihanSpp::create([
@@ -462,7 +470,7 @@ class SegarkanSandboxCommand extends Command
                 'bulan' => $bulan->month,
                 'tahun' => $bulan->year,
                 'nominal' => $nominal,
-                'jatuh_tempo' => $bulan->copy()->startOfMonth()->addDays(9),
+                'jatuh_tempo' => $bulan->copy()->addDays(9),
                 'keterangan' => 'SPP Bulanan',
                 'status' => $lunas ? 'lunas' : 'belum_bayar',
             ]);
@@ -472,7 +480,7 @@ class SegarkanSandboxCommand extends Command
                     'pesantren_id' => $this->pesantren->id,
                     'tagihan_spp_id' => $tagihan->id,
                     'jumlah' => $nominal,
-                    'tanggal_bayar' => $bulan->copy()->startOfMonth()->addDays(5),
+                    'tanggal_bayar' => $bulan->copy()->addDays(5),
                     'metode_bayar' => 'transfer_bank',
                     'dicatat_oleh' => null,
                 ]);
