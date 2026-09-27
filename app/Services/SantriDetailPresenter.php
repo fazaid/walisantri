@@ -11,6 +11,7 @@ use App\Models\PrestasiSantri;
 use App\Models\Santri;
 use App\Models\SantriEkskul;
 use App\Models\TahfidzProgress;
+use App\Services\Rapor\RaporAkademikData;
 use App\Support\Waktu;
 use Illuminate\Support\Collection;
 
@@ -80,6 +81,23 @@ class SantriDetailPresenter
             'status_pemulihan' => $latestKesehatan->status_pemulihan,
         ] : null;
 
+        // Semester berjalan, sama seperti nilai default RaporPage — dashboard cuma
+        // butuh sekilas-pandang; rincian per mapel & periode lain ada di halaman Rapor.
+        $nilaiAkademik = null;
+        if ($akademikAktif) {
+            $raporAkademik = RaporAkademikData::untuk(
+                $santri->id,
+                TahunAjaranOptions::current(),
+                TahunAjaranOptions::currentPeriode(),
+            );
+
+            $nilaiAkademik = [
+                'ada_data' => $raporAkademik['ada_data'],
+                'rata_rata' => $raporAkademik['rata_rata'],
+                'jumlah_mapel' => $raporAkademik['nilai']->count(),
+            ];
+        }
+
         $kehadiranBulanIni = null;
         if ($presensiAktif) {
             $rekapKehadiran = PresensiRekap::untuk(
@@ -141,6 +159,7 @@ class SantriDetailPresenter
             'persentaseAmalanMingguIni',
             'mutabaahWeek',
             'statusKesehatanTerkini',
+            'nilaiAkademik',
             'kehadiranBulanIni',
             'prestasi',
             'ekskul',

@@ -8,6 +8,7 @@
        Ekskul & Prestasi tidak dijaga di sini: koleksi Ekskul sudah dikosongkan
        SantriDetailPresenter saat modul Akademik mati sehingga @if-nya yang lama
        sudah menutupnya, dan Prestasi milik Cluster Santri yang tidak punya tuas. */
+    $modulAkademik   = \App\Enums\Modul::Akademik->aktif($santri->pesantren_id);
     $modulTahfidz    = \App\Enums\Modul::Tahfidz->aktif($santri->pesantren_id);
     $modulKesantrian = \App\Enums\Modul::Kesantrian->aktif($santri->pesantren_id);
     $modulPresensi   = \App\Enums\Modul::Presensi->aktif($santri->pesantren_id);
@@ -67,8 +68,29 @@
             : ($persentaseAmalanMingguIni >= 40 ? 'bg-yellow-400' : 'bg-red-400');
     @endphp
 
-    @if($modulTahfidz || $modulKesantrian || $modulPresensi)
+    @if($modulAkademik || $modulTahfidz || $modulKesantrian || $modulPresensi)
     <div class="grid grid-cols-2 gap-3">
+
+        @if($modulAkademik)
+        {{-- Card 0 — Rata-rata Nilai Akademik --}}
+        <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4">
+            <div class="flex items-center gap-1.5 mb-2">
+                <span class="text-lg leading-none">🎓</span>
+                <span class="text-xs font-medium text-indigo-600">Nilai Akademik</span>
+            </div>
+            @if($nilaiAkademik && $nilaiAkademik['ada_data'])
+                <p class="text-2xl font-bold text-indigo-700 leading-tight">
+                    {{ $nilaiAkademik['rata_rata'] }}
+                </p>
+                <p class="text-xs text-indigo-500 mt-1">
+                    Rata-rata {{ $nilaiAkademik['jumlah_mapel'] }} mapel semester ini
+                </p>
+            @else
+                <p class="text-sm font-medium text-indigo-400">Belum ada data</p>
+            @endif
+        </div>
+
+        @endif
 
         @if($modulTahfidz)
         {{-- Card 1 — Capaian Hafalan --}}
