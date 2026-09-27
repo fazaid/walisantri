@@ -8,6 +8,8 @@ use App\Models\NilaiAkademik;
 use App\Models\Santri;
 use App\Models\TahfidzProgress;
 use App\Models\TahfidzUjian;
+use App\Services\Rapor\RaporMutabaahData;
+use App\Services\Rapor\RaporPresensiData;
 use App\Services\TahunAjaranOptions;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -52,11 +54,20 @@ class LaporanController extends Controller
             ->take(10)
             ->get();
 
+        // Mutaba'ah dan Presensi dicatat harian tanpa kolom periode, jadi dipakai
+        // langsung lewat kelas Rapor\* yang sama dengan PDF panel admin — periode
+        // 'Tahunan' diterjemahkan ke rentang tahun ajaran penuh (Juli–Juni), sejalan
+        // dengan cakupan tiga rapor lain di atas.
+        $raporMutabaah = RaporMutabaahData::untuk($santri->id, $tahunAjaran, 'Tahunan');
+        $raporPresensi = RaporPresensiData::untuk($santri->id, $tahunAjaran, 'Tahunan');
+
         $pdf = Pdf::loadView('wali.pdf.laporan', compact(
             'santri',
             'raporTahfidz',
             'raporKarakter',
             'raporAkademik',
+            'raporMutabaah',
+            'raporPresensi',
             'progressTahfidz',
             'tahunAjaran',
         ))->setPaper('A4', 'portrait');

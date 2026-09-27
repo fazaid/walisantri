@@ -9,7 +9,22 @@
 
         @page { margin: 2.2cm 1.8cm; }
 
+        /*
+         * DomPDF menerapkan margin @page lewat kotak margin <body> — bukan lapisan
+         * terpisah seperti di browser. Reset universal di atas ("* { margin: 0 }")
+         * ikut kena ke <body> dan MENIMPA margin itu, sehingga @page di atas
+         * efektif diabaikan: diukur langsung dari PDF yang dirender, kontennya
+         * mulai ~0.2cm dari SEMUA tepi kertas, bukan 2.2cm/1.8cm — logo pesantren
+         * menempel ke pinggir atas, dan baris tabel terakhir sempat bertumpuk
+         * dengan footer di bawah karena keduanya sama-sama menempel ke tepi.
+         * Menuliskan ulang margin yang sama persis di sini — selectornya lebih
+         * spesifik dari "*" jadi menang di cascade — mengembalikan keduanya
+         * sekaligus. Footer position:fixed lalu otomatis punya tempat: begitu
+         * <body> benar-benar berhenti 2.2cm sebelum tepi kertas, footer (tinggi
+         * ~0.9cm) muat di celah itu tanpa menabrak baris terakhir.
+         */
         body {
+            margin: 2.2cm 1.8cm;
             font-family: 'DejaVu Sans', sans-serif;
             font-size: 11px;
             color: #1a1a1a;
@@ -197,11 +212,19 @@
         .bar-kuning { background: #ca8a04; }
         .bar-merah  { background: #dc2626; }
 
+        {{--
+            left/right: 1.8cm, BUKAN 0. Footer position:fixed diposisikan relatif ke
+            kotak halaman fisik, bukan ke kotak margin <body> — jadi left/right:0
+            membuatnya menempel rata ke tepi kertas sementara seluruh konten lain
+            (kop, tabel, tanda tangan) punya inset 1.8cm dari margin body. Diukur
+            langsung: garis pemisah dan teks footer dulu mentok ke tepi kiri-kanan
+            kertas, satu-satunya elemen yang tidak sejajar dengan sisanya.
+        --}}
         .footer {
             position: fixed;
             bottom: 0;
-            left: 0;
-            right: 0;
+            left: 1.8cm;
+            right: 1.8cm;
             font-size: 8.5px;
             color: #6b7280;
             border-top: 1px solid #e5e7eb;
@@ -211,7 +234,7 @@
         .footer td { font-size: 8.5px; }
         .footer .identitas { text-align: left; }
         .footer .nomor { text-align: right; white-space: nowrap; }
-        .footer .nomor:after { content: "Halaman " counter(page) " dari " counter(pages); }
+        .footer .nomor:after { content: "Halaman " counter(page); }
         .footer .jejak { text-align: center; color: #9ca3af; font-size: 8px; margin-top: 1px; }
 
         .ttd-blok {
@@ -283,8 +306,17 @@
                 @if($santri->kelas?->nama_kelas) &middot; {{ $santri->kelas->nama_kelas }} @endif
                 &middot; {{ $tahunAjaran }} {{ $periodeLabel }}
             </td>
-            {{-- counter(page)/counter(pages) didukung DomPDF di konfigurasi ini
-                 (enable_php mati, jadi $PAGE_NUM bukan pilihan). --}}
+            {{--
+                Hanya counter(page) — BUKAN counter(pages). DomPDF tidak
+                mengelola "pages" sebagai counter total-halaman bawaan seperti
+                CSS Paged Media di browser; diperiksa langsung, nilainya SELALU
+                0 apa pun isi dokumennya ("Halaman 3 dari 0"), karena dompdf
+                cuma mendukung counter kustom yang di-increment manual, dan
+                tak ada yang pernah increment "pages". Jalur resminya —
+                $pdf->page_text() dengan {PAGE_COUNT} — perlu enable_php, yang
+                sengaja mati di config/dompdf.php (§keamanan). Nomor halaman
+                tanpa total tetap berguna; total yang selalu salah tidak.
+            --}}
             <td class="nomor"></td>
         </tr>
     </table>

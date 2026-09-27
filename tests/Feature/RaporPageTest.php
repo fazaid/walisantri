@@ -577,7 +577,12 @@ class RaporPageTest extends TestCase
         $this->assertStringContainsString('Ahmad', $html);
         $this->assertStringContainsString($this->kelas->nama_kelas, $html);
         $this->assertStringContainsString('counter(page)', $html);
-        $this->assertStringContainsString('counter(pages)', $html);
+
+        // ⚠️ counter(pages) BUKAN fitur DomPDF — diperiksa langsung, nilainya
+        // selalu 0 ("Halaman 3 dari 0") apa pun isi dokumennya. Bukan bug baru:
+        // ini kenapa fitur itu dilepas dari footer, jadi ia tidak boleh masuk
+        // lagi lewat regresi.
+        $this->assertStringNotContainsString('counter(pages)', $html);
     }
 
     public function test_rapor_ditutup_blok_tanda_tangan(): void

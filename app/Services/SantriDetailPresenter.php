@@ -11,7 +11,7 @@ use App\Models\PrestasiSantri;
 use App\Models\Santri;
 use App\Models\SantriEkskul;
 use App\Models\TahfidzProgress;
-use App\Models\TahfidzUjian;
+use App\Services\Rapor\RaporAkademikData;
 use App\Support\Waktu;
 use Illuminate\Support\Collection;
 
@@ -37,6 +37,7 @@ class SantriDetailPresenter
         $tahfidzAktif = Modul::Tahfidz->aktif($pesantrenId);
         $kesantrianAktif = Modul::Kesantrian->aktif($pesantrenId);
         $akademikAktif = Modul::Akademik->aktif($pesantrenId);
+        $presensiAktif = Modul::Presensi->aktif($pesantrenId);
 
         // 5 saja — dashboard cuma perlu sekilas-pandang; 10 terakhir ada di halaman Statistik Tahfidz.
         $tahfidzRecent = $tahfidzAktif
@@ -80,20 +81,41 @@ class SantriDetailPresenter
             'status_pemulihan' => $latestKesehatan->status_pemulihan,
         ] : null;
 
-        $latestRapor = $tahfidzAktif
-            ? TahfidzUjian::where('santri_id', $santri->id)
-                ->orderByDesc('created_at')
-                ->first()
-            : null;
+        // Semester berjalan, sama seperti nilai default RaporPage — dashboard cuma
+        // butuh sekilas-pandang; rincian per mapel & periode lain ada di halaman Rapor.
+        $nilaiAkademik = null;
+        if ($akademikAktif) {
+            $raporAkademik = RaporAkademikData::untuk(
+                $santri->id,
+                TahunAjaranOptions::current(),
+                TahunAjaranOptions::currentPeriode(),
+            );
 
-        $raporTahfidzTerakhir = $latestRapor ? [
-            'periode' => $latestRapor->periode,
-            'tahun_ajaran' => $latestRapor->tahun_ajaran,
-            'nilai_hafalan' => $latestRapor->nilai_hafalan,
-            'nilai_tilawah' => $latestRapor->nilai_tilawah,
-            'nilai_tajwid' => $latestRapor->nilai_tajwid,
-            'nilai_makhraj' => $latestRapor->nilai_makhraj,
-        ] : null;
+            $nilaiAkademik = [
+                'ada_data' => $raporAkademik['ada_data'],
+                'rata_rata' => $raporAkademik['rata_rata'],
+                'jumlah_mapel' => $raporAkademik['nilai']->count(),
+            ];
+        }
+
+        $kehadiranBulanIni = null;
+        if ($presensiAktif) {
+            $rekapKehadiran = PresensiRekap::untuk(
+                $pesantrenId,
+                Waktu::sekarang()->startOfMonth()->toDateString(),
+                Waktu::sekarang()->toDateString(),
+                santriId: $santri->id,
+            )->satuSantri();
+
+            // total_tercatat > 0: bedakan "belum pernah diabsen" dari "0% hadir" —
+            // pola yang sama dipakai App\Services\Rapor\RaporPresensiData.
+            $kehadiranBulanIni = $rekapKehadiran ? [
+                'ada_data' => $rekapKehadiran->total_tercatat > 0,
+                'persen_kehadiran' => $rekapKehadiran->persen_kehadiran,
+                'hadir_efektif' => $rekapKehadiran->hadir_efektif,
+                'hari_efektif' => $rekapKehadiran->hari_efektif,
+            ] : null;
+        }
 
         // Prestasi milik Cluster Santri — inti, tidak pernah bisa dimatikan.
         $prestasi = PrestasiSantri::withoutGlobalScope('pesantren')
@@ -137,7 +159,8 @@ class SantriDetailPresenter
             'persentaseAmalanMingguIni',
             'mutabaahWeek',
             'statusKesehatanTerkini',
-            'raporTahfidzTerakhir',
+            'nilaiAkademik',
+            'kehadiranBulanIni',
             'prestasi',
             'ekskul',
             'totalInventaris',

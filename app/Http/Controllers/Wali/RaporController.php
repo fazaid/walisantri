@@ -28,6 +28,8 @@ class RaporController extends Controller
         }
 
         $tahunAjaran = request('tahun_ajaran', TahunAjaranOptions::current());
+        $periode = (string) request('periode', '');
+        $bulan = $periode === 'Bulanan' ? (string) request('bulan', '') : null;
 
         if (! $santriId) {
             return view('wali.rapor', [
@@ -35,28 +37,35 @@ class RaporController extends Controller
                 'santriId' => null,
                 'tahunAjaran' => $tahunAjaran,
                 'tahunList' => collect([$tahunAjaran]),
+                'periode' => $periode,
+                'bulan' => $bulan,
                 'raporTahfidz' => collect(),
                 'daftarKarakter' => collect(),
                 'raporAkademik' => collect(),
             ]);
         }
 
-        $raporTahfidz = TahfidzUjian::where('santri_id', $santriId)
-            ->where('tahun_ajaran', $tahunAjaran)
+        // Filter periode kosong = "Semua Periode": kompatibel dengan tautan lama
+        // yang belum membawa query param ini.
+        $saringPeriode = fn ($query) => $query
+            ->when($periode !== '', fn ($q) => $q->where('periode', $periode))
+            ->when($periode === 'Bulanan' && $bulan, fn ($q) => $q->where('bulan', $bulan));
+
+        $raporTahfidz = $saringPeriode(TahfidzUjian::where('santri_id', $santriId)
+            ->where('tahun_ajaran', $tahunAjaran))
             ->orderBy('periode')
             ->get();
 
         // Karakter dipegang per (tahun_ajaran, periode, bulan) sejak v4.9 — bukan lagi
-        // ditebak dari tanggal_input. Semua periode dalam satu tahun ajaran ditampilkan
-        // karena halaman ini memang tidak punya filter periode.
-        $daftarKarakter = KesantrianKarakterRapor::where('santri_id', $santriId)
-            ->where('tahun_ajaran', $tahunAjaran)
+        // ditebak dari tanggal_input.
+        $daftarKarakter = $saringPeriode(KesantrianKarakterRapor::where('santri_id', $santriId)
+            ->where('tahun_ajaran', $tahunAjaran))
             ->orderByDesc('tanggal_input')
             ->get();
 
-        $raporAkademik = NilaiAkademik::with('mataPelajaran')
+        $raporAkademik = $saringPeriode(NilaiAkademik::with('mataPelajaran')
             ->where('santri_id', $santriId)
-            ->where('tahun_ajaran', $tahunAjaran)
+            ->where('tahun_ajaran', $tahunAjaran))
             ->get()
             ->groupBy('periode');
 
@@ -67,6 +76,8 @@ class RaporController extends Controller
             'santriId',
             'tahunAjaran',
             'tahunList',
+            'periode',
+            'bulan',
             'raporTahfidz',
             'daftarKarakter',
             'raporAkademik',

@@ -8,6 +8,7 @@
        Ekskul & Prestasi tidak dijaga di sini: koleksi Ekskul sudah dikosongkan
        SantriDetailPresenter saat modul Akademik mati sehingga @if-nya yang lama
        sudah menutupnya, dan Prestasi milik Cluster Santri yang tidak punya tuas. */
+    $modulAkademik   = \App\Enums\Modul::Akademik->aktif($santri->pesantren_id);
     $modulTahfidz    = \App\Enums\Modul::Tahfidz->aktif($santri->pesantren_id);
     $modulKesantrian = \App\Enums\Modul::Kesantrian->aktif($santri->pesantren_id);
     $modulPresensi   = \App\Enums\Modul::Presensi->aktif($santri->pesantren_id);
@@ -65,23 +66,31 @@
         $progressColor = $persentaseAmalanMingguIni >= 70
             ? 'bg-green-500'
             : ($persentaseAmalanMingguIni >= 40 ? 'bg-yellow-400' : 'bg-red-400');
-
-        /* ── Card 4: format periode rapor singkat ── */
-        if ($raporTahfidzTerakhir) {
-            $periodeLabel = match ($raporTahfidzTerakhir['periode']) {
-                'Semester_Ganjil' => 'Sem. Ganjil',
-                'Semester_Genap'  => 'Sem. Genap',
-                default           => $raporTahfidzTerakhir['periode'],
-            };
-            $tahunSingkat = implode('/', array_map(
-                fn ($y) => substr(trim($y), 2),
-                explode('/', $raporTahfidzTerakhir['tahun_ajaran'])
-            ));
-        }
     @endphp
 
-    @if($modulTahfidz || $modulKesantrian)
+    @if($modulAkademik || $modulTahfidz || $modulKesantrian || $modulPresensi)
     <div class="grid grid-cols-2 gap-3">
+
+        @if($modulAkademik)
+        {{-- Card 0 — Rata-rata Nilai Akademik --}}
+        <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4">
+            <div class="flex items-center gap-1.5 mb-2">
+                <span class="text-lg leading-none">🎓</span>
+                <span class="text-xs font-medium text-indigo-600">Nilai Akademik</span>
+            </div>
+            @if($nilaiAkademik && $nilaiAkademik['ada_data'])
+                <p class="text-2xl font-bold text-indigo-700 leading-tight">
+                    {{ $nilaiAkademik['rata_rata'] }}
+                </p>
+                <p class="text-xs text-indigo-500 mt-1">
+                    Rata-rata {{ $nilaiAkademik['jumlah_mapel'] }} mapel semester ini
+                </p>
+            @else
+                <p class="text-sm font-medium text-indigo-400">Belum ada data</p>
+            @endif
+        </div>
+
+        @endif
 
         @if($modulTahfidz)
         {{-- Card 1 — Capaian Hafalan --}}
@@ -135,22 +144,22 @@
 
         @endif
 
-        @if($modulTahfidz)
-        {{-- Card 4 — Rapor Tahfidz --}}
-        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+        @if($modulPresensi)
+        {{-- Card 4 — Kehadiran Bulan Ini --}}
+        <div class="bg-sky-50 border border-sky-200 rounded-2xl p-4">
             <div class="flex items-center gap-1.5 mb-2">
-                <span class="text-lg leading-none">⭐</span>
-                <span class="text-xs font-medium text-amber-600">Rapor Terakhir</span>
+                <span class="text-lg leading-none">🗓️</span>
+                <span class="text-xs font-medium text-sky-600">Kehadiran Bulan Ini</span>
             </div>
-            @if($raporTahfidzTerakhir)
-                <p class="text-2xl font-bold text-amber-700 leading-tight">
-                    {{ $raporTahfidzTerakhir['nilai_hafalan'] }}
+            @if($kehadiranBulanIni && $kehadiranBulanIni['ada_data'])
+                <p class="text-2xl font-bold text-sky-700 leading-tight">
+                    {{ $kehadiranBulanIni['persen_kehadiran'] }}<span class="text-sm font-medium ml-0.5">%</span>
                 </p>
-                <p class="text-xs text-amber-600 mt-0.5">
-                    {{ $periodeLabel }} {{ $tahunSingkat }}
+                <p class="text-xs text-sky-600 mt-0.5">
+                    {{ $kehadiranBulanIni['hadir_efektif'] }} dari {{ $kehadiranBulanIni['hari_efektif'] }} hari efektif
                 </p>
             @else
-                <p class="text-sm font-medium text-amber-400">Belum ada rapor</p>
+                <p class="text-sm font-medium text-sky-400">Belum ada data</p>
             @endif
         </div>
 
