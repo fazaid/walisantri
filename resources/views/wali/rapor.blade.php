@@ -65,19 +65,49 @@
             <input type="hidden" name="santri_id" value="{{ $santriId }}">
         @endif
 
+        <div class="grid grid-cols-2 gap-2">
+            <div>
+                <label class="block text-xs text-gray-500 mb-1 font-medium">Tahun Ajaran</label>
+                <select name="tahun_ajaran" onchange="this.form.submit()"
+                        class="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-400">
+                    @forelse($tahunList as $tahun)
+                    <option value="{{ $tahun }}" {{ $tahun === $tahunAjaran ? 'selected' : '' }}>
+                        {{ $tahun }}
+                    </option>
+                    @empty
+                    <option value="{{ $tahunAjaran }}">{{ $tahunAjaran }}</option>
+                    @endforelse
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs text-gray-500 mb-1 font-medium">Semester</label>
+                <select name="periode" onchange="this.form.submit()"
+                        class="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-400">
+                    <option value="" {{ $periode === '' ? 'selected' : '' }}>Semua Periode</option>
+                    @foreach(\App\Services\TahunAjaranOptions::periodeOptions() as $value => $label)
+                    <option value="{{ $value }}" {{ $periode === $value ? 'selected' : '' }}>
+                        {{ $label }}
+                    </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
+        @if($periode === 'Bulanan')
         <div>
-            <label class="block text-xs text-gray-500 mb-1 font-medium">Tahun Ajaran</label>
-            <select name="tahun_ajaran" onchange="this.form.submit()"
+            <label class="block text-xs text-gray-500 mb-1 font-medium">Bulan</label>
+            <select name="bulan" onchange="this.form.submit()"
                     class="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-400">
-                @forelse($tahunList as $tahun)
-                <option value="{{ $tahun }}" {{ $tahun === $tahunAjaran ? 'selected' : '' }}>
-                    {{ $tahun }}
+                <option value="">Semua Bulan</option>
+                @foreach(\App\Services\TahunAjaranOptions::bulanOptions($tahunAjaran) as $value => $label)
+                <option value="{{ $value }}" {{ $bulan === $value ? 'selected' : '' }}>
+                    {{ $label }}
                 </option>
-                @empty
-                <option value="{{ $tahunAjaran }}">{{ $tahunAjaran }}</option>
-                @endforelse
+                @endforeach
             </select>
         </div>
+        @endif
     </form>
 
     {{-- ── Tabs ─────────────────────────────────────────────────────────── --}}

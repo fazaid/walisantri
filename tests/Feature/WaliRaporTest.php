@@ -3,9 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\KesantrianKarakterRapor;
+use App\Models\KesantrianMutabaah;
 use App\Models\MataPelajaran;
 use App\Models\NilaiAkademik;
 use App\Models\Pesantren;
+use App\Models\Presensi;
 use App\Models\Santri;
 use App\Models\TahfidzUjian;
 use App\Models\User;
@@ -183,6 +185,77 @@ class WaliRaporTest extends TestCase
             ->assertDontSee('Catatan tahun lalu');
     }
 
+    // ── B5: filter semester/periode ───────────────────────────────────────
+
+    public function test_filter_periode_menyaring_karakter_ke_satu_semester(): void
+    {
+        $this->buatKarakter($this->santri, [
+            'periode' => 'Semester_Ganjil',
+            'tanggal_input' => '2026-11-10',
+            'log_kasus_khusus' => 'Catatan ganjil',
+        ]);
+
+        $this->buatKarakter($this->santri, [
+            'periode' => 'Semester_Genap',
+            'tanggal_input' => '2027-02-20',
+            'log_kasus_khusus' => 'Catatan genap',
+        ]);
+
+        $this->actingAs($this->wali)
+            ->get(route('wali.rapor', [
+                'tahun_ajaran' => '2026/2027',
+                'tab' => 'karakter',
+                'periode' => 'Semester_Genap',
+            ]))
+            ->assertOk()
+            ->assertSee('Catatan genap')
+            ->assertDontSee('Catatan ganjil');
+    }
+
+    public function test_filter_periode_menyaring_akademik_ke_satu_semester(): void
+    {
+        $this->buatNilai($this->santri, ['nama_mapel' => 'Nahwu Ganjil', 'periode' => 'Semester_Ganjil']);
+        $this->buatNilai($this->santri, ['nama_mapel' => 'Nahwu Genap', 'periode' => 'Semester_Genap']);
+
+        $this->actingAs($this->wali)
+            ->get(route('wali.rapor', [
+                'tahun_ajaran' => '2026/2027',
+                'tab' => 'akademik',
+                'periode' => 'Semester_Ganjil',
+            ]))
+            ->assertOk()
+            ->assertSee('Nahwu Ganjil')
+            ->assertDontSee('Nahwu Genap');
+    }
+
+    public function test_filter_bulan_hanya_berlaku_saat_periode_bulanan(): void
+    {
+        $this->buatKarakter($this->santri, [
+            'periode' => 'Bulanan',
+            'bulan' => '11-2026',
+            'tanggal_input' => '2026-11-28',
+            'log_kasus_khusus' => 'Catatan November',
+        ]);
+
+        $this->buatKarakter($this->santri, [
+            'periode' => 'Bulanan',
+            'bulan' => '12-2026',
+            'tanggal_input' => '2026-12-28',
+            'log_kasus_khusus' => 'Catatan Desember',
+        ]);
+
+        $this->actingAs($this->wali)
+            ->get(route('wali.rapor', [
+                'tahun_ajaran' => '2026/2027',
+                'tab' => 'karakter',
+                'periode' => 'Bulanan',
+                'bulan' => '12-2026',
+            ]))
+            ->assertOk()
+            ->assertSee('Catatan Desember')
+            ->assertDontSee('Catatan November');
+    }
+
     // ── B4: dropdown tahun ajaran tidak lagi hanya dari tahfidz ──────────
 
     public function test_tahun_ajaran_dari_nilai_akademik_muncul_di_dropdown(): void
@@ -278,6 +351,57 @@ class WaliRaporTest extends TestCase
             ['Semester_Ganjil', 'Semester_Genap'],
             $data['raporTahfidz']->pluck('periode')->all(),
         );
+    }
+
+    public function test_pdf_wali_memuat_ringkasan_mutabaah(): void
+    {
+        KesantrianMutabaah::create([
+            'pesantren_id' => $this->pesantren->id,
+            'santri_id' => $this->santri->id,
+            'tanggal' => '2026-11-10',
+            'amalan' => ['is_rawatib' => true],
+            'status_udzur' => 'Tidak',
+        ]);
+
+        $data = [];
+        $this->rekamDataPdf($data);
+
+        $respons = $this->actingAs($this->wali)
+            ->get(route('wali.laporan.pdf', [
+                'santri_id' => $this->santri->id,
+                'tahun_ajaran' => '2026/2027',
+            ]));
+
+        $respons->assertOk();
+        $this->assertTrue($data['raporMutabaah']['ada_data']);
+        $this->assertSame(1, $data['raporMutabaah']['total_hari']);
+    }
+
+    public function test_pdf_wali_memuat_ringkasan_presensi(): void
+    {
+        // Tanggal harus <= hari ini: PresensiRekap memotong batas atas rentang ke
+        // hari ini (rekap tidak boleh menghitung hari yang belum terjadi), jadi
+        // tanggal di masa depan tidak akan pernah tercatat sebagai "hari efektif".
+        Presensi::create([
+            'pesantren_id' => $this->pesantren->id,
+            'santri_id' => $this->santri->id,
+            'tanggal' => '2026-09-10',
+            'jam_ke' => Presensi::HARIAN,
+            'status' => 'Hadir',
+        ]);
+
+        $data = [];
+        $this->rekamDataPdf($data);
+
+        $respons = $this->actingAs($this->wali)
+            ->get(route('wali.laporan.pdf', [
+                'santri_id' => $this->santri->id,
+                'tahun_ajaran' => '2026/2027',
+            ]));
+
+        $respons->assertOk();
+        $this->assertTrue($data['raporPresensi']['ada_data']);
+        $this->assertSame(1, $data['raporPresensi']['hadir_efektif']);
     }
 
     public function test_pdf_wali_menolak_santri_bukan_anaknya(): void
