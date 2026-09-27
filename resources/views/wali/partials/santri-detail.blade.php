@@ -65,22 +65,9 @@
         $progressColor = $persentaseAmalanMingguIni >= 70
             ? 'bg-green-500'
             : ($persentaseAmalanMingguIni >= 40 ? 'bg-yellow-400' : 'bg-red-400');
-
-        /* ── Card 4: format periode rapor singkat ── */
-        if ($raporTahfidzTerakhir) {
-            $periodeLabel = match ($raporTahfidzTerakhir['periode']) {
-                'Semester_Ganjil' => 'Sem. Ganjil',
-                'Semester_Genap'  => 'Sem. Genap',
-                default           => $raporTahfidzTerakhir['periode'],
-            };
-            $tahunSingkat = implode('/', array_map(
-                fn ($y) => substr(trim($y), 2),
-                explode('/', $raporTahfidzTerakhir['tahun_ajaran'])
-            ));
-        }
     @endphp
 
-    @if($modulTahfidz || $modulKesantrian)
+    @if($modulTahfidz || $modulKesantrian || $modulPresensi)
     <div class="grid grid-cols-2 gap-3">
 
         @if($modulTahfidz)
@@ -135,22 +122,22 @@
 
         @endif
 
-        @if($modulTahfidz)
-        {{-- Card 4 — Rapor Tahfidz --}}
-        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+        @if($modulPresensi)
+        {{-- Card 4 — Kehadiran Bulan Ini --}}
+        <div class="bg-sky-50 border border-sky-200 rounded-2xl p-4">
             <div class="flex items-center gap-1.5 mb-2">
-                <span class="text-lg leading-none">⭐</span>
-                <span class="text-xs font-medium text-amber-600">Rapor Terakhir</span>
+                <span class="text-lg leading-none">🗓️</span>
+                <span class="text-xs font-medium text-sky-600">Kehadiran Bulan Ini</span>
             </div>
-            @if($raporTahfidzTerakhir)
-                <p class="text-2xl font-bold text-amber-700 leading-tight">
-                    {{ $raporTahfidzTerakhir['nilai_hafalan'] }}
+            @if($kehadiranBulanIni && $kehadiranBulanIni['ada_data'])
+                <p class="text-2xl font-bold text-sky-700 leading-tight">
+                    {{ $kehadiranBulanIni['persen_kehadiran'] }}<span class="text-sm font-medium ml-0.5">%</span>
                 </p>
-                <p class="text-xs text-amber-600 mt-0.5">
-                    {{ $periodeLabel }} {{ $tahunSingkat }}
+                <p class="text-xs text-sky-600 mt-0.5">
+                    {{ $kehadiranBulanIni['hadir_efektif'] }} dari {{ $kehadiranBulanIni['hari_efektif'] }} hari efektif
                 </p>
             @else
-                <p class="text-sm font-medium text-amber-400">Belum ada rapor</p>
+                <p class="text-sm font-medium text-sky-400">Belum ada data</p>
             @endif
         </div>
 
