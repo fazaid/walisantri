@@ -164,6 +164,20 @@
         </div>
 
         @endif
+
+        @if($modulKesantrian)
+        {{-- Card 5 — Inventaris --}}
+        <div class="bg-orange-50 border border-orange-200 rounded-2xl p-4">
+            <div class="flex items-center gap-1.5 mb-2">
+                <span class="text-lg leading-none">🎒</span>
+                <span class="text-xs font-medium text-orange-600">Inventaris</span>
+            </div>
+            <p class="text-2xl font-bold text-orange-700 leading-tight">
+                {{ $totalInventaris }}<span class="text-sm font-medium ml-1">barang</span>
+            </p>
+        </div>
+
+        @endif
     </div>{{-- /grid --}}
     @endif
 
