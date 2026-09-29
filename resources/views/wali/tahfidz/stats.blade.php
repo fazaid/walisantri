@@ -116,6 +116,38 @@
         @endforelse
     </div>
 
+    {{-- Riwayat Ujian Tahfidz --}}
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+            <p class="font-semibold text-gray-800">Riwayat Ujian Tahfidz</p>
+            <span class="text-xs text-gray-400">10 terakhir</span>
+        </div>
+        @forelse($ujianTahfidz as $u)
+        <div class="px-4 py-3 border-b border-gray-50 last:border-0">
+            <div class="flex items-start justify-between gap-2">
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-800">
+                        Target Juz {{ $u->target_juz }}
+                    </p>
+                    <p class="text-xs text-gray-500">
+                        {{ $u->tanggal_ujian->translatedFormat('d M Y') }}
+                        @if($u->penguji) · Penguji: {{ $u->penguji->name }} @endif
+                    </p>
+                    @if($u->rekomendasi_pembimbing)
+                    <p class="text-xs text-gray-400 mt-1 italic">{{ $u->rekomendasi_pembimbing }}</p>
+                    @endif
+                </div>
+                <span class="text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0
+                    {{ $u->status_kelulusan === 'Lulus' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">
+                    {{ $u->status_kelulusan }}
+                </span>
+            </div>
+        </div>
+        @empty
+        <div class="px-4 py-6 text-center text-sm text-gray-400">Belum ada data ujian tahfidz.</div>
+        @endforelse
+    </div>
+
 </div>
 
 <script>

@@ -83,7 +83,7 @@
                     {{ $nilaiAkademik['rata_rata'] }}
                 </p>
                 <p class="text-xs text-indigo-500 mt-1">
-                    Rata-rata {{ $nilaiAkademik['jumlah_mapel'] }} mapel semester ini
+                    Rata-rata {{ $nilaiAkademik['jumlah_mapel'] }} mapel {{ $nilaiAkademik['label_periode'] }}
                 </p>
             @else
                 <p class="text-sm font-medium text-indigo-400">Belum ada data</p>
@@ -161,6 +161,20 @@
             @else
                 <p class="text-sm font-medium text-sky-400">Belum ada data</p>
             @endif
+        </div>
+
+        @endif
+
+        @if($modulKesantrian)
+        {{-- Card 5 — Inventaris --}}
+        <div class="bg-orange-50 border border-orange-200 rounded-2xl p-4">
+            <div class="flex items-center gap-1.5 mb-2">
+                <span class="text-lg leading-none">🎒</span>
+                <span class="text-xs font-medium text-orange-600">Inventaris</span>
+            </div>
+            <p class="text-2xl font-bold text-orange-700 leading-tight">
+                {{ $totalInventaris }}<span class="text-sm font-medium ml-1">barang</span>
+            </p>
         </div>
 
         @endif

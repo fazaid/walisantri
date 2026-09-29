@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\Modul;
 use App\Models\Kelas;
+use App\Models\KesantrianInventaris;
 use App\Models\ModulPengaturan;
 use App\Models\Pesantren;
 use App\Models\Santri;
@@ -121,6 +122,32 @@ class WaliModulTest extends TestCase
         $respons->assertSee(route('wali.pengumuman'), escape: false);
     }
 
+    public function test_kartu_inventaris_menghitung_jumlah_barang_santri(): void
+    {
+        KesantrianInventaris::create([
+            'pesantren_id' => $this->pesantren->id,
+            'santri_id' => $this->santri->id,
+            'nama_barang_umum' => 'Sarung',
+            'kode_unik_fisik' => 'FZ-SRG-01',
+            'kuota_regulasi_maksimal' => 2,
+            'kondisi_barang' => 'Baik',
+        ]);
+        KesantrianInventaris::create([
+            'pesantren_id' => $this->pesantren->id,
+            'santri_id' => $this->santri->id,
+            'nama_barang_umum' => 'Baju Koko',
+            'kode_unik_fisik' => 'FZ-BJK-01',
+            'kuota_regulasi_maksimal' => 2,
+            'kondisi_barang' => 'Baik',
+        ]);
+
+        $this->actingAs($this->wali);
+
+        $this->get(route('wali.santri.show', $this->santri))->assertOk()
+            ->assertSee('Inventaris')
+            ->assertSeeInOrder(['Inventaris', '2', 'barang']);
+    }
+
     public function test_seksi_detail_santri_lenyap_mengikuti_modul(): void
     {
         TahfidzProgress::create([
@@ -138,14 +165,16 @@ class WaliModulTest extends TestCase
         $this->actingAs($this->wali);
 
         $this->get(route('wali.santri.show', $this->santri))->assertOk()
-            ->assertSee('Capaian Hafalan');
+            ->assertSee('Capaian Hafalan')
+            ->assertSee('Inventaris');
 
         $this->matikan(Modul::Tahfidz, Modul::Kesantrian, Modul::Presensi);
 
         $this->get(route('wali.santri.show', $this->santri))->assertOk()
             ->assertDontSee('Capaian Hafalan')
             ->assertDontSee('Riwayat Setoran')
-            ->assertDontSee('Status Kesehatan');
+            ->assertDontSee('Status Kesehatan')
+            ->assertDontSee('Inventaris');
     }
 
     /**

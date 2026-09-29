@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Wali;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Wali\Concerns\ResolvesSantriMilikWali;
 use App\Models\TahfidzProgress;
+use App\Models\TahfidzUjian;
 use App\Services\TahfidzJuzCalculator;
 use App\Services\TrendBulanan;
 use App\Support\Waktu;
@@ -70,6 +71,14 @@ class TahfidzStatsController extends Controller
             ->limit(10)
             ->get();
 
+        // Ujian jarang terjadi (per kenaikan target juz) — tidak perlu limit
+        // seketat setoran harian, tapi tetap dibatasi jaga-jaga riwayat panjang.
+        $ujianTahfidz = TahfidzUjian::with('penguji')
+            ->where('santri_id', $santri->id)
+            ->orderByDesc('tanggal_ujian')
+            ->limit(10)
+            ->get();
+
         return view('wali.tahfidz.stats', compact(
             'santri',
             'bulanLabels',
@@ -82,6 +91,7 @@ class TahfidzStatsController extends Controller
             'juz',
             'distribusiNilai',
             'setoranTerbaru',
+            'ujianTahfidz',
         ));
     }
 }
