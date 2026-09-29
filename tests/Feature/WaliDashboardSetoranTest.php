@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Pesantren;
 use App\Models\Santri;
 use App\Models\TahfidzProgress;
+use App\Models\TahfidzUjian;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -130,7 +131,7 @@ class WaliDashboardSetoranTest extends TestCase
         $santri = $this->santriDenganWali();
         $penguji = User::factory()->ustadz()->create(['pesantren_id' => $santri->pesantren_id]);
 
-        \App\Models\TahfidzUjian::create([
+        TahfidzUjian::create([
             'pesantren_id' => $santri->pesantren_id,
             'santri_id' => $santri->id,
             'penguji_id' => $penguji->id,

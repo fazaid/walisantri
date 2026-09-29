@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\Modul;
 use App\Models\Kelas;
+use App\Models\KesantrianInventaris;
 use App\Models\ModulPengaturan;
 use App\Models\Pesantren;
 use App\Models\Santri;
@@ -123,7 +124,7 @@ class WaliModulTest extends TestCase
 
     public function test_kartu_inventaris_menghitung_jumlah_barang_santri(): void
     {
-        \App\Models\KesantrianInventaris::create([
+        KesantrianInventaris::create([
             'pesantren_id' => $this->pesantren->id,
             'santri_id' => $this->santri->id,
             'nama_barang_umum' => 'Sarung',
@@ -131,7 +132,7 @@ class WaliModulTest extends TestCase
             'kuota_regulasi_maksimal' => 2,
             'kondisi_barang' => 'Baik',
         ]);
-        \App\Models\KesantrianInventaris::create([
+        KesantrianInventaris::create([
             'pesantren_id' => $this->pesantren->id,
             'santri_id' => $this->santri->id,
             'nama_barang_umum' => 'Baju Koko',
