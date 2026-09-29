@@ -120,4 +120,53 @@ class WaliDashboardSetoranTest extends TestCase
         $response->assertDontSee('PenandaSetoran11')
             ->assertDontSee('PenandaSetoran12');
     }
+
+    public function test_halaman_statistik_menampilkan_riwayat_ujian_tahfidz(): void
+    {
+        if (config('database.default') !== 'pgsql') {
+            $this->markTestSkipped('Halaman statistik tahfidz butuh PostgreSQL (TO_CHAR).');
+        }
+
+        $santri = $this->santriDenganWali();
+        $penguji = User::factory()->ustadz()->create(['pesantren_id' => $santri->pesantren_id]);
+
+        \App\Models\TahfidzUjian::create([
+            'pesantren_id' => $santri->pesantren_id,
+            'santri_id' => $santri->id,
+            'penguji_id' => $penguji->id,
+            'tanggal_ujian' => '2026-09-20',
+            'target_juz' => 5,
+            'status_kelulusan' => 'Lulus',
+            'tahun_ajaran' => '2026/2027',
+            'periode' => 'Semester_Ganjil',
+            'nilai_hafalan' => 90,
+            'nilai_tilawah' => 'A',
+            'nilai_makhraj' => 'A',
+            'nilai_tajwid' => 'B',
+            'rekomendasi_pembimbing' => 'Lanjut juz berikutnya',
+        ]);
+
+        $this->actingAs($santri->wali)
+            ->get(route('wali.santri.tahfidz', $santri->id))
+            ->assertOk()
+            ->assertSee('Riwayat Ujian Tahfidz')
+            ->assertSee('Target Juz 5')
+            ->assertSee('Lulus')
+            ->assertSee($penguji->name)
+            ->assertSee('Lanjut juz berikutnya');
+    }
+
+    public function test_halaman_statistik_menjelaskan_diri_saat_belum_pernah_ujian(): void
+    {
+        if (config('database.default') !== 'pgsql') {
+            $this->markTestSkipped('Halaman statistik tahfidz butuh PostgreSQL (TO_CHAR).');
+        }
+
+        $santri = $this->santriDenganWali();
+
+        $this->actingAs($santri->wali)
+            ->get(route('wali.santri.tahfidz', $santri->id))
+            ->assertOk()
+            ->assertSee('Belum ada data ujian tahfidz');
+    }
 }
