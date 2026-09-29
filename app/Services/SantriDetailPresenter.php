@@ -83,18 +83,31 @@ class SantriDetailPresenter
 
         // Semester berjalan, sama seperti nilai default RaporPage — dashboard cuma
         // butuh sekilas-pandang; rincian per mapel & periode lain ada di halaman Rapor.
+        // Sebagian pesantren input nilai per bulan (periode='Bulanan'), bukan per
+        // semester — periode tidak dikonfigurasi per tenant, jadi kalau semester
+        // berjalan kosong, coba bulan berjalan sebelum menyerah ke "Belum ada data".
         $nilaiAkademik = null;
         if ($akademikAktif) {
-            $raporAkademik = RaporAkademikData::untuk(
-                $santri->id,
-                TahunAjaranOptions::current(),
-                TahunAjaranOptions::currentPeriode(),
-            );
+            $tahunAjaran = TahunAjaranOptions::current();
+            $periode = TahunAjaranOptions::currentPeriode();
+
+            $raporAkademik = RaporAkademikData::untuk($santri->id, $tahunAjaran, $periode);
+
+            if (! $raporAkademik['ada_data']) {
+                $bulanIni = Waktu::sekarang()->month.'-'.Waktu::sekarang()->year;
+                $raporBulanan = RaporAkademikData::untuk($santri->id, $tahunAjaran, 'Bulanan', $bulanIni);
+
+                if ($raporBulanan['ada_data']) {
+                    $periode = 'Bulanan';
+                    $raporAkademik = $raporBulanan;
+                }
+            }
 
             $nilaiAkademik = [
                 'ada_data' => $raporAkademik['ada_data'],
                 'rata_rata' => $raporAkademik['rata_rata'],
                 'jumlah_mapel' => $raporAkademik['nilai']->count(),
+                'label_periode' => $periode === 'Bulanan' ? 'bulan ini' : 'semester ini',
             ];
         }
 

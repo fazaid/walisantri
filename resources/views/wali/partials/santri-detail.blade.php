@@ -83,7 +83,7 @@
                     {{ $nilaiAkademik['rata_rata'] }}
                 </p>
                 <p class="text-xs text-indigo-500 mt-1">
-                    Rata-rata {{ $nilaiAkademik['jumlah_mapel'] }} mapel semester ini
+                    Rata-rata {{ $nilaiAkademik['jumlah_mapel'] }} mapel {{ $nilaiAkademik['label_periode'] }}
                 </p>
             @else
                 <p class="text-sm font-medium text-indigo-400">Belum ada data</p>
