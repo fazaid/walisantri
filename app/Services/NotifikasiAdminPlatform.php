@@ -2,13 +2,17 @@
 
 namespace App\Services;
 
+use App\Enums\PaketLangganan;
 use App\Filament\Resources\DemoRequests\DemoRequestResource;
 use App\Filament\Resources\Orders\OrderResource;
+use App\Filament\Resources\Pesantrens\PesantrenResource;
 use App\Jobs\KirimNotifikasiWhatsapp;
 use App\Models\DemoRequest;
 use App\Models\Invoice;
 use App\Models\Order;
+use App\Models\Pesantren;
 use App\Models\PlatformContactSetting;
+use App\Models\User;
 use App\Models\WhatsAppMessageTemplate;
 use App\Models\WhatsAppSetting;
 
@@ -33,6 +37,23 @@ class NotifikasiAdminPlatform
             '{kota}' => $demoRequest->kota ?: '-',
             '{jumlah_santri}' => $demoRequest->jumlah_santri ?: '-',
             '{link_admin}' => DemoRequestResource::getUrl('view', ['record' => $demoRequest]),
+        ]);
+    }
+
+    public function pesantrenBaru(Pesantren $pesantren, User $admin): void
+    {
+        $paket = PaketLangganan::tryFrom((string) $pesantren->paket_langganan);
+        $wilayah = $pesantren->profil['wilayah'] ?? [];
+
+        $this->kirim('notif_admin_pesantren_baru', self::DEFAULT_PESANTREN_BARU, [
+            '{nama_pesantren}' => $pesantren->nama_pesantren,
+            '{subdomain}' => $pesantren->slug,
+            '{nama_admin}' => $admin->name,
+            '{email}' => $admin->email ?: '-',
+            '{no_hp}' => $admin->phone_number ?: '-',
+            '{kota}' => $wilayah['kota']['nama'] ?? '-',
+            '{paket}' => $paket?->label() ?? (string) $pesantren->paket_langganan,
+            '{link_admin}' => PesantrenResource::getUrl('view', ['record' => $pesantren]),
         ]);
     }
 
@@ -97,6 +118,21 @@ class NotifikasiAdminPlatform
     Santri    : {jumlah_santri}
 
     Hubungi dalam 2 hari kerja:
+    {link_admin}
+    TEXT;
+
+    public const DEFAULT_PESANTREN_BARU = <<<'TEXT'
+    🎉 Pesantren baru mendaftar
+
+    Pesantren : {nama_pesantren}
+    Subdomain : {subdomain}
+    Paket     : {paket}
+    Kota      : {kota}
+    Admin     : {nama_admin}
+    Email     : {email}
+    No. HP    : {no_hp}
+
+    Detail:
     {link_admin}
     TEXT;
 

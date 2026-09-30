@@ -2,12 +2,16 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\KirimNotifikasiWhatsapp;
 use App\Models\BillingSetting;
 use App\Models\Pesantren;
+use App\Models\PlatformContactSetting;
 use App\Models\PlatformSetting;
 use App\Models\User;
+use App\Models\WhatsAppSetting;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Tests\Concerns\MenyemaiWilayah;
 use Tests\TestCase;
 
@@ -311,5 +315,45 @@ class RegisterControllerTest extends TestCase
         ] + $this->dataWilayahValid();
 
         return array_filter($data, fn ($nilai) => $nilai !== null);
+    }
+
+    private function daftarUntukAlert(): void
+    {
+        $this->withoutMiddleware(ValidateCsrfToken::class)
+            ->post($this->registerUrl(), [
+                'paket' => 'rintisan',
+                'nama_pesantren' => 'Pesantren Alert Daftar',
+                'slug' => 'alert-daftar',
+                'admin_name' => 'Admin Alert',
+                'email' => 'alert@example.com',
+                'alamat_pesantren' => 'Jl. Raya Contoh No. 12',
+                'admin_whatsapp' => '081234567890',
+                'password' => 'Password123',
+                'password_confirmation' => 'Password123',
+            ] + $this->dataWilayahValid())
+            ->assertRedirect();
+    }
+
+    public function test_pendaftaran_mengirim_alert_wa_ke_admin_platform_saat_diaktifkan(): void
+    {
+        Queue::fake();
+        WhatsAppSetting::set('notif_admin_platform_enabled', true);
+        PlatformContactSetting::set('admin_whatsapp', '6281399096658');
+
+        $this->daftarUntukAlert();
+
+        Queue::assertPushed(KirimNotifikasiWhatsapp::class, fn ($job) => $job->phoneNumber === '6281399096658'
+            && str_contains($job->message, 'Pesantren Alert Daftar')
+            && str_contains($job->message, 'alert-daftar'));
+    }
+
+    public function test_pendaftaran_tidak_mengirim_alert_wa_saat_kill_switch_mati(): void
+    {
+        Queue::fake();
+        PlatformContactSetting::set('admin_whatsapp', '6281399096658');
+
+        $this->daftarUntukAlert();
+
+        Queue::assertNotPushed(KirimNotifikasiWhatsapp::class);
     }
 }
