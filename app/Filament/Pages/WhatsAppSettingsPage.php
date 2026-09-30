@@ -77,6 +77,8 @@ class WhatsAppSettingsPage extends Page implements HasForms
 
     public string $notif_admin_demo_baru_template = '';
 
+    public string $notif_admin_pesantren_baru_template = '';
+
     public string $notif_admin_order_baru_template = '';
 
     public string $notif_admin_order_bukti_template = '';
@@ -110,6 +112,10 @@ class WhatsAppSettingsPage extends Page implements HasForms
             'notif_admin_demo_baru_template' => WhatsAppMessageTemplate::get(
                 'notif_admin_demo_baru',
                 NotifikasiAdminPlatform::DEFAULT_DEMO_BARU,
+            ),
+            'notif_admin_pesantren_baru_template' => WhatsAppMessageTemplate::get(
+                'notif_admin_pesantren_baru',
+                NotifikasiAdminPlatform::DEFAULT_PESANTREN_BARU,
             ),
             'notif_admin_order_baru_template' => WhatsAppMessageTemplate::get(
                 'notif_admin_order_baru',
@@ -146,7 +152,7 @@ class WhatsAppSettingsPage extends Page implements HasForms
                         ->helperText('Tujuan semua alert internal. Boleh ditulis 08xx maupun 62xx — akan disimpan dalam format internasional. Kosongkan untuk menghentikan pengiriman tanpa mematikan toggle.')
                         ->rule($this->nomorWhatsappRule()),
                     Toggle::make('notif_admin_platform_enabled')
-                        ->label('Kirim alert WhatsApp saat lead demo & pesanan upgrade masuk')
+                        ->label('Kirim alert WhatsApp saat pesantren baru mendaftar, lead demo & pesanan upgrade masuk')
                         ->helperText('Default mati. Nyalakan hanya setelah memastikan token Fonnte hidup lewat tombol "Kirim WA Tes" di bawah.')
                         ->default(false),
                     Actions::make([
@@ -161,6 +167,11 @@ class WhatsAppSettingsPage extends Page implements HasForms
                         ->required()
                         ->rows(8)
                         ->helperText('Placeholder yang bisa dipakai: {nama_pesantren}, {nama_kontak}, {no_hp}, {kota}, {jumlah_santri}, {link_admin}.'),
+                    Textarea::make('notif_admin_pesantren_baru_template')
+                        ->label('Template alert pesantren baru mendaftar')
+                        ->required()
+                        ->rows(10)
+                        ->helperText('Dikirim saat pesantren menyelesaikan pendaftaran mandiri. Placeholder: {nama_pesantren}, {subdomain}, {paket}, {kota}, {nama_admin}, {email}, {no_hp}, {link_admin}.'),
                     Textarea::make('notif_admin_order_baru_template')
                         ->label('Template alert pesanan upgrade dibuat')
                         ->required()
@@ -370,6 +381,7 @@ class WhatsAppSettingsPage extends Page implements HasForms
 
             WhatsAppSetting::set('notif_admin_platform_enabled', (bool) $state['notif_admin_platform_enabled']);
             WhatsAppMessageTemplate::set('notif_admin_demo_baru', $state['notif_admin_demo_baru_template']);
+            WhatsAppMessageTemplate::set('notif_admin_pesantren_baru', $state['notif_admin_pesantren_baru_template']);
             WhatsAppMessageTemplate::set('notif_admin_order_baru', $state['notif_admin_order_baru_template']);
             WhatsAppMessageTemplate::set('notif_admin_order_bukti', $state['notif_admin_order_bukti_template']);
 

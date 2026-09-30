@@ -16,6 +16,7 @@ use App\Rules\ValidTenantSlug;
 use App\Rules\WilayahJalurValid;
 use App\Services\BillingCalculatorService;
 use App\Services\FonnteWhatsAppService;
+use App\Services\NotifikasiAdminPlatform;
 use App\Services\OnboardPesantren;
 use App\Support\WilayahLookup;
 use Illuminate\Database\QueryException;
@@ -185,6 +186,7 @@ class RegisterController extends Controller
         }
 
         $this->kirimEmailSambutan($result);
+        app(NotifikasiAdminPlatform::class)->pesantrenBaru($result['pesantren'], $result['admin']);
 
         // Sengaja TIDAK Auth::login() di sini: sesi yang lahir di apex tidak akan
         // pernah terbaca di host panel (cookie ber-scope host, §1.8). Sesinya

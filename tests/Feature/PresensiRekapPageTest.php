@@ -67,6 +67,10 @@ class PresensiRekapPageTest extends TestCase
 
     public function test_panel_perlu_perhatian_muncul_saat_ada_alpa_beruntun(): void
     {
+        // Dibekukan ke pertengahan bulan: tiga hari mundur dari tanggal 1–3 jatuh di
+        // bulan sebelumnya, di luar rekap bulan berjalan.
+        $this->travelTo(Waktu::sekarang()->startOfMonth()->addDays(14)->setTime(10, 0));
+
         [$pesantren, $admin, $kelas] = $this->siapkan();
 
         $santri = Santri::factory()->create([

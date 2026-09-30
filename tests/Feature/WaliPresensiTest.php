@@ -97,6 +97,10 @@ class WaliPresensiTest extends TestCase
 
     public function test_status_hadir_terlambat_dan_dispensasi_sama_sama_dihitung_hadir(): void
     {
+        // Dibekukan ke pertengahan bulan: rekap tidak menghitung tanggal setelah hari
+        // ini, jadi di tanggal 1–3 empat catatan di bawah tidak semuanya terhitung.
+        $this->travelTo(Waktu::sekarang()->startOfMonth()->addDays(14)->setTime(10, 0));
+
         $bulan = Waktu::sekarang()->startOfMonth();
 
         $this->catat($bulan->copy()->toDateString(), StatusKehadiran::Hadir);
